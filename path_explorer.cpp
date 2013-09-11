@@ -49,7 +49,6 @@ vdep_graph                                    dta_graph;
 map_ins_io                                    dta_inss_io;
 
 std::vector<ptr_checkpoint>                   saved_ptr_checkpoints;
-// ptr_checkpoint                                active_ptr_checkpoint;
 ptr_checkpoint                                master_ptr_checkpoint;
 
 std::map< UINT32, 
