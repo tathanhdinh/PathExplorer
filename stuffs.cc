@@ -26,26 +26,24 @@
 /* ------------------------------------------------------------------------------------------------------------------ */
 /*                                                       global variables                                             */
 /* ------------------------------------------------------------------------------------------------------------------ */
-// extern UINT32 counter;
 extern std::map< ADDRINT, 
-                 instruction > addr_ins_static_map;
+                 instruction >      addr_ins_static_map;
                  
-extern vdep_graph dta_graph;
+extern vdep_graph                   dta_graph;
 
-extern std::vector<ptr_checkpoint> saved_ptr_checkpoints;
-// extern ptr_checkpoint              active_ptr_checkpoint;
+extern std::vector<ptr_checkpoint>  saved_ptr_checkpoints;
 
-extern ptr_branch active_ptr_branch;
-extern std::vector<ptr_branch> tainted_ptr_branches;
-extern std::vector<ptr_branch> untainted_ptr_branches;
-extern std::vector<ptr_branch> resolved_ptr_branches;
+extern ptr_branch                   active_ptr_branch;
+extern std::vector<ptr_branch>      tainted_ptr_branches;
+extern std::vector<ptr_branch>      untainted_ptr_branches;
+extern std::vector<ptr_branch>      resolved_ptr_branches;
 
-extern std::vector<ADDRINT> explored_trace;
+extern std::vector<ADDRINT>         explored_trace;
 
-extern UINT32 tainted_branch_num;
-extern UINT32 resolved_branch_num;
+extern UINT32                       tainted_branch_num;
+extern UINT32                       resolved_branch_num;
 
-extern KNOB<BOOL> print_debug_text;
+extern KNOB<BOOL>                   print_debug_text;
 
 
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -60,7 +58,6 @@ void assign_image_name(ADDRINT ins_addr, std::string& img_name)
     {
       if ((ins_addr >= SEC_Address(sec)) && (ins_addr < SEC_Address(sec) + SEC_Size(sec)))
       {
-//         addr_ins_static_map[ins_addr].img = IMG_Name(img);
         img_name = IMG_Name(img);
         return;
       }
@@ -306,11 +303,7 @@ void print_debug_resolving_rollback(ADDRINT ins_addr, ptr_branch& new_ptr_branch
   {
     std::cerr << boost::format("Resolving   %-5i %-20s %-35s (rollback to %i)\n") 
                   % explored_trace.size() % StringFromAddrint(ins_addr) % addr_ins_static_map[ins_addr].disass 
-                  % active_ptr_branch->chkpnt->trace.size();
-                
-//     std::cerr << boost::format("Rollback to %-5i %-20s %-35s\n") 
-//                   % active_ptr_checkpoint->trace.size() % StringFromAddrint(active_ptr_checkpoint->addr) 
-//                   % addr_ins_static_map[active_ptr_checkpoint->addr].disass;
+                  % active_ptr_branch->chkpnt->trace.size();                
   }
   return;
 }
@@ -450,16 +443,22 @@ void journal_branch_messages(ptr_branch& ptr_resolved_branch)
   std::vector< boost::shared_ptr<UINT8> >::iterator msg_number_iter;
   
   std::map< bool, 
-            std::vector< boost::shared_ptr<UINT8> > >::iterator msg_map_iter = ptr_resolved_branch->inputs.begin();
+            std::vector< boost::shared_ptr<UINT8> > 
+          >::iterator msg_map_iter = ptr_resolved_branch->inputs.begin();
   for (; msg_map_iter != ptr_resolved_branch->inputs.end(); ++msg_map_iter) 
   {
-    br_taken_name = msg_map_iter->first ? "true" : "false";
+    br_taken_name = msg_map_iter->first ? "taken" : "nottaken";
     msg_file_name = "msg_" + br_taken_name + "_";
     
-    for (msg_number_iter = msg_map_iter->second.begin(); msg_number_iter != msg_map_iter->second.end(); 
-         ++msg_number_iter)
-         {
-           
-         }
+    msg_number_iter = msg_map_iter->second.begin();
+    for (; msg_number_iter != msg_map_iter->second.end(); ++msg_number_iter)
+    {
+      msg_number_name << (msg_number_iter - msg_map_iter->second.begin());
+      journal_buffer((msg_file_name + msg_number_name.str()).c_str(), (*msg_number_iter).get(), received_msg_size);
+      msg_number_name.clear();
+      msg_number_name.str("");
+    }
   }
+  
+  return;
 }

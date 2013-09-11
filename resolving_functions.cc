@@ -145,7 +145,7 @@ inline void error_lost_in_forwarding(ADDRINT ins_addr, ptr_branch& err_ptr_branc
 {
   journal_buffer("failed_rollback_msg", reinterpret_cast<UINT8*>(received_msg_addr), received_msg_size);
   print_debug_lost_forward(ins_addr, err_ptr_branch);
-  PIN_ExitApplication(0);
+  
   
   return;
 }
@@ -270,6 +270,7 @@ inline void new_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_bra
   else // error: in forward but new branch taken found 
   {
     error_lost_in_forwarding(ins_addr, tainted_ptr_branch);
+    PIN_ExitApplication(0);
   }  
   
   return;
@@ -404,9 +405,10 @@ inline void process_untainted_branch(ADDRINT ins_addr, bool br_taken, ptr_branch
 VOID resolving_cond_branch_analyzer(ADDRINT ins_addr, bool br_taken)
 { 
   // search in the list of tainted branches
-  std::vector<ptr_branch>::iterator ptr_branch_iter = search_in(tainted_ptr_branches, ins_addr);  
+  std::vector<ptr_branch>::iterator ptr_branch_iter = search_in(tainted_ptr_branches, ins_addr);
+  
   if (ptr_branch_iter != tainted_ptr_branches.end()) // found a tainted branch
-  {    
+  {
     process_tainted_branch(ins_addr, br_taken, *ptr_branch_iter);
   }
   else // not found in the list of tainted branches

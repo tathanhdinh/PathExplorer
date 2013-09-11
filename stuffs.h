@@ -35,6 +35,8 @@ void        journal_explored_trace      (const std::string& filename, std::vecto
 
 void        journal_tainting_graph      (const std::string& filename);
 
+void        journal_branch_messages     (ptr_branch& ptr_resolved_branch);
+
 void        store_input                 (ptr_branch& ptr_br, bool br_taken);
 
 void        print_debug_rollbacking_stop(ptr_branch& unexplored_ptr_branch);
