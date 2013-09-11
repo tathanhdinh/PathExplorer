@@ -438,3 +438,28 @@ void print_debug_new_branch(ADDRINT ins_addr, ptr_branch& new_ptr_branch)
   }
   return;
 }
+
+/*====================================================================================================================*/
+
+void journal_branch_messages(ptr_branch& ptr_resolved_branch) 
+{
+  std::stringstream msg_number_name;
+  std::string msg_file_name;
+  std::string br_taken_name;
+  
+  std::vector< boost::shared_ptr<UINT8> >::iterator msg_number_iter;
+  
+  std::map< bool, 
+            std::vector< boost::shared_ptr<UINT8> > >::iterator msg_map_iter = ptr_resolved_branch->inputs.begin();
+  for (; msg_map_iter != ptr_resolved_branch->inputs.end(); ++msg_map_iter) 
+  {
+    br_taken_name = msg_map_iter->first ? "true" : "false";
+    msg_file_name = "msg_" + br_taken_name + "_";
+    
+    for (msg_number_iter = msg_map_iter->second.begin(); msg_number_iter != msg_map_iter->second.end(); 
+         ++msg_number_iter)
+         {
+           
+         }
+  }
+}

@@ -42,10 +42,6 @@ public:
   bool                  br_taken;
   std::set<ADDRINT>     dep_mems;
   
-//   std::pair< 
-//             std::vector< boost::shared_ptr<UINT8> >,
-//             std::vector< boost::shared_ptr<UINT8> > 
-//            >            inputs;
   std::map< bool, 
             std::vector< boost::shared_ptr<UINT8> > 
           >             inputs;

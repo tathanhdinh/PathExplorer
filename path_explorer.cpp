@@ -1,7 +1,5 @@
 #include <pin.H>
 
-// #include <boost/cstdint.hpp>
-
 #include <map>
 #include <vector>
 #include <algorithm>
@@ -186,8 +184,6 @@ VOID stop_tracing(INT32 code, VOID *data)
   
   journal_result_total(max_total_rollback.Value(), used_rollback_times, 
                        max_trace_length.Value(), tainted_ptr_branches.size(), succeeded_branches);
-  
-  
   
   return;
 }
