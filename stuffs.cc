@@ -276,9 +276,9 @@ void print_debug_rollbacking_stop(ptr_branch& unexplored_ptr_branch)
     }
     
     std::cerr << "\033[33mRollbacking phase stopped: " << resolved_branch_num << "/" 
-              << input_dep_branch_num << " branches resolved.\n" 
-              << "-------------------------------------------------------------------------------------------------\n"
-              << "Start tainting phase exploring branch at " << unexplored_ptr_branch->trace.size() << "\033[0m\n";
+              << input_dep_branch_num << " branches resolved.\033[0m\n";
+    std::cerr << "\033[35m-------------------------------------------------------------------------------------------------\n"
+              << "Start tainting phase exploring branch at " << unexplored_ptr_branch->trace.size() << ".\033[0m\n";
   }
   return;
 }

@@ -53,27 +53,7 @@ inline void omit_branch(ptr_branch& omitted_ptr_branch)
   return;
 }
 
-inline std::vector<ptr_branch>::iterator omit_examined_branches() 
-{
-  std::vector<ptr_branch>::iterator ptr_branch_iter = input_dep_ptr_branches.begin();
-  if (exploring_ptr_branch) 
-  {
-    for (; ptr_branch_iter != input_dep_ptr_branches.end(); ++ptr_branch_iter) 
-    {
-      if ((*ptr_branch_iter)->trace.size() <= exploring_ptr_branch->trace.size()) 
-      {
-        omit_branch(*ptr_branch_iter);
-        input_dep_branch_num--;
-      }
-      else 
-      {
-        break;
-      }
-    }
-  }
-  
-  return ptr_branch_iter;
-}
+/*====================================================================================================================*/
 
 void prepare_new_rollbacking_phase() 
 {
@@ -92,7 +72,7 @@ void prepare_new_rollbacking_phase()
     if (!input_dep_ptr_branches.empty()) 
     {
       rollback_with_input_replacement(master_ptr_checkpoint, 
-                                    input_dep_ptr_branches[0]->inputs[input_dep_ptr_branches[0]->br_taken][0].get());
+                                      input_dep_ptr_branches[0]->inputs[input_dep_ptr_branches[0]->br_taken][0].get());
     }
     else 
     {
@@ -123,33 +103,6 @@ VOID logging_ins_count_analyzer(ADDRINT ins_addr)
   else // trace length limit reached
   {
     prepare_new_rollbacking_phase();
-//     if (!input_dep_ptr_branches.empty())
-//     {
-//       input_dep_branch_num += input_dep_ptr_branches.size();
-//       
-//       // omit branches which have been resolved in the previous rollbacking phases
-//       std::vector<ptr_branch>::iterator ptr_branch_iter = omit_examined_branches();
-// 
-//       // rollback and start rollbacking phase
-//       if (ptr_branch_iter != input_dep_ptr_branches.end()) 
-//       {
-//         print_debug_start_rollbacking();
-//         
-//         in_tainting = false;
-//         PIN_RemoveInstrumentation();
-//         tmp_ptr_branch = input_dep_ptr_branches[0];
-//         rollback_with_input_replacement(master_ptr_checkpoint, 
-//                                         tmp_ptr_branch->inputs[tmp_ptr_branch->br_taken][0].get());
-//       }
-//       else 
-//       {
-//         PIN_ExitApplication(0);
-//       }
-//     }
-//     else // tainted branches do not exist
-//     {
-//       PIN_ExitApplication(0);
-//     }
   }
   
   return;
@@ -164,8 +117,8 @@ VOID logging_mem_to_st_analyzer(ADDRINT ins_addr, ADDRINT mem_read_addr, UINT32 
       std::min(mem_read_addr + mem_read_size, received_msg_addr + received_msg_size)
      )
   {
-    ptr_checkpoint new_ptr_chkpt(new checkpoint(ins_addr, p_ctxt, explored_trace, mem_read_addr, mem_read_size));
-    saved_ptr_checkpoints.push_back(new_ptr_chkpt);
+    ptr_checkpoint new_ptr_checkpoint(new checkpoint(ins_addr, p_ctxt, explored_trace, mem_read_addr, mem_read_size));
+    saved_ptr_checkpoints.push_back(new_ptr_checkpoint);
     
     if (!master_ptr_checkpoint) 
     {
