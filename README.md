@@ -1,1 +1,1 @@
-A Pintool for Code Coveraging
+A Pintool for Code Coveraging (warning: crappy code!!!)
