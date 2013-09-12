@@ -29,6 +29,7 @@ extern UINT32                                     received_msg_size;
 
 extern std::vector<ptr_branch>                    input_dep_ptr_branches;
 extern std::vector<ptr_branch>                    input_indep_ptr_branches;
+extern std::vector<ptr_branch>                    tainted_ptr_branches;
 extern std::vector<ptr_branch>                    resolved_ptr_branches;
 
 extern ptr_branch                                 active_ptr_branch;
@@ -121,6 +122,7 @@ inline std::vector<ptr_branch>::iterator search_in(std::vector<ptr_branch>& ptr_
       break;
     }
   }
+  
   return ptr_branch_iter;
 }
 
@@ -225,7 +227,7 @@ inline void exploring_new_branch_or_stop()
 
 inline void process_tainted_and_resolved_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& tainted_ptr_branch) 
 {
-  store_input(tainted_ptr_branch, br_taken);
+//   store_input(tainted_ptr_branch, br_taken);
   
   if (tainted_ptr_branch->br_taken != br_taken) // new branch taken
   { 
@@ -255,7 +257,7 @@ inline void new_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_bra
     print_debug_succeed(ins_addr, tainted_ptr_branch);
     
     accept_branch(active_ptr_branch);
-    store_input(active_ptr_branch, br_taken);
+//     store_input(active_ptr_branch, br_taken);
     
     // this branch is resolved, now restore the input to take a clean rollback
     tmp_ptr_branch = active_ptr_branch;
@@ -296,7 +298,7 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
   
   if (active_ptr_branch->chkpnt->rb_times <= max_local_rollback.Value())
   {
-    store_input(active_ptr_branch, br_taken);
+//     store_input(active_ptr_branch, br_taken);
     
     // this branch is not resolved yet, now modify the input and rollback again
     total_rollback_times++;
@@ -377,7 +379,7 @@ inline void process_untainted_branch(ADDRINT ins_addr, bool br_taken, ptr_branch
         accept_branch(untainted_ptr_branch);
       }
       
-      store_input(untainted_ptr_branch, br_taken);
+//       store_input(untainted_ptr_branch, br_taken);
       
       // the original trace will lost if go further, so rollback
       total_rollback_times++;
@@ -390,11 +392,29 @@ inline void process_untainted_branch(ADDRINT ins_addr, bool br_taken, ptr_branch
     }
   }
   else 
+//   {
+//     if (untainted_ptr_branch->is_resolved) 
+//     {
+//       store_input(untainted_ptr_branch, br_taken);
+//     }
+//   }
+  
+  return;
+}
+
+/*====================================================================================================================*/
+
+inline void log_input(ADDRINT ins_addr, bool br_taken)
+{
+  std::vector<ptr_branch>::iterator ptr_branch_iter = search_in(tainted_ptr_branches, ins_addr);
+  if (ptr_branch_iter != tainted_ptr_branches.end()) 
   {
-    if (untainted_ptr_branch->is_resolved) 
-    {
-      store_input(untainted_ptr_branch, br_taken);
-    }
+    store_input(*ptr_branch_iter, br_taken);
+  }
+  else 
+  {
+    print_debug_unknown_branch(ins_addr, *ptr_branch_iter);
+    PIN_ExitApplication(0);
   }
   
   return;
@@ -404,9 +424,10 @@ inline void process_untainted_branch(ADDRINT ins_addr, bool br_taken, ptr_branch
 
 VOID resolving_cond_branch_analyzer(ADDRINT ins_addr, bool br_taken)
 { 
+  log_input(ins_addr, br_taken);
+  
   // search in the list of tainted branches
   std::vector<ptr_branch>::iterator ptr_branch_iter = search_in(input_dep_ptr_branches, ins_addr);
-  
   if (ptr_branch_iter != input_dep_ptr_branches.end()) // found a tainted branch
   {
     process_tainted_branch(ins_addr, br_taken, *ptr_branch_iter);
