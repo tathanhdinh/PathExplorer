@@ -60,9 +60,6 @@ std::vector<ptr_branch>                       resolved_ptr_branches;
 ptr_branch                                    active_ptr_branch;
 ptr_branch                                    exploring_ptr_branch;             
 
-// UINT32                                        input_dep_branch_num;
-// UINT32                                        resolved_branch_num;
-
 std::vector<ADDRINT>                          explored_trace;
 
 UINT8                                         received_msg_num;
