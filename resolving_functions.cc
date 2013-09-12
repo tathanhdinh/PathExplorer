@@ -27,14 +27,14 @@ extern UINT32                                     total_rollback_times;
 extern ADDRINT                                    received_msg_addr;
 extern UINT32                                     received_msg_size;
 
-extern std::vector<ptr_branch>                    tainted_ptr_branches;
-extern std::vector<ptr_branch>                    untainted_ptr_branches;
+extern std::vector<ptr_branch>                    input_dep_ptr_branches;
+extern std::vector<ptr_branch>                    input_indep_ptr_branches;
 extern std::vector<ptr_branch>                    resolved_ptr_branches;
 
 extern ptr_branch                                 active_ptr_branch;
 extern ptr_branch                                 exploring_ptr_branch; 
 
-extern UINT32                                     tainted_branch_num;
+extern UINT32                                     input_dep_branch_num;
 extern UINT32                                     resolved_branch_num;
 
 extern KNOB<UINT32>                               max_total_rollback;
@@ -94,8 +94,8 @@ inline void prepare_new_tainting_phase(ptr_branch& unexplored_ptr_branch)
   exploring_ptr_branch = unexplored_ptr_branch;
           
   vdep_graph().swap(dta_graph);
-  std::vector<ptr_branch>().swap(tainted_ptr_branches);
-  std::vector<ptr_branch>().swap(untainted_ptr_branches);
+  std::vector<ptr_branch>().swap(input_dep_ptr_branches);
+  std::vector<ptr_branch>().swap(input_indep_ptr_branches);
   std::vector<ptr_checkpoint>().swap(saved_ptr_checkpoints);
   std::map< UINT32, std::vector<ptr_checkpoint> >().swap(exepoint_checkpoints_map);
   
@@ -201,7 +201,7 @@ inline void exploring_new_branch_or_stop()
   // unexplored branch found
   if (unexplored_ptr_branch_iter != resolved_ptr_branches.end()) 
   {
-    resolved_branch_num = resolved_ptr_branches.size();
+//     resolved_branch_num = resolved_ptr_branches.size();
     
     print_debug_rollbacking_stop(*unexplored_ptr_branch_iter);
 
@@ -346,7 +346,7 @@ inline void process_tainted_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& 
   
   if (tainted_ptr_branch->is_resolved) // which is resolved 
   {
-    if (tainted_ptr_branch == tainted_ptr_branches.back()) // and is the current last branch
+    if (tainted_ptr_branch == input_dep_ptr_branches.back()) // and is the current last branch
     {
       exploring_new_branch_or_stop();
     }
@@ -405,17 +405,17 @@ inline void process_untainted_branch(ADDRINT ins_addr, bool br_taken, ptr_branch
 VOID resolving_cond_branch_analyzer(ADDRINT ins_addr, bool br_taken)
 { 
   // search in the list of tainted branches
-  std::vector<ptr_branch>::iterator ptr_branch_iter = search_in(tainted_ptr_branches, ins_addr);
+  std::vector<ptr_branch>::iterator ptr_branch_iter = search_in(input_dep_ptr_branches, ins_addr);
   
-  if (ptr_branch_iter != tainted_ptr_branches.end()) // found a tainted branch
+  if (ptr_branch_iter != input_dep_ptr_branches.end()) // found a tainted branch
   {
     process_tainted_branch(ins_addr, br_taken, *ptr_branch_iter);
   }
   else // not found in the list of tainted branches
   {
     // search in the list of untainted branches
-    ptr_branch_iter = search_in(untainted_ptr_branches, ins_addr);
-    if (ptr_branch_iter != untainted_ptr_branches.end()) // a untainted branch found
+    ptr_branch_iter = search_in(input_indep_ptr_branches, ins_addr);
+    if (ptr_branch_iter != input_indep_ptr_branches.end()) // a untainted branch found
     {
       process_untainted_branch(ins_addr, br_taken, *ptr_branch_iter);
     }

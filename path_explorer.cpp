@@ -52,15 +52,16 @@ ptr_checkpoint                                master_ptr_checkpoint;
 std::map< UINT32, 
           std::vector<ptr_checkpoint> >       exepoint_checkpoints_map;
 
+std::vector<ptr_branch>                       input_dep_ptr_branches;
+std::vector<ptr_branch>                       input_indep_ptr_branches;
 std::vector<ptr_branch>                       tainted_ptr_branches;
-std::vector<ptr_branch>                       untainted_ptr_branches;
 std::vector<ptr_branch>                       resolved_ptr_branches;
 
 ptr_branch                                    active_ptr_branch;
 ptr_branch                                    exploring_ptr_branch;             
 
-UINT32                                        tainted_branch_num;
-UINT32                                        resolved_branch_num;
+// UINT32                                        input_dep_branch_num;
+// UINT32                                        resolved_branch_num;
 
 std::vector<ADDRINT>                          explored_trace;
 
@@ -107,8 +108,8 @@ VOID start_tracing(VOID *data)
 
   received_msg_num      = 0;
 
-  tainted_branch_num    = 0;
-  resolved_branch_num   = 0;
+//   input_dep_branch_num    = 0;
+//   resolved_branch_num   = 0;
 
   logged_syscall_index  = syscall_inexist;
     
@@ -136,8 +137,8 @@ VOID stop_tracing(INT32 code, VOID *data)
   trace_file.close();
   
   UINT32 succeeded_branches = 0;
-  std::vector<ptr_branch>::iterator ptr_br_iter = tainted_ptr_branches.begin();
-  for (; ptr_br_iter != tainted_ptr_branches.end(); ++ptr_br_iter)
+  std::vector<ptr_branch>::iterator ptr_br_iter = input_dep_ptr_branches.begin();
+  for (; ptr_br_iter != input_dep_ptr_branches.end(); ++ptr_br_iter)
   {
     if ((*ptr_br_iter)->is_resolved && !(*ptr_br_iter)->is_bypassed)
     {
@@ -146,8 +147,8 @@ VOID stop_tracing(INT32 code, VOID *data)
   }
   
   UINT32 new_branches = 0;
-  ptr_br_iter = untainted_ptr_branches.begin();
-  for (; ptr_br_iter != untainted_ptr_branches.end(); ++ptr_br_iter)
+  ptr_br_iter = input_indep_ptr_branches.begin();
+  for (; ptr_br_iter != input_indep_ptr_branches.end(); ++ptr_br_iter)
   {
     if ((*ptr_br_iter)->is_resolved)
     {
@@ -168,24 +169,36 @@ VOID stop_tracing(INT32 code, VOID *data)
   // that is by default
   if (print_debug_text)
   {
-    std::cerr << "\033[33mRollbacking phase is stopped.\033[0m\n"
+    UINT32 resolved_branch_num = resolved_ptr_branches.size();
+    UINT32 input_dep_branch_num = 0;
+    
+    std::vector<ptr_branch>::iterator ptr_branch_iter = tainted_ptr_branches.begin();
+    for (; ptr_branch_iter != tainted_ptr_branches.end(); ++ptr_branch_iter) 
+    {
+      if (!(*ptr_branch_iter)->dep_mems.empty()) 
+      {
+        input_dep_branch_num++;
+      }
+    }
+    
+    std::cerr << "\033[33mExamining stopped.\033[0m\n"
               << "-------------------------------------------------------------------------------------------------\n"
               << elapsed_millisec << " milli-seconds elapsed.\n"
               << used_rollback_times << " rollbacks used.\n"
-              << resolved_ptr_branches.size() << "/" << tainted_branch_num << " branches successfully resolved.\n" 
+              << resolved_branch_num << "/" << input_dep_branch_num << " branches successfully resolved.\n" 
 //               << new_branches << "/" << untainted_branches.size() << " new branches successfully found.\n";
               << "-------------------------------------------------------------------------------------------------\n";
     
     journal_explored_trace("explored_trace", explored_trace);
     journal_static_trace("static_trace");
-    journal_buffer("after_rollback_msg", reinterpret_cast<UINT8*>(received_msg_addr), received_msg_size);
+//     journal_buffer("after_rollback_msg", reinterpret_cast<UINT8*>(received_msg_addr), received_msg_size);
     journal_tainting_graph("tainting_graph.dot");
     
     journal_branch_messages(resolved_ptr_branches[2]);
   }
   
   journal_result_total(max_total_rollback.Value(), used_rollback_times, 
-                       max_trace_length.Value(), tainted_ptr_branches.size(), succeeded_branches);
+                       max_trace_length.Value(), input_dep_ptr_branches.size(), succeeded_branches);
   
   return;
 }

@@ -34,14 +34,15 @@ extern vdep_graph                   dta_graph;
 extern std::vector<ptr_checkpoint>  saved_ptr_checkpoints;
 
 extern ptr_branch                   active_ptr_branch;
-extern std::vector<ptr_branch>      tainted_ptr_branches;
-extern std::vector<ptr_branch>      untainted_ptr_branches;
+extern std::vector<ptr_branch>      input_dep_ptr_branches;
+extern std::vector<ptr_branch>      input_indep_ptr_branches;
 extern std::vector<ptr_branch>      resolved_ptr_branches;
+extern std::vector<ptr_branch>      tainted_ptr_branches;
 
 extern std::vector<ADDRINT>         explored_trace;
 
-extern UINT32                       tainted_branch_num;
-extern UINT32                       resolved_branch_num;
+extern UINT32                       input_dep_branch_num;
+// extern UINT32                       resolved_branch_num;
 
 extern KNOB<BOOL>                   print_debug_text;
 
@@ -262,8 +263,20 @@ void print_debug_rollbacking_stop(ptr_branch& unexplored_ptr_branch)
 {
   if (print_debug_text)
   {
+    UINT32 resolved_branch_num = resolved_ptr_branches.size();
+    UINT32 input_dep_branch_num = 0;
+    
+    std::vector<ptr_branch>::iterator ptr_branch_iter = tainted_ptr_branches.begin();
+    for (; ptr_branch_iter != tainted_ptr_branches.end(); ++ptr_branch_iter) 
+    {
+      if (!(*ptr_branch_iter)->dep_mems.empty()) 
+      {
+        input_dep_branch_num++;
+      }
+    }
+    
     std::cerr << "\033[33mRollbacking phase stopped: " << resolved_branch_num << "/" 
-              << tainted_branch_num << " branches resolved.\n" 
+              << input_dep_branch_num << " branches resolved.\n" 
               << "-------------------------------------------------------------------------------------------------\n"
               << "Start tainting phase exploring branch at " << unexplored_ptr_branch->trace.size() << "\033[0m\n";
   }
@@ -378,8 +391,8 @@ void print_debug_start_rollbacking()
   if (print_debug_text) 
   {
     std::cerr << "\033[33mTainting phase stopped at " << explored_trace.size() << ", " 
-              << tainted_ptr_branches.size() << " tainted branches, " 
-              << untainted_ptr_branches.size() << " untainted branches, " 
+              << input_dep_ptr_branches.size() << " tainted branches, " 
+              << input_indep_ptr_branches.size() << " untainted branches, " 
               << saved_ptr_checkpoints.size() << " checkpoints. "
               << "Start rollbacking phase.\033[0m\n";
               

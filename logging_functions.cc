@@ -20,12 +20,13 @@ extern UINT32                                   total_rollback_times;
 
 extern std::vector<ADDRINT>                     explored_trace;
 
+extern std::vector<ptr_branch>                  input_dep_ptr_branches;
+extern std::vector<ptr_branch>                  input_indep_ptr_branches;
 extern std::vector<ptr_branch>                  tainted_ptr_branches;
-extern std::vector<ptr_branch>                  untainted_ptr_branches;
 
 extern ptr_branch                               exploring_ptr_branch; 
 
-extern UINT32                                   tainted_branch_num;
+extern UINT32                                   input_dep_branch_num;
 
 extern std::vector<ptr_checkpoint>              saved_ptr_checkpoints;
 extern ptr_checkpoint                           master_ptr_checkpoint;
@@ -43,11 +44,62 @@ extern KNOB<UINT32>                             max_trace_length;
 
 /*====================================================================================================================*/
 
-inline void omit_branch(ptr_branch& omitted_branch) 
+inline void omit_branch(ptr_branch& omitted_ptr_branch) 
 {
-  omitted_branch->is_resolved = true;
-  omitted_branch->is_bypassed = false;
-  omitted_branch->is_just_resolved = false;
+  omitted_ptr_branch->is_resolved = true;
+  omitted_ptr_branch->is_bypassed = false;
+  omitted_ptr_branch->is_just_resolved = false;
+  
+  return;
+}
+
+inline std::vector<ptr_branch>::iterator omit_examined_branches() 
+{
+  std::vector<ptr_branch>::iterator ptr_branch_iter = input_dep_ptr_branches.begin();
+  if (exploring_ptr_branch) 
+  {
+    for (; ptr_branch_iter != input_dep_ptr_branches.end(); ++ptr_branch_iter) 
+    {
+      if ((*ptr_branch_iter)->trace.size() <= exploring_ptr_branch->trace.size()) 
+      {
+        omit_branch(*ptr_branch_iter);
+        input_dep_branch_num--;
+      }
+      else 
+      {
+        break;
+      }
+    }
+  }
+  
+  return ptr_branch_iter;
+}
+
+void prepare_new_rollbacking_phase() 
+{
+  print_debug_start_rollbacking();
+  
+  in_tainting = false;
+  PIN_RemoveInstrumentation();
+  
+  if (exploring_ptr_branch) 
+  {
+    rollback_with_input_replacement(master_ptr_checkpoint, 
+                                    exploring_ptr_branch->inputs[!exploring_ptr_branch->br_taken][0].get());
+  }
+  else 
+  {
+    if (!input_dep_ptr_branches.empty()) 
+    {
+      rollback_with_input_replacement(master_ptr_checkpoint, 
+                                    input_dep_ptr_branches[0]->inputs[input_dep_ptr_branches[0]->br_taken][0].get());
+    }
+    else 
+    {
+      PIN_ExitApplication(0);
+    }
+  }
+  
   return;
 }
 
@@ -55,6 +107,8 @@ inline void omit_branch(ptr_branch& omitted_branch)
 
 VOID logging_ins_count_analyzer(ADDRINT ins_addr)
 {  
+  ptr_branch tmp_ptr_branch;
+  
   if (explored_trace.size() < max_trace_length.Value())
   {
     explored_trace.push_back(ins_addr);
@@ -68,48 +122,34 @@ VOID logging_ins_count_analyzer(ADDRINT ins_addr)
   }
   else // trace length limit reached
   {
-    if (!tainted_ptr_branches.empty())
-    {
-      tainted_branch_num += tainted_ptr_branches.size();
-      
-      // omit branches which have been resolved in the previous rollbacking phases
-      std::vector<ptr_branch>::iterator ptr_branch_iter = tainted_ptr_branches.begin();
-      if (exploring_ptr_branch) 
-      {
-        for (; ptr_branch_iter != tainted_ptr_branches.end(); ++ptr_branch_iter) 
-        {
-          if ((*ptr_branch_iter)->trace.size() <= exploring_ptr_branch->trace.size()) 
-          {
-            omit_branch(*ptr_branch_iter);
-            tainted_branch_num--;
-          }
-          else 
-          {
-            break;
-          }
-        }
-      }
-
-      // rollback and start rollbacking phase
-      if (ptr_branch_iter != tainted_ptr_branches.end()) 
-      {
-        print_debug_start_rollbacking();
-        
-        in_tainting = false;
-        PIN_RemoveInstrumentation();
-        ptr_branch tmp_ptr_branch = tainted_ptr_branches[0];
-        rollback_with_input_replacement(master_ptr_checkpoint, 
-                                        tmp_ptr_branch->inputs[tmp_ptr_branch->br_taken][0].get());
-      }
-      else 
-      {
-        PIN_ExitApplication(0);
-      }
-    }
-    else // tainted branches do not exist
-    {
-      PIN_ExitApplication(0);
-    }
+    prepare_new_rollbacking_phase();
+//     if (!input_dep_ptr_branches.empty())
+//     {
+//       input_dep_branch_num += input_dep_ptr_branches.size();
+//       
+//       // omit branches which have been resolved in the previous rollbacking phases
+//       std::vector<ptr_branch>::iterator ptr_branch_iter = omit_examined_branches();
+// 
+//       // rollback and start rollbacking phase
+//       if (ptr_branch_iter != input_dep_ptr_branches.end()) 
+//       {
+//         print_debug_start_rollbacking();
+//         
+//         in_tainting = false;
+//         PIN_RemoveInstrumentation();
+//         tmp_ptr_branch = input_dep_ptr_branches[0];
+//         rollback_with_input_replacement(master_ptr_checkpoint, 
+//                                         tmp_ptr_branch->inputs[tmp_ptr_branch->br_taken][0].get());
+//       }
+//       else 
+//       {
+//         PIN_ExitApplication(0);
+//       }
+//     }
+//     else // tainted branches do not exist
+//     {
+//       PIN_ExitApplication(0);
+//     }
   }
   
   return;
@@ -124,9 +164,6 @@ VOID logging_mem_to_st_analyzer(ADDRINT ins_addr, ADDRINT mem_read_addr, UINT32 
       std::min(mem_read_addr + mem_read_size, received_msg_addr + received_msg_size)
      )
   {
-//     CONTEXT *new_p_ctxt = new CONTEXT;
-//     PIN_SaveContext(p_ctxt, new_p_ctxt);
-    
     ptr_checkpoint new_ptr_chkpt(new checkpoint(ins_addr, p_ctxt, explored_trace, mem_read_addr, mem_read_size));
     saved_ptr_checkpoints.push_back(new_ptr_chkpt);
     
@@ -159,19 +196,36 @@ VOID logging_st_to_mem_analyzer(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT
 
 VOID logging_cond_br_analyzer(ADDRINT ins_addr, bool br_taken)
 { 
-  ptr_branch new_ptr_br_taint(new branch(ins_addr, br_taken));
+  ptr_branch new_ptr_branch(new branch(ins_addr, br_taken));
   
   // save the first input
-  store_input(new_ptr_br_taint, br_taken);
+  store_input(new_ptr_branch, br_taken);
   
-  if (!new_ptr_br_taint->dep_mems.empty()) // tainted branch
+  // verify if the branch is a new tainted branch
+  if (exploring_ptr_branch) 
   {
-    tainted_ptr_branches.push_back(new_ptr_br_taint);    
-    print_debug_new_branch(ins_addr, new_ptr_br_taint);
+    if (new_ptr_branch->trace.size() <= exploring_ptr_branch->trace.size()) // it is not
+    {
+      omit_branch(new_ptr_branch); // then omit it
+    }
+    else 
+    {
+      tainted_ptr_branches.push_back(new_ptr_branch);
+    }
   }
-  else // untainted branch
+  else // it is always a new tainted branch in the first tainting phase
   {
-    untainted_ptr_branches.push_back(new_ptr_br_taint);
+    tainted_ptr_branches.push_back(new_ptr_branch);
+  }
+  
+  if (!new_ptr_branch->dep_mems.empty()) // input dependent branch
+  {
+    input_dep_ptr_branches.push_back(new_ptr_branch);    
+    print_debug_new_branch(ins_addr, new_ptr_branch);
+  }
+  else // input independent branch
+  {
+    input_indep_ptr_branches.push_back(new_ptr_branch);
   }
 
   return;
