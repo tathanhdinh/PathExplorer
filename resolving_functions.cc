@@ -146,7 +146,6 @@ inline void error_lost_in_forwarding(ADDRINT ins_addr, ptr_branch& err_ptr_branc
   journal_buffer("failed_rollback_msg", reinterpret_cast<UINT8*>(received_msg_addr), received_msg_size);
   print_debug_lost_forward(ins_addr, err_ptr_branch);
   
-  
   return;
 }
 
@@ -181,7 +180,6 @@ inline void bypass_branch(ptr_branch& bypassed_ptr_branch)
 inline void disable_active_branch() 
 {
   active_ptr_branch.reset();
-//   active_ptr_checkpoint.reset();
   return;
 }
 
@@ -280,6 +278,8 @@ inline void new_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_bra
 
 inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_branch& tainted_ptr_branch) 
 {
+  bool current_br_taken;
+  
   if (active_ptr_branch) // in some rollback
   {
     if (active_ptr_branch != tainted_ptr_branch) // error: 
@@ -312,7 +312,7 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
     disable_active_branch();
     
     total_rollback_times++;
-    bool current_br_taken = tmp_ptr_branch->br_taken;
+    current_br_taken = tmp_ptr_branch->br_taken;
     rollback_with_input_replacement(tmp_ptr_branch->chkpnt, tmp_ptr_branch->inputs[current_br_taken][0].get());          
   }
   
