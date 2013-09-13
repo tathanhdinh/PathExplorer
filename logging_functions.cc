@@ -37,8 +37,6 @@ extern std::map< UINT32,
 extern ADDRINT                                  received_msg_addr;
 extern UINT32                                   received_msg_size;
 
-extern std::ofstream trace_file;
-
 extern KNOB<BOOL>                               print_debug_text;
 extern KNOB<UINT32>                             max_trace_length;
 
@@ -87,18 +85,9 @@ void prepare_new_rollbacking_phase()
 
 VOID logging_ins_count_analyzer(ADDRINT ins_addr)
 {  
-  ptr_branch tmp_ptr_branch;
-  
   if (explored_trace.size() < max_trace_length.Value())
   {
-    explored_trace.push_back(ins_addr);
-        
-    if (print_debug_text)
-    {
-      trace_file << boost::format("%-5i %-20s %-35s (R: %-i, W: %-i)\n") 
-                    % explored_trace.size() % StringFromAddrint(ins_addr) % addr_ins_static_map[ins_addr].disass 
-                    % addr_ins_static_map[ins_addr].mem_read_size % addr_ins_static_map[ins_addr].mem_written_size;
-    }
+    explored_trace.push_back(ins_addr);        
   }
   else // trace length limit reached
   {

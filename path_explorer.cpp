@@ -66,8 +66,6 @@ UINT8                                         received_msg_num;
 ADDRINT                                       received_msg_addr;
 UINT32                                        received_msg_size;
 
-std::ofstream                                 trace_file;
-
 boost::shared_ptr<boost::posix_time::ptime>   start_ptr_time;
 boost::shared_ptr<boost::posix_time::ptime>   stop_ptr_time;
 
@@ -95,8 +93,6 @@ KNOB<UINT32>  max_trace_length                (KNOB_MODE_WRITEONCE, "pintool",
 /* -------------------------------------------------------+---------------------------------------------------------- */
 VOID start_tracing(VOID *data)                                                  
 {
-  trace_file.open("trace", std::ofstream::out | std::ofstream::trunc);
-  
   trace_max_size        = max_trace_length.Value();
   
   in_tainting           = true;
@@ -104,9 +100,6 @@ VOID start_tracing(VOID *data)
   total_rollback_times  = 0;
 
   received_msg_num      = 0;
-
-//   input_dep_branch_num    = 0;
-//   resolved_branch_num   = 0;
 
   logged_syscall_index  = syscall_inexist;
     
@@ -130,8 +123,6 @@ VOID stop_tracing(INT32 code, VOID *data)
   
   boost::posix_time::time_duration elapsed_time = *stop_ptr_time - *start_ptr_time;
   long elapsed_millisec = elapsed_time.total_milliseconds();
-  
-  trace_file.close();
   
   UINT32 succeeded_branches = 0;
   std::vector<ptr_branch>::iterator ptr_br_iter = input_dep_ptr_branches.begin();
@@ -188,7 +179,6 @@ VOID stop_tracing(INT32 code, VOID *data)
     
     journal_explored_trace("explored_trace", explored_trace);
     journal_static_trace("static_trace");
-//     journal_buffer("after_rollback_msg", reinterpret_cast<UINT8*>(received_msg_addr), received_msg_size);
     journal_tainting_graph("tainting_graph.dot");
     
     journal_branch_messages(resolved_ptr_branches[1]);
