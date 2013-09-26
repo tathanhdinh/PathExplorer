@@ -53,7 +53,7 @@ inline void omit_branch(ptr_branch& omitted_ptr_branch)
 
 /*====================================================================================================================*/
 
-void prepare_new_rollbacking_phase() 
+inline void prepare_new_rollbacking_phase() 
 {
   print_debug_start_rollbacking();
   

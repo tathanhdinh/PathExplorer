@@ -181,7 +181,7 @@ VOID stop_tracing(INT32 code, VOID *data)
     journal_static_trace("static_trace");
     journal_tainting_graph("tainting_graph.dot");
     
-    journal_branch_messages(resolved_ptr_branches[1]);
+//     journal_branch_messages(resolved_ptr_branches[1]);
   }
   
   journal_result_total(max_total_rollback.Value(), used_rollback_times, 

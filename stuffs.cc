@@ -34,6 +34,8 @@ extern vdep_graph                   dta_graph;
 extern std::vector<ptr_checkpoint>  saved_ptr_checkpoints;
 
 extern ptr_branch                   active_ptr_branch;
+extern ptr_branch                   exploring_ptr_branch;
+
 extern std::vector<ptr_branch>      input_dep_ptr_branches;
 extern std::vector<ptr_branch>      input_indep_ptr_branches;
 extern std::vector<ptr_branch>      resolved_ptr_branches;
@@ -400,7 +402,14 @@ void print_debug_start_rollbacking()
                  % saved_ptr_checkpoints[0]->trace.size() % StringFromAddrint(saved_ptr_checkpoints[0]->addr) 
                  % addr_ins_static_map[saved_ptr_checkpoints[0]->addr].disass;
     
-    journal_explored_trace("tainted_trace", explored_trace);
+    std::string tainted_trace_filename("tainted_trace");
+    if (exploring_ptr_branch) 
+    {
+      std::stringstream ss;
+      ss << exploring_ptr_branch->trace.size();
+      tainted_trace_filename = tainted_trace_filename + "_" + ss.str();
+    }
+    journal_explored_trace(tainted_trace_filename.c_str(), explored_trace);
   }
   
   return;
