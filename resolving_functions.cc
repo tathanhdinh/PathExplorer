@@ -155,11 +155,8 @@ inline void error_lost_in_forwarding(ADDRINT ins_addr, ptr_branch& err_ptr_branc
 
 inline void accept_branch(ptr_branch& accepted_ptr_branch) 
 {
-//   store_input(accepted_ptr_branch, 2);
-  
   accepted_ptr_branch->is_resolved      = true;
   accepted_ptr_branch->is_just_resolved = true;
-  
   accepted_ptr_branch->is_bypassed      = false;
   
   resolved_ptr_branches.push_back(accepted_ptr_branch);
@@ -172,7 +169,6 @@ inline void bypass_branch(ptr_branch& bypassed_ptr_branch)
 {
   bypassed_ptr_branch->is_resolved      = true;
   bypassed_ptr_branch->is_just_resolved = true;
-  
   bypassed_ptr_branch->is_bypassed      = true;
   return;
 }
@@ -197,14 +193,9 @@ inline void enable_active_branch(ptr_branch& new_branch)
 
 inline void exploring_new_branch_or_stop() 
 {
-  // then explore another resolved branch
   std::vector<ptr_branch>::iterator unexplored_ptr_branch_iter = first_unexplored_branch();
-  
-  // unexplored branch found
-  if (unexplored_ptr_branch_iter != resolved_ptr_branches.end()) 
+  if (unexplored_ptr_branch_iter != resolved_ptr_branches.end())   // unexplored branch found
   {
-//     resolved_branch_num = resolved_ptr_branches.size();
-    
     print_debug_rollbacking_stop(*unexplored_ptr_branch_iter);
 
     // rollback to the first unexplored branch
@@ -227,8 +218,6 @@ inline void exploring_new_branch_or_stop()
 
 inline void process_tainted_and_resolved_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& tainted_ptr_branch) 
 {
-//   store_input(tainted_ptr_branch, br_taken);
-  
   if (tainted_ptr_branch->br_taken != br_taken) // new branch taken
   { 
     // the branch has been marked as "bypassed" before, then is resolved accidentally
@@ -257,7 +246,6 @@ inline void new_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_bra
     print_debug_succeed(ins_addr, tainted_ptr_branch);
     
     accept_branch(active_ptr_branch);
-//     store_input(active_ptr_branch, br_taken);
     
     // this branch is resolved, now restore the input to take a clean rollback
     tmp_ptr_branch = active_ptr_branch;
@@ -298,8 +286,6 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
   
   if (active_ptr_branch->chkpnt->rb_times <= max_local_rollback.Value())
   {
-//     store_input(active_ptr_branch, br_taken);
-    
     // this branch is not resolved yet, now modify the input and rollback again
     total_rollback_times++;
     rollback_with_input_random_modification(active_ptr_branch->chkpnt, active_ptr_branch->dep_mems);
@@ -378,8 +364,6 @@ inline void process_untainted_branch(ADDRINT ins_addr, bool br_taken, ptr_branch
         print_debug_found_new(ins_addr, untainted_ptr_branch);
         accept_branch(untainted_ptr_branch);
       }
-      
-//       store_input(untainted_ptr_branch, br_taken);
       
       // the original trace will lost if go further, so rollback
       total_rollback_times++;
