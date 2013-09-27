@@ -223,7 +223,7 @@ inline void process_tainted_and_resolved_branch(ADDRINT ins_addr, bool br_taken,
     // the branch has been marked as "bypassed" before, then is resolved accidentally
     if (tainted_ptr_branch->is_bypassed) 
     {
-      print_debug_met_again(ins_addr, tainted_ptr_branch);
+//       print_debug_met_again(ins_addr, tainted_ptr_branch);
       accept_branch(tainted_ptr_branch);
     }
     
@@ -243,7 +243,7 @@ inline void new_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_bra
   
   if (active_ptr_branch) // so this branch is resolved
   {
-    print_debug_succeed(ins_addr, tainted_ptr_branch);
+//     print_debug_succeed(ins_addr, tainted_ptr_branch);
     
     accept_branch(active_ptr_branch);
     
@@ -281,7 +281,7 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
   else // in forward and meet a branch to resolve, so enable active_ptr_branch
   {
     enable_active_branch(tainted_ptr_branch);
-    print_debug_resolving_rollback(ins_addr, tainted_ptr_branch);
+//     print_debug_resolving_rollback(ins_addr, tainted_ptr_branch);
   }
   
   if (active_ptr_branch->chkpnt->rb_times <= max_local_rollback.Value())
@@ -292,7 +292,7 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
   }
   else // the rollback number bypasses the maximum value
   {
-    print_debug_resolving_failed(ins_addr, tainted_ptr_branch);
+//     print_debug_resolving_failed(ins_addr, tainted_ptr_branch);
     
     bypass_branch(active_ptr_branch);
     
@@ -361,7 +361,7 @@ inline void process_untainted_branch(ADDRINT ins_addr, bool br_taken, ptr_branch
     {
       if (!untainted_ptr_branch->is_resolved) 
       {
-        print_debug_found_new(ins_addr, untainted_ptr_branch);
+//         print_debug_found_new(ins_addr, untainted_ptr_branch);
         accept_branch(untainted_ptr_branch);
       }
       
@@ -397,7 +397,7 @@ inline void log_input(ADDRINT ins_addr, bool br_taken)
   }
   else 
   {
-    print_debug_unknown_branch(ins_addr, *ptr_branch_iter);
+//     print_debug_unknown_branch(ins_addr, *ptr_branch_iter);
     PIN_ExitApplication(0);
   }
   
