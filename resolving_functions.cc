@@ -292,7 +292,7 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
   }
   else // the rollback number bypasses the maximum value
   {
-//     print_debug_resolving_failed(ins_addr, tainted_ptr_branch);
+    print_debug_resolving_failed(ins_addr, tainted_ptr_branch);
     
     bypass_branch(active_ptr_branch);
     
