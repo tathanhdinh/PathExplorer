@@ -180,68 +180,76 @@ VOID ins_instrumenter(INS ins, VOID *data)
 //       if (rollback_times == 0) // branch exploring
       if (in_tainting)
       {
-        /* 
-         * memory read/write tainting and logging
-          ============================================================================================================*/
-        
-        INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)logging_ins_count_analyzer, 
-                                 IARG_INST_PTR, 
-                                 IARG_END);
-        
-        extract_ins_operands(ins);
-        
-        if (INS_IsMemoryRead(ins))
+        if (INS_IsSyscall(ins)) 
         {
-          // memory read tainting
-          INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)tainting_mem_to_st_analyzer, 
-                                   IARG_INST_PTR, 
-                                   IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE,
-                                   IARG_END);
-          
-          // memory read logging
-          INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)logging_mem_to_st_analyzer,
-                                   IARG_INST_PTR,
-                                   IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE, 
-                                   IARG_CONTEXT,
-                                   IARG_END);
+          INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)logging_ins_syscall, 
+                                   IARG_INST_PTR, IARG_END);
         }
         else 
         {
-          if (INS_IsMemoryWrite(ins))
+          /* 
+           * memory read/write tainting and logging
+           * =======================================*/
+          
+          INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)logging_ins_count_analyzer, 
+                                  IARG_INST_PTR, 
+                                  IARG_END);
+          
+          extract_ins_operands(ins);
+          
+          if (INS_IsMemoryRead(ins))
           {
-          // memory written tainting
-            INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)tainting_st_to_mem_analyzer, 
-                                     IARG_INST_PTR, 
-                                     IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE,
-                                     IARG_END);
+            // memory read tainting
+            INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)tainting_mem_to_st_analyzer, 
+                                    IARG_INST_PTR, 
+                                    IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE,
+                                    IARG_END);
             
-            // memory written logging
-            INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)logging_st_to_mem_analyzer, 
-                                     IARG_INST_PTR,
-                                     IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE, 
-                                     IARG_END);
+            // memory read logging
+            INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)logging_mem_to_st_analyzer,
+                                    IARG_INST_PTR,
+                                    IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE, 
+                                    IARG_CONTEXT,
+                                    IARG_END);
           }
           else 
           {
-            // register read/written tainting
-            INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)tainting_st_to_st_analyzer, 
-                                     IARG_INST_PTR, 
-                                     IARG_END);
+            if (INS_IsMemoryWrite(ins))
+            {
+              // memory written tainting
+              INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)tainting_st_to_mem_analyzer, 
+                                      IARG_INST_PTR, 
+                                      IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE,
+                                      IARG_END);
+              
+              // memory written logging
+              INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)logging_st_to_mem_analyzer, 
+                                      IARG_INST_PTR,
+                                      IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE, 
+                                      IARG_END);
+            }
+            else 
+            {
+              // register read/written tainting
+              INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)tainting_st_to_st_analyzer, 
+                                      IARG_INST_PTR, 
+                                      IARG_END);
+            }
           }
-        }
-        
-        if (addr_ins_static_map[ins_addr].category == XED_CATEGORY_COND_BR)
-        {
-          INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)logging_cond_br_analyzer, 
-                                   IARG_INST_PTR, 
-                                   IARG_BRANCH_TAKEN,
-                                   IARG_END);
+          
+          if (addr_ins_static_map[ins_addr].category == XED_CATEGORY_COND_BR)
+          {
+            INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)logging_cond_br_analyzer, 
+                                    IARG_INST_PTR, 
+                                    IARG_BRANCH_TAKEN,
+                                    IARG_END);
+          }
         }
       }
       else // in rollbacking
       {
         /* branch resolving
-        ==============================================================================================================*/
+         * ================= */
         
         INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)resolving_ins_count_analyzer, 
                                  IARG_INST_PTR, 

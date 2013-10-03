@@ -3,6 +3,8 @@
 
 #include <pin.H>
 
+VOID logging_ins_syscall(ADDRINT ins_addr);
+
 VOID logging_ins_count_analyzer(ADDRINT ins_addr);
 
 VOID logging_mem_to_st_analyzer(ADDRINT ins_addr, ADDRINT mem_read_addr, UINT32 mem_read_size, CONTEXT* p_ctxt);

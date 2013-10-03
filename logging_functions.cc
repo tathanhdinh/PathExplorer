@@ -83,6 +83,14 @@ inline void prepare_new_rollbacking_phase()
 
 /*====================================================================================================================*/
 
+VOID logging_ins_syscall(ADDRINT ins_addr)
+{
+  prepare_new_rollbacking_phase();
+  return;
+}
+
+/*====================================================================================================================*/
+
 VOID logging_ins_count_analyzer(ADDRINT ins_addr)
 {  
   if (explored_trace.size() < max_trace_length.Value())
@@ -165,7 +173,7 @@ VOID logging_cond_br_analyzer(ADDRINT ins_addr, bool br_taken)
     input_dep_ptr_branches.push_back(new_ptr_branch);    
     print_debug_new_branch(ins_addr, new_ptr_branch);
   }
-  else // input independent branch
+  else // input independent branchc
   {
     input_indep_ptr_branches.push_back(new_ptr_branch);
   }
