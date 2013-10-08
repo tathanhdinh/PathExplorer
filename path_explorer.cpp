@@ -55,6 +55,7 @@ std::map< UINT32,
 std::vector<ptr_branch>                       input_dep_ptr_branches;
 std::vector<ptr_branch>                       input_indep_ptr_branches;
 std::vector<ptr_branch>                       tainted_ptr_branches;
+std::vector<ptr_branch>                       found_new_ptr_branches;
 std::vector<ptr_branch>                       resolved_ptr_branches;
 
 ptr_branch                                    active_ptr_branch;
@@ -158,7 +159,7 @@ VOID stop_tracing(INT32 code, VOID *data)
   if (print_debug_text)
   {
     UINT32 resolved_branch_num = resolved_ptr_branches.size();
-    UINT32 input_dep_branch_num = 0;
+    UINT32 input_dep_branch_num = found_new_ptr_branches.size();
     
     std::vector<ptr_branch>::iterator ptr_branch_iter = tainted_ptr_branches.begin();
     for (; ptr_branch_iter != tainted_ptr_branches.end(); ++ptr_branch_iter) 

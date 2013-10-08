@@ -39,6 +39,7 @@ extern ptr_branch                   exploring_ptr_branch;
 extern std::vector<ptr_branch>      input_dep_ptr_branches;
 extern std::vector<ptr_branch>      input_indep_ptr_branches;
 extern std::vector<ptr_branch>      resolved_ptr_branches;
+extern std::vector<ptr_branch>      found_new_ptr_branches;
 extern std::vector<ptr_branch>      tainted_ptr_branches;
 
 extern std::vector<ADDRINT>         explored_trace;
@@ -266,7 +267,7 @@ void print_debug_rollbacking_stop(ptr_branch& unexplored_ptr_branch)
   if (print_debug_text)
   {
     UINT32 resolved_branch_num = resolved_ptr_branches.size();
-    UINT32 input_dep_branch_num = 0;
+    UINT32 input_dep_branch_num = found_new_ptr_branches.size();
     
     std::vector<ptr_branch>::iterator ptr_branch_iter = tainted_ptr_branches.begin();
     for (; ptr_branch_iter != tainted_ptr_branches.end(); ++ptr_branch_iter) 
@@ -276,6 +277,7 @@ void print_debug_rollbacking_stop(ptr_branch& unexplored_ptr_branch)
         input_dep_branch_num++;
       }
     }
+    
     
     std::cerr << "\033[33mRollbacking phase stopped: " << resolved_branch_num << "/" 
               << input_dep_branch_num << " branches resolved.\033[0m\n";

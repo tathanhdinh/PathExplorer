@@ -30,6 +30,7 @@ extern UINT32                                     received_msg_size;
 extern std::vector<ptr_branch>                    input_dep_ptr_branches;
 extern std::vector<ptr_branch>                    input_indep_ptr_branches;
 extern std::vector<ptr_branch>                    tainted_ptr_branches;
+extern std::vector<ptr_branch>                    found_new_ptr_branches;
 extern std::vector<ptr_branch>                    resolved_ptr_branches;
 
 extern ptr_branch                                 active_ptr_branch;
@@ -363,6 +364,7 @@ inline void process_untainted_branch(ADDRINT ins_addr, bool br_taken, ptr_branch
       {
 //         print_debug_found_new(ins_addr, untainted_ptr_branch);
         accept_branch(untainted_ptr_branch);
+        found_new_ptr_branches.push_back(untainted_ptr_branch);
       }
       
       // the original trace will lost if go further, so rollback
@@ -375,7 +377,7 @@ inline void process_untainted_branch(ADDRINT ins_addr, bool br_taken, ptr_branch
       PIN_ExitApplication(0);
     }
   }
-  else 
+//   else 
 //   {
 //     if (untainted_ptr_branch->is_resolved) 
 //     {

@@ -173,7 +173,7 @@ VOID logging_cond_br_analyzer(ADDRINT ins_addr, bool br_taken)
     input_dep_ptr_branches.push_back(new_ptr_branch);    
     print_debug_new_branch(ins_addr, new_ptr_branch);
   }
-  else // input independent branchc
+  else // input independent branch
   {
     input_indep_ptr_branches.push_back(new_ptr_branch);
   }
