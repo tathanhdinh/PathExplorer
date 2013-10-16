@@ -395,7 +395,10 @@ inline void log_input(ADDRINT ins_addr, bool br_taken)
   std::vector<ptr_branch>::iterator ptr_branch_iter = search_in(tainted_ptr_branches, ins_addr);
   if (ptr_branch_iter != tainted_ptr_branches.end()) 
   {
-    store_input(*ptr_branch_iter, br_taken);
+    if ((*ptr_branch_iter)->inputs[br_taken].empty()) 
+    {
+      store_input(*ptr_branch_iter, br_taken);
+    }
   }
   else 
   {
