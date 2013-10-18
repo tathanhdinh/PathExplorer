@@ -18,9 +18,9 @@ extern std::vector<ADDRINT> explored_trace;
 
 VOID tainting_st_to_st_analyzer(ADDRINT ins_addr)
 {
-  std::vector<REG>::iterator      reg_iter;
-  std::vector<UINT32>::iterator   imm_iter;
-  std::vector<ADDRINT>::iterator  mem_iter;
+  std::set<REG>::iterator      reg_iter;
+  std::set<UINT32>::iterator   imm_iter;
+  std::set<ADDRINT>::iterator  mem_iter;
   
   /*
    * source variables construction 
@@ -144,13 +144,13 @@ VOID tainting_st_to_st_analyzer(ADDRINT ins_addr)
 VOID tainting_mem_to_st_analyzer(ADDRINT ins_addr, ADDRINT mem_read_addr, UINT32 mem_read_size)
 {
   // clear out input/output memory operands
-  std::vector<ADDRINT>().swap(boost::get<2>(dta_inss_io[ins_addr]).first);
-  std::vector<ADDRINT>().swap(boost::get<2>(dta_inss_io[ins_addr]).second);
+  std::set<ADDRINT>().swap(boost::get<2>(dta_inss_io[ins_addr]).first);
+  std::set<ADDRINT>().swap(boost::get<2>(dta_inss_io[ins_addr]).second);
   
   // update input memory operands
   for (UINT32 mem_idx = 0; mem_idx < mem_read_size; ++mem_idx)
   {
-    boost::get<2>(dta_inss_io[ins_addr]).first.push_back(mem_read_addr + mem_idx);
+    boost::get<2>(dta_inss_io[ins_addr]).first.insert(mem_read_addr + mem_idx);
   }
   
   tainting_st_to_st_analyzer(ins_addr);
@@ -163,13 +163,13 @@ VOID tainting_mem_to_st_analyzer(ADDRINT ins_addr, ADDRINT mem_read_addr, UINT32
 VOID tainting_st_to_mem_analyzer(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 mem_written_size)
 {
    // clear out input/output memory operands
-  std::vector<ADDRINT>().swap(boost::get<2>(dta_inss_io[ins_addr]).first);
-  std::vector<ADDRINT>().swap(boost::get<2>(dta_inss_io[ins_addr]).second);
+  std::set<ADDRINT>().swap(boost::get<2>(dta_inss_io[ins_addr]).first);
+  std::set<ADDRINT>().swap(boost::get<2>(dta_inss_io[ins_addr]).second);
   
   // update output memory operands
   for (UINT32 mem_idx = 0; mem_idx < mem_written_size; ++mem_idx)
   {
-    boost::get<2>(dta_inss_io[ins_addr]).second.push_back(mem_written_addr + mem_idx);
+    boost::get<2>(dta_inss_io[ins_addr]).second.insert(mem_written_addr + mem_idx);
   }
   
   tainting_st_to_st_analyzer(ins_addr);

@@ -22,7 +22,7 @@ variable::variable(ADDRINT new_mem) : mem(new_mem)
 
 /*====================================================================================================================*/
 
-variable::variable(REG& new_reg) : reg(new_reg)
+variable::variable(REG new_reg) : reg(new_reg)
 {
   REG full_reg = REG_FullRegName(reg);
   this->name = REG_StringShort(full_reg);

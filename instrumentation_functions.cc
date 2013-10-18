@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <map>
+#include <set>
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 
@@ -31,17 +32,25 @@ extern boost::shared_ptr<boost::posix_time::ptime>  stop_ptr_time;
 
 VOID extract_ins_operands(INS ins) 
 {
-  std::vector<UINT32>   src_oprs;
-  std::vector<UINT32>   dst_oprs;
+//   std::vector<UINT32>   src_oprs;
+//   std::vector<UINT32>   dst_oprs;
+  std::set<UINT32> src_oprs;
+  std::set<UINT32> dst_oprs;
   
-  std::vector<REG>      src_regs;
-  std::vector<REG>      dst_regs;
+//   std::vector<REG>      src_regs;
+//   std::vector<REG>      dst_regs;
+  std::set<REG> src_regs;
+  std::set<REG> dst_regs;
     
-  std::vector<ADDRINT>  src_mems;
-  std::vector<ADDRINT>  dst_mems;
+//   std::vector<ADDRINT>  src_mems;
+//   std::vector<ADDRINT>  dst_mems;
+  std::set<ADDRINT> src_mems;
+  std::set<ADDRINT> dst_mems;
     
-  std::vector<UINT32>   src_imms;
-  std::vector<UINT32>   dst_imms;
+//   std::vector<UINT32>   src_imms;
+//   std::vector<UINT32>   dst_imms;
+  std::set<UINT32> src_imms;
+  std::set<UINT32> dst_imms;
   
   UINT32 opr_num = INS_OperandCount(ins);
   for (UINT32 opr_id = 0; opr_id < opr_num; ++opr_id)
@@ -58,87 +67,99 @@ VOID extract_ins_operands(INS ins)
     {
       if (INS_OperandRead(ins, opr_id))
       {
-        src_oprs.push_back(opr_id);
+//         src_oprs.push_back(opr_id);
+        src_oprs.insert(opr_id);
       }
     
       if (INS_OperandWritten(ins, opr_id))
       {
-        dst_oprs.push_back(opr_id);
+//         dst_oprs.push_back(opr_id);
+        dst_oprs.insert(opr_id);
       }
     } 
   }
   
 //   std::cerr << INS_Disassemble(ins) << " Source: " << src_oprs.size() << ", " << "Destination: " << dst_oprs.size() << "\n"; 
   
-  for (std::vector<UINT32>::iterator src_iter = src_oprs.begin(); src_iter != src_oprs.end(); ++src_iter)
+  for (/*std::vector<UINT32>::iterator*/std::set<UINT32>::iterator src_iter = src_oprs.begin(); src_iter != src_oprs.end(); ++src_iter)
   {
     if (INS_OperandIsReg(ins, *src_iter))
     {
-      src_regs.push_back(INS_OperandReg(ins, *src_iter));
+//       src_regs.push_back(INS_OperandReg(ins, *src_iter));
+      src_regs.insert(INS_OperandReg(ins, *src_iter));
     }
     
     if (INS_OperandIsMemory(ins, *src_iter))
     {
-      src_mems.push_back(*src_iter);
+//       src_mems.push_back(*src_iter);
 
       REG base_reg = INS_OperandMemoryBaseReg(ins, *src_iter);
       if (base_reg != REG_INVALID())
       {
-        src_regs.push_back(base_reg);
+//         src_regs.push_back(base_reg);
+        src_regs.insert(base_reg);
       }
       
       REG idx_reg = INS_OperandMemoryIndexReg(ins, *src_iter);
       if (idx_reg != REG_INVALID())
       {
-        src_regs.push_back(base_reg);
+//         src_regs.push_back(base_reg);
+        src_regs.insert(idx_reg);
       }
       
       REG seg_reg = INS_OperandMemorySegmentReg(ins, *src_iter);
       if (seg_reg != REG_INVALID())
       {
-        src_regs.push_back(seg_reg);
+//         src_regs.push_back(seg_reg);
+        src_regs.insert(seg_reg);
       }
     }
     
     if (INS_OperandIsImmediate(ins, *src_iter))
     {
-      src_imms.push_back(static_cast<UINT32>(INS_OperandImmediate(ins, *src_iter)));
+//       src_imms.push_back(static_cast<UINT32>(INS_OperandImmediate(ins, *src_iter)));
+      src_imms.insert(static_cast<UINT32>(INS_OperandImmediate(ins, *src_iter)));
     }
   }
     
-  for (std::vector<UINT32>::iterator dst_iter = dst_oprs.begin(); dst_iter != dst_oprs.end(); ++dst_iter)
+  for (/*std::vector<UINT32>::iterator*/std::set<UINT32>::iterator dst_iter = dst_oprs.begin(); dst_iter != dst_oprs.end(); ++dst_iter)
   {
     if (INS_OperandIsReg(ins, *dst_iter))
     {
-      dst_regs.push_back(INS_OperandReg(ins, *dst_iter));
+//       dst_regs.push_back(INS_OperandReg(ins, *dst_iter));
+      dst_regs.insert(INS_OperandReg(ins, *dst_iter));
     }
     
     if (INS_OperandIsMemory(ins, *dst_iter))
     {
-      dst_mems.push_back(*dst_iter);
+//       dst_mems.push_back(*dst_iter);
       
       REG base_reg = INS_OperandMemoryBaseReg(ins, *dst_iter);
       if (base_reg != REG_INVALID())
       {
-        src_regs.push_back(base_reg);
+//         src_regs.push_back(base_reg);
+        src_regs.insert(base_reg);
       }
       
       REG idx_reg = INS_OperandMemoryIndexReg(ins, *dst_iter);
       if (idx_reg != REG_INVALID())
       {
-        src_regs.push_back(base_reg);
+//         src_regs.push_back(base_reg);
+        src_regs.insert(idx_reg);
       }
       
       REG seg_reg = INS_OperandMemorySegmentReg(ins, *dst_iter);
       if (seg_reg != REG_INVALID())
       {
-        src_regs.push_back(seg_reg);
+//         src_regs.push_back(seg_reg);
+        src_regs.insert(seg_reg);
       }
     }
     
     if (INS_OperandIsImmediate(ins, *dst_iter))
     {
-      dst_imms.push_back(static_cast<UINT32>(INS_OperandImmediate(ins, *dst_iter)));
+//       dst_imms.push_back(static_cast<UINT32>(INS_OperandImmediate(ins, *dst_iter)));
+      dst_imms.insert(static_cast<UINT32>(INS_OperandImmediate(ins, *dst_iter)));
     }
   }
   

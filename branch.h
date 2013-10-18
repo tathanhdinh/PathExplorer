@@ -17,14 +17,14 @@ class branch;
 
 typedef boost::shared_ptr<branch>         ptr_branch;
 
-typedef std::pair< std::vector<REG>, 
-                   std::vector<REG> >     reg_io;
+typedef std::pair< std::set<REG>, 
+                   std::set<REG> >     reg_io;
                    
-typedef std::pair< std::vector<UINT32>, 
-                   std::vector<UINT32> >  imm_io;
+typedef std::pair< std::set<UINT32>, 
+                   std::set<UINT32> >  imm_io;
                    
-typedef std::pair< std::vector<ADDRINT>, 
-                   std::vector<ADDRINT> > mem_io;
+typedef std::pair< std::set<ADDRINT>, 
+                   std::set<ADDRINT> > mem_io;
                    
 typedef boost::tuple< reg_io, 
                       imm_io, 
