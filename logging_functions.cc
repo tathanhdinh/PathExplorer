@@ -122,7 +122,11 @@ VOID logging_mem_to_st_analyzer(ADDRINT ins_addr, ADDRINT mem_read_addr, UINT32 
       master_ptr_checkpoint = saved_ptr_checkpoints[0];
     }
    
-//     print_debug_new_checkpoint(ins_addr);
+    print_debug_new_checkpoint(ins_addr);
+  }
+  else 
+  {
+    print_debug_mem_read(ins_addr, mem_read_addr, mem_read_size);
   }
   
   return;

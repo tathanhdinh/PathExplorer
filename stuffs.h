@@ -61,6 +61,8 @@ void        print_debug_start_rollbacking();
 
 void        print_debug_new_checkpoint  (ADDRINT ins_addr);
 
+void        print_debug_mem_read        (ADDRINT ins_addr, ADDRINT mem_read_addr, UINT32 mem_read_size);
+
 void        print_debug_new_branch      (ADDRINT ins_addr, ptr_branch& new_ptr_branch);
 
 #endif // STUFFS_H

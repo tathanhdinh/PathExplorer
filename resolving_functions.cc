@@ -224,13 +224,29 @@ inline void process_tainted_and_resolved_branch(ADDRINT ins_addr, bool br_taken,
     // the branch has been marked as "bypassed" before, then is resolved accidentally
     if (tainted_ptr_branch->is_bypassed) 
     {
-//       print_debug_met_again(ins_addr, tainted_ptr_branch);
+      print_debug_met_again(ins_addr, tainted_ptr_branch);
       accept_branch(tainted_ptr_branch);
     }
     
-    // we will lost out of the original trace if go further, so we must rollback
-    total_rollback_times++;
-    rollback_with_input_random_modification(active_ptr_branch->chkpnt, active_ptr_branch->dep_mems);
+    if (active_ptr_branch->chkpnt->rb_times <= max_local_rollback.Value()) 
+    {
+      // we will lost out of the original trace if go further, so we must rollback
+      total_rollback_times++;
+      rollback_with_input_random_modification(active_ptr_branch->chkpnt, active_ptr_branch->dep_mems);
+    }
+    else 
+    {
+//       print_debug_resolving_failed(ins_addr, tainted_ptr_branch);
+      print_debug_resolving_failed(active_ptr_branch->addr, active_ptr_branch);
+      
+      bypass_branch(active_ptr_branch);
+      
+      ptr_branch tmp_ptr_branch = active_ptr_branch;
+      disable_active_branch();
+      
+      total_rollback_times++;
+      rollback_with_input_replacement(tmp_ptr_branch->chkpnt, tmp_ptr_branch->inputs[tmp_ptr_branch->br_taken][0].get());
+    }
   }
   
   return;
@@ -244,7 +260,7 @@ inline void new_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_bra
   
   if (active_ptr_branch) // so this branch is resolved
   {
-//     print_debug_succeed(ins_addr, tainted_ptr_branch);
+    print_debug_succeed(ins_addr, tainted_ptr_branch);
     
     accept_branch(active_ptr_branch);
     
@@ -282,7 +298,7 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
   else // in forward and meet a branch to resolve, so enable active_ptr_branch
   {
     enable_active_branch(tainted_ptr_branch);
-//     print_debug_resolving_rollback(ins_addr, tainted_ptr_branch);
+    print_debug_resolving_rollback(ins_addr, tainted_ptr_branch);
   }
   
   if (active_ptr_branch->chkpnt->rb_times <= max_local_rollback.Value())
@@ -362,7 +378,7 @@ inline void process_untainted_branch(ADDRINT ins_addr, bool br_taken, ptr_branch
     {
       if (!untainted_ptr_branch->is_resolved) 
       {
-//         print_debug_found_new(ins_addr, untainted_ptr_branch);
+        print_debug_found_new(ins_addr, untainted_ptr_branch);
         accept_branch(untainted_ptr_branch);
         found_new_ptr_branches.push_back(untainted_ptr_branch);
       }

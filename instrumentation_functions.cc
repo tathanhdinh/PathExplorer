@@ -142,6 +142,8 @@ VOID extract_ins_operands(INS ins)
     }
   }
   
+  std::cerr << INS_Disassemble(ins) << " sregs: " << src_regs.size() << ", " << "dregs: " << dst_regs.size() << "\n"; 
+  
   dta_inss_io[INS_Address(ins)] = boost::make_tuple(std::make_pair(src_regs, dst_regs), 
                                                     std::make_pair(src_imms, dst_imms), 
                                                     std::make_pair(src_mems, dst_mems));
