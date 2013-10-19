@@ -105,10 +105,10 @@ VOID start_tracing(VOID *data)
   logged_syscall_index  = syscall_inexist;
     
   ::srand(::time(0));
-  if (print_debug_text)
-  {
-    std::cout << "\033[2J\033[1;1H"; // clear screen
-  }
+//   if (print_debug_text)
+//   {
+//     std::cout << "\033[2J\033[1;1H"; // clear screen
+//   }
     
   return;
 }
