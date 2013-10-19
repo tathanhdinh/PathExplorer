@@ -59,9 +59,6 @@ VOID extract_ins_operands(INS ins)
     dst_regs.insert(INS_RegW(ins, reg_id));
   }
   
-//   std::cout << boost::format("\033[0m%-20s  %-5i %-20s %-35s") 
-//                   % explored_trace.size() % StringFromAddrint(ins_addr) % addr_ins_static_map[ins_addr].disass;
-                  
   std::cout << boost::format("\033[0m%-35s max_num_rregs %-3i max_num_wregs: %-3i num_wregs: %-3i num_sregs: %-3i num_dregs: %-3i\033[0m\n")
                 % INS_Disassemble(ins) % max_num_rregs % max_num_wregs % max_num_wregs 
                 % src_regs.size() % dst_regs.size();
