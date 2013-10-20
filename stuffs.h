@@ -63,6 +63,12 @@ void        print_debug_new_checkpoint  (ADDRINT ins_addr);
 
 void        print_debug_mem_read        (ADDRINT ins_addr, ADDRINT mem_read_addr, UINT32 mem_read_size);
 
-void        print_debug_new_branch      (ADDRINT ins_addr, ptr_branch& new_ptr_branch);
+void        print_debug_mem_written     (ADDRINT ins_addr, ADDRINT mem_write_addr, UINT32 mem_write_size);
+
+void        print_debug_reg_to_reg      (ADDRINT ins_addr, UINT32 num_sregs, UINT32 num_dregs);
+
+void        print_debug_dep_branch      (ADDRINT ins_addr, ptr_branch& new_ptr_branch);
+
+void        print_debug_indep_branch    (ADDRINT ins_addr, ptr_branch& indep_ptr_branch);
 
 #endif // STUFFS_H

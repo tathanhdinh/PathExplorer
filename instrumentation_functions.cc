@@ -19,6 +19,8 @@
 
 extern std::map< ADDRINT, 
                  instruction >                      addr_ins_static_map;
+                 
+extern std::vector<ADDRINT>                         explored_trace;
 
 extern bool                                         in_tainting;
 
@@ -31,7 +33,7 @@ extern boost::shared_ptr<boost::posix_time::ptime>  stop_ptr_time;
 
 /*====================================================================================================================*/
 
-VOID extract_ins_operands(INS ins) 
+inline VOID extract_ins_operands(INS ins, ADDRINT ins_addr) 
 {
   std::set<UINT32> src_oprs;
   std::set<UINT32> dst_oprs;
@@ -59,13 +61,15 @@ VOID extract_ins_operands(INS ins)
     dst_regs.insert(INS_RegW(ins, reg_id));
   }
   
-  std::cout << boost::format("\033[0m%-35s max_num_rregs %-3i max_num_wregs: %-3i num_wregs: %-3i num_sregs: %-3i num_dregs: %-3i\033[0m\n")
-                % INS_Disassemble(ins) % max_num_rregs % max_num_wregs % max_num_wregs 
-                % src_regs.size() % dst_regs.size();
+//   print_debug_reg_to_reg(ins_addr, src_regs.size(), dst_regs.size());
   
-  dta_inss_io[INS_Address(ins)] = boost::make_tuple(std::make_pair(src_regs, dst_regs), 
-                                                    std::make_pair(src_imms, dst_imms), 
-                                                    std::make_pair(src_mems, dst_mems));
+//   std::cout << boost::format("\033[0m%-4i  %-35s max_num_rregs %-3i max_num_wregs: %-3i num_wregs: %-3i num_sregs: %-3i num_dregs: %-3i\033[0m\n")
+//                 % explored_trace.size() % INS_Disassemble(ins) % max_num_rregs % max_num_wregs % max_num_wregs 
+//                 % src_regs.size() % dst_regs.size();
+  
+  dta_inss_io[ins_addr] = boost::make_tuple(std::make_pair(src_regs, dst_regs), 
+                                            std::make_pair(src_imms, dst_imms), 
+                                            std::make_pair(src_mems, dst_mems));
   return;
 }
 
@@ -111,12 +115,11 @@ VOID ins_instrumenter(INS ins, VOID *data)
           /* 
            * memory read/write tainting and logging
            * =======================================*/
+          extract_ins_operands(ins, ins_addr);
           
           INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)logging_ins_count_analyzer, 
                                   IARG_INST_PTR, 
                                   IARG_END);
-          
-          extract_ins_operands(ins);
           
           if (INS_IsMemoryRead(ins))
           {
@@ -153,8 +156,15 @@ VOID ins_instrumenter(INS ins, VOID *data)
             {
               // register read/written tainting
               INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)tainting_st_to_st_analyzer, 
-                                      IARG_INST_PTR, 
-                                      IARG_END);
+                                       IARG_INST_PTR, 
+                                       IARG_END);
+              
+              if (addr_ins_static_map[ins_addr].category != XED_CATEGORY_COND_BR) 
+              {
+                INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)logging_st_to_st_analyzer, 
+                                        IARG_INST_PTR, 
+                                        IARG_END);
+              }
             }
           }
           

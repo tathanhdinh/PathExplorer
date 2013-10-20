@@ -419,20 +419,39 @@ void print_debug_start_rollbacking()
 
 /*====================================================================================================================*/
 
-void print_debug_mem_read(ADDRINT ins_addr, ADDRINT mem_read_addr, UINT32 mem_read_size)
+void print_debug_mem_written(ADDRINT ins_addr, ADDRINT mem_write_addr, UINT32 mem_written_size)
 {
   if (print_debug_text) 
   {
-    std::cout << boost::format("\033[33mMem read    %-5i %-20s %-35s") 
-                  % explored_trace.size() % StringFromAddrint(ins_addr) % addr_ins_static_map[ins_addr].disass; 
-    
-    std::cout << "[" << StringFromAddrint(mem_read_addr) << ", " 
-              << StringFromAddrint(mem_read_addr + mem_read_size - 1) << "]\033[0m\n";
-//     for (UINT32 idx = 0; idx < mem_read_size; ++idx) 
-//     {
-//       std::cout << " " << StringFromAddrint(mem_read_addr + idx);
-//     }
-//     std::cout << "\033[0m\n";
+    std::cout << boost::format("\033[33m%-4i %-20s %-35s %-15s [%-18s, %-18s]\033[0m\n")
+                  % explored_trace.size() % StringFromAddrint(ins_addr) % addr_ins_static_map[ins_addr].disass  
+                  % "reg->mem" % StringFromAddrint(mem_write_addr) % StringFromAddrint(mem_write_addr + mem_written_size - 1);
+  }
+  return;
+}
+
+/*====================================================================================================================*/
+
+void print_debug_mem_read(ADDRINT ins_addr, ADDRINT mem_read_addr, UINT32 mem_read_size)
+{
+  if (print_debug_text) 
+  {       
+    std::cout << boost::format("\033[0m%-4i %-20s %-35s %-15s [%-18s, %-18s]\033[0m\n")
+                  % explored_trace.size() % StringFromAddrint(ins_addr) % addr_ins_static_map[ins_addr].disass  
+                  % "mem->reg" % StringFromAddrint(mem_read_addr) % StringFromAddrint(mem_read_addr + mem_read_size - 1);
+  }
+  return;
+}
+
+/*====================================================================================================================*/
+
+void print_debug_reg_to_reg(ADDRINT ins_addr, UINT32 num_sregs, UINT32 num_dregs)
+{
+  if (print_debug_text) 
+  {
+    std::cout << boost::format("\033[0m%-4i %-20s %-35s %-15s [%-18i, %-18i]\033[0m\n")
+                    % explored_trace.size() % StringFromAddrint(ins_addr) % addr_ins_static_map[ins_addr].disass  
+                    % "reg->reg" % num_sregs % num_dregs;
   }
   return;
 }
@@ -443,39 +462,50 @@ void print_debug_new_checkpoint(ADDRINT ins_addr)
 {
   if (print_debug_text)
   {
-    std::cout << boost::format("\033[0mCheckpoint  %-5i %-20s %-35s") 
-                  % explored_trace.size() % StringFromAddrint(ins_addr) % addr_ins_static_map[ins_addr].disass;
-            
-//     std::set<ADDRINT>::iterator mem_iter = saved_ptr_checkpoints.back()->dep_mems.begin();
-//     for (; mem_iter != saved_ptr_checkpoints.back()->dep_mems.end(); ++mem_iter)
-//     {
-//       std::cout << " " << StringFromAddrint(*mem_iter);
-//     }
-//     std::cout << "\033[0m\n";
-     std::cout << "[" << StringFromAddrint(*(saved_ptr_checkpoints.back()->dep_mems.begin())) << ", " 
-               << StringFromAddrint(*(saved_ptr_checkpoints.back()->dep_mems.rbegin())) << "]\033[0m\n";
+    
+    std::cout << boost::format("\033[36m%-4i %-20s %-35s %-15s [%-18i, %-18i] %-15s\033[0m\n")
+                    % explored_trace.size() % StringFromAddrint(ins_addr) % addr_ins_static_map[ins_addr].disass 
+                    % "mem->reg" 
+                    % StringFromAddrint(*(saved_ptr_checkpoints.back()->dep_mems.begin())) 
+                    % StringFromAddrint(*(saved_ptr_checkpoints.back()->dep_mems.rbegin()))
+                    % "checkpoint";
   }
   return;
 }
 
 /*====================================================================================================================*/
 
-void print_debug_new_branch(ADDRINT ins_addr, ptr_branch& new_ptr_branch) 
+void print_debug_dep_branch(ADDRINT ins_addr, ptr_branch& dep_ptr_branch) 
 {
   if (print_debug_text)
   {
-    std::cerr << boost::format("\033[32mBranch  %-1i   %-5i %-20s %-35s") 
-                  % new_ptr_branch->br_taken % explored_trace.size() % StringFromAddrint(ins_addr) 
-                  % addr_ins_static_map[ins_addr].disass;
+                  
+    std::cout << boost::format("\033[32m%-4i %-20s %-35s %-15s [%-18s, %-18s] %-15s %-2i\033[0m\n")
+                  % explored_trace.size() % StringFromAddrint(ins_addr) % addr_ins_static_map[ins_addr].disass  
+                  % "branch"  
+                  % StringFromAddrint(*(dep_ptr_branch->dep_mems.begin())) 
+                  % StringFromAddrint(*(dep_ptr_branch->dep_mems.rbegin()))
+                  % "input dep"
+                  % dep_ptr_branch->br_taken;
+                  
+  }
+  return;
+}
 
-//     std::set<ADDRINT>::iterator mem_addr_iter = new_ptr_branch->dep_mems.begin();
-//     for (; mem_addr_iter != new_ptr_branch->dep_mems.end(); ++mem_addr_iter)
-//     {
-//       std::cerr << " " << StringFromAddrint(*mem_addr_iter) ;
-//     }
-//     std::cerr << "\033[0m\n";
-    std::cout << "[" << StringFromAddrint(*(new_ptr_branch->dep_mems.begin())) << ", " 
-              << StringFromAddrint(*(new_ptr_branch->dep_mems.rbegin())) << "]\033[0m\n";
+/*====================================================================================================================*/
+
+void print_debug_indep_branch(ADDRINT ins_addr, ptr_branch& indep_ptr_branch) 
+{
+  if (print_debug_text) 
+  {
+    std::cout << boost::format("\033[33m%-4i %-20s %-35s %-15s [%-18s, %-18s] %-15s %-2i\033[0m\n")
+                  % explored_trace.size() % StringFromAddrint(ins_addr) % addr_ins_static_map[ins_addr].disass  
+                  % "branch"  
+//                   % StringFromAddrint(*(indep_ptr_branch->dep_mems.begin())) 
+//                   % StringFromAddrint(*(indep_ptr_branch->dep_mems.rbegin()))
+                  % "outside" % "outside"
+                  % "input indep"
+                  % indep_ptr_branch->br_taken;
   }
   return;
 }

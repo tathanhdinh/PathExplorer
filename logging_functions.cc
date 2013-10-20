@@ -18,6 +18,8 @@ extern std::map< ADDRINT,
 
 extern UINT32                                   total_rollback_times;
 
+extern map_ins_io                               dta_inss_io;
+
 extern std::vector<ADDRINT>                     explored_trace;
 
 extern std::vector<ptr_branch>                  input_dep_ptr_branches;
@@ -95,13 +97,23 @@ VOID logging_ins_count_analyzer(ADDRINT ins_addr)
 {  
   if (explored_trace.size() < max_trace_length.Value())
   {
-    explored_trace.push_back(ins_addr);        
+    explored_trace.push_back(ins_addr);
   }
   else // trace length limit reached
   {
     prepare_new_rollbacking_phase();
   }
   
+  return;
+}
+
+/*====================================================================================================================*/
+
+VOID logging_st_to_st_analyzer(ADDRINT ins_addr) 
+{
+  print_debug_reg_to_reg(ins_addr, 
+                           boost::get<0>(dta_inss_io[ins_addr]).first.size(), 
+                           boost::get<0>(dta_inss_io[ins_addr]).second.size());
   return;
 }
 
@@ -143,6 +155,8 @@ VOID logging_st_to_mem_analyzer(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT
   
   exepoint_checkpoints_map[explored_trace.size()] = saved_ptr_checkpoints;
   
+  print_debug_mem_written(ins_addr, mem_written_addr, mem_written_size);
+  
   return;
 }
 
@@ -175,11 +189,12 @@ VOID logging_cond_br_analyzer(ADDRINT ins_addr, bool br_taken)
   if (!new_ptr_branch->dep_mems.empty()) // input dependent branch
   {
     input_dep_ptr_branches.push_back(new_ptr_branch);    
-    print_debug_new_branch(ins_addr, new_ptr_branch);
+    print_debug_dep_branch(ins_addr, new_ptr_branch);
   }
   else // input independent branch
   {
     input_indep_ptr_branches.push_back(new_ptr_branch);
+    print_debug_indep_branch(ins_addr, new_ptr_branch);
   }
 
   return;
