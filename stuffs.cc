@@ -272,7 +272,7 @@ void print_debug_rollbacking_stop(ptr_branch& unexplored_ptr_branch)
     std::vector<ptr_branch>::iterator ptr_branch_iter = tainted_ptr_branches.begin();
     for (; ptr_branch_iter != tainted_ptr_branches.end(); ++ptr_branch_iter) 
     {
-      if (!(*ptr_branch_iter)->dep_mems.empty()) 
+      if (!(*ptr_branch_iter)->dep_input_addrs.empty()) 
       {
         input_dep_branch_num++;
       }
@@ -483,9 +483,9 @@ void print_debug_dep_branch(ADDRINT ins_addr, ptr_branch& dep_ptr_branch)
     std::cout << boost::format("\033[32m%-4i %-20s %-35s %-15s [%-18s, %-18s] %-15s %-2i\033[0m\n")
                   % explored_trace.size() % StringFromAddrint(ins_addr) % addr_ins_static_map[ins_addr].disass  
                   % "branch"  
-                  % StringFromAddrint(*(dep_ptr_branch->dep_mems.begin())) 
-                  % StringFromAddrint(*(dep_ptr_branch->dep_mems.rbegin()))
-                  % "input dep"
+                  % StringFromAddrint(*(dep_ptr_branch->dep_input_addrs.begin())) 
+                  % StringFromAddrint(*(dep_ptr_branch->dep_input_addrs.rbegin()))
+                  % "dep"
                   % dep_ptr_branch->br_taken;
                   
   }
@@ -498,14 +498,28 @@ void print_debug_indep_branch(ADDRINT ins_addr, ptr_branch& indep_ptr_branch)
 {
   if (print_debug_text) 
   {
-    std::cout << boost::format("\033[33m%-4i %-20s %-35s %-15s [%-18s, %-18s] %-15s %-2i\033[0m\n")
+    if (indep_ptr_branch->dep_out_addrs.empty()) 
+    {
+      std::cout << boost::format("\033[33m%-4i %-20s %-35s %-15s [%-18s, %-18s] %-15s %-2i\033[0m\n")
                   % explored_trace.size() % StringFromAddrint(ins_addr) % addr_ins_static_map[ins_addr].disass  
                   % "branch"  
 //                   % StringFromAddrint(*(indep_ptr_branch->dep_mems.begin())) 
 //                   % StringFromAddrint(*(indep_ptr_branch->dep_mems.rbegin()))
-                  % "outside" % "outside"
-                  % "input indep"
+                  % "reg" % "reg"
+                  % "indep"
+                  % indep_ptr_branch->br_taken;  
+    }
+    else 
+    {
+      std::cout << boost::format("\033[33m%-4i %-20s %-35s %-15s [%-18s, %-18s] %-15s %-2i\033[0m\n")
+                  % explored_trace.size() % StringFromAddrint(ins_addr) % addr_ins_static_map[ins_addr].disass  
+                  % "branch"  
+                  % StringFromAddrint(*(indep_ptr_branch->dep_out_addrs.begin())) 
+                  % StringFromAddrint(*(indep_ptr_branch->dep_out_addrs.rbegin()))
+                  % "indep"
                   % indep_ptr_branch->br_taken;
+    }
+    
   }
   return;
 }

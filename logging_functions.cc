@@ -186,7 +186,7 @@ VOID logging_cond_br_analyzer(ADDRINT ins_addr, bool br_taken)
     tainted_ptr_branches.push_back(new_ptr_branch);
   }
   
-  if (!new_ptr_branch->dep_mems.empty()) // input dependent branch
+  if (!new_ptr_branch->dep_input_addrs.empty()) // input dependent branch
   {
     input_dep_ptr_branches.push_back(new_ptr_branch);    
     print_debug_dep_branch(ins_addr, new_ptr_branch);

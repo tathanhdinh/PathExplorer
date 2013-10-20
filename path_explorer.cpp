@@ -164,7 +164,7 @@ VOID stop_tracing(INT32 code, VOID *data)
     std::vector<ptr_branch>::iterator ptr_branch_iter = tainted_ptr_branches.begin();
     for (; ptr_branch_iter != tainted_ptr_branches.end(); ++ptr_branch_iter) 
     {
-      if (!(*ptr_branch_iter)->dep_mems.empty()) 
+      if (!(*ptr_branch_iter)->dep_input_addrs.empty()) 
       {
         input_dep_branch_num++;
       }

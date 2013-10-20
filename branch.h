@@ -15,7 +15,7 @@
 
 class branch;
 
-typedef boost::shared_ptr<branch>         ptr_branch;
+typedef boost::shared_ptr<branch>      ptr_branch;
 
 typedef std::pair< std::set<REG>, 
                    std::set<REG> >     reg_io;
@@ -28,9 +28,9 @@ typedef std::pair< std::set<ADDRINT>,
                    
 typedef boost::tuple< reg_io, 
                       imm_io, 
-                      mem_io >            ins_io;
+                      mem_io >         ins_io;
 
-typedef std::map<ADDRINT, ins_io>         map_ins_io;
+typedef std::map<ADDRINT, ins_io>      map_ins_io;
 
 /*====================================================================================================================*/
 
@@ -40,7 +40,8 @@ public:
   ADDRINT               addr;
   std::vector<ADDRINT>  trace;
   bool                  br_taken;
-  std::set<ADDRINT>     dep_mems;
+  std::set<ADDRINT>     dep_input_addrs;
+  std::set<ADDRINT>     dep_out_addrs;
   
   std::map< bool, 
             std::vector< boost::shared_ptr<UINT8> > 

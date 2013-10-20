@@ -78,7 +78,7 @@ void dfs_traversal(vdep_vertex_desc const& start_vertex,
 
 /*====================================================================================================================*/
 
-void dependency_computation(std::set<ADDRINT>& dep_mems)
+inline void dependency_computation(std::set<ADDRINT>& dep_input_addrs, std::set<ADDRINT>& dep_out_addrs)
 {
   vdep_vertex_iter vertex_iter;
   vdep_vertex_iter last_vertex_iter;
@@ -89,18 +89,22 @@ void dependency_computation(std::set<ADDRINT>& dep_mems)
   {
     if (dta_graph[*vertex_iter].type == MEM_VAR) // a memory address found
     {
-      if ((received_msg_addr <= dta_graph[*vertex_iter].mem) &&
-          (received_msg_addr + received_msg_size > dta_graph[*vertex_iter].mem)) // and it locates in the message
+      std::vector< std::vector<vdep_edge_desc> >().swap(traversed_edges_list);
+      dfs_traversal(*vertex_iter, traversed_edges_list); // then take dfs traversal from it
+      
+      std::vector< std::vector<vdep_edge_desc> >::iterator traversed_edges_iter = traversed_edges_list.begin();
+      for (; traversed_edges_iter != traversed_edges_list.end(); ++traversed_edges_iter) 
       {
-        std::vector< std::vector<vdep_edge_desc> >().swap(traversed_edges_list);
-        dfs_traversal(*vertex_iter, traversed_edges_list); // then take dfs traversal from it
-        
-        std::vector< std::vector<vdep_edge_desc> >::iterator traversed_edges_iter = traversed_edges_list.begin();
-        for (; traversed_edges_iter != traversed_edges_list.end(); ++traversed_edges_iter) 
+        if (dta_graph[traversed_edges_iter->back()].second == explored_trace.size()) 
         {
-          if (dta_graph[traversed_edges_iter->back()].second == explored_trace.size()) 
+          if ((received_msg_addr <= dta_graph[*vertex_iter].mem) &&
+          (received_msg_addr + received_msg_size > dta_graph[*vertex_iter].mem)) // and it locates in the message
           {
-            dep_mems.insert(dta_graph[*vertex_iter].mem); 
+            dep_input_addrs.insert(dta_graph[*vertex_iter].mem);
+          }
+          else 
+          {
+            dep_out_addrs.insert(dta_graph[*vertex_iter].mem);
           }
         }
       }
@@ -123,12 +127,12 @@ branch::branch(ADDRINT ins_addr, bool br_taken)
   this->is_explored       = false;
 
   // calculate the dependency memories
-  dependency_computation(this->dep_mems);
+  dependency_computation(this->dep_input_addrs, this->dep_out_addrs);
   
   // calculate the minimal checkpoint
   bool minimal_checkpoint_found = false;
   
-  if (!this->dep_mems.empty())
+  if (!this->dep_input_addrs.empty())
   {
     std::set<ADDRINT> intersec_mems;
     
@@ -138,7 +142,9 @@ branch::branch(ADDRINT ins_addr, bool br_taken)
       std::set<ADDRINT>::iterator addr_iter = (*ptr_chkpt_iter)->dep_mems.begin();
       for (; addr_iter != (*ptr_chkpt_iter)->dep_mems.end(); ++addr_iter) 
       {
-        if (std::find(this->dep_mems.begin(), this->dep_mems.end(), *addr_iter) != this->dep_mems.end()) 
+        if (
+            std::find(this->dep_input_addrs.begin(), this->dep_input_addrs.end(), *addr_iter) != this->dep_input_addrs.end()
+           ) 
         {
           minimal_checkpoint_found = true;
           break;
@@ -167,7 +173,7 @@ branch::branch(const branch& other)
   this->addr              = other.addr;
   this->trace             = other.trace;
   this->br_taken          = other.br_taken;
-  this->dep_mems          = other.dep_mems;
+  this->dep_input_addrs          = other.dep_input_addrs;
   this->chkpnt            = other.chkpnt;
   this->inputs            = other.inputs;
   
@@ -184,7 +190,7 @@ branch& branch::operator=(const branch& other)
   this->addr              = other.addr;
   this->trace             = other.trace;
   this->br_taken          = other.br_taken;
-  this->dep_mems          = other.dep_mems;
+  this->dep_input_addrs          = other.dep_input_addrs;
   this->chkpnt            = other.chkpnt;
   this->inputs            = other.inputs;
   

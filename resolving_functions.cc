@@ -232,7 +232,7 @@ inline void process_tainted_and_resolved_branch(ADDRINT ins_addr, bool br_taken,
     {
       // we will lost out of the original trace if go further, so we must rollback
       total_rollback_times++;
-      rollback_with_input_random_modification(active_ptr_branch->chkpnt, active_ptr_branch->dep_mems);
+      rollback_with_input_random_modification(active_ptr_branch->chkpnt, active_ptr_branch->dep_input_addrs);
     }
     else 
     {
@@ -305,7 +305,7 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
   {
     // this branch is not resolved yet, now modify the input and rollback again
     total_rollback_times++;
-    rollback_with_input_random_modification(active_ptr_branch->chkpnt, active_ptr_branch->dep_mems);
+    rollback_with_input_random_modification(active_ptr_branch->chkpnt, active_ptr_branch->dep_input_addrs);
   }
   else // the rollback number bypasses the maximum value
   {
@@ -353,6 +353,9 @@ inline void process_tainted_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& 
   {
     if (tainted_ptr_branch == input_dep_ptr_branches.back()) // and is the current last branch
     {
+      /* for testing */
+      PIN_ExitApplication(0);
+      
       exploring_new_branch_or_stop();
     }
     else // it is not the last branch
@@ -385,7 +388,7 @@ inline void process_untainted_branch(ADDRINT ins_addr, bool br_taken, ptr_branch
       
       // the original trace will lost if go further, so rollback
       total_rollback_times++;
-      rollback_with_input_random_modification(active_ptr_branch->chkpnt, active_ptr_branch->dep_mems);
+      rollback_with_input_random_modification(active_ptr_branch->chkpnt, active_ptr_branch->dep_input_addrs);
     }
     else // error: active_ptr_branch is empty, namely in forwarding, but new taken found
     {
