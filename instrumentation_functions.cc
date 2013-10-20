@@ -48,28 +48,34 @@ inline VOID extract_ins_operands(INS ins, ADDRINT ins_addr)
   std::set<UINT32> dst_imms;
   
   UINT32 reg_id;
+  REG    reg;
   
   UINT32 max_num_rregs = INS_MaxNumRRegs(ins);
   for (reg_id = 0; reg_id < max_num_rregs; ++reg_id) 
   {
-    src_regs.insert(INS_RegR(ins, reg_id));
+    reg = INS_RegR(ins, reg_id);
+    if ((reg != REG_INST_PTR) && (reg != REG_STACK_PTR))
+    {
+      src_regs.insert(reg);
+    }
   }
   
   UINT32 max_num_wregs = INS_MaxNumWRegs(ins);
   for (reg_id = 0; reg_id < max_num_wregs; ++reg_id) 
   {
-    dst_regs.insert(INS_RegW(ins, reg_id));
+    reg = INS_RegW(ins, reg_id);
+    if (/*(reg != REG_INST_PTR) &&*/ (reg != REG_STACK_PTR))
+    {
+      dst_regs.insert(reg);
+    }
   }
   
-//   print_debug_reg_to_reg(ins_addr, src_regs.size(), dst_regs.size());
-  
-//   std::cout << boost::format("\033[0m%-4i  %-35s max_num_rregs %-3i max_num_wregs: %-3i num_wregs: %-3i num_sregs: %-3i num_dregs: %-3i\033[0m\n")
-//                 % explored_trace.size() % INS_Disassemble(ins) % max_num_rregs % max_num_wregs % max_num_wregs 
-//                 % src_regs.size() % dst_regs.size();
+  bool is_mov_or_lea = INS_IsMov(ins) || INS_IsLea(ins);
   
   dta_inss_io[ins_addr] = boost::make_tuple(std::make_pair(src_regs, dst_regs), 
                                             std::make_pair(src_imms, dst_imms), 
-                                            std::make_pair(src_mems, dst_mems));
+                                            std::make_pair(src_mems, dst_mems), 
+                                            is_mov_or_lea);
   return;
 }
 

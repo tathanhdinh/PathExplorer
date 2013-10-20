@@ -70,6 +70,8 @@ UINT32                                        received_msg_size;
 boost::shared_ptr<boost::posix_time::ptime>   start_ptr_time;
 boost::shared_ptr<boost::posix_time::ptime>   stop_ptr_time;
 
+std::ofstream                                 tainting_log_file;
+
 /* ------------------------------------------------------------------------------------------------------------------ */
 /*                                               input handler functions                                              */
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -95,21 +97,18 @@ KNOB<UINT32>  max_trace_length                (KNOB_MODE_WRITEONCE, "pintool",
 VOID start_tracing(VOID *data)                                                  
 {
   trace_max_size        = max_trace_length.Value();
-  
   in_tainting           = true;
- 
   total_rollback_times  = 0;
-
   received_msg_num      = 0;
-
   logged_syscall_index  = syscall_inexist;
-    
   ::srand(::time(0));
-//   if (print_debug_text)
-//   {
+  
+  if (print_debug_text) 
+  {
+    tainting_log_file.open("tainting_log", std::ofstream::trunc);  
 //     std::cout << "\033[2J\033[1;1H"; // clear screen
-//   }
-    
+  }
+      
   return;
 }
 
@@ -183,6 +182,7 @@ VOID stop_tracing(INT32 code, VOID *data)
     journal_tainting_graph("tainting_graph.dot");
     
 //     journal_branch_messages(resolved_ptr_branches[0]);
+    tainting_log_file.close();
   }
   
   journal_result_total(max_total_rollback.Value(), used_rollback_times, 

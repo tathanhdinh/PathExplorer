@@ -49,6 +49,8 @@ extern UINT32                       input_dep_branch_num;
 
 extern KNOB<BOOL>                   print_debug_text;
 
+extern std::ofstream                tainting_log_file;
+
 
 /* ------------------------------------------------------------------------------------------------------------------ */
 /*                                                         implementation                                             */
@@ -423,9 +425,9 @@ void print_debug_mem_written(ADDRINT ins_addr, ADDRINT mem_write_addr, UINT32 me
 {
   if (print_debug_text) 
   {
-    std::cout << boost::format("\033[33m%-4i %-20s %-35s %-15s [%-18s, %-18s]\033[0m\n")
-                  % explored_trace.size() % StringFromAddrint(ins_addr) % addr_ins_static_map[ins_addr].disass  
-                  % "reg->mem" % StringFromAddrint(mem_write_addr) % StringFromAddrint(mem_write_addr + mem_written_size - 1);
+    tainting_log_file << boost::format("\033[33m%-4i %-20s %-35s %-15s [%-18s, %-18s]\033[0m\n")
+                          % explored_trace.size() % StringFromAddrint(ins_addr) % addr_ins_static_map[ins_addr].disass  
+                          % "reg->mem" % StringFromAddrint(mem_write_addr) % StringFromAddrint(mem_write_addr + mem_written_size - 1);
   }
   return;
 }
@@ -436,9 +438,9 @@ void print_debug_mem_read(ADDRINT ins_addr, ADDRINT mem_read_addr, UINT32 mem_re
 {
   if (print_debug_text) 
   {       
-    std::cout << boost::format("\033[0m%-4i %-20s %-35s %-15s [%-18s, %-18s]\033[0m\n")
-                  % explored_trace.size() % StringFromAddrint(ins_addr) % addr_ins_static_map[ins_addr].disass  
-                  % "mem->reg" % StringFromAddrint(mem_read_addr) % StringFromAddrint(mem_read_addr + mem_read_size - 1);
+    tainting_log_file << boost::format("\033[0m%-4i %-20s %-35s %-15s [%-18s, %-18s]\033[0m\n")
+                          % explored_trace.size() % StringFromAddrint(ins_addr) % addr_ins_static_map[ins_addr].disass  
+                          % "mem->reg" % StringFromAddrint(mem_read_addr) % StringFromAddrint(mem_read_addr + mem_read_size - 1);
   }
   return;
 }
@@ -449,9 +451,9 @@ void print_debug_reg_to_reg(ADDRINT ins_addr, UINT32 num_sregs, UINT32 num_dregs
 {
   if (print_debug_text) 
   {
-    std::cout << boost::format("\033[0m%-4i %-20s %-35s %-15s [%-18i, %-18i]\033[0m\n")
-                    % explored_trace.size() % StringFromAddrint(ins_addr) % addr_ins_static_map[ins_addr].disass  
-                    % "reg->reg" % num_sregs % num_dregs;
+    tainting_log_file << boost::format("\033[0m%-4i %-20s %-35s %-15s [%-18i, %-18i]\033[0m\n")
+                          % explored_trace.size() % StringFromAddrint(ins_addr) % addr_ins_static_map[ins_addr].disass  
+                          % "reg->reg" % num_sregs % num_dregs;
   }
   return;
 }
@@ -462,13 +464,12 @@ void print_debug_new_checkpoint(ADDRINT ins_addr)
 {
   if (print_debug_text)
   {
-    
-    std::cout << boost::format("\033[36m%-4i %-20s %-35s %-15s [%-18i, %-18i] %-15s\033[0m\n")
-                    % explored_trace.size() % StringFromAddrint(ins_addr) % addr_ins_static_map[ins_addr].disass 
-                    % "mem->reg" 
-                    % StringFromAddrint(*(saved_ptr_checkpoints.back()->dep_mems.begin())) 
-                    % StringFromAddrint(*(saved_ptr_checkpoints.back()->dep_mems.rbegin()))
-                    % "checkpoint";
+    tainting_log_file << boost::format("\033[36m%-4i %-20s %-35s %-15s [%-18i, %-18i] %-15s\033[0m\n")
+                          % explored_trace.size() % StringFromAddrint(ins_addr) % addr_ins_static_map[ins_addr].disass 
+                          % "mem->reg" 
+                          % StringFromAddrint(*(saved_ptr_checkpoints.back()->dep_mems.begin())) 
+                          % StringFromAddrint(*(saved_ptr_checkpoints.back()->dep_mems.rbegin()))
+                          % "checkpoint";
   }
   return;
 }
@@ -479,14 +480,13 @@ void print_debug_dep_branch(ADDRINT ins_addr, ptr_branch& dep_ptr_branch)
 {
   if (print_debug_text)
   {
-                  
-    std::cout << boost::format("\033[32m%-4i %-20s %-35s %-15s [%-18s, %-18s] %-15s %-2i\033[0m\n")
-                  % explored_trace.size() % StringFromAddrint(ins_addr) % addr_ins_static_map[ins_addr].disass  
-                  % "branch"  
-                  % StringFromAddrint(*(dep_ptr_branch->dep_input_addrs.begin())) 
-                  % StringFromAddrint(*(dep_ptr_branch->dep_input_addrs.rbegin()))
-                  % "dep"
-                  % dep_ptr_branch->br_taken;
+    tainting_log_file << boost::format("\033[32m%-4i %-20s %-35s %-15s [%-18s, %-18s] %-15s %-2i\033[0m\n")
+                          % explored_trace.size() % StringFromAddrint(ins_addr) % addr_ins_static_map[ins_addr].disass  
+                          % "branch"  
+                          % StringFromAddrint(*(dep_ptr_branch->dep_input_addrs.begin())) 
+                          % StringFromAddrint(*(dep_ptr_branch->dep_input_addrs.rbegin()))
+                          % "dep"
+                          % dep_ptr_branch->br_taken;
                   
   }
   return;
@@ -500,24 +500,22 @@ void print_debug_indep_branch(ADDRINT ins_addr, ptr_branch& indep_ptr_branch)
   {
     if (indep_ptr_branch->dep_out_addrs.empty()) 
     {
-      std::cout << boost::format("\033[33m%-4i %-20s %-35s %-15s [%-18s, %-18s] %-15s %-2i\033[0m\n")
-                  % explored_trace.size() % StringFromAddrint(ins_addr) % addr_ins_static_map[ins_addr].disass  
-                  % "branch"  
-//                   % StringFromAddrint(*(indep_ptr_branch->dep_mems.begin())) 
-//                   % StringFromAddrint(*(indep_ptr_branch->dep_mems.rbegin()))
-                  % "reg" % "reg"
-                  % "indep"
-                  % indep_ptr_branch->br_taken;  
+      tainting_log_file << boost::format("\033[33m%-4i %-20s %-35s %-15s [%-18s, %-18s] %-15s %-2i\033[0m\n")
+                            % explored_trace.size() % StringFromAddrint(ins_addr) % addr_ins_static_map[ins_addr].disass  
+                            % "branch"  
+                            % "reg" % "reg"
+                            % "indep"
+                            % indep_ptr_branch->br_taken;  
     }
     else 
     {
-      std::cout << boost::format("\033[33m%-4i %-20s %-35s %-15s [%-18s, %-18s] %-15s %-2i\033[0m\n")
-                  % explored_trace.size() % StringFromAddrint(ins_addr) % addr_ins_static_map[ins_addr].disass  
-                  % "branch"  
-                  % StringFromAddrint(*(indep_ptr_branch->dep_out_addrs.begin())) 
-                  % StringFromAddrint(*(indep_ptr_branch->dep_out_addrs.rbegin()))
-                  % "indep"
-                  % indep_ptr_branch->br_taken;
+      tainting_log_file << boost::format("\033[33m%-4i %-20s %-35s %-15s [%-18s, %-18s] %-15s %-2i\033[0m\n")
+                            % explored_trace.size() % StringFromAddrint(ins_addr) % addr_ins_static_map[ins_addr].disass  
+                            % "branch"  
+                            % StringFromAddrint(*(indep_ptr_branch->dep_out_addrs.begin())) 
+                            % StringFromAddrint(*(indep_ptr_branch->dep_out_addrs.rbegin()))
+                            % "indep"
+                            % indep_ptr_branch->br_taken;
     }
     
   }
@@ -554,3 +552,4 @@ void journal_branch_messages(ptr_branch& ptr_resolved_branch)
   
   return;
 }
+

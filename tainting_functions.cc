@@ -112,6 +112,11 @@ VOID tainting_st_to_st_analyzer(ADDRINT ins_addr)
   }
   
   /*
+   * remove all current edges to the destination variable if the instruction is mov or lea
+   ===================================================================================================================*/
+  
+  
+  /*
    * Insert the edges between each pair (source, destination) into the tainting graph 
    ===================================================================================================================*/
   
