@@ -4,6 +4,7 @@
 #include <map>
 
 #include "instruction.h"
+#include "stuffs.h"
 
 extern ADDRINT logged_syscall_index;
 extern ADDRINT logged_syscall_args[6];
@@ -65,7 +66,7 @@ VOID syscall_exit_analyzer(THREADID thread_id, CONTEXT* p_ctxt, SYSCALL_STANDARD
         
         if (print_debug_text)
         {
-          std::cerr << "\033[33mThe first message saved at " << StringFromAddrint(received_msg_addr)
+          std::cerr << "\033[33mThe first message saved at " << remove_leading_zeros(StringFromAddrint(received_msg_addr))
                     << " with size " << received_msg_size << ".\033[0m\n";
           std::cerr << "-------------------------------------------------------------------------------------------------\n";        
           std::cerr << "\033[33mStart tainting phase with maximum trace size " 

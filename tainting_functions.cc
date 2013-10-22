@@ -15,17 +15,13 @@ extern map_ins_io dta_inss_io;
 extern std::vector<ADDRINT> explored_trace;
 
 /*====================================================================================================================*/
-
-VOID tainting_st_to_st_analyzer(ADDRINT ins_addr)
+// source variables construction 
+inline void add_source_variable(ADDRINT ins_addr, std::vector<vdep_vertex_desc> src_descs) 
 {
   std::set<REG>::iterator      reg_iter;
   std::set<UINT32>::iterator   imm_iter;
   std::set<ADDRINT>::iterator  mem_iter;
-  
-  /*
-   * source variables construction 
-   ===================================================================================================================*/
-  
+    
   var_set src_vars;
   
   for (reg_iter = boost::get<0>(dta_inss_io[ins_addr]).first.begin(); 
@@ -50,7 +46,7 @@ VOID tainting_st_to_st_analyzer(ADDRINT ins_addr)
   vdep_vertex_iter vertex_iter;
   vdep_vertex_iter last_vertex_iter;
   
-  std::vector<vdep_vertex_desc> src_descs;
+//   std::vector<vdep_vertex_desc> src_descs;
   
   for (var_set::iterator src_iter = src_vars.begin(); src_iter != src_vars.end(); ++src_iter)
   {
@@ -70,9 +66,16 @@ VOID tainting_st_to_st_analyzer(ADDRINT ins_addr)
     }
   }
   
-  /*
-   * Destination variable construction 
-   ===================================================================================================================*/
+  return;
+}
+
+/*====================================================================================================================*/
+// destination variable construction 
+inline void add_destination_variables(ADDRINT ins_addr, std::vector<vdep_vertex_desc> dst_descs) 
+{
+  std::set<REG>::iterator      reg_iter;
+  std::set<UINT32>::iterator   imm_iter;
+  std::set<ADDRINT>::iterator  mem_iter;
   
   var_set dst_vars;
   
@@ -89,9 +92,11 @@ VOID tainting_st_to_st_analyzer(ADDRINT ins_addr)
   }
     
   // insert the destination variables into the tainting graph
-  std::vector<vdep_vertex_desc> dst_descs;
+  vdep_vertex_iter vertex_iter;
+  vdep_vertex_iter last_vertex_iter;
   
-//   std::cerr << "Destination var: " << dst_vars.size() << "\n";
+//   std::vector<vdep_vertex_desc> dst_descs;
+  
   for (var_set::iterator dst_iter = dst_vars.begin(); dst_iter != dst_vars.end(); 
        ++dst_iter)
   {
@@ -111,6 +116,35 @@ VOID tainting_st_to_st_analyzer(ADDRINT ins_addr)
     }
   }
   
+  return;
+}
+
+/*====================================================================================================================*/
+
+inline void remove_edges_to_destination(ADDRINT ins_addr) 
+{
+  bool is_mov_or_lea = boost::get<3>(dta_inss_io[ins_addr]);
+  if (is_mov_or_lea) 
+  {
+    std::set<REG>::iterator reg_iter;
+    for (reg_iter = boost::get<0>(dta_inss_io[ins_addr]).second.begin(); 
+         reg_iter != boost::get<0>(dta_inss_io[ins_addr]).second.end(); ++reg_iter) 
+    {
+      if (!REG_is_partialreg(*reg_iter)) 
+      {
+        
+      }
+    }
+  }
+}
+
+/*====================================================================================================================*/
+
+VOID tainting_st_to_st_analyzer(ADDRINT ins_addr)
+{  
+  std::vector<vdep_vertex_desc> src_vertex_descs;
+  std::vector<vdep_vertex_desc> dst_vertex_descs;
+  
   /*
    * remove all current edges to the destination variable if the instruction is mov or lea
    ===================================================================================================================*/
@@ -124,10 +158,10 @@ VOID tainting_st_to_st_analyzer(ADDRINT ins_addr)
   std::vector<vdep_vertex_desc>::iterator dst_desc_iter;
   UINT32 current_ins_order = static_cast<UINT32>(explored_trace.size());
   
-  for (src_desc_iter = src_descs.begin(); src_desc_iter != src_descs.end(); 
+  for (src_desc_iter = src_vertex_descs.begin(); src_desc_iter != src_vertex_descs.end(); 
        ++src_desc_iter)
   {
-    for (dst_desc_iter = dst_descs.begin(); dst_desc_iter != dst_descs.end(); 
+    for (dst_desc_iter = dst_vertex_descs.begin(); dst_desc_iter != dst_vertex_descs.end(); 
          ++dst_desc_iter)
     {
       if (dta_graph[*src_desc_iter] == dta_graph[*dst_desc_iter])

@@ -35,17 +35,10 @@ extern boost::shared_ptr<boost::posix_time::ptime>  stop_ptr_time;
 
 inline VOID extract_ins_operands(INS ins, ADDRINT ins_addr) 
 {
-  std::set<UINT32> src_oprs;
-  std::set<UINT32> dst_oprs;
-  
-  std::set<REG> src_regs;
-  std::set<REG> dst_regs;
-    
-  std::set<ADDRINT> src_mems;
-  std::set<ADDRINT> dst_mems;
-    
-  std::set<UINT32> src_imms;
-  std::set<UINT32> dst_imms;
+  std::set<UINT32>  src_oprs, dst_oprs;
+  std::set<REG>     src_regs, dst_regs;
+  std::set<ADDRINT> src_mems, dst_mems;
+  std::set<UINT32>  src_imms, dst_imms;
   
   UINT32 reg_id;
   REG    reg;

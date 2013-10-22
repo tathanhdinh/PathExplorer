@@ -71,4 +71,6 @@ void        print_debug_dep_branch      (ADDRINT ins_addr, ptr_branch& new_ptr_b
 
 void        print_debug_indep_branch    (ADDRINT ins_addr, ptr_branch& indep_ptr_branch);
 
+std::string remove_leading_zeros        (std::string input);
+
 #endif // STUFFS_H
