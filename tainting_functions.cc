@@ -102,7 +102,6 @@ inline void add_destination_variables(ADDRINT ins_addr, std::vector<vdep_vertex_
             (is_mov_or_lea) && (!REG_is_partialreg(*reg_iter))
            )
         {
-//           tainting_log_file << "Remove vertex\n";
           boost::remove_vertex(*vertex_iter, dta_graph);
           dst_descs.push_back(boost::add_vertex(reg_var, dta_graph));
         }
