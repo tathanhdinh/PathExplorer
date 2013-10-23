@@ -1,5 +1,6 @@
 #include <pin.H>
 
+#include <fstream>
 #include <vector>
 #include <map>
 #include <set>
@@ -28,6 +29,8 @@ extern map_ins_io                                   dta_inss_io;
 
 extern UINT8                                        received_msg_num;
 
+extern std::ofstream                                tainting_log_file;
+
 extern boost::shared_ptr<boost::posix_time::ptime>  start_ptr_time;
 extern boost::shared_ptr<boost::posix_time::ptime>  stop_ptr_time;
 
@@ -47,7 +50,7 @@ inline VOID extract_ins_operands(INS ins, ADDRINT ins_addr)
   for (reg_id = 0; reg_id < max_num_rregs; ++reg_id) 
   {
     reg = INS_RegR(ins, reg_id);
-    if ((reg != REG_INST_PTR) && (reg != REG_STACK_PTR))
+    if (reg != REG_INST_PTR)
     {
       src_regs.insert(reg);
     }
@@ -57,7 +60,7 @@ inline VOID extract_ins_operands(INS ins, ADDRINT ins_addr)
   for (reg_id = 0; reg_id < max_num_wregs; ++reg_id) 
   {
     reg = INS_RegW(ins, reg_id);
-    if (/*(reg != REG_INST_PTR) &&*/ (reg != REG_STACK_PTR))
+    if ((reg != REG_INST_PTR) || INS_IsBranch(ins))
     {
       dst_regs.insert(reg);
     }

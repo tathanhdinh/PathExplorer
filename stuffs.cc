@@ -14,6 +14,8 @@
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/graph/graphviz.hpp>
+#include <boost/graph/lookup_edge.hpp>
+
 
 #include "instruction.h"
 #include "variable.h"
@@ -30,6 +32,7 @@ extern std::map< ADDRINT,
                  instruction >      addr_ins_static_map;
                  
 extern vdep_graph                   dta_graph;
+extern map_ins_io                   dta_inss_io;
 
 extern std::vector<ptr_checkpoint>  saved_ptr_checkpoints;
 
@@ -455,7 +458,7 @@ void print_debug_mem_written(ADDRINT ins_addr, ADDRINT mem_write_addr, UINT32 me
 {
   if (print_debug_text) 
   {
-    tainting_log_file << boost::format("\033[33m%-4i %-20s %-35s %-15s [%-18s, %-18s]\033[0m\n")
+    tainting_log_file << boost::format("\033[33m%-4i %-20s %-35s %-15s [%-14s, %-14s]\033[0m\n")
                           % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr)) 
                           % addr_ins_static_map[ins_addr].disass  
                           % "reg->mem" 
@@ -470,13 +473,35 @@ void print_debug_mem_written(ADDRINT ins_addr, ADDRINT mem_write_addr, UINT32 me
 void print_debug_mem_read(ADDRINT ins_addr, ADDRINT mem_read_addr, UINT32 mem_read_size)
 {
   if (print_debug_text) 
-  {       
-    tainting_log_file << boost::format("\033[0m%-4i %-20s %-35s %-15s [%-18s, %-18s]\033[0m\n")
+  { 
+    std::set<REG>::iterator reg_iter;
+    
+    std::stringstream sstream_sregs;
+    sstream_sregs << "sregs: ";
+    for (reg_iter = boost::get<0>(dta_inss_io[ins_addr]).first.begin(); 
+         reg_iter != boost::get<0>(dta_inss_io[ins_addr]).first.end(); ++reg_iter)
+    {
+      sstream_sregs << REG_StringShort(*reg_iter) << " ";
+    }
+    
+    std::stringstream sstream_dregs;
+    sstream_dregs << "dregs: ";
+    for (reg_iter = boost::get<0>(dta_inss_io[ins_addr]).second.begin(); 
+         reg_iter != boost::get<0>(dta_inss_io[ins_addr]).second.end(); ++reg_iter) 
+    {
+      sstream_dregs << REG_StringShort(*reg_iter) << " ";
+    }
+    
+    std::stringstream sstream_smems;
+    sstream_smems << "smems: [" 
+                  << remove_leading_zeros(StringFromAddrint(mem_read_addr)) << ", "
+                  << remove_leading_zeros(StringFromAddrint(mem_read_addr + mem_read_size - 1)) << "]";
+                  
+    tainting_log_file << boost::format("\033[0m%-4i %-20s %-35s %-15s %-14s %-14s %-40s\033[0m\n")
                           % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr)) 
                           % addr_ins_static_map[ins_addr].disass  
                           % "mem->reg" 
-                          % remove_leading_zeros(StringFromAddrint(mem_read_addr)) 
-                          % remove_leading_zeros(StringFromAddrint(mem_read_addr + mem_read_size - 1));
+                          % sstream_sregs.str() % sstream_dregs.str() % sstream_smems.str();
   }
   return;
 }
@@ -487,10 +512,28 @@ void print_debug_reg_to_reg(ADDRINT ins_addr, UINT32 num_sregs, UINT32 num_dregs
 {
   if (print_debug_text) 
   {
-    tainting_log_file << boost::format("\033[0m%-4i %-20s %-35s %-15s [%-18i, %-18i]\033[0m\n")
+    std::set<REG>::iterator reg_iter;
+    
+    std::stringstream sstream_sregs;
+    sstream_sregs << "sregs: ";
+    for (reg_iter = boost::get<0>(dta_inss_io[ins_addr]).first.begin(); 
+         reg_iter != boost::get<0>(dta_inss_io[ins_addr]).first.end(); ++reg_iter)
+    {
+      sstream_sregs << REG_StringShort(*reg_iter) << " ";
+    }
+    
+    std::stringstream sstream_dregs;
+    sstream_dregs << "dregs: ";
+    for (reg_iter = boost::get<0>(dta_inss_io[ins_addr]).second.begin(); 
+         reg_iter != boost::get<0>(dta_inss_io[ins_addr]).second.end(); ++reg_iter) 
+    {
+      sstream_dregs << REG_StringShort(*reg_iter) << " ";
+    }
+    
+    tainting_log_file << boost::format("\033[0m%-4i %-20s %-35s %-15s %-14s %-14s\033[0m\n")
                           % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr)) 
                           % addr_ins_static_map[ins_addr].disass  
-                          % "reg->reg" % num_sregs % num_dregs;
+                          % "reg->reg" % sstream_sregs.str() % sstream_dregs.str();
   }
   return;
 }
@@ -501,12 +544,34 @@ void print_debug_new_checkpoint(ADDRINT ins_addr)
 {
   if (print_debug_text)
   {
-    tainting_log_file << boost::format("\033[36m%-4i %-20s %-35s %-15s [%-18i, %-18i] %-15s\033[0m\n")
+    std::set<REG>::iterator reg_iter;
+    
+    std::stringstream sstream_sregs;
+    sstream_sregs << "sregs: ";
+    for (reg_iter = boost::get<0>(dta_inss_io[ins_addr]).first.begin(); 
+         reg_iter != boost::get<0>(dta_inss_io[ins_addr]).first.end(); ++reg_iter)
+    {
+      sstream_sregs << REG_StringShort(*reg_iter) << " ";
+    }
+    
+    std::stringstream sstream_dregs;
+    sstream_dregs << "dregs: ";
+    for (reg_iter = boost::get<0>(dta_inss_io[ins_addr]).second.begin(); 
+         reg_iter != boost::get<0>(dta_inss_io[ins_addr]).second.end(); ++reg_iter) 
+    {
+      sstream_dregs << REG_StringShort(*reg_iter) << " ";
+    }
+    
+    std::stringstream sstream_smems;
+    sstream_smems << "smems: [" 
+                  << remove_leading_zeros(StringFromAddrint(*(saved_ptr_checkpoints.back()->dep_mems.begin()))) << ", "
+                  << remove_leading_zeros(StringFromAddrint(*(saved_ptr_checkpoints.back()->dep_mems.rbegin()))) << "]";
+    
+    tainting_log_file << boost::format("\033[36m%-4i %-20s %-35s %-15s %-14s %-14s %-40s %-15s\033[0m\n")
                           % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr)) 
                           % addr_ins_static_map[ins_addr].disass 
                           % "mem->reg" 
-                          % remove_leading_zeros(StringFromAddrint(*(saved_ptr_checkpoints.back()->dep_mems.begin()))) 
-                          % remove_leading_zeros(StringFromAddrint(*(saved_ptr_checkpoints.back()->dep_mems.rbegin())))
+                          % sstream_sregs.str() % sstream_dregs.str() % sstream_smems.str()
                           % "checkpoint";
   }
   return;
@@ -518,15 +583,38 @@ void print_debug_dep_branch(ADDRINT ins_addr, ptr_branch& dep_ptr_branch)
 {
   if (print_debug_text)
   {
-    tainting_log_file << boost::format("\033[32m%-4i %-20s %-35s %-15s [%-18s, %-18s] %-15s %-2i\033[0m\n")
+    std::set<REG>::iterator reg_iter;
+    
+    std::stringstream sstream_sregs;
+    sstream_sregs << "sregs: ";
+    for (reg_iter = boost::get<0>(dta_inss_io[ins_addr]).first.begin(); 
+         reg_iter != boost::get<0>(dta_inss_io[ins_addr]).first.end(); ++reg_iter)
+    {
+      sstream_sregs << REG_StringShort(*reg_iter) << " ";
+    }
+    
+    std::stringstream sstream_dregs;
+    sstream_dregs << "dregs: ";
+    for (reg_iter = boost::get<0>(dta_inss_io[ins_addr]).second.begin(); 
+         reg_iter != boost::get<0>(dta_inss_io[ins_addr]).second.end(); ++reg_iter) 
+    {
+      sstream_dregs << REG_StringShort(*reg_iter) << " ";
+    }
+    
+    std::stringstream sstream_smems;
+    sstream_smems << "smems: [" 
+                  << remove_leading_zeros(StringFromAddrint(*(saved_ptr_checkpoints.back()->dep_mems.begin()))) << ", "
+                  << remove_leading_zeros(StringFromAddrint(*(saved_ptr_checkpoints.back()->dep_mems.rbegin()))) << "]";
+                  
+    tainting_log_file << boost::format("\033[32m%-4i %-20s %-35s %-15s %-14s %-14s %-40s %-15s %-2i\033[0m\n")
                           % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr)) 
                           % addr_ins_static_map[ins_addr].disass  
                           % "branch"  
-                          % remove_leading_zeros(StringFromAddrint(*(dep_ptr_branch->dep_input_addrs.begin()))) 
-                          % remove_leading_zeros(StringFromAddrint(*(dep_ptr_branch->dep_input_addrs.rbegin())))
+                          % sstream_sregs.str() % sstream_dregs.str() % sstream_smems.str()
                           % "dep"
                           % dep_ptr_branch->br_taken;
   }
+  
   return;
 }
 
@@ -536,28 +624,43 @@ void print_debug_indep_branch(ADDRINT ins_addr, ptr_branch& indep_ptr_branch)
 {
   if (print_debug_text) 
   {
+    std::set<REG>::iterator reg_iter;
+    
+    std::stringstream sstream_sregs;
+    sstream_sregs << "sregs: ";
+    for (reg_iter = boost::get<0>(dta_inss_io[ins_addr]).first.begin(); 
+         reg_iter != boost::get<0>(dta_inss_io[ins_addr]).first.end(); ++reg_iter)
+    {
+      sstream_sregs << REG_StringShort(*reg_iter) << " ";
+    }
+    
+    std::stringstream sstream_dregs;
+    sstream_dregs << "dregs: ";
+    for (reg_iter = boost::get<0>(dta_inss_io[ins_addr]).second.begin(); 
+         reg_iter != boost::get<0>(dta_inss_io[ins_addr]).second.end(); ++reg_iter) 
+    {
+      sstream_dregs << REG_StringShort(*reg_iter) << " ";
+    }
+    
+    std::stringstream sstream_smems;
     if (indep_ptr_branch->dep_out_addrs.empty()) 
     {
-      tainting_log_file << boost::format("\033[33m%-4i %-20s %-35s %-15s [%-18s, %-18s] %-15s %-2i\033[0m\n")
-                            % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr)) 
-                            % addr_ins_static_map[ins_addr].disass  
-                            % "branch"  
-                            % "reg" % "reg"
-                            % "indep"
-                            % indep_ptr_branch->br_taken;  
+      sstream_smems << "smems: []"; 
     }
     else 
     {
-      tainting_log_file << boost::format("\033[33m%-4i %-20s %-35s %-15s [%-18s, %-18s] %-15s %-2i\033[0m\n")
+      sstream_smems << "smems: [" 
+                    << remove_leading_zeros(StringFromAddrint(*(indep_ptr_branch->dep_out_addrs.begin()))) << ", "
+                    << remove_leading_zeros(StringFromAddrint(*(indep_ptr_branch->dep_out_addrs.rbegin()))) << "]";
+    }
+                  
+    tainting_log_file << boost::format("\033[33m%-4i %-20s %-35s %-15s %-14s %-14s %-40s %-15s %-2i\033[0m\n")
                             % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr)) 
                             % addr_ins_static_map[ins_addr].disass  
                             % "branch"  
-                            % remove_leading_zeros(StringFromAddrint(*(indep_ptr_branch->dep_out_addrs.begin()))) 
-                            % remove_leading_zeros(StringFromAddrint(*(indep_ptr_branch->dep_out_addrs.rbegin())))
+                            % sstream_sregs.str() % sstream_dregs.str() % sstream_smems.str()
                             % "indep"
-                            % indep_ptr_branch->br_taken;
-    }
-    
+                            % indep_ptr_branch->br_taken; 
   }
   return;
 }

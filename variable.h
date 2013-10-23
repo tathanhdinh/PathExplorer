@@ -81,7 +81,7 @@ public:
 
 inline bool operator==(const variable& var_a, const variable& var_b)
 {
- return (var_a.name == var_b.name);
+ return ((var_a.name == var_b.name) && (var_a.type == var_b.type));
 }
 
 class variable_hash
