@@ -10,7 +10,7 @@ extern std::vector<ptr_checkpoint>  saved_ptr_checkpoints;
 
 /*====================================================================================================================*/
 
-void dfs_traversal(vdep_vertex_desc const& start_vertex, 
+inline void dfs_traversal(vdep_vertex_desc const& start_vertex, 
                    std::vector< std::vector<vdep_edge_desc> >& traversed_edges_list)
 {
   vdep_out_edge_iter edge_iter;
@@ -97,8 +97,10 @@ inline void dependency_computation(std::set<ADDRINT>& dep_input_addrs, std::set<
       {
         if (dta_graph[traversed_edges_iter->back()].second == explored_trace.size()) 
         {
-          if ((received_msg_addr <= dta_graph[*vertex_iter].mem) &&
-          (received_msg_addr + received_msg_size > dta_graph[*vertex_iter].mem)) // and it locates in the message
+          if (
+              (received_msg_addr <= dta_graph[*vertex_iter].mem) &&
+              (received_msg_addr + received_msg_size > dta_graph[*vertex_iter].mem)
+             ) // and it locates in the message
           {
             dep_input_addrs.insert(dta_graph[*vertex_iter].mem);
           }

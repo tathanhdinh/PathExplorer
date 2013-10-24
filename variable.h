@@ -72,10 +72,7 @@ public:
   var_type    type;
   
   REG         reg;
-  
   ADDRINT     mem;
-//   UINT32      mem_size;
-  
   UINT32      imm;
 };
 
@@ -99,8 +96,8 @@ public:
 extern std::map< ADDRINT, 
                  instruction > addr_ins_static_map;
 
-extern ADDRINT received_msg_addr;
-extern UINT32  received_msg_size;
+extern ADDRINT                 received_msg_addr;
+extern UINT32                  received_msg_size;
 
 /*====================================================================================================================*/
 
@@ -130,9 +127,7 @@ public:
     vertex_label += vertex_var.name;
     vertex_label += "\"]";
     
-//     std::cerr << vertex_label << "\n";
     out << vertex_label;
-//     out << "[label=\"" << vertex_var.name << "\"]";
   }
   
 private:
@@ -159,19 +154,5 @@ public:
 private:
   vdep_graph graph;
 };
-
-/*====================================================================================================================*/
-
-// void linear_traversing(vdep_vertex_desc const& in_root_vertex, 
-//                        vdep_graph const& in_graph, 
-//                        vdep_edge_desc_list& out_path);
-// 
-// void mem_branch_dependency(vdep_graph const& in_graph, 
-//                            std::list< std::pair<vdep_vertex_desc, 
-//                                                 vdep_edge_desc_list> >& out_ve_dependencies);
-// 
-// void branch_mem_dependency(vdep_graph const& in_graph, 
-//                            std::list< std::pair<vdep_edge_desc, 
-//                                                 vdep_vertex_desc_list> >& out_ev_dependencies);
 
 #endif // VARIABLE_H

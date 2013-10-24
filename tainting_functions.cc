@@ -32,11 +32,11 @@ inline void add_source_variables(ADDRINT ins_addr, std::vector<vdep_vertex_desc>
     src_vars.insert(variable(*reg_iter));
   }
   
-  for (imm_iter = boost::get<1>(dta_inss_io[ins_addr]).first.begin();
-       imm_iter != boost::get<1>(dta_inss_io[ins_addr]).first.end(); ++imm_iter)
-  {
+//   for (imm_iter = boost::get<1>(dta_inss_io[ins_addr]).first.begin();
+//        imm_iter != boost::get<1>(dta_inss_io[ins_addr]).first.end(); ++imm_iter)
+//   {
 //     src_vars.insert(variable(*imm_iter));
-  }
+//   }
   
   for (mem_iter = boost::get<2>(dta_inss_io[ins_addr]).first.begin(); 
        mem_iter != boost::get<2>(dta_inss_io[ins_addr]).first.end(); ++mem_iter)
@@ -77,80 +77,41 @@ inline void add_destination_variables(ADDRINT ins_addr, std::vector<vdep_vertex_
   std::set<UINT32>::iterator   imm_iter;
   std::set<ADDRINT>::iterator  mem_iter;
   
-  vdep_vertex_iter vertex_iter;
-  vdep_vertex_iter next_vertex_iter;
-  vdep_vertex_iter last_vertex_iter;
-  
   var_set dst_vars;
   
-  bool is_mov_or_lea = boost::get<3>(dta_inss_io[ins_addr]);
-  
-  // destination register construction
   for (reg_iter = boost::get<0>(dta_inss_io[ins_addr]).second.begin(); 
-       reg_iter != boost::get<0>(dta_inss_io[ins_addr]).second.end(); ++reg_iter)
+       reg_iter != boost::get<0>(dta_inss_io[ins_addr]).second.end(); ++reg_iter) 
   {
-    variable reg_var = variable(*reg_iter);
-    
-    boost::tie(vertex_iter, last_vertex_iter) = boost::vertices(dta_graph);
-    for (next_vertex_iter = vertex_iter; vertex_iter != last_vertex_iter; vertex_iter = next_vertex_iter) 
-    {
-      ++next_vertex_iter;
-      
-      if (reg_var == dta_graph[*vertex_iter]) // the register existed already in the graph
-      {
-        if (
-            (is_mov_or_lea) && (!REG_is_partialreg(*reg_iter))
-           )
-        {
-          boost::remove_vertex(*vertex_iter, dta_graph);
-          dst_descs.push_back(boost::add_vertex(reg_var, dta_graph));
-        }
-        else 
-        {
-          dst_descs.push_back(*vertex_iter);
-        }
-        break;
-      }
-    }
-    
-    if (vertex_iter == last_vertex_iter)     // the register does not exist in the graph yet
-    {
-      dst_descs.push_back(boost::add_vertex(reg_var, dta_graph));
-    }
+    dst_vars.insert(variable(*reg_iter));
   }
   
-  // destination memory address construction
   for (mem_iter = boost::get<2>(dta_inss_io[ins_addr]).second.begin(); 
        mem_iter != boost::get<2>(dta_inss_io[ins_addr]).second.end(); ++mem_iter) 
   {
-    variable mem_var = variable(*mem_iter);
-    
-    boost::tie(vertex_iter, last_vertex_iter) = boost::vertices(dta_graph);
-    for (next_vertex_iter = vertex_iter; vertex_iter != last_vertex_iter; vertex_iter = next_vertex_iter) 
+    dst_vars.insert(variable(*mem_iter));
+  }
+  
+  vdep_vertex_iter vertex_iter;
+  vdep_vertex_iter last_vertex_iter;
+  
+  for (var_set::iterator dst_iter = dst_vars.begin(); dst_iter != dst_vars.end(); ++dst_iter) 
+  {
+    for (boost::tie(vertex_iter, last_vertex_iter) = boost::vertices(dta_graph); 
+         vertex_iter != last_vertex_iter; ++vertex_iter) 
     {
-      ++next_vertex_iter;
-      
-      if (mem_var == dta_graph[*vertex_iter]) // the memory address existed already in the graph
+      if (*dst_iter == dta_graph[*vertex_iter]) 
       {
-        if (is_mov_or_lea) 
-        {
-          boost::remove_vertex(*vertex_iter, dta_graph);
-          dst_descs.push_back(boost::add_vertex(mem_var, dta_graph));
-        }
-        else 
-        {
-          dst_descs.push_back(*vertex_iter);
-        }
+        dst_descs.push_back(*vertex_iter);
         break;
       }
     }
     
-    if (vertex_iter == last_vertex_iter) // the memory address does not exist in the graph yet
+    if (vertex_iter == last_vertex_iter) 
     {
-      dst_descs.push_back(boost::add_vertex(mem_var, dta_graph));
+      dst_descs.push_back(boost::add_vertex(*dst_iter, dta_graph));
     }
   }
-  
+    
   return;
 }
 
