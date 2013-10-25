@@ -60,7 +60,7 @@ inline VOID extract_ins_operands(INS ins, ADDRINT ins_addr)
   for (reg_id = 0; reg_id < max_num_wregs; ++reg_id) 
   {
     reg = INS_RegW(ins, reg_id);
-    if ((reg != REG_INST_PTR) || INS_IsBranch(ins))
+    if ((reg != REG_INST_PTR) || INS_IsBranchOrCall(ins) || INS_IsRet(ins))
     {
       dst_regs.insert(reg);
     }
