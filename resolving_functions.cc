@@ -353,7 +353,7 @@ inline void process_tainted_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& 
   {
     if (tainted_ptr_branch == input_dep_ptr_branches.back()) // and is the current last branch
     {
-      /* for testing */
+      /* FOR TESTING ONLY */
       PIN_ExitApplication(0);
       
       exploring_new_branch_or_stop();

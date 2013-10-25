@@ -101,6 +101,9 @@ VOID logging_ins_count_analyzer(ADDRINT ins_addr)
   }
   else // trace length limit reached
   {
+    /* FOR TESTING ONLY */
+    PIN_ExitApplication(0);
+    
     prepare_new_rollbacking_phase();
   }
   

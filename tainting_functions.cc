@@ -44,7 +44,6 @@ inline void add_source_variables(ADDRINT ins_addr, vdep_vertex_desc_set& src_des
 //   vdep_vertex_desc_set::iterator last_vertex_iter = dta_outer_vertices.end();
   vdep_vertex_desc new_vertex_desc;
     
-  std::cout << "src_vars size: " << src_vars.size() << " ";
   for (var_set::iterator src_iter = src_vars.begin(); src_iter != src_vars.end(); ++src_iter)
   {
     for (vertex_iter = dta_outer_vertices.begin(); vertex_iter != dta_outer_vertices.end(); ++vertex_iter) 
@@ -68,7 +67,7 @@ inline void add_source_variables(ADDRINT ins_addr, vdep_vertex_desc_set& src_des
     }    
   }
   
-  std::cout << "src_descs size: " << src_descs.size();
+//   std::cout << "src_vars: " << src_vars.size() << " src_descs: " << src_descs.size();
   
   return;
 }
@@ -99,7 +98,6 @@ inline void add_destination_variables(ADDRINT ins_addr, vdep_vertex_desc_set& ds
   vdep_vertex_desc_set::iterator vertex_iter = dta_outer_vertices.begin();
   vdep_vertex_desc_set::iterator last_vertex_iter = dta_outer_vertices.end();
   vdep_vertex_desc_set::iterator next_vertex_iter;
-  
   
   vdep_vertex_desc new_vertex_desc;
   
@@ -136,7 +134,7 @@ inline void add_destination_variables(ADDRINT ins_addr, vdep_vertex_desc_set& ds
     }
   }
   
-  std::cout << " dst_descs size: " << dst_descs.size() << "\n";
+//   std::cout << "  dst_vars: " << dst_vars.size() << " dst_descs: " << dst_descs.size() << "\n";
     
   return;
 }
@@ -152,13 +150,14 @@ VOID tainting_st_to_st_analyzer(ADDRINT ins_addr)
   add_destination_variables(ins_addr, dst_vertex_descs);
   
   // insert the edges between each pair (source, destination) into the tainting graph
-  vdep_vertex_desc_set::iterator src_desc_iter = src_vertex_descs.begin();
-  vdep_vertex_desc_set::iterator dst_desc_iter = dst_vertex_descs.begin();
+  vdep_vertex_desc_set::iterator src_desc_iter;
+  vdep_vertex_desc_set::iterator dst_desc_iter;
   UINT32 current_ins_order = static_cast<UINT32>(explored_trace.size());
   
-  for (; src_desc_iter != src_vertex_descs.end(); ++src_desc_iter)
+//   std::cout << "src_vertex_descs: " << src_vertex_descs.size() << " dst_vertex_descs: " << dst_vertex_descs.size() << "\n";
+  for (src_desc_iter = src_vertex_descs.begin(); src_desc_iter != src_vertex_descs.end(); ++src_desc_iter)
   {
-    for (; dst_desc_iter != dst_vertex_descs.end(); ++dst_desc_iter)
+    for (dst_desc_iter = dst_vertex_descs.begin(); dst_desc_iter != dst_vertex_descs.end(); ++dst_desc_iter)
     {
       if (dta_graph[*src_desc_iter] == dta_graph[*dst_desc_iter])
       {
