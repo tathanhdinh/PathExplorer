@@ -11,7 +11,7 @@ extern std::vector<ptr_checkpoint>  saved_ptr_checkpoints;
 /*====================================================================================================================*/
 
 inline void dfs_traversal(vdep_vertex_desc const& start_vertex, 
-                   std::vector< std::vector<vdep_edge_desc> >& traversed_edges_list)
+                          std::vector< std::vector<vdep_edge_desc> >& traversed_edges_list)
 {
   vdep_out_edge_iter edge_iter;
   vdep_out_edge_iter last_edge_iter;

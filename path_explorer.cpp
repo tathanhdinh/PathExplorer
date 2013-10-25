@@ -45,6 +45,7 @@ bool                                          in_tainting;
 
 vdep_graph                                    dta_graph;
 map_ins_io                                    dta_inss_io;
+vdep_vertex_desc_set                          dta_outer_vertices;
 
 std::vector<ptr_checkpoint>                   saved_ptr_checkpoints;
 ptr_checkpoint                                master_ptr_checkpoint;

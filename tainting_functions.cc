@@ -11,6 +11,7 @@
 
 extern vdep_graph           dta_graph;
 extern map_ins_io           dta_inss_io;
+extern vdep_vertex_desc_set dta_outer_vertices;
 
 extern std::vector<ADDRINT> explored_trace;
 
@@ -18,7 +19,7 @@ extern std::ofstream        tainting_log_file;
 
 /*====================================================================================================================*/
 // source variables construction 
-inline void add_source_variables(ADDRINT ins_addr, std::vector<vdep_vertex_desc>& src_descs) 
+inline void add_source_variables(ADDRINT ins_addr, vdep_vertex_desc_set& src_descs) 
 {
   std::set<REG>::iterator      reg_iter;
   std::set<UINT32>::iterator   imm_iter;
@@ -31,38 +32,40 @@ inline void add_source_variables(ADDRINT ins_addr, std::vector<vdep_vertex_desc>
   {
     src_vars.insert(variable(*reg_iter));
   }
-  
-//   for (imm_iter = boost::get<1>(dta_inss_io[ins_addr]).first.begin();
-//        imm_iter != boost::get<1>(dta_inss_io[ins_addr]).first.end(); ++imm_iter)
-//   {
-//     src_vars.insert(variable(*imm_iter));
-//   }
-  
+    
   for (mem_iter = boost::get<2>(dta_inss_io[ins_addr]).first.begin(); 
        mem_iter != boost::get<2>(dta_inss_io[ins_addr]).first.end(); ++mem_iter)
   {
     src_vars.insert(variable(*mem_iter));
   }
   
-  // insert the source variables into the tainting graph
-  vdep_vertex_iter vertex_iter;
-  vdep_vertex_iter last_vertex_iter;
-  
+  // insert the source variables into the tainting graph and its outer interface
+  vdep_vertex_desc_set::iterator vertex_iter = dta_outer_vertices.begin();
+  vdep_vertex_desc_set::iterator last_vertex_iter = dta_outer_vertices.end();
+  vdep_vertex_desc new_vertex_desc;
+    
   for (var_set::iterator src_iter = src_vars.begin(); src_iter != src_vars.end(); ++src_iter)
   {
-    for (boost::tie(vertex_iter, last_vertex_iter) = boost::vertices(dta_graph); 
-         vertex_iter != last_vertex_iter; ++vertex_iter)
+    for (; vertex_iter != last_vertex_iter; ++vertex_iter) 
     {
-      if (*src_iter == dta_graph[*vertex_iter])
+      // the current source operand is found in the outer interface
+      if (*src_iter == dta_graph[*vertex_iter]) 
       {
-        src_descs.push_back(*vertex_iter);
-        break;
+        src_descs.insert(*vertex_iter);
+        std::cout << "found in the outer\n";
       }
+      break;
     }
     
-    if (vertex_iter == last_vertex_iter)
+    // not found
+    if (vertex_iter == last_vertex_iter)        
     {
-      src_descs.push_back(boost::add_vertex(*src_iter, dta_graph));
+      new_vertex_desc = boost::add_vertex(*src_iter, dta_graph);
+      
+      dta_outer_vertices.insert(new_vertex_desc);
+
+      src_descs.insert(new_vertex_desc);
+      std::cout << "add source\n";
     }
   }
   
@@ -71,7 +74,7 @@ inline void add_source_variables(ADDRINT ins_addr, std::vector<vdep_vertex_desc>
 
 /*====================================================================================================================*/
 // destination variable construction 
-inline void add_destination_variables(ADDRINT ins_addr, std::vector<vdep_vertex_desc>& dst_descs) 
+inline void add_destination_variables(ADDRINT ins_addr, vdep_vertex_desc_set& dst_descs) 
 {
   std::set<REG>::iterator      reg_iter;
   std::set<UINT32>::iterator   imm_iter;
@@ -91,24 +94,41 @@ inline void add_destination_variables(ADDRINT ins_addr, std::vector<vdep_vertex_
     dst_vars.insert(variable(*mem_iter));
   }
   
-  vdep_vertex_iter vertex_iter;
-  vdep_vertex_iter last_vertex_iter;
+  // insert the destination variables into the tainting graph and its outer interface
+  vdep_vertex_desc_set::iterator vertex_iter = dta_outer_vertices.begin();
+  vdep_vertex_desc_set::iterator last_vertex_iter = dta_outer_vertices.end();
+  vdep_vertex_desc_set::iterator next_vertex_iter;
+  
+  
+  vdep_vertex_desc new_vertex_desc;
   
   for (var_set::iterator dst_iter = dst_vars.begin(); dst_iter != dst_vars.end(); ++dst_iter) 
   {
-    for (boost::tie(vertex_iter, last_vertex_iter) = boost::vertices(dta_graph); 
-         vertex_iter != last_vertex_iter; ++vertex_iter) 
+    for (next_vertex_iter = vertex_iter; vertex_iter != last_vertex_iter; vertex_iter = next_vertex_iter) 
     {
+      ++next_vertex_iter;
+      
+      // the current destination operand is found in the outer interface
       if (*dst_iter == dta_graph[*vertex_iter]) 
       {
-        dst_descs.push_back(*vertex_iter);
+        // first, insert a new vertex into the dependency graph
+        new_vertex_desc = boost::add_vertex(*dst_iter, dta_graph);
+        
+        // then modify the outer interface
+        dta_outer_vertices.erase(vertex_iter);
+        dta_outer_vertices.insert(new_vertex_desc);
+        
+        dst_descs.insert(new_vertex_desc);
         break;
       }
     }
     
     if (vertex_iter == last_vertex_iter) 
     {
-      dst_descs.push_back(boost::add_vertex(*dst_iter, dta_graph));
+      new_vertex_desc = boost::add_vertex(*dst_iter, dta_graph);
+      dta_outer_vertices.insert(new_vertex_desc);      
+      
+      dst_descs.insert(new_vertex_desc);
     }
   }
     
@@ -119,22 +139,20 @@ inline void add_destination_variables(ADDRINT ins_addr, std::vector<vdep_vertex_
 
 VOID tainting_st_to_st_analyzer(ADDRINT ins_addr)
 {  
-  std::vector<vdep_vertex_desc> src_vertex_descs;
-  std::vector<vdep_vertex_desc> dst_vertex_descs;
+  vdep_vertex_desc_set src_vertex_descs;
+  vdep_vertex_desc_set dst_vertex_descs;
   
-  add_destination_variables(ins_addr, dst_vertex_descs);
   add_source_variables(ins_addr, src_vertex_descs);
+  add_destination_variables(ins_addr, dst_vertex_descs);
   
   // insert the edges between each pair (source, destination) into the tainting graph
-  std::vector<vdep_vertex_desc>::iterator src_desc_iter;
-  std::vector<vdep_vertex_desc>::iterator dst_desc_iter;
+  vdep_vertex_desc_set::iterator src_desc_iter = src_vertex_descs.begin();
+  vdep_vertex_desc_set::iterator dst_desc_iter = dst_vertex_descs.begin();
   UINT32 current_ins_order = static_cast<UINT32>(explored_trace.size());
   
-  for (src_desc_iter = src_vertex_descs.begin(); src_desc_iter != src_vertex_descs.end(); 
-       ++src_desc_iter)
+  for (; src_desc_iter != src_vertex_descs.end(); ++src_desc_iter)
   {
-    for (dst_desc_iter = dst_vertex_descs.begin(); dst_desc_iter != dst_vertex_descs.end(); 
-         ++dst_desc_iter)
+    for (; dst_desc_iter != dst_vertex_descs.end(); ++dst_desc_iter)
     {
       if (dta_graph[*src_desc_iter] == dta_graph[*dst_desc_iter])
       {

@@ -20,8 +20,53 @@
 
 #include "instruction.h"
 
-class variable;
-class variable_hash;
+/*====================================================================================================================*/
+
+typedef enum 
+{
+  MEM_VAR = 0,
+  REG_VAR = 1, 
+  IMM_VAR = 2,
+} var_type;
+
+class variable
+{
+public:
+  variable();
+  variable(ADDRINT new_mem);
+  variable(REG new_reg);
+  variable(UINT32 new_imm);
+  variable(const variable& var);
+  variable& operator=(const variable& var);
+  
+  std::string name;
+  var_type    type;
+  
+  REG         reg;
+  ADDRINT     mem;
+  UINT32      imm;
+};
+
+inline bool operator==(const variable& var_a, const variable& var_b)
+{
+  return (
+          (var_a.type == var_b.type) && (var_a.name == var_b.name)
+         );
+}
+
+/*====================================================================================================================*/
+
+class variable_hash
+{
+public:
+  std::size_t operator()(variable const& var) const
+  {
+    boost::hash<std::string> str_hash;
+    return str_hash(var.name);
+  }
+};
+
+/*====================================================================================================================*/
 
 typedef boost::unordered_set<variable, variable_hash>       var_set;
 
@@ -50,46 +95,8 @@ typedef boost::unordered_map<vdep_vertex_desc,
                              vdep_edge_desc_list>           vdep_vertex_edges_dependency;
 typedef boost::unordered_map<vdep_edge_desc, 
                              vdep_vertex_desc_list>         vdep_edge_vertices_dependency;
-
-typedef enum 
-{
-  MEM_VAR = 0,
-  REG_VAR = 1, 
-  IMM_VAR = 2
-} var_type;
-
-class variable
-{
-public:
-  variable();
-  variable(ADDRINT new_mem);
-  variable(REG new_reg);
-  variable(UINT32 new_imm);
-  variable(const variable& var);
-  variable& operator=(const variable& var);
-  
-  std::string name;
-  var_type    type;
-  
-  REG         reg;
-  ADDRINT     mem;
-  UINT32      imm;
-};
-
-inline bool operator==(const variable& var_a, const variable& var_b)
-{
- return ((var_a.name == var_b.name) && (var_a.type == var_b.type));
-}
-
-class variable_hash
-{
-public:
-  std::size_t operator()(variable const& var) const
-  {
-    boost::hash<std::string> str_hash;
-    return str_hash(var.name);
-  }
-};
+                             
+typedef boost::unordered_set<vdep_vertex_desc>              vdep_vertex_desc_set;
 
 /*====================================================================================================================*/
 
