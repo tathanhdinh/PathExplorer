@@ -41,33 +41,34 @@ inline void add_source_variables(ADDRINT ins_addr, vdep_vertex_desc_set& src_des
   
   // insert the source variables into the tainting graph and its outer interface
   vdep_vertex_desc_set::iterator vertex_iter = dta_outer_vertices.begin();
-  vdep_vertex_desc_set::iterator last_vertex_iter = dta_outer_vertices.end();
+//   vdep_vertex_desc_set::iterator last_vertex_iter = dta_outer_vertices.end();
   vdep_vertex_desc new_vertex_desc;
     
+  std::cout << "src_vars size: " << src_vars.size() << " ";
   for (var_set::iterator src_iter = src_vars.begin(); src_iter != src_vars.end(); ++src_iter)
   {
-    for (; vertex_iter != last_vertex_iter; ++vertex_iter) 
+    for (vertex_iter = dta_outer_vertices.begin(); vertex_iter != dta_outer_vertices.end(); ++vertex_iter) 
     {
       // the current source operand is found in the outer interface
       if (*src_iter == dta_graph[*vertex_iter]) 
       {
         src_descs.insert(*vertex_iter);
-        std::cout << "found in the outer\n";
+        break;
       }
-      break;
     }
     
     // not found
-    if (vertex_iter == last_vertex_iter)        
+    if (vertex_iter == dta_outer_vertices.end())        
     {
       new_vertex_desc = boost::add_vertex(*src_iter, dta_graph);
       
       dta_outer_vertices.insert(new_vertex_desc);
 
       src_descs.insert(new_vertex_desc);
-      std::cout << "add source\n";
-    }
+    }    
   }
+  
+  std::cout << "src_descs size: " << src_descs.size();
   
   return;
 }
@@ -123,14 +124,19 @@ inline void add_destination_variables(ADDRINT ins_addr, vdep_vertex_desc_set& ds
       }
     }
     
+    // not found
     if (vertex_iter == last_vertex_iter) 
     {
       new_vertex_desc = boost::add_vertex(*dst_iter, dta_graph);
+      
+      // modify the outer interface
       dta_outer_vertices.insert(new_vertex_desc);      
       
       dst_descs.insert(new_vertex_desc);
     }
   }
+  
+  std::cout << " dst_descs size: " << dst_descs.size() << "\n";
     
   return;
 }
