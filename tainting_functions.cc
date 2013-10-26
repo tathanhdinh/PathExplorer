@@ -66,9 +66,7 @@ inline void add_source_variables(ADDRINT ins_addr, vdep_vertex_desc_set& src_des
       src_descs.insert(new_vertex_desc);
     }    
   }
-  
-//   std::cout << "src_vars: " << src_vars.size() << " src_descs: " << src_descs.size();
-  
+    
   return;
 }
 
@@ -95,15 +93,16 @@ inline void add_destination_variables(ADDRINT ins_addr, vdep_vertex_desc_set& ds
   }
   
   // insert the destination variables into the tainting graph and its outer interface
-  vdep_vertex_desc_set::iterator vertex_iter = dta_outer_vertices.begin();
-  vdep_vertex_desc_set::iterator last_vertex_iter = dta_outer_vertices.end();
+  vdep_vertex_desc_set::iterator vertex_iter;
+  vdep_vertex_desc_set::iterator last_vertex_iter;
   vdep_vertex_desc_set::iterator next_vertex_iter;
   
   vdep_vertex_desc new_vertex_desc;
   
   for (var_set::iterator dst_iter = dst_vars.begin(); dst_iter != dst_vars.end(); ++dst_iter) 
   {
-    for (next_vertex_iter = vertex_iter; vertex_iter != last_vertex_iter; vertex_iter = next_vertex_iter) 
+    vertex_iter = dta_outer_vertices.begin();
+    for (next_vertex_iter = vertex_iter; vertex_iter != dta_outer_vertices.end(); vertex_iter = next_vertex_iter) 
     {
       ++next_vertex_iter;
       
@@ -123,7 +122,7 @@ inline void add_destination_variables(ADDRINT ins_addr, vdep_vertex_desc_set& ds
     }
     
     // not found
-    if (vertex_iter == last_vertex_iter) 
+    if (vertex_iter == dta_outer_vertices.end()) 
     {
       new_vertex_desc = boost::add_vertex(*dst_iter, dta_graph);
       
@@ -133,9 +132,7 @@ inline void add_destination_variables(ADDRINT ins_addr, vdep_vertex_desc_set& ds
       dst_descs.insert(new_vertex_desc);
     }
   }
-  
-//   std::cout << "  dst_vars: " << dst_vars.size() << " dst_descs: " << dst_descs.size() << "\n";
-    
+      
   return;
 }
 
@@ -154,7 +151,6 @@ VOID tainting_st_to_st_analyzer(ADDRINT ins_addr)
   vdep_vertex_desc_set::iterator dst_desc_iter;
   UINT32 current_ins_order = static_cast<UINT32>(explored_trace.size());
   
-//   std::cout << "src_vertex_descs: " << src_vertex_descs.size() << " dst_vertex_descs: " << dst_vertex_descs.size() << "\n";
   for (src_desc_iter = src_vertex_descs.begin(); src_desc_iter != src_vertex_descs.end(); ++src_desc_iter)
   {
     for (dst_desc_iter = dst_vertex_descs.begin(); dst_desc_iter != dst_vertex_descs.end(); ++dst_desc_iter)
@@ -165,8 +161,9 @@ VOID tainting_st_to_st_analyzer(ADDRINT ins_addr)
       }
       else
       {
-        boost::add_edge(*src_desc_iter, *dst_desc_iter, std::make_pair(ins_addr, current_ins_order), dta_graph);
+//         boost::add_edge(*src_desc_iter, *dst_desc_iter, std::make_pair(ins_addr, current_ins_order), dta_graph);
       }
+      boost::add_edge(*src_desc_iter, *dst_desc_iter, std::make_pair(ins_addr, current_ins_order), dta_graph);
     }
   }
 

@@ -159,13 +159,12 @@ branch::branch(ADDRINT ins_addr, bool br_taken)
         break;
       }
     }
-    
 //     if (!minimal_checkpoint_found) 
 //     {
 //       std::cerr << "Critical error: minimal checkpoint cannot found!\n";
 //       PIN_ExitApplication(0);
 //     }
-  }  
+  }
 }
 
 /*====================================================================================================================*/
@@ -175,7 +174,7 @@ branch::branch(const branch& other)
   this->addr              = other.addr;
   this->trace             = other.trace;
   this->br_taken          = other.br_taken;
-  this->dep_input_addrs          = other.dep_input_addrs;
+  this->dep_input_addrs   = other.dep_input_addrs;
   this->chkpnt            = other.chkpnt;
   this->inputs            = other.inputs;
   
@@ -192,7 +191,7 @@ branch& branch::operator=(const branch& other)
   this->addr              = other.addr;
   this->trace             = other.trace;
   this->br_taken          = other.br_taken;
-  this->dep_input_addrs          = other.dep_input_addrs;
+  this->dep_input_addrs   = other.dep_input_addrs;
   this->chkpnt            = other.chkpnt;
   this->inputs            = other.inputs;
   
