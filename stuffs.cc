@@ -670,15 +670,15 @@ void print_debug_indep_branch(ADDRINT ins_addr, ptr_branch& indep_ptr_branch)
     }
     
     std::stringstream sstream_smems;
-    if (indep_ptr_branch->dep_out_addrs.empty()) 
+    if (indep_ptr_branch->dep_other_addrs.empty()) 
     {
       sstream_smems << "smems: []"; 
     }
     else 
     {
       sstream_smems << "smems: [" 
-                    << remove_leading_zeros(StringFromAddrint(*(indep_ptr_branch->dep_out_addrs.begin()))) << ", "
-                    << remove_leading_zeros(StringFromAddrint(*(indep_ptr_branch->dep_out_addrs.rbegin()))) << "]";
+                    << remove_leading_zeros(StringFromAddrint(*(indep_ptr_branch->dep_other_addrs.begin()))) << ", "
+                    << remove_leading_zeros(StringFromAddrint(*(indep_ptr_branch->dep_other_addrs.rbegin()))) << "]";
     }
                   
     tainting_log_file << boost::format("\033[33m%-4i %-20s %-35s %-15s %-20s %-20s %-40s %-12s %-2i\033[0m\n")

@@ -40,8 +40,7 @@ inline void add_source_variables(ADDRINT ins_addr, vdep_vertex_desc_set& src_des
   }
   
   // insert the source variables into the tainting graph and its outer interface
-  vdep_vertex_desc_set::iterator vertex_iter = dta_outer_vertices.begin();
-//   vdep_vertex_desc_set::iterator last_vertex_iter = dta_outer_vertices.end();
+  vdep_vertex_desc_set::iterator vertex_iter;
   vdep_vertex_desc new_vertex_desc;
     
   for (var_set::iterator src_iter = src_vars.begin(); src_iter != src_vars.end(); ++src_iter)
@@ -155,14 +154,14 @@ VOID tainting_st_to_st_analyzer(ADDRINT ins_addr)
   {
     for (dst_desc_iter = dst_vertex_descs.begin(); dst_desc_iter != dst_vertex_descs.end(); ++dst_desc_iter)
     {
-      if (dta_graph[*src_desc_iter] == dta_graph[*dst_desc_iter])
-      {
-        // omit loopback edges
-      }
-      else
-      {
+//       if (dta_graph[*src_desc_iter] == dta_graph[*dst_desc_iter])
+//       {
+//         // omit loopback edges
+//       }
+//       else
+//       {
 //         boost::add_edge(*src_desc_iter, *dst_desc_iter, std::make_pair(ins_addr, current_ins_order), dta_graph);
-      }
+//       }
       boost::add_edge(*src_desc_iter, *dst_desc_iter, std::make_pair(ins_addr, current_ins_order), dta_graph);
     }
   }

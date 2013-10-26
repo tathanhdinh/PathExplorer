@@ -1,8 +1,27 @@
 #include "branch.h"
 
 #include <algorithm>
+#include <set>
+
+#include <boost/graph/breadth_first_search.hpp>
 
 #include "variable.h"
+
+/*====================================================================================================================*/
+
+static std::set<vdep_edge_desc> dep_edges;
+
+class dep_bfs_visitor : public boost::default_bfs_visitor
+{
+public:
+  template < typename Edge, typename Graph > 
+  void examine_edge(Edge e, const Graph& g) 
+  {
+    dep_edges.insert(e);
+  }
+};
+
+/*====================================================================================================================*/
 
 extern vdep_graph                   dta_graph;
 extern std::vector<ADDRINT>         explored_trace;
@@ -10,106 +29,30 @@ extern std::vector<ptr_checkpoint>  saved_ptr_checkpoints;
 
 /*====================================================================================================================*/
 
-inline void dfs_traversal(vdep_vertex_desc const& start_vertex, 
-                          std::vector< std::vector<vdep_edge_desc> >& traversed_edges_list)
-{
-  vdep_out_edge_iter edge_iter;
-  vdep_out_edge_iter last_edge_iter;
-  vdep_out_edge_iter min_edge_iter;
-  
-  UINT32 min_order;
-  bool found_new_edge;
-  
-  std::vector<vdep_edge_desc> traversed_edges;
-  vdep_vertex_desc current_vertex;
-  
-  vdep_out_edge_iter edge_start_iter;
-  vdep_out_edge_iter last_edge_start_iter;
-  boost::tie(edge_start_iter, last_edge_start_iter) = boost::out_edges(start_vertex, dta_graph);
-  
-  // start traversing with out edges of start_vertex (each of them will give a different path)
-  for (; edge_start_iter != last_edge_start_iter; ++edge_start_iter) 
-  {
-    std::vector<vdep_edge_desc>().swap(traversed_edges);
-    traversed_edges.push_back(*edge_start_iter);
-    
-    min_order = dta_graph[*edge_start_iter].second;
-    current_vertex = boost::target(*edge_start_iter, dta_graph);
-    
-    do
-    {
-      found_new_edge = false;
-      
-      // find an out edge of the minimum order (but still greater than one of the current traversed edge) 
-      boost::tie(edge_iter, last_edge_iter) = boost::out_edges(current_vertex, dta_graph);
-      for (; edge_iter != last_edge_iter; ++edge_iter) 
-      {
-        if (dta_graph[*edge_iter].second > min_order) 
-        {
-          if (!found_new_edge) 
-          {
-            min_edge_iter = edge_iter;
-            found_new_edge = true;
-          }
-          else 
-          {
-            if (dta_graph[*min_edge_iter].second > dta_graph[*edge_iter].second) 
-            {
-              min_edge_iter = edge_iter;
-            }
-          }
-        }
-      }
-      
-      if (found_new_edge) 
-      {
-        min_order = dta_graph[*min_edge_iter].second;
-        traversed_edges.push_back(*min_edge_iter);
-        current_vertex = boost::target(*min_edge_iter, dta_graph);
-      }
-    }
-    while (found_new_edge);
-    
-    traversed_edges_list.push_back(traversed_edges);
-  }
-  
-  return;
-}
-
-/*====================================================================================================================*/
-
-inline void dependency_computation(std::set<ADDRINT>& dep_input_addrs, std::set<ADDRINT>& dep_out_addrs)
+void dependent_mem_addrs(std::set<ADDRINT>& dep_mem_addrs) 
 {
   vdep_vertex_iter vertex_iter;
   vdep_vertex_iter last_vertex_iter;
-  std::vector< std::vector<vdep_edge_desc> > traversed_edges_list;
+  
+  dep_bfs_visitor dep_vis;
   
   boost::tie(vertex_iter, last_vertex_iter) = boost::vertices(dta_graph);
-  for (; vertex_iter != last_vertex_iter; ++vertex_iter)
+  for (; vertex_iter != last_vertex_iter; ++vertex_iter) 
   {
-    if (dta_graph[*vertex_iter].type == MEM_VAR) // a memory address found
+    if (dta_graph[*vertex_iter].type == MEM_VAR) 
     {
-      std::vector< std::vector<vdep_edge_desc> >().swap(traversed_edges_list);
-      dfs_traversal(*vertex_iter, traversed_edges_list); // then take dfs traversal from it
+      boost::breadth_first_search(dta_graph, *vertex_iter, boost::visitor(dep_vis));
       
-      std::vector< std::vector<vdep_edge_desc> >::iterator traversed_edges_iter = traversed_edges_list.begin();
-      for (; traversed_edges_iter != traversed_edges_list.end(); ++traversed_edges_iter) 
+      std::set<vdep_edge_desc>::iterator edge_desc_iter = dep_edges.begin();
+      for (; edge_desc_iter != dep_edges.end(); ++edge_desc_iter) 
       {
-        if (dta_graph[traversed_edges_iter->back()].second == explored_trace.size()) 
+        if (dta_graph[*edge_desc_iter].second == explored_trace.size()) 
         {
-          if (
-              (received_msg_addr <= dta_graph[*vertex_iter].mem) &&
-              (received_msg_addr + received_msg_size > dta_graph[*vertex_iter].mem)
-             ) // and it locates in the message
-          {
-            dep_input_addrs.insert(dta_graph[*vertex_iter].mem);
-          }
-          else 
-          {
-            dep_out_addrs.insert(dta_graph[*vertex_iter].mem);
-          }
+          dep_mem_addrs.insert(dta_graph[*vertex_iter].mem);
         }
       }
+      
+      std::set<vdep_edge_desc>().swap(dep_edges);
     }
   }
   
@@ -129,7 +72,22 @@ branch::branch(ADDRINT ins_addr, bool br_taken)
   this->is_explored       = false;
 
   // calculate the dependency memories
-  dependency_computation(this->dep_input_addrs, this->dep_out_addrs);
+//   dependency_computation(this->dep_input_addrs, this->dep_other_addrs);
+  std::set<ADDRINT> dep_mem_addrs;
+  dependent_mem_addrs(dep_mem_addrs);
+  for (std::set<ADDRINT>::iterator addr_iter = dep_mem_addrs.begin(); addr_iter != dep_mem_addrs.end(); ++addr_iter) 
+  {
+    if (
+        (received_msg_addr <= *addr_iter) && (*addr_iter < received_msg_addr + received_msg_size)
+       ) 
+    {
+      this->dep_input_addrs.insert(*addr_iter);
+    }
+    else 
+    {
+      this->dep_other_addrs.insert(*addr_iter);
+    }
+  }
   
   // calculate the minimal checkpoint
   bool minimal_checkpoint_found = false;

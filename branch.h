@@ -41,8 +41,9 @@ public:
   ADDRINT               addr;
   std::vector<ADDRINT>  trace;
   bool                  br_taken;
+  
   std::set<ADDRINT>     dep_input_addrs;
-  std::set<ADDRINT>     dep_out_addrs;
+  std::set<ADDRINT>     dep_other_addrs;
   
   std::map< bool, 
             std::vector< boost::shared_ptr<UINT8> > 
