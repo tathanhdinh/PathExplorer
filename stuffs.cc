@@ -532,12 +532,12 @@ void print_debug_mem_written(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 
     std::stringstream sstream_smems;
     sstream_smems << "smems: []"; 
     
-    tainting_log_file << boost::format("\033[33m%-4i %-16s %-34s %-20s %-20s %-40s %-40s %-12s\033[0m\n")
+    tainting_log_file << boost::format("\033[33m%-4i %-16s %-34s %-20s %-20s %-40s %-40s\033[0m\n")
                           % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr)) 
                           % addr_ins_static_map[ins_addr].disass  
                           % sregs_format(ins_addr) % dregs_format(ins_addr) 
-                          % sstream_smems.str() % mem_written_format(mem_written_addr, mem_written_size) 
-                          % "reg->mem";
+                          % sstream_smems.str() % mem_written_format(mem_written_addr, mem_written_size);
+//                           % "reg->mem";
   }
   return;
 }
@@ -551,12 +551,12 @@ void print_debug_mem_read(ADDRINT ins_addr, ADDRINT mem_read_addr, UINT32 mem_re
     std::stringstream sstream_dmems;
     sstream_dmems << "dmems: []"; 
                   
-    tainting_log_file << boost::format("\033[0m%-4i %-16s %-34s %-20s %-20s %-40s %-40s %-12s\033[0m\n")
+    tainting_log_file << boost::format("\033[0m%-4i %-16s %-34s %-20s %-20s %-40s %-40s\033[0m\n")
                           % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr)) 
                           % addr_ins_static_map[ins_addr].disass  
                           % sregs_format(ins_addr) % dregs_format(ins_addr) 
-                          % mem_read_format(mem_read_addr, mem_read_size) % sstream_dmems.str()
-                          % "mem->reg";
+                          % mem_read_format(mem_read_addr, mem_read_size) % sstream_dmems.str();
+//                           % "mem->reg";
   }
   return;
 }
@@ -573,11 +573,12 @@ void print_debug_reg_to_reg(ADDRINT ins_addr, UINT32 num_sregs, UINT32 num_dregs
     std::stringstream sstream_dmems;
     sstream_dmems << "dmems: []";
     
-    tainting_log_file << boost::format("\033[0m%-4i %-16s %-34s %-20s %-20s %-40s %-40s %-12s\033[0m\n")
+    tainting_log_file << boost::format("\033[0m%-4i %-16s %-34s %-20s %-20s %-40s %-40s\033[0m\n")
                           % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr)) 
                           % addr_ins_static_map[ins_addr].disass  
-                          % sregs_format(ins_addr) % dregs_format(ins_addr) % sstream_smems.str() % sstream_dmems.str()
-                          % "reg->reg";
+                          % sregs_format(ins_addr) % dregs_format(ins_addr) 
+                          % sstream_smems.str() % sstream_dmems.str();
+//                           % "reg->reg";
   }
   return;
 }
@@ -596,11 +597,11 @@ void print_debug_new_checkpoint(ADDRINT ins_addr)
     std::stringstream sstream_dmems;
     sstream_dmems << "dmems: []";
     
-    tainting_log_file << boost::format("\033[36m%-4i %-16s %-34s %-20s %-20s %-40s %-40s %-12s %-12s\033[0m\n")
+    tainting_log_file << boost::format("\033[36m%-4i %-16s %-34s %-20s %-20s %-40s %-40s\033[0m\n")
                           % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr)) 
                           % addr_ins_static_map[ins_addr].disass 
-                          % sregs_format(ins_addr) % dregs_format(ins_addr) % sstream_smems.str() % sstream_dmems.str()
-                          % "checkpoint" % "mem->reg";
+                          % sregs_format(ins_addr) % dregs_format(ins_addr) % sstream_smems.str() % sstream_dmems.str();
+//                           % "checkpoint" % "mem->reg";
   }
   return;
 }
@@ -621,12 +622,12 @@ void print_debug_dep_branch(ADDRINT ins_addr, ptr_branch& dep_ptr_branch)
     std::stringstream sstream_dmems;
     sstream_dmems << "dmems: []";
                   
-    tainting_log_file << boost::format("\033[32m%-4i %-16s %-34s %-20s %-20s %-40s %-40s %-2i %-4i %-12s %-12s\033[0m\n")
+    tainting_log_file << boost::format("\033[32m%-4i %-16s %-34s %-20s %-20s %-40s %-40s %-2i %-4i\033[0m\n")
                           % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr)) 
                           % addr_ins_static_map[ins_addr].disass  
                           % sregs_format(ins_addr) % dregs_format(ins_addr) % sstream_smems.str() % sstream_dmems.str()
-                          % dep_ptr_branch->br_taken % dep_ptr_branch->chkpnt->trace.size()
-                          % "dep" % "branch" ;
+                          % dep_ptr_branch->br_taken % dep_ptr_branch->chkpnt->trace.size();
+//                           % "dep" % "branch" ;
   }
   
   return;
@@ -654,12 +655,12 @@ void print_debug_indep_branch(ADDRINT ins_addr, ptr_branch& indep_ptr_branch)
     std::stringstream sstream_dmems;
     sstream_dmems << "dmems: []";
                   
-    tainting_log_file << boost::format("\033[33m%-4i %-16s %-34s %-20s %-20s %-40s %-40s %-2i %-12s %-12s\033[0m\n")
+    tainting_log_file << boost::format("\033[33m%-4i %-16s %-34s %-20s %-20s %-40s %-40s %-2i\033[0m\n")
                             % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr)) 
                             % addr_ins_static_map[ins_addr].disass  
                             % sregs_format(ins_addr) % dregs_format(ins_addr) % sstream_smems.str() % sstream_dmems.str()
-                            % indep_ptr_branch->br_taken
-                            % "indep" % "branch";
+                            % indep_ptr_branch->br_taken;
+//                             % "indep" % "branch";
   }
   return;
 }
