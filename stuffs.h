@@ -39,6 +39,8 @@ void        journal_branch_messages     (ptr_branch& ptr_resolved_branch);
 
 void        store_input                 (ptr_branch& ptr_br, bool br_taken);
 
+void        print_debug_message_received();
+
 void        print_debug_rollbacking_stop(ptr_branch& unexplored_ptr_branch);
 
 void        print_debug_met_again       (ADDRINT ins_addr, ptr_branch &met_ptr_branch);

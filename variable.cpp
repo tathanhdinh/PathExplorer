@@ -6,6 +6,8 @@
 #include <iostream>
 #include <exception>
 
+#include "stuffs.h"
+
 /*===========================================================================*/
 
 variable::variable()
@@ -16,7 +18,7 @@ variable::variable()
 
 variable::variable(ADDRINT new_mem) : mem(new_mem)
 {
-  this->name = StringFromAddrint(new_mem);
+  this->name = remove_leading_zeros(StringFromAddrint(new_mem));
   this->type = MEM_VAR;
 }
 

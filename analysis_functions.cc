@@ -64,14 +64,7 @@ VOID syscall_exit_analyzer(THREADID thread_id, CONTEXT* p_ctxt, SYSCALL_STANDARD
         received_msg_addr = logged_syscall_args[1];
         received_msg_size = ret_val;
         
-        if (print_debug_text)
-        {
-          std::cerr << "\033[33mThe first message saved at " << remove_leading_zeros(StringFromAddrint(received_msg_addr))
-                    << " with size " << received_msg_size << ".\033[0m\n";
-          std::cerr << "-------------------------------------------------------------------------------------------------\n";        
-          std::cerr << "\033[33mStart tainting phase with maximum trace size " 
-                    << max_trace_length.Value() << ".\033[0m\n";
-        }
+        print_debug_message_received();
                   
         PIN_RemoveInstrumentation();
       }

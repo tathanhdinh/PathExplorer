@@ -72,7 +72,6 @@ branch::branch(ADDRINT ins_addr, bool br_taken)
   this->is_explored       = false;
 
   // calculate the dependency memories
-//   dependency_computation(this->dep_input_addrs, this->dep_other_addrs);
   std::set<ADDRINT> dep_mem_addrs;
   dependent_mem_addrs(dep_mem_addrs);
   for (std::set<ADDRINT>::iterator addr_iter = dep_mem_addrs.begin(); addr_iter != dep_mem_addrs.end(); ++addr_iter) 
@@ -117,11 +116,11 @@ branch::branch(ADDRINT ins_addr, bool br_taken)
         break;
       }
     }
-//     if (!minimal_checkpoint_found) 
-//     {
-//       std::cerr << "Critical error: minimal checkpoint cannot found!\n";
-//       PIN_ExitApplication(0);
-//     }
+    if (!minimal_checkpoint_found) 
+    {
+      std::cerr << "Critical error: minimal checkpoint cannot found!\n";
+      PIN_ExitApplication(0);
+    }
   }
 }
 
@@ -165,5 +164,7 @@ branch& branch::operator=(const branch& other)
 
 bool branch::operator==(const branch& other)
 {
-  return ((this->addr = other.addr) && (this->trace.size() == other.trace.size()) && (this->br_taken == other.br_taken)); 
+  return (
+          (this->addr = other.addr) && (this->trace.size() == other.trace.size()) && (this->br_taken == other.br_taken)
+         ); 
 }
