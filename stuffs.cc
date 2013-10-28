@@ -639,8 +639,12 @@ void journal_tainting_log()
   std::set<REG>::iterator reg_iter;
   std::stringstream sstream_sregs;
   std::stringstream sstream_dregs;
+  std::stringstream sstream_smems;
+  std::stringstream sstream_dmems;
   
   UINT32 idx;
+  
+  std::vector<ptr_branch>::iterator ptr_branch_iter;
   
   if (print_debug_text) 
   {
@@ -652,37 +656,108 @@ void journal_tainting_log()
       {
         sstream_sregs << REG_StringShort(*reg_iter) << " ";
       }
-    }
-    
-    for (ins_addr_iter = explored_trace.begin(); ins_addr_iter != explored_trace.end(); ++ins_addr_iter) 
-    {
-      sstream_sregs << "sregs: ";
-      for (reg_iter = addr_ins_static_map[*ins_addr_iter].src_regs.begin(); 
-           reg_iter != addr_ins_static_map[*ins_addr_iter].src_regs.end(); ++reg_iter) 
-      {
-        sstream_sregs << REG_StringShort(*reg_iter) << " ";
-      }
       
       sstream_dregs << "dregs: ";
-      for (reg_iter = addr_ins_static_map[*ins_addr_iter].dst_regs.begin(); 
-           reg_iter != addr_ins_static_map[*ins_addr_iter].dst_regs.end(); ++reg_iter) 
+      for (reg_iter = order_ins_dynamic_map[idx].dst_regs.begin(); 
+           reg_iter != order_ins_dynamic_map[idx].dst_regs.end(); ++reg_iter) 
       {
         sstream_dregs << REG_StringShort(*reg_iter) << " ";
       }
       
-      if (addr_ins_static_map[*ins_addr_iter].category == XED_CATEGORY_COND_BR) 
+      if (order_ins_dynamic_map[idx].category == XED_CATEGORY_COND_BR) 
       {
+        sstream_dmems << "[]";
         
-      }
-      else 
-      {
-        if (addr_ins_static_map[*ins_addr_iter].src_mems.size() > 0) 
+        for (ptr_branch_iter = tainted_ptr_branches.begin(); 
+             ptr_branch_iter != tainted_ptr_branches.end(); ++ptr_branch_iter) 
         {
+          if ((*ptr_branch_iter)->trace.size() == idx) 
+          {
+            break;
+          }
+        }
+        
+        if ((*ptr_branch_iter)->dep_input_addrs.empty()) 
+        {
+          if ((*ptr_branch_iter)->dep_other_addrs.empty()) 
+          {
+            sstream_smems << "smems: [" 
+                          << remove_leading_zeros(StringFromAddrint(*((*ptr_branch_iter)->dep_other_addrs.begin()))) << ","
+                          << remove_leading_zeros(StringFromAddrint(*((*ptr_branch_iter)->dep_other_addrs.rbegin()))) << "]";
+          }
+          else 
+          {
+            sstream_smems << "smems: []";
+          }
           
+          // input independent branch
+          tainting_log_file << boost::format("\033[33m%-4i %-16s %-34s %-16s %-19s %-40s %-40s %-2i\033[0m\n")
+                                % idx % remove_leading_zeros(StringFromAddrint(order_ins_dynamic_map[idx].address)) 
+                                % order_ins_dynamic_map[idx].disass  
+                                % sstream_sregs.str() % sstream_dregs.str() % sstream_smems.str() % sstream_dmems.str()
+                                % (*ptr_branch_iter)->br_taken;
         }
         else 
         {
-          
+          sstream_smems << "smems: [" 
+                        << remove_leading_zeros(StringFromAddrint(*((*ptr_branch_iter)->dep_input_addrs.begin()))) << ","
+                        << remove_leading_zeros(StringFromAddrint(*((*ptr_branch_iter)->dep_input_addrs.rbegin()))) << "]";
+                        
+          // an input dependent branch
+          tainting_log_file << boost::format("\033[32m%-4i %-16s %-34s %-16s %-19s %-40s %-40s %-2i %-4i\033[0m\n")
+                                % idx % remove_leading_zeros(StringFromAddrint(order_ins_dynamic_map[idx].address)) 
+                                % order_ins_dynamic_map[idx].disass  
+                                % sstream_sregs.str() % sstream_dregs.str() % sstream_smems.str() % sstream_dmems.str()
+                                % (*ptr_branch_iter)->br_taken % (*ptr_branch_iter)->chkpnt->trace.size();
+        }
+        
+        
+      }
+      else // not a conditional branch instruction
+      {
+        if (order_ins_dynamic_map[idx].src_mems.empty()) 
+        {
+          sstream_smems << "smems: []";
+        }
+        else 
+        {
+          sstream_smems << "smems: [" 
+                << remove_leading_zeros(StringFromAddrint(*(order_ins_dynamic_map[idx].src_mems.begin()))) << ","
+                << remove_leading_zeros(StringFromAddrint(*(order_ins_dynamic_map[idx].src_mems.rbegin()))) << "]";
+        }
+        
+        if (order_ins_dynamic_map[idx].dst_mems.empty()) 
+        {
+          sstream_dmems << "dmems: []";
+        }
+        else 
+        {
+          sstream_dmems << "dmems: [" 
+                        << remove_leading_zeros(StringFromAddrint(*(order_ins_dynamic_map[idx].dst_mems.begin()))) << ","
+                        << remove_leading_zeros(StringFromAddrint(*(order_ins_dynamic_map[idx].dst_mems.rbegin()))) << "]";
+        }
+        
+        if (
+            !order_ins_dynamic_map[idx].dst_mems.empty() && 
+            (
+              std::max(*order_ins_dynamic_map[idx].dst_mems.begin(), received_msg_addr) < 
+              std::min(*order_ins_dynamic_map[idx].dst_mems.rbegin(), received_msg_addr + received_msg_size)
+            )
+           )
+        {
+          // a checkpoint
+          tainting_log_file << boost::format("\033[36m%-4i %-16s %-34s %-16s %-19s %-40s %-40s\033[0m\n")
+                          % idx % remove_leading_zeros(StringFromAddrint(order_ins_dynamic_map[idx].address)) 
+                          % order_ins_dynamic_map[idx].disass 
+                          % sstream_sregs.str() % sstream_dregs.str() % sstream_smems.str() % sstream_dmems.str();
+        }
+        else 
+        {
+          // a normal instruction
+          tainting_log_file << boost::format("\033[0m%-4i %-16s %-34s %-16s %-19s %-40s %-40s\033[0m\n")
+                          % idx % remove_leading_zeros(StringFromAddrint(order_ins_dynamic_map[idx].address)) 
+                          % order_ins_dynamic_map[idx].disass 
+                          % sstream_sregs.str() % sstream_dregs.str() % sstream_smems.str() % sstream_dmems.str();
         }
       }
     }

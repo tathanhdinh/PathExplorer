@@ -78,14 +78,17 @@ VOID ins_instrumenter(INS ins, VOID *data)
            * =======================================*/
 //           extract_ins_operands(ins, ins_addr);
           
-          INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)logging_ins_count_analyzer, 
-                                  IARG_INST_PTR, 
-                                  IARG_END);
+          INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)logging_st_to_st_analyzer, 
+                                   IARG_INST_PTR, 
+                                   IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE, 
+                                   IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE,
+                                   IARG_END);
           
           INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)tainting_st_to_st_analyzer, 
                                    IARG_INST_PTR, 
                                    IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE, 
-                                   IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE);
+                                   IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE, 
+                                   IARG_END);
           
           if (INS_IsMemoryRead(ins))
           {
