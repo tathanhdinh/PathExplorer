@@ -70,58 +70,6 @@ branch::branch(ADDRINT ins_addr, bool br_taken)
   this->is_just_resolved  = false;
   this->is_bypassed       = false;
   this->is_explored       = false;
-
-  // calculate the dependency memories
-  std::set<ADDRINT> dep_mem_addrs;
-  dependent_mem_addrs(dep_mem_addrs);
-  for (std::set<ADDRINT>::iterator addr_iter = dep_mem_addrs.begin(); addr_iter != dep_mem_addrs.end(); ++addr_iter) 
-  {
-    if (
-        (received_msg_addr <= *addr_iter) && (*addr_iter < received_msg_addr + received_msg_size)
-       ) 
-    {
-      this->dep_input_addrs.insert(*addr_iter);
-    }
-    else 
-    {
-      this->dep_other_addrs.insert(*addr_iter);
-    }
-  }
-  
-  // calculate the minimal checkpoint
-  bool minimal_checkpoint_found = false;
-  
-  if (!this->dep_input_addrs.empty())
-  {
-    std::set<ADDRINT> intersec_mems;
-    
-    std::vector<ptr_checkpoint>::iterator ptr_chkpt_iter = saved_ptr_checkpoints.begin();
-    for (; ptr_chkpt_iter != saved_ptr_checkpoints.end(); ++ptr_chkpt_iter)
-    {
-      std::set<ADDRINT>::iterator addr_iter = (*ptr_chkpt_iter)->dep_mems.begin();
-      for (; addr_iter != (*ptr_chkpt_iter)->dep_mems.end(); ++addr_iter) 
-      {
-        if (
-            std::find(this->dep_input_addrs.begin(), this->dep_input_addrs.end(), *addr_iter) != this->dep_input_addrs.end()
-           ) 
-        {
-          minimal_checkpoint_found = true;
-          break;
-        }
-      }
-
-      if (minimal_checkpoint_found) 
-      {
-        this->chkpnt = *ptr_chkpt_iter;
-        break;
-      }
-    }
-    if (!minimal_checkpoint_found) 
-    {
-      std::cerr << "Critical error: minimal checkpoint cannot found!\n";
-      PIN_ExitApplication(0);
-    }
-  }
 }
 
 /*====================================================================================================================*/
@@ -131,7 +79,10 @@ branch::branch(const branch& other)
   this->addr              = other.addr;
   this->trace             = other.trace;
   this->br_taken          = other.br_taken;
+  
   this->dep_input_addrs   = other.dep_input_addrs;
+  this->dep_other_addrs   = other.dep_other_addrs;
+  
   this->chkpnt            = other.chkpnt;
   this->inputs            = other.inputs;
   
@@ -148,7 +99,10 @@ branch& branch::operator=(const branch& other)
   this->addr              = other.addr;
   this->trace             = other.trace;
   this->br_taken          = other.br_taken;
+  
   this->dep_input_addrs   = other.dep_input_addrs;
+  this->dep_other_addrs   = other.dep_other_addrs;
+  
   this->chkpnt            = other.chkpnt;
   this->inputs            = other.inputs;
   

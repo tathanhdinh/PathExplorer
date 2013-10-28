@@ -19,24 +19,25 @@ extern std::ofstream        tainting_log_file;
 
 /*====================================================================================================================*/
 // source variables construction 
-inline void add_source_variables(ADDRINT ins_addr, vdep_vertex_desc_set& src_descs) 
+inline std::set<vdep_vertex_desc> source_variables(ADDRINT ins_addr, 
+                                                       ADDRINT mem_read_addr, UINT32 mem_read_size) 
 {
   std::set<REG>::iterator      reg_iter;
   std::set<UINT32>::iterator   imm_iter;
   std::set<ADDRINT>::iterator  mem_iter;
     
   var_set src_vars;
+  std::set<vdep_vertex_desc> src_vertex_descs;
   
-  for (reg_iter = boost::get<0>(dta_inss_io[ins_addr]).first.begin(); 
-       reg_iter != boost::get<0>(dta_inss_io[ins_addr]).first.end(); ++reg_iter)
+  for (reg_iter = addr_ins_static_map[ins_addr].src_regs.begin(); 
+       reg_iter != addr_ins_static_map[ins_addr].src_regs.end(); ++reg_iter) 
   {
     src_vars.insert(variable(*reg_iter));
   }
     
-  for (mem_iter = boost::get<2>(dta_inss_io[ins_addr]).first.begin(); 
-       mem_iter != boost::get<2>(dta_inss_io[ins_addr]).first.end(); ++mem_iter)
+  for (UINT32 idx = 0; idx < mem_read_size; ++idx) 
   {
-    src_vars.insert(variable(*mem_iter));
+    src_vars.insert(variable(mem_read_addr + idx));
   }
   
   // insert the source variables into the tainting graph and its outer interface
@@ -50,7 +51,7 @@ inline void add_source_variables(ADDRINT ins_addr, vdep_vertex_desc_set& src_des
       // the current source operand is found in the outer interface
       if (*src_iter == dta_graph[*vertex_iter]) 
       {
-        src_descs.insert(*vertex_iter);
+        src_vertex_descs.insert(*vertex_iter);
         break;
       }
     }
@@ -62,33 +63,34 @@ inline void add_source_variables(ADDRINT ins_addr, vdep_vertex_desc_set& src_des
       
       dta_outer_vertices.insert(new_vertex_desc);
 
-      src_descs.insert(new_vertex_desc);
+      src_vertex_descs.insert(new_vertex_desc);
     }    
   }
     
-  return;
+  return src_vertex_descs;
 }
 
 /*====================================================================================================================*/
 // destination variable construction 
-inline void add_destination_variables(ADDRINT ins_addr, vdep_vertex_desc_set& dst_descs) 
+inline std::set<vdep_vertex_desc> destination_variables(ADDRINT ins_addr, 
+                                                        ADDRINT mem_written_addr, UINT32 mem_written_size) 
 {
   std::set<REG>::iterator      reg_iter;
   std::set<UINT32>::iterator   imm_iter;
   std::set<ADDRINT>::iterator  mem_iter;
   
   var_set dst_vars;
+  std::set<vdep_vertex_desc> dst_vertex_descs;
   
-  for (reg_iter = boost::get<0>(dta_inss_io[ins_addr]).second.begin(); 
-       reg_iter != boost::get<0>(dta_inss_io[ins_addr]).second.end(); ++reg_iter) 
+  for (reg_iter = addr_ins_static_map[ins_addr].dst_regs.begin(); 
+       reg_iter != addr_ins_static_map[ins_addr].dst_regs.end(); ++reg_iter) 
   {
     dst_vars.insert(variable(*reg_iter));
   }
   
-  for (mem_iter = boost::get<2>(dta_inss_io[ins_addr]).second.begin(); 
-       mem_iter != boost::get<2>(dta_inss_io[ins_addr]).second.end(); ++mem_iter) 
+  for (UINT32 idx = 0; idx < mem_written_size; ++idx) 
   {
-    dst_vars.insert(variable(*mem_iter));
+    dst_vars.insert(variable(mem_written_addr + idx));
   }
   
   // insert the destination variables into the tainting graph and its outer interface
@@ -115,7 +117,7 @@ inline void add_destination_variables(ADDRINT ins_addr, vdep_vertex_desc_set& ds
         dta_outer_vertices.erase(vertex_iter);
         dta_outer_vertices.insert(new_vertex_desc);
         
-        dst_descs.insert(new_vertex_desc);
+        dst_vertex_descs.insert(new_vertex_desc);
         break;
       }
     }
@@ -128,81 +130,37 @@ inline void add_destination_variables(ADDRINT ins_addr, vdep_vertex_desc_set& ds
       // modify the outer interface
       dta_outer_vertices.insert(new_vertex_desc);      
       
-      dst_descs.insert(new_vertex_desc);
+      dst_vertex_descs.insert(new_vertex_desc);
     }
   }
       
-  return;
+  return dst_vertex_descs;
 }
 
 /*====================================================================================================================*/
 
-VOID tainting_st_to_st_analyzer(ADDRINT ins_addr)
+VOID tainting_st_to_st_analyzer(ADDRINT ins_addr, 
+                                ADDRINT mem_read_addr, UINT32 mem_read_size, 
+                                ADDRINT mem_written_addr, UINT32 mem_written_size)
 {  
-  vdep_vertex_desc_set src_vertex_descs;
-  vdep_vertex_desc_set dst_vertex_descs;
-  
-  add_source_variables(ins_addr, src_vertex_descs);
-  add_destination_variables(ins_addr, dst_vertex_descs);
+  std::set<vdep_vertex_desc> src_vertex_descs = source_variables(ins_addr, mem_read_addr, mem_read_size);
+  std::set<vdep_vertex_desc> dst_vertex_descs = destination_variables(ins_addr, mem_written_addr, mem_written_size);
   
   // insert the edges between each pair (source, destination) into the tainting graph
-  vdep_vertex_desc_set::iterator src_desc_iter;
-  vdep_vertex_desc_set::iterator dst_desc_iter;
+  std::set<vdep_vertex_desc>::iterator src_vertex_desc_iter;
+  std::set<vdep_vertex_desc>::iterator dst_vertex_desc_iter;
   UINT32 current_ins_order = static_cast<UINT32>(explored_trace.size());
   
-  for (src_desc_iter = src_vertex_descs.begin(); src_desc_iter != src_vertex_descs.end(); ++src_desc_iter)
+  for (src_vertex_desc_iter = src_vertex_descs.begin(); 
+       src_vertex_desc_iter != src_vertex_descs.end(); ++src_vertex_desc_iter)
   {
-    for (dst_desc_iter = dst_vertex_descs.begin(); dst_desc_iter != dst_vertex_descs.end(); ++dst_desc_iter)
+    for (dst_vertex_desc_iter = dst_vertex_descs.begin(); 
+         dst_vertex_desc_iter != dst_vertex_descs.end(); ++dst_vertex_desc_iter)
     {
-//       if (dta_graph[*src_desc_iter] == dta_graph[*dst_desc_iter])
-//       {
-//         // omit loopback edges
-//       }
-//       else
-//       {
-//         boost::add_edge(*src_desc_iter, *dst_desc_iter, std::make_pair(ins_addr, current_ins_order), dta_graph);
-//       }
-      boost::add_edge(*src_desc_iter, *dst_desc_iter, std::make_pair(ins_addr, current_ins_order), dta_graph);
+      boost::add_edge(*src_vertex_desc_iter, *dst_vertex_desc_iter, 
+                      std::make_pair(ins_addr, current_ins_order), dta_graph);
     }
   }
 
-  return;
-}
-
-/*====================================================================================================================*/
-
-VOID tainting_mem_to_st_analyzer(ADDRINT ins_addr, ADDRINT mem_read_addr, UINT32 mem_read_size)
-{
-  // clear out input/output memory operands
-  std::set<ADDRINT>().swap(boost::get<2>(dta_inss_io[ins_addr]).first);
-  std::set<ADDRINT>().swap(boost::get<2>(dta_inss_io[ins_addr]).second);
-  
-  // update input memory operands
-  for (UINT32 mem_idx = 0; mem_idx < mem_read_size; ++mem_idx)
-  {
-    boost::get<2>(dta_inss_io[ins_addr]).first.insert(mem_read_addr + mem_idx);
-  }
-  
-  tainting_st_to_st_analyzer(ins_addr);
-  
-  return;
-}
-
-/*====================================================================================================================*/
-
-VOID tainting_st_to_mem_analyzer(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 mem_written_size)
-{
-   // clear out input/output memory operands
-  std::set<ADDRINT>().swap(boost::get<2>(dta_inss_io[ins_addr]).first);
-  std::set<ADDRINT>().swap(boost::get<2>(dta_inss_io[ins_addr]).second);
-  
-  // update output memory operands
-  for (UINT32 mem_idx = 0; mem_idx < mem_written_size; ++mem_idx)
-  {
-    boost::get<2>(dta_inss_io[ins_addr]).second.insert(mem_written_addr + mem_idx);
-  }
-  
-  tainting_st_to_st_analyzer(ins_addr);
-  
   return;
 }

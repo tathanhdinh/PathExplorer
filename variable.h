@@ -37,6 +37,7 @@ public:
   variable(REG new_reg);
   variable(UINT32 new_imm);
   variable(const variable& var);
+  
   variable& operator=(const variable& var);
   
   std::string name;

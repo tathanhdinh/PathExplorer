@@ -40,7 +40,6 @@ variable::variable(UINT32 new_imm) : imm(new_imm)
   this->type = IMM_VAR;
 }
 
-
 /*====================================================================================================================*/
 
 variable::variable(const variable& var)

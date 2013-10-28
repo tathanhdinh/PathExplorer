@@ -32,8 +32,7 @@ typedef enum
 class instruction
 {
 public:                                                                         
-  ADDRINT             address;                                                     
-  
+  ADDRINT             address;                                                       
   std::string         disass;
   std::string         img;
 
@@ -42,9 +41,9 @@ public:
   UINT32              mem_read_size;
   UINT32              mem_written_size;
   
-  std::map< ADDRINT, UINT8 > mem_read_map;
-  std::map< ADDRINT, UINT8 > mem_written_map;
-
+  std::set<REG>       src_regs, dst_regs;
+  std::set<ADDRINT>   src_mems, dst_mems;
+  
 public:
   instruction();
   instruction(INS const& ins);

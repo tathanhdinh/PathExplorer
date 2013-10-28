@@ -32,8 +32,8 @@ extern "C" {
 /* ------------------------------------------------------------------------------------------------------------------ */
 /*                                                      global variables                                              */
 /* ------------------------------------------------------------------------------------------------------------------ */
-std::map< ADDRINT, 
-          instruction >                       addr_ins_static_map;    // statically examined instructions
+std::map<ADDRINT, instruction>                addr_ins_static_map;    // statically examined instructions
+std::map<UINT32, instruction>                 order_ins_dynamic_map;  // dynamically examined instructions        
 
 ADDRINT                                       logged_syscall_index;   // logged syscall index
 ADDRINT                                       logged_syscall_args[6]; // logged syscall arguments

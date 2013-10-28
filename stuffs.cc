@@ -30,6 +30,8 @@
 /* ------------------------------------------------------------------------------------------------------------------ */
 extern std::map< ADDRINT, 
                  instruction >      addr_ins_static_map;
+extern std::map< UINT32, 
+                 instruction >      order_ins_dynamic_map;  
                  
 extern vdep_graph                   dta_graph;
 extern map_ins_io                   dta_inss_io;
@@ -96,40 +98,6 @@ void assign_image_name(ADDRINT ins_addr, std::string& img_name)
         return;
       }
     }
-  }
-  
-  return;
-}
-
-/*====================================================================================================================*/
-
-void copy_instruction_mem_access(ADDRINT ins_addr, ADDRINT mem_addr, ADDRINT mem_size, UINT8 access_type)
-{
-  UINT8 single_byte;
-  UINT32 idx;
-  
-  switch (access_type) 
-  {
-    case 0:
-      std::map<ADDRINT, UINT8>().swap(addr_ins_static_map[ins_addr].mem_read_map);
-      for (idx = 0; idx < mem_size; ++idx) 
-      {
-        PIN_SafeCopy(&single_byte, reinterpret_cast<UINT8*>(mem_addr + idx), 1);
-        addr_ins_static_map[ins_addr].mem_read_map[mem_addr + idx] = single_byte;
-      }
-      break;
-      
-    case 1:
-      std::map<ADDRINT, UINT8>().swap(addr_ins_static_map[ins_addr].mem_written_map);
-      for (idx = 0; idx < mem_size; ++idx) 
-      {
-        PIN_SafeCopy(&single_byte, reinterpret_cast<UINT8*>(mem_addr + idx), 1);
-        addr_ins_static_map[ins_addr].mem_written_map[mem_addr + idx] = single_byte;
-      }
-      break;
-      
-    default:
-      break;
   }
   
   return;
@@ -236,20 +204,20 @@ void journal_explored_trace(const std::string& filename, std::vector< ADDRINT >&
                 
     std::map<ADDRINT, UINT8>::iterator mem_access_iter;
     out_file << boost::format("(R : %i") % addr_ins_static_map[*trace_iter].mem_read_size;
-    for (mem_access_iter = addr_ins_static_map[*trace_iter].mem_read_map.begin(); 
-         mem_access_iter != addr_ins_static_map[*trace_iter].mem_read_map.end(); ++mem_access_iter) 
-    {
-      out_file << boost::format(" %s(%i)") 
-                  % StringFromAddrint(mem_access_iter->first) % static_cast<UINT32>(mem_access_iter->second);
-    }
+//     for (mem_access_iter = addr_ins_static_map[*trace_iter].mem_read_map.begin(); 
+//          mem_access_iter != addr_ins_static_map[*trace_iter].mem_read_map.end(); ++mem_access_iter) 
+//     {
+//       out_file << boost::format(" %s(%i)") 
+//                   % StringFromAddrint(mem_access_iter->first) % static_cast<UINT32>(mem_access_iter->second);
+//     }
     
     out_file << boost::format(" W: %i") % addr_ins_static_map[*trace_iter].mem_written_size;
-    for (mem_access_iter = addr_ins_static_map[*trace_iter].mem_written_map.begin(); 
-         mem_access_iter != addr_ins_static_map[*trace_iter].mem_written_map.end(); ++mem_access_iter)
-    {
-      out_file << boost::format(" %s(%i)") 
-                  % StringFromAddrint(mem_access_iter->first) % static_cast<UINT32>(mem_access_iter->second);
-    }
+//     for (mem_access_iter = addr_ins_static_map[*trace_iter].mem_written_map.begin(); 
+//          mem_access_iter != addr_ins_static_map[*trace_iter].mem_written_map.end(); ++mem_access_iter)
+//     {
+//       out_file << boost::format(" %s(%i)") 
+//                   % StringFromAddrint(mem_access_iter->first) % static_cast<UINT32>(mem_access_iter->second);
+//     }
     
     out_file << ")\n";
   }
@@ -484,8 +452,6 @@ inline std::string sregs_format(ADDRINT ins_addr)
   }
   
   return sstream_sregs.str();
-  
-    
 }
 
 inline std::string dregs_format(ADDRINT ins_addr) 
@@ -532,7 +498,7 @@ void print_debug_mem_written(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 
     std::stringstream sstream_smems;
     sstream_smems << "smems: []"; 
     
-    tainting_log_file << boost::format("\033[33m%-4i %-16s %-34s %-20s %-20s %-40s %-40s\033[0m\n")
+    tainting_log_file << boost::format("\033[33m%-4i %-16s %-34s %-16s %-19s %-40s %-40s\033[0m\n")
                           % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr)) 
                           % addr_ins_static_map[ins_addr].disass  
                           % sregs_format(ins_addr) % dregs_format(ins_addr) 
@@ -551,7 +517,7 @@ void print_debug_mem_read(ADDRINT ins_addr, ADDRINT mem_read_addr, UINT32 mem_re
     std::stringstream sstream_dmems;
     sstream_dmems << "dmems: []"; 
                   
-    tainting_log_file << boost::format("\033[0m%-4i %-16s %-34s %-20s %-20s %-40s %-40s\033[0m\n")
+    tainting_log_file << boost::format("\033[0m%-4i %-16s %-34s %-16s %-19s %-40s %-40s\033[0m\n")
                           % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr)) 
                           % addr_ins_static_map[ins_addr].disass  
                           % sregs_format(ins_addr) % dregs_format(ins_addr) 
@@ -573,7 +539,7 @@ void print_debug_reg_to_reg(ADDRINT ins_addr, UINT32 num_sregs, UINT32 num_dregs
     std::stringstream sstream_dmems;
     sstream_dmems << "dmems: []";
     
-    tainting_log_file << boost::format("\033[0m%-4i %-16s %-34s %-20s %-20s %-40s %-40s\033[0m\n")
+    tainting_log_file << boost::format("\033[0m%-4i %-16s %-34s %-16s %-19s %-40s %-40s\033[0m\n")
                           % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr)) 
                           % addr_ins_static_map[ins_addr].disass  
                           % sregs_format(ins_addr) % dregs_format(ins_addr) 
@@ -597,7 +563,7 @@ void print_debug_new_checkpoint(ADDRINT ins_addr)
     std::stringstream sstream_dmems;
     sstream_dmems << "dmems: []";
     
-    tainting_log_file << boost::format("\033[36m%-4i %-16s %-34s %-20s %-20s %-40s %-40s\033[0m\n")
+    tainting_log_file << boost::format("\033[36m%-4i %-16s %-34s %-16s %-19s %-40s %-40s\033[0m\n")
                           % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr)) 
                           % addr_ins_static_map[ins_addr].disass 
                           % sregs_format(ins_addr) % dregs_format(ins_addr) % sstream_smems.str() % sstream_dmems.str();
@@ -622,7 +588,7 @@ void print_debug_dep_branch(ADDRINT ins_addr, ptr_branch& dep_ptr_branch)
     std::stringstream sstream_dmems;
     sstream_dmems << "dmems: []";
                   
-    tainting_log_file << boost::format("\033[32m%-4i %-16s %-34s %-20s %-20s %-40s %-40s %-2i %-4i\033[0m\n")
+    tainting_log_file << boost::format("\033[32m%-4i %-16s %-34s %-16s %-19s %-40s %-40s %-2i %-4i\033[0m\n")
                           % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr)) 
                           % addr_ins_static_map[ins_addr].disass  
                           % sregs_format(ins_addr) % dregs_format(ins_addr) % sstream_smems.str() % sstream_dmems.str()
@@ -639,7 +605,6 @@ void print_debug_indep_branch(ADDRINT ins_addr, ptr_branch& indep_ptr_branch)
 {
   if (print_debug_text) 
   {
-
     std::stringstream sstream_smems;
     if (indep_ptr_branch->dep_other_addrs.empty()) 
     {
@@ -655,13 +620,74 @@ void print_debug_indep_branch(ADDRINT ins_addr, ptr_branch& indep_ptr_branch)
     std::stringstream sstream_dmems;
     sstream_dmems << "dmems: []";
                   
-    tainting_log_file << boost::format("\033[33m%-4i %-16s %-34s %-20s %-20s %-40s %-40s %-2i\033[0m\n")
+    tainting_log_file << boost::format("\033[33m%-4i %-16s %-34s %-16s %-19s %-40s %-40s %-2i\033[0m\n")
                             % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr)) 
                             % addr_ins_static_map[ins_addr].disass  
                             % sregs_format(ins_addr) % dregs_format(ins_addr) % sstream_smems.str() % sstream_dmems.str()
                             % indep_ptr_branch->br_taken;
 //                             % "indep" % "branch";
   }
+  return;
+}
+
+/*====================================================================================================================*/
+
+void journal_tainting_log()
+{
+  std::vector<ADDRINT>::iterator ins_addr_iter;
+  
+  std::set<REG>::iterator reg_iter;
+  std::stringstream sstream_sregs;
+  std::stringstream sstream_dregs;
+  
+  UINT32 idx;
+  
+  if (print_debug_text) 
+  {
+    for (idx = 1; idx <= explored_trace.size(); ++idx) 
+    {
+      sstream_sregs << "sregs: ";
+      for (reg_iter = order_ins_dynamic_map[idx].src_regs.begin(); 
+           reg_iter != order_ins_dynamic_map[idx].src_regs.end(); ++reg_iter) 
+      {
+        sstream_sregs << REG_StringShort(*reg_iter) << " ";
+      }
+    }
+    
+    for (ins_addr_iter = explored_trace.begin(); ins_addr_iter != explored_trace.end(); ++ins_addr_iter) 
+    {
+      sstream_sregs << "sregs: ";
+      for (reg_iter = addr_ins_static_map[*ins_addr_iter].src_regs.begin(); 
+           reg_iter != addr_ins_static_map[*ins_addr_iter].src_regs.end(); ++reg_iter) 
+      {
+        sstream_sregs << REG_StringShort(*reg_iter) << " ";
+      }
+      
+      sstream_dregs << "dregs: ";
+      for (reg_iter = addr_ins_static_map[*ins_addr_iter].dst_regs.begin(); 
+           reg_iter != addr_ins_static_map[*ins_addr_iter].dst_regs.end(); ++reg_iter) 
+      {
+        sstream_dregs << REG_StringShort(*reg_iter) << " ";
+      }
+      
+      if (addr_ins_static_map[*ins_addr_iter].category == XED_CATEGORY_COND_BR) 
+      {
+        
+      }
+      else 
+      {
+        if (addr_ins_static_map[*ins_addr_iter].src_mems.size() > 0) 
+        {
+          
+        }
+        else 
+        {
+          
+        }
+      }
+    }
+  }
+  
   return;
 }
 
