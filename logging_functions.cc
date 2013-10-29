@@ -75,36 +75,6 @@ inline void omit_branch(ptr_branch& omitted_ptr_branch)
 
 /*====================================================================================================================*/
 
-inline void prepare_new_rollbacking_phase() 
-{
-  print_debug_start_rollbacking();
-  
-  in_tainting = false;
-  PIN_RemoveInstrumentation();
-  
-  if (exploring_ptr_branch) 
-  {
-    rollback_with_input_replacement(master_ptr_checkpoint, 
-                                    exploring_ptr_branch->inputs[!exploring_ptr_branch->br_taken][0].get());
-  }
-  else 
-  {
-    if (!input_dep_ptr_branches.empty()) 
-    {
-      rollback_with_input_replacement(master_ptr_checkpoint, 
-                                      input_dep_ptr_branches[0]->inputs[input_dep_ptr_branches[0]->br_taken][0].get());
-    }
-    else 
-    {
-      PIN_ExitApplication(0);
-    }
-  }
-  
-  return;
-}
-
-/*====================================================================================================================*/
-
 inline void compute_branch_mem_dependency() 
 {
   vdep_vertex_iter vertex_iter;
@@ -210,10 +180,43 @@ inline void compute_branch_min_checkpoint()
 
 /*====================================================================================================================*/
 
+inline void prepare_new_rollbacking_phase() 
+{
+  print_debug_start_rollbacking();
+  
+  in_tainting = false;
+  PIN_RemoveInstrumentation();
+  
+  if (exploring_ptr_branch) 
+  {
+    rollback_with_input_replacement(master_ptr_checkpoint, 
+                                    exploring_ptr_branch->inputs[!exploring_ptr_branch->br_taken][0].get());
+  }
+  else 
+  {
+    if (!input_dep_ptr_branches.empty()) 
+    {
+      rollback_with_input_replacement(master_ptr_checkpoint, 
+                                      input_dep_ptr_branches[0]->inputs[input_dep_ptr_branches[0]->br_taken][0].get());
+    }
+    else 
+    {
+      PIN_ExitApplication(0);
+    }
+  }
+  
+  return;
+}
+
+/*====================================================================================================================*/
+
 VOID logging_ins_syscall(ADDRINT ins_addr)
 {
   compute_branch_mem_dependency();
   compute_branch_min_checkpoint();
+  
+  journal_tainting_log();
+  
   prepare_new_rollbacking_phase();
   return;
 }
@@ -267,6 +270,9 @@ VOID logging_st_to_st_analyzer(ADDRINT ins_addr,
   {
     compute_branch_mem_dependency();
     compute_branch_min_checkpoint();
+    
+    journal_tainting_log();
+    
     prepare_new_rollbacking_phase();
   }
   

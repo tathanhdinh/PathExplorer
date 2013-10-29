@@ -747,17 +747,17 @@ void journal_tainting_log()
         {
           // a checkpoint
           tainting_log_file << boost::format("\033[36m%-4i %-16s %-34s %-16s %-19s %-40s %-40s\033[0m\n")
-                          % idx % remove_leading_zeros(StringFromAddrint(order_ins_dynamic_map[idx].address)) 
-                          % order_ins_dynamic_map[idx].disass 
-                          % sstream_sregs.str() % sstream_dregs.str() % sstream_smems.str() % sstream_dmems.str();
+                                % idx % remove_leading_zeros(StringFromAddrint(order_ins_dynamic_map[idx].address)) 
+                                % order_ins_dynamic_map[idx].disass 
+                                % sstream_sregs.str() % sstream_dregs.str() % sstream_smems.str() % sstream_dmems.str();
         }
         else 
         {
           // a normal instruction
           tainting_log_file << boost::format("\033[0m%-4i %-16s %-34s %-16s %-19s %-40s %-40s\033[0m\n")
-                          % idx % remove_leading_zeros(StringFromAddrint(order_ins_dynamic_map[idx].address)) 
-                          % order_ins_dynamic_map[idx].disass 
-                          % sstream_sregs.str() % sstream_dregs.str() % sstream_smems.str() % sstream_dmems.str();
+                                % idx % remove_leading_zeros(StringFromAddrint(order_ins_dynamic_map[idx].address)) 
+                                % order_ins_dynamic_map[idx].disass 
+                                % sstream_sregs.str() % sstream_dregs.str() % sstream_smems.str() % sstream_dmems.str();
         }
       }
     }

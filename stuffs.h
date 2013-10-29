@@ -37,6 +37,8 @@ void        journal_tainting_graph      (const std::string& filename);
 
 void        journal_branch_messages     (ptr_branch& ptr_resolved_branch);
 
+void        journal_tainting_log();
+
 void        store_input                 (ptr_branch& ptr_br, bool br_taken);
 
 void        print_debug_message_received();
