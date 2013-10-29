@@ -27,8 +27,10 @@ checkpoint::checkpoint()
 
 /*====================================================================================================================*/
 
-checkpoint::checkpoint(ADDRINT ip_addr, CONTEXT* p_ctxt, const std::vector<ADDRINT>& current_trace,
-                       ADDRINT msg_read_addr, UINT32 msg_read_size)
+checkpoint::checkpoint(ADDRINT ip_addr, 
+                       CONTEXT* p_ctxt, 
+                       const std::vector<ADDRINT>& current_trace,
+                       ADDRINT mem_read_addr, UINT32 mem_read_size)
 {
   this->addr = ip_addr;
   this->ptr_ctxt.reset(new CONTEXT);
@@ -36,18 +38,18 @@ checkpoint::checkpoint(ADDRINT ip_addr, CONTEXT* p_ctxt, const std::vector<ADDRI
 
 //   this->ptr_ctxt.reset(new_ptr_ctxt);
 
-  std::map<ADDRINT, UINT8>().swap(this->mem_read_log);
-  std::map<ADDRINT, UINT8>().swap(this->mem_written_log);
+//   std::map<ADDRINT, UINT8>().swap(this->mem_read_log);
+//   std::map<ADDRINT, UINT8>().swap(this->mem_written_log);
 
   this->trace = current_trace;
 
-//   std::set<ADDRINT>().swap(this->dep_mems);
-  for (UINT32 offset = 0; offset < msg_read_size; ++offset)
+  for (UINT32 idx = 0; idx < mem_read_size; ++idx)
   {
-    if ((msg_read_addr + offset >= received_msg_addr) &&
-        (msg_read_addr + offset < received_msg_addr + received_msg_size))
+    if (
+        (received_msg_addr <= mem_read_addr + idx) && (mem_read_addr + idx < received_msg_addr + received_msg_size)
+       )
     {
-      this->dep_mems.insert(msg_read_addr + offset);
+      this->dep_mems.insert(mem_read_addr + idx);
     }
   }
 

@@ -19,7 +19,7 @@
 void        journal_buffer              (const std::string& filename, 
                                          UINT8* buffer_addr, UINT32 buffer_size);
 
-void        assign_image_name           (ADDRINT ins_addr, std::string& img_name);
+std::string contained_image_name        (ADDRINT ins_addr);
 
 void        copy_instruction_mem_access (ADDRINT ins_addr, ADDRINT mem_addr, ADDRINT mem_size, UINT8 access_type);
 

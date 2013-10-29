@@ -9,17 +9,17 @@
 
 /*====================================================================================================================*/
 
-static std::set<vdep_edge_desc> dep_edges;
-
-class dep_bfs_visitor : public boost::default_bfs_visitor
-{
-public:
-  template < typename Edge, typename Graph > 
-  void examine_edge(Edge e, const Graph& g) 
-  {
-    dep_edges.insert(e);
-  }
-};
+// static std::set<vdep_edge_desc> dep_edges;
+// 
+// class dep_bfs_visitor : public boost::default_bfs_visitor
+// {
+// public:
+//   template < typename Edge, typename Graph > 
+//   void examine_edge(Edge e, const Graph& g) 
+//   {
+//     dep_edges.insert(e);
+//   }
+// };
 
 /*====================================================================================================================*/
 
@@ -29,35 +29,35 @@ extern std::vector<ptr_checkpoint>  saved_ptr_checkpoints;
 
 /*====================================================================================================================*/
 
-void dependent_mem_addrs(std::set<ADDRINT>& dep_mem_addrs) 
-{
-  vdep_vertex_iter vertex_iter;
-  vdep_vertex_iter last_vertex_iter;
-  
-  dep_bfs_visitor dep_vis;
-  
-  boost::tie(vertex_iter, last_vertex_iter) = boost::vertices(dta_graph);
-  for (; vertex_iter != last_vertex_iter; ++vertex_iter) 
-  {
-    if (dta_graph[*vertex_iter].type == MEM_VAR) 
-    {
-      boost::breadth_first_search(dta_graph, *vertex_iter, boost::visitor(dep_vis));
-      
-      std::set<vdep_edge_desc>::iterator edge_desc_iter = dep_edges.begin();
-      for (; edge_desc_iter != dep_edges.end(); ++edge_desc_iter) 
-      {
-        if (dta_graph[*edge_desc_iter].second == explored_trace.size()) 
-        {
-          dep_mem_addrs.insert(dta_graph[*vertex_iter].mem);
-        }
-      }
-      
-      std::set<vdep_edge_desc>().swap(dep_edges);
-    }
-  }
-  
-  return;
-}
+// void dependent_mem_addrs(std::set<ADDRINT>& dep_mem_addrs) 
+// {
+//   vdep_vertex_iter vertex_iter;
+//   vdep_vertex_iter last_vertex_iter;
+//   
+//   dep_bfs_visitor dep_vis;
+//   
+//   boost::tie(vertex_iter, last_vertex_iter) = boost::vertices(dta_graph);
+//   for (; vertex_iter != last_vertex_iter; ++vertex_iter) 
+//   {
+//     if (dta_graph[*vertex_iter].type == MEM_VAR) 
+//     {
+//       boost::breadth_first_search(dta_graph, *vertex_iter, boost::visitor(dep_vis));
+//       
+//       std::set<vdep_edge_desc>::iterator edge_desc_iter = dep_edges.begin();
+//       for (; edge_desc_iter != dep_edges.end(); ++edge_desc_iter) 
+//       {
+//         if (dta_graph[*edge_desc_iter].second == explored_trace.size()) 
+//         {
+//           dep_mem_addrs.insert(dta_graph[*vertex_iter].mem);
+//         }
+//       }
+//       
+//       std::set<vdep_edge_desc>().swap(dep_edges);
+//     }
+//   }
+//   
+//   return;
+// }
 
 /*====================================================================================================================*/
 
