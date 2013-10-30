@@ -160,8 +160,8 @@ inline void compute_branch_mem_dependency()
                 (*ptr_branch_iter)->dep_other_addrs.insert(dta_graph[*vertex_iter].mem);
               }
               
-              std::cout << "branch at " << (*ptr_branch_iter)->trace.size() << " depends on " 
-                        << remove_leading_zeros(StringFromAddrint(current_addr)) << "\n";
+//               std::cout << "branch at " << (*ptr_branch_iter)->trace.size() << " depends on " 
+//                         << remove_leading_zeros(StringFromAddrint(current_addr)) << "\n";
               (*ptr_branch_iter)->dep_backward_traces[current_addr] = backward_trace(*vertex_iter, 
                                                                                      prec_vertex_iter->second);
             }

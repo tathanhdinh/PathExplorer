@@ -36,6 +36,7 @@ public:
   std::string         disass;
   std::string         img;
 
+  OPCODE              opcode;
   xed_category_enum_t category;
   
   UINT32              mem_read_size;

@@ -1,6 +1,9 @@
 #include "instruction.h"
 
 #include <pin.H>
+extern "C" {
+#include <xed-interface.h>
+}
 
 #include "stuffs.h"
 
@@ -14,9 +17,10 @@ instruction::instruction()
 
 instruction::instruction(const INS& ins)
 {
-  this->address           = INS_Address(ins);
-  this->disass            = INS_Disassemble(ins);
-  this->category          = static_cast<xed_category_enum_t>(INS_Category(ins));
+  this->address  = INS_Address(ins);
+  this->disass   = INS_Disassemble(ins);
+  this->category = static_cast<xed_category_enum_t>(INS_Category(ins));
+  this->opcode   = INS_Opcode(ins);
   
   if (INS_IsMemoryRead(ins)) 
   {
@@ -53,7 +57,6 @@ instruction::instruction(const INS& ins)
       {
         this->src_regs.insert(reg);
       }
-        
     }
   }
   
@@ -74,6 +77,23 @@ instruction::instruction(const INS& ins)
         this->dst_regs.insert(reg);
       }
     }
+  }
+  
+  if ((this->opcode == XED_ICLASS_PUSH) || (this->opcode == XED_ICLASS_POP)) 
+  {
+    std::set<REG> common_regs;
+    std::set<REG> new_src_regs;
+    std::set<REG> new_dst_regs;
+    
+    std::set_intersection(this->src_regs.begin(), this->src_regs.end(), this->dst_regs.begin(), this->dst_regs.end(), 
+                          std::inserter(common_regs, common_regs.begin()));
+    std::set_difference(this->src_regs.begin(), this->src_regs.end(), common_regs.begin(), common_regs.end(), 
+                        std::inserter(new_src_regs, new_src_regs.begin()));
+    std::set_difference(this->dst_regs.begin(), this->dst_regs.end(), common_regs.begin(), common_regs.end(), 
+                        std::inserter(new_dst_regs, new_dst_regs.begin()));
+    
+    this->src_regs.swap(new_src_regs);
+    this->dst_regs.swap(new_dst_regs);
   }
 }
 
