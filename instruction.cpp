@@ -45,7 +45,15 @@ instruction::instruction(const INS& ins)
     reg = INS_RegR(ins, reg_id);
     if (reg != REG_INST_PTR)
     {
-      this->src_regs.insert(reg);
+      if (INS_IsRet(ins) && (reg == REG_STACK_PTR)) 
+      {
+        //
+      }
+      else 
+      {
+        this->src_regs.insert(reg);
+      }
+        
     }
   }
   
@@ -53,9 +61,18 @@ instruction::instruction(const INS& ins)
   for (reg_id = 0; reg_id < max_num_wregs; ++reg_id) 
   {
     reg = INS_RegW(ins, reg_id);
-    if ((reg != REG_INST_PTR) || INS_IsBranchOrCall(ins) || INS_IsRet(ins))
+    if (
+        (reg != REG_INST_PTR) || INS_IsBranchOrCall(ins) || INS_IsRet(ins)
+       )
     {
-      this->dst_regs.insert(reg);
+      if ((reg == REG_STACK_PTR) && INS_IsRet(ins)) 
+      {
+        //
+      }
+      else 
+      {
+        this->dst_regs.insert(reg);
+      }
     }
   }
 }

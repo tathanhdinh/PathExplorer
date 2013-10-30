@@ -50,8 +50,6 @@ extern KNOB<UINT32>                             max_trace_length;
 
 /*====================================================================================================================*/
 
-static std::set<vdep_edge_desc>     dep_edge_descs;
-
 static std::map<vdep_vertex_desc, 
                 vdep_vertex_desc>   prec_vertex_desc;
 
@@ -60,12 +58,6 @@ static std::map<vdep_vertex_desc,
 class dep_bfs_visitor : public boost::default_bfs_visitor
 {
 public:
-  template <typename Edge, typename Graph> 
-  void examine_edge(Edge e, const Graph& g) 
-  {
-    dep_edge_descs.insert(e);
-  }
-  
   template <typename Edge, typename Graph>
   void tree_edge(Edge e, const Graph& g)
   {
@@ -132,7 +124,6 @@ inline void compute_branch_mem_dependency()
   std::set<vdep_edge_desc>::iterator edge_iter;
   std::vector<ptr_branch>::iterator  ptr_branch_iter;
   
-//   std::map<vdep_vertex_desc, vdep_vertex_desc> prec_vertex_desc_map;
   std::map<vdep_vertex_desc, vdep_vertex_desc>::iterator prec_vertex_iter;
   
   ADDRINT current_addr;
@@ -142,7 +133,6 @@ inline void compute_branch_mem_dependency()
   {
     if (dta_graph[*vertex_iter].type == MEM_VAR) 
     {
-      std::set<vdep_edge_desc>().swap(dep_edge_descs);
       std::map<vdep_vertex_desc, vdep_vertex_desc>().swap(prec_vertex_desc);
       
       boost::breadth_first_search(dta_graph, *vertex_iter, boost::visitor(dep_vis));
@@ -182,30 +172,7 @@ inline void compute_branch_mem_dependency()
           std::cerr << "Critical error: backward edge not found in BFS.\n";
           PIN_ExitApplication(0);
         }
-      }
-      
-      /*boost::breadth_first_search(dta_graph, *vertex_iter, boost::visitor(dep_vis));
-      for (edge_desc_iter = dep_edge_descs.begin(); edge_desc_iter != dep_edge_descs.end(); ++edge_desc_iter) 
-      {
-        for (ptr_branch_iter = tainted_ptr_branches.begin(); 
-             ptr_branch_iter != tainted_ptr_branches.end(); ++ptr_branch_iter) 
-        {
-          if (dta_graph[*edge_desc_iter].second == (*ptr_branch_iter)->trace.size()) 
-          {
-            if (
-                (received_msg_addr <= dta_graph[*vertex_iter].mem) && 
-                (dta_graph[*vertex_iter].mem < received_msg_addr + received_msg_size)
-               ) 
-            {
-              (*ptr_branch_iter)->dep_input_addrs.insert(dta_graph[*vertex_iter].mem);
-            }
-            else 
-            {
-              (*ptr_branch_iter)->dep_other_addrs.insert(dta_graph[*vertex_iter].mem);
-            }
-          }
-        }
-      }*/      
+      }    
     }
   }
   
