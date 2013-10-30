@@ -2,6 +2,8 @@
 
 #include <iostream>
 #include <fstream>
+#include <map>
+#include <set>
 
 #include <boost/format.hpp>
 #include <boost/graph/breadth_first_search.hpp>
@@ -48,7 +50,10 @@ extern KNOB<UINT32>                             max_trace_length;
 
 /*====================================================================================================================*/
 
-static std::set<vdep_edge_desc> dep_edges;
+static std::set<vdep_edge_desc>     dep_edge_descs;
+
+static std::map<vdep_vertex_desc, 
+                vdep_vertex_desc>   prec_vertex_desc;
 
 /*====================================================================================================================*/
 
@@ -58,14 +63,14 @@ public:
   template <typename Edge, typename Graph> 
   void examine_edge(Edge e, const Graph& g) 
   {
-    dep_edges.insert(e);
+    dep_edge_descs.insert(e);
   }
   
-//   template<typename Vertex, typename Graph>
-//   void examine_vertex(Vertex v, const Graph& g) 
-//   {
-//     std::cout << "examine_vertex\n";
-//   }
+  template <typename Edge, typename Graph>
+  void tree_edge(Edge e, const Graph& g)
+  {
+    prec_vertex_desc[boost::target(e, g)] = boost::source(e, g);
+  }
 };
 
 /*====================================================================================================================*/
@@ -86,19 +91,68 @@ inline void compute_branch_mem_dependency()
   vdep_vertex_iter vertex_iter;
   vdep_vertex_iter last_vertex_iter;
   
+  vdep_edge_desc edge_desc;
+  bool edge_exist;
+  
   dep_bfs_visitor dep_vis;
   
   std::set<vdep_edge_desc>::iterator edge_desc_iter;
   std::vector<ptr_branch>::iterator  ptr_branch_iter;
+  
+//   std::map<vdep_vertex_desc, vdep_vertex_desc> prec_vertex_desc_map;
+  std::map<vdep_vertex_desc, vdep_vertex_desc>::iterator prec_vertex_desc_iter;
   
   boost::tie(vertex_iter, last_vertex_iter) = boost::vertices(dta_graph);
   for (; vertex_iter != last_vertex_iter; ++vertex_iter) 
   {
     if (dta_graph[*vertex_iter].type == MEM_VAR) 
     {
+      std::set<vdep_edge_desc>().swap(dep_edge_descs);
+      std::map<vdep_vertex_desc, vdep_vertex_desc>().swap(prec_vertex_desc);
+      
       boost::breadth_first_search(dta_graph, *vertex_iter, boost::visitor(dep_vis));
       
-      for (edge_desc_iter = dep_edges.begin(); edge_desc_iter != dep_edges.end(); ++edge_desc_iter) 
+//       std::cout << dta_graph[*vertex_iter].name 
+//                 << " dep_edge_descs: " << dep_edge_descs.size() 
+//                 << " prec_vertex_desc: " << prec_vertex_desc.size() << "\n";
+      
+      if (prec_vertex_desc.size() > 1) 
+      {
+        for (prec_vertex_desc_iter = prec_vertex_desc.begin(); 
+             prec_vertex_desc_iter != prec_vertex_desc.end(); ++prec_vertex_desc_iter) 
+        {
+          boost::tie(edge_desc, edge_exist) = boost::edge(prec_vertex_desc_iter->second, 
+                                                          prec_vertex_desc_iter->first, dta_graph);
+          if (edge_exist) 
+          {
+            for (ptr_branch_iter = tainted_ptr_branches.begin(); 
+                 ptr_branch_iter != tainted_ptr_branches.end(); ++ptr_branch_iter) 
+            {
+              if (dta_graph[edge_desc].second == (*ptr_branch_iter)->trace.size()) 
+              {
+                if (
+                    (received_msg_addr <= dta_graph[*vertex_iter].mem) && 
+                    (dta_graph[*vertex_iter].mem < received_msg_addr + received_msg_size)
+                  ) 
+                {
+                  (*ptr_branch_iter)->dep_input_addrs.insert(dta_graph[*vertex_iter].mem);
+                }
+                else 
+                {
+                  (*ptr_branch_iter)->dep_other_addrs.insert(dta_graph[*vertex_iter].mem);
+                }
+              }
+            }
+          }
+          else 
+          {
+            std::cerr << "Critical error: backward edge not found in bfs.\n";
+            PIN_ExitApplication(0);
+          }
+        }
+      }
+      /*boost::breadth_first_search(dta_graph, *vertex_iter, boost::visitor(dep_vis));
+      for (edge_desc_iter = dep_edge_descs.begin(); edge_desc_iter != dep_edge_descs.end(); ++edge_desc_iter) 
       {
         for (ptr_branch_iter = tainted_ptr_branches.begin(); 
              ptr_branch_iter != tainted_ptr_branches.end(); ++ptr_branch_iter) 
@@ -118,9 +172,7 @@ inline void compute_branch_mem_dependency()
             }
           }
         }
-      }
-      
-      std::set<vdep_edge_desc>().swap(dep_edges);
+      }*/      
     }
   }
   
@@ -147,19 +199,13 @@ inline void compute_branch_min_checkpoint()
     }
     else 
     {
-//       std::cout << remove_leading_zeros(StringFromAddrint(*((*ptr_branch_iter)->dep_input_addrs.begin()))) << ", " 
-//                 << remove_leading_zeros(StringFromAddrint(*((*ptr_branch_iter)->dep_input_addrs.rbegin()))) << "\n";
       minimal_checkpoint_found = false;
       for (ptr_chkpt_iter = saved_ptr_checkpoints.begin(); 
            ptr_chkpt_iter != saved_ptr_checkpoints.end(); ++ptr_chkpt_iter)
       {
-//         std::cout << remove_leading_zeros(StringFromAddrint(*((*ptr_chkpt_iter)->dep_mems.begin()))) << ", "
-//                   << remove_leading_zeros(StringFromAddrint(*((*ptr_chkpt_iter)->dep_mems.rbegin()))) << "\n";
-        
         for (addr_iter = (*ptr_chkpt_iter)->dep_mems.begin(); 
              addr_iter != (*ptr_chkpt_iter)->dep_mems.end(); ++addr_iter) 
         {
-//           std::cout << remove_leading_zeros(StringFromAddrint(*addr_iter)) << "\n";
           if (
               std::find((*ptr_branch_iter)->dep_input_addrs.begin(), (*ptr_branch_iter)->dep_input_addrs.end(), 
                         *addr_iter) != (*ptr_branch_iter)->dep_input_addrs.end()

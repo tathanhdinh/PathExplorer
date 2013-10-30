@@ -71,7 +71,7 @@ UINT32                                        received_msg_size;
 boost::shared_ptr<boost::posix_time::ptime>   start_ptr_time;
 boost::shared_ptr<boost::posix_time::ptime>   stop_ptr_time;
 
-std::ofstream                                 tainting_log_file;
+// std::ofstream                                 tainting_log_file;
 
 /* ------------------------------------------------------------------------------------------------------------------ */
 /*                                               input handler functions                                              */
@@ -106,7 +106,7 @@ VOID start_tracing(VOID *data)
   
   if (print_debug_text) 
   {
-    tainting_log_file.open("tainting_log", std::ofstream::trunc);  
+//     tainting_log_file.open("tainting_log", std::ofstream::trunc);  
 //     std::cout << "\033[2J\033[1;1H"; // clear screen
   }
       
@@ -155,7 +155,6 @@ VOID stop_tracing(INT32 code, VOID *data)
     used_rollback_times = total_rollback_times;
   }
   
-  // that is by default
   if (print_debug_text)
   {
     UINT32 resolved_branch_num = resolved_ptr_branches.size();
@@ -175,19 +174,18 @@ VOID stop_tracing(INT32 code, VOID *data)
               << elapsed_millisec << " milli-seconds elapsed.\n"
               << used_rollback_times << " rollbacks used.\n"
               << resolved_branch_num << "/" << input_dep_branch_num << " branches successfully resolved.\n" 
-//               << new_branches << "/" << untainted_branches.size() << " new branches successfully found.\n";
               << "-------------------------------------------------------------------------------------------------\n";
     
-    journal_explored_trace("explored_trace", explored_trace);
-    journal_static_trace("static_trace");
+//     journal_explored_trace("explored_trace", explored_trace);
+//     journal_static_trace("static_trace");
     journal_tainting_graph("tainting_graph.dot");
     
 //     journal_branch_messages(resolved_ptr_branches[0]);
-    tainting_log_file.close();
+//     tainting_log_file.close();
   }
   
-  journal_result_total(max_total_rollback.Value(), used_rollback_times, 
-                       max_trace_length.Value(), input_dep_ptr_branches.size(), succeeded_branches);
+//   journal_result_total(max_total_rollback.Value(), used_rollback_times, 
+//                        max_trace_length.Value(), input_dep_ptr_branches.size(), succeeded_branches);
   
   return;
 }

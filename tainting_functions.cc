@@ -18,7 +18,7 @@ extern std::map< UINT32,
 
 extern std::vector<ADDRINT>     explored_trace;
 
-extern std::ofstream            tainting_log_file;
+// extern std::ofstream            tainting_log_file;
 
 /*====================================================================================================================*/
 // source variables construction 

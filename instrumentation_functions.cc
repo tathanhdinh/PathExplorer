@@ -29,7 +29,7 @@ extern map_ins_io                                   dta_inss_io;
 
 extern UINT8                                        received_msg_num;
 
-extern std::ofstream                                tainting_log_file;
+// extern std::ofstream                                tainting_log_file;
 
 extern boost::shared_ptr<boost::posix_time::ptime>  start_ptr_time;
 extern boost::shared_ptr<boost::posix_time::ptime>  stop_ptr_time;

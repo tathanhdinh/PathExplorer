@@ -55,7 +55,7 @@ extern UINT32                       input_dep_branch_num;
 extern KNOB<UINT32>                 max_trace_length;
 extern KNOB<BOOL>                   print_debug_text;
 
-extern std::ofstream                tainting_log_file;
+// extern std::ofstream                tainting_log_file;
 
 
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -454,6 +454,8 @@ void journal_tainting_log()
   
   if (print_debug_text) 
   {
+    std::ofstream tainting_log_file("tainting_log", std::ofstream::trunc);
+    
     for (idx = 1; idx <= explored_trace.size(); ++idx) 
     {
       sstream_sregs.str(""); sstream_sregs.clear();
@@ -578,6 +580,8 @@ void journal_tainting_log()
         }
       }
     }
+  
+    tainting_log_file.close();
   }
   
   return;
