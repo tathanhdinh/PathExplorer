@@ -86,6 +86,39 @@ inline void omit_branch(ptr_branch& omitted_ptr_branch)
 
 /*====================================================================================================================*/
 
+std::vector<UINT32> backward_trace(vdep_vertex_desc root_vertex, vdep_vertex_desc last_vertex) 
+{
+  std::vector<UINT32> backward_trace;
+  
+  vdep_vertex_desc current_vertex = last_vertex;
+  vdep_vertex_desc backward_vertex;
+  
+  vdep_edge_desc current_edge;
+  bool edge_exist;
+  
+  while (current_vertex != root_vertex) 
+  {
+    backward_vertex = prec_vertex_desc[current_vertex];
+    
+    boost::tie(current_edge, edge_exist) = boost::edge(backward_vertex, current_vertex, dta_graph);
+    if (edge_exist) 
+    {
+      backward_trace.push_back(dta_graph[current_edge].second);
+    }
+    else 
+    {
+      std::cerr << "Critical error: edge not found in backward trace construction.\n";
+      PIN_ExitApplication(0);
+    }
+    
+    current_vertex = backward_vertex;
+  }
+  
+  return backward_trace;
+}
+
+/*====================================================================================================================*/
+
 inline void compute_branch_mem_dependency() 
 {
   vdep_vertex_iter vertex_iter;
@@ -96,11 +129,13 @@ inline void compute_branch_mem_dependency()
   
   dep_bfs_visitor dep_vis;
   
-  std::set<vdep_edge_desc>::iterator edge_desc_iter;
+  std::set<vdep_edge_desc>::iterator edge_iter;
   std::vector<ptr_branch>::iterator  ptr_branch_iter;
   
 //   std::map<vdep_vertex_desc, vdep_vertex_desc> prec_vertex_desc_map;
-  std::map<vdep_vertex_desc, vdep_vertex_desc>::iterator prec_vertex_desc_iter;
+  std::map<vdep_vertex_desc, vdep_vertex_desc>::iterator prec_vertex_iter;
+  
+  ADDRINT current_addr;
   
   boost::tie(vertex_iter, last_vertex_iter) = boost::vertices(dta_graph);
   for (; vertex_iter != last_vertex_iter; ++vertex_iter) 
@@ -112,45 +147,43 @@ inline void compute_branch_mem_dependency()
       
       boost::breadth_first_search(dta_graph, *vertex_iter, boost::visitor(dep_vis));
       
-//       std::cout << dta_graph[*vertex_iter].name 
-//                 << " dep_edge_descs: " << dep_edge_descs.size() 
-//                 << " prec_vertex_desc: " << prec_vertex_desc.size() << "\n";
-      
-      if (prec_vertex_desc.size() > 1) 
+      for (prec_vertex_iter = prec_vertex_desc.begin(); 
+           prec_vertex_iter != prec_vertex_desc.end(); ++prec_vertex_iter) 
       {
-        for (prec_vertex_desc_iter = prec_vertex_desc.begin(); 
-             prec_vertex_desc_iter != prec_vertex_desc.end(); ++prec_vertex_desc_iter) 
+        boost::tie(edge_desc, edge_exist) = boost::edge(prec_vertex_iter->second, 
+                                                        prec_vertex_iter->first, dta_graph);
+        if (edge_exist) 
         {
-          boost::tie(edge_desc, edge_exist) = boost::edge(prec_vertex_desc_iter->second, 
-                                                          prec_vertex_desc_iter->first, dta_graph);
-          if (edge_exist) 
+          for (ptr_branch_iter = tainted_ptr_branches.begin(); 
+               ptr_branch_iter != tainted_ptr_branches.end(); ++ptr_branch_iter) 
           {
-            for (ptr_branch_iter = tainted_ptr_branches.begin(); 
-                 ptr_branch_iter != tainted_ptr_branches.end(); ++ptr_branch_iter) 
+            if (dta_graph[edge_desc].second == (*ptr_branch_iter)->trace.size()) 
             {
-              if (dta_graph[edge_desc].second == (*ptr_branch_iter)->trace.size()) 
+              current_addr = dta_graph[*vertex_iter].mem;
+              
+              if ((received_msg_addr <= current_addr) && (current_addr < received_msg_addr + received_msg_size)) 
               {
-                if (
-                    (received_msg_addr <= dta_graph[*vertex_iter].mem) && 
-                    (dta_graph[*vertex_iter].mem < received_msg_addr + received_msg_size)
-                  ) 
-                {
-                  (*ptr_branch_iter)->dep_input_addrs.insert(dta_graph[*vertex_iter].mem);
-                }
-                else 
-                {
-                  (*ptr_branch_iter)->dep_other_addrs.insert(dta_graph[*vertex_iter].mem);
-                }
+                (*ptr_branch_iter)->dep_input_addrs.insert(current_addr);
               }
+              else 
+              {
+                (*ptr_branch_iter)->dep_other_addrs.insert(dta_graph[*vertex_iter].mem);
+              }
+              
+              std::cout << "branch at " << (*ptr_branch_iter)->trace.size() << " depends on " 
+                        << remove_leading_zeros(StringFromAddrint(current_addr)) << "\n";
+              (*ptr_branch_iter)->dep_backward_traces[current_addr] = backward_trace(*vertex_iter, 
+                                                                                     prec_vertex_iter->second);
             }
           }
-          else 
-          {
-            std::cerr << "Critical error: backward edge not found in bfs.\n";
-            PIN_ExitApplication(0);
-          }
+        }
+        else 
+        {
+          std::cerr << "Critical error: backward edge not found in BFS.\n";
+          PIN_ExitApplication(0);
         }
       }
+      
       /*boost::breadth_first_search(dta_graph, *vertex_iter, boost::visitor(dep_vis));
       for (edge_desc_iter = dep_edge_descs.begin(); edge_desc_iter != dep_edge_descs.end(); ++edge_desc_iter) 
       {

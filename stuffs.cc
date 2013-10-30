@@ -443,10 +443,12 @@ void journal_tainting_log()
   std::vector<ADDRINT>::iterator ins_addr_iter;
   
   std::set<REG>::iterator reg_iter;
+  
   std::stringstream sstream_sregs;
   std::stringstream sstream_dregs;
   std::stringstream sstream_smems;
   std::stringstream sstream_dmems;
+  std::stringstream sstream_bpaths;
   
   UINT32 idx;
   
@@ -455,6 +457,7 @@ void journal_tainting_log()
   if (print_debug_text) 
   {
     std::ofstream tainting_log_file("tainting_log", std::ofstream::trunc);
+    std::ofstream backward_log_file("backward_traces_log", std::ofstream::trunc);
     
     for (idx = 1; idx <= explored_trace.size(); ++idx) 
     {
@@ -462,6 +465,7 @@ void journal_tainting_log()
       sstream_dregs.str(""); sstream_dregs.clear();
       sstream_smems.str(""); sstream_smems.clear();
       sstream_dmems.str(""); sstream_dmems.clear();
+      sstream_bpaths.str(""); sstream_bpaths.clear();
       
       sstream_sregs << "sregs: ";
       for (reg_iter = order_ins_dynamic_map[idx].src_regs.begin(); 
@@ -518,12 +522,32 @@ void journal_tainting_log()
                           << remove_leading_zeros(StringFromAddrint(*((*ptr_branch_iter)->dep_input_addrs.begin()))) << ","
                           << remove_leading_zeros(StringFromAddrint(*((*ptr_branch_iter)->dep_input_addrs.rbegin()))) << "]";
                           
+            sstream_bpaths << "bpaths at " << idx << "\n";
+            std::map< ADDRINT, std::vector<UINT32> >::iterator addr_bpath_iter;
+            std::vector<UINT32>::iterator ins_order_iter;
+            
+            for (addr_bpath_iter = (*ptr_branch_iter)->dep_backward_traces.begin(); 
+                 addr_bpath_iter != (*ptr_branch_iter)->dep_backward_traces.end(); ++addr_bpath_iter) 
+            {
+              sstream_bpaths << remove_leading_zeros(StringFromAddrint(addr_bpath_iter->first)) << ": ";
+              
+              for (ins_order_iter = addr_bpath_iter->second.begin(); 
+                   ins_order_iter != addr_bpath_iter->second.end(); ++ins_order_iter)
+              {
+                sstream_bpaths << *ins_order_iter << " ";
+              }
+              sstream_bpaths << "\n";
+            }
+            sstream_bpaths << "======================================================\n";
+                          
             // an input dependent branch
             tainting_log_file << boost::format("\033[32m%-4i %-16s %-34s %-16s %-19s %-40s %-40s %-2i %-4i\033[0m\n")
                                   % idx % remove_leading_zeros(StringFromAddrint(order_ins_dynamic_map[idx].address)) 
                                   % order_ins_dynamic_map[idx].disass  
                                   % sstream_sregs.str() % sstream_dregs.str() % sstream_smems.str() % sstream_dmems.str()
                                   % (*ptr_branch_iter)->br_taken % (*ptr_branch_iter)->chkpnt->trace.size();
+                                  
+            backward_log_file << sstream_bpaths.str();
           }
         }
         else 
@@ -582,6 +606,7 @@ void journal_tainting_log()
     }
   
     tainting_log_file.close();
+    backward_log_file.close();
   }
   
   return;

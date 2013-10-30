@@ -45,6 +45,10 @@ public:
   std::set<ADDRINT>     dep_input_addrs;
   std::set<ADDRINT>     dep_other_addrs;
   
+  std::map< ADDRINT, 
+            std::vector<UINT32> 
+            >           dep_backward_traces;
+  
   std::map< bool, 
             std::vector< boost::shared_ptr<UINT8> > 
           >             inputs;
