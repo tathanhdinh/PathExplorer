@@ -18,8 +18,6 @@ extern std::map< UINT32,
 
 extern std::vector<ADDRINT>     explored_trace;
 
-// extern std::ofstream            tainting_log_file;
-
 /*====================================================================================================================*/
 // source variables construction 
 inline std::set<vdep_vertex_desc> source_variables(UINT32 idx) 
@@ -68,9 +66,7 @@ inline std::set<vdep_vertex_desc> source_variables(UINT32 idx)
       src_vertex_descs.insert(new_vertex_desc);
     }    
   }
-  
-//   std::cout << " src_vars: " << src_vars.size() << " src_vertex: " << src_vertex_descs.size();
-    
+      
   return src_vertex_descs;
 }
 
@@ -137,7 +133,6 @@ inline std::set<vdep_vertex_desc> destination_variables(UINT32 idx)
     }
   }
   
-//   std::cout << " dst_vars: " << dst_vars.size() << " dst_vertex: " << dst_vertex_descs.size() << "\n";
       
   return dst_vertex_descs;
 }

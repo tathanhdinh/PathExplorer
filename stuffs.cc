@@ -522,13 +522,22 @@ void journal_tainting_log()
                           << remove_leading_zeros(StringFromAddrint(*((*ptr_branch_iter)->dep_input_addrs.begin()))) << ","
                           << remove_leading_zeros(StringFromAddrint(*((*ptr_branch_iter)->dep_input_addrs.rbegin()))) << "]";
                           
-            sstream_bpaths << "bpaths at " << idx << "\n";
+            sstream_bpaths << "\033[36mbpaths at " << idx << "\033[0m\n";
             std::map< ADDRINT, std::vector<UINT32> >::iterator addr_bpath_iter;
             std::vector<UINT32>::iterator ins_order_iter;
+            
+            ADDRINT root_addr;
             
             for (addr_bpath_iter = (*ptr_branch_iter)->dep_backward_traces.begin(); 
                  addr_bpath_iter != (*ptr_branch_iter)->dep_backward_traces.end(); ++addr_bpath_iter) 
             {
+              root_addr = addr_bpath_iter->first;
+              
+              if ((received_msg_addr <= root_addr) && (root_addr < received_msg_addr + received_msg_size)) 
+              {
+                sstream_bpaths << "\033[32m";
+              }
+              
               sstream_bpaths << remove_leading_zeros(StringFromAddrint(addr_bpath_iter->first)) << ": ";
               
               for (ins_order_iter = addr_bpath_iter->second.begin(); 
@@ -536,7 +545,7 @@ void journal_tainting_log()
               {
                 sstream_bpaths << *ins_order_iter << " ";
               }
-              sstream_bpaths << "\n";
+              sstream_bpaths << "\033[0m\n";
             }
             sstream_bpaths << "======================================================\n";
                           
