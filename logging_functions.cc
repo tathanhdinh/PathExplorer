@@ -174,6 +174,19 @@ inline void compute_branch_mem_dependency()
     }
   }
   
+  ptr_branch_iter = tainted_ptr_branches.begin();
+  for (; ptr_branch_iter != tainted_ptr_branches.end(); ++ptr_branch_iter) 
+  {
+    if (!(*ptr_branch_iter)->dep_input_addrs.empty()) 
+    {
+      input_dep_ptr_branches.push_back(*ptr_branch_iter);
+    }
+    else 
+    {
+      input_indep_ptr_branches.push_back(*ptr_branch_iter);
+    }
+  }
+  
   return;
 }
 
@@ -395,14 +408,14 @@ VOID logging_cond_br_analyzer(ADDRINT ins_addr, bool br_taken)
     tainted_ptr_branches.push_back(new_ptr_branch);
   }
   
-  if (!new_ptr_branch->dep_input_addrs.empty()) // input dependent branch
-  {
-    input_dep_ptr_branches.push_back(new_ptr_branch);    
-  }
-  else // input independent branch
-  {
-    input_indep_ptr_branches.push_back(new_ptr_branch);
-  }
+//   if (!new_ptr_branch->dep_input_addrs.empty()) // input dependent branch
+//   {
+//     input_dep_ptr_branches.push_back(new_ptr_branch);    
+//   }
+//   else // input independent branch
+//   {
+//     input_indep_ptr_branches.push_back(new_ptr_branch);
+//   }
 
   return;
 }
