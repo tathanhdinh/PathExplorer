@@ -53,7 +53,7 @@ public:
             std::vector< boost::shared_ptr<UINT8> > 
           >             inputs;
     
-  ptr_checkpoint        chkpnt;
+  ptr_checkpoint        checkpoint;
   bool                  is_resolved;
   bool                  is_just_resolved;
   bool                  is_bypassed;

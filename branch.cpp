@@ -83,7 +83,7 @@ branch::branch(const branch& other)
   this->dep_input_addrs   = other.dep_input_addrs;
   this->dep_other_addrs   = other.dep_other_addrs;
   
-  this->chkpnt            = other.chkpnt;
+  this->checkpoint            = other.checkpoint;
   this->inputs            = other.inputs;
   
   this->is_resolved       = other.is_resolved;
@@ -103,7 +103,7 @@ branch& branch::operator=(const branch& other)
   this->dep_input_addrs   = other.dep_input_addrs;
   this->dep_other_addrs   = other.dep_other_addrs;
   
-  this->chkpnt            = other.chkpnt;
+  this->checkpoint            = other.checkpoint;
   this->inputs            = other.inputs;
   
   this->is_resolved       = other.is_resolved;

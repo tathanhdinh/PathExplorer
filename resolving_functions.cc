@@ -72,7 +72,7 @@ VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr, ADDRINT mem_written_addr, UI
   
   if (active_ptr_branch) // in resolving
   {
-    active_ptr_branch->chkpnt->mem_written_logging(ins_addr, mem_written_addr, mem_written_size);
+    active_ptr_branch->checkpoint->mem_written_logging(ins_addr, mem_written_addr, mem_written_size);
   }
   else // in forwarding
   { 
@@ -228,11 +228,11 @@ inline void process_tainted_and_resolved_branch(ADDRINT ins_addr, bool br_taken,
       accept_branch(tainted_ptr_branch);
     }
     
-    if (active_ptr_branch->chkpnt->rb_times <= max_local_rollback.Value()) 
+    if (active_ptr_branch->checkpoint->rb_times <= max_local_rollback.Value()) 
     {
       // we will lost out of the original trace if go further, so we must rollback
       total_rollback_times++;
-      rollback_with_input_random_modification(active_ptr_branch->chkpnt, active_ptr_branch->dep_input_addrs);
+      rollback_with_input_random_modification(active_ptr_branch->checkpoint, active_ptr_branch->dep_input_addrs);
     }
     else 
     {
@@ -245,7 +245,7 @@ inline void process_tainted_and_resolved_branch(ADDRINT ins_addr, bool br_taken,
       disable_active_branch();
       
       total_rollback_times++;
-      rollback_with_input_replacement(tmp_ptr_branch->chkpnt, tmp_ptr_branch->inputs[tmp_ptr_branch->br_taken][0].get());
+      rollback_with_input_replacement(tmp_ptr_branch->checkpoint, tmp_ptr_branch->inputs[tmp_ptr_branch->br_taken][0].get());
     }
   }
   
@@ -270,7 +270,7 @@ inline void new_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_bra
     total_rollback_times++;
     
     bool current_br_taken = tmp_ptr_branch->br_taken;
-    rollback_with_input_replacement(tmp_ptr_branch->chkpnt, tmp_ptr_branch->inputs[current_br_taken][0].get());
+    rollback_with_input_replacement(tmp_ptr_branch->checkpoint, tmp_ptr_branch->inputs[current_br_taken][0].get());
   }
   else // error: in forward but new branch taken found 
   {
@@ -301,11 +301,11 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
     print_debug_resolving_rollback(ins_addr, tainted_ptr_branch);
   }
   
-  if (active_ptr_branch->chkpnt->rb_times <= max_local_rollback.Value())
+  if (active_ptr_branch->checkpoint->rb_times <= max_local_rollback.Value())
   {
     // this branch is not resolved yet, now modify the input and rollback again
     total_rollback_times++;
-    rollback_with_input_random_modification(active_ptr_branch->chkpnt, active_ptr_branch->dep_input_addrs);
+    rollback_with_input_random_modification(active_ptr_branch->checkpoint, active_ptr_branch->dep_input_addrs);
   }
   else // the rollback number bypasses the maximum value
   {
@@ -318,7 +318,7 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
     
     total_rollback_times++;
     current_br_taken = tmp_ptr_branch->br_taken;
-    rollback_with_input_replacement(tmp_ptr_branch->chkpnt, tmp_ptr_branch->inputs[current_br_taken][0].get());          
+    rollback_with_input_replacement(tmp_ptr_branch->checkpoint, tmp_ptr_branch->inputs[current_br_taken][0].get());          
   }
   
   return;
@@ -388,7 +388,7 @@ inline void process_untainted_branch(ADDRINT ins_addr, bool br_taken, ptr_branch
       
       // the original trace will lost if go further, so rollback
       total_rollback_times++;
-      rollback_with_input_random_modification(active_ptr_branch->chkpnt, active_ptr_branch->dep_input_addrs);
+      rollback_with_input_random_modification(active_ptr_branch->checkpoint, active_ptr_branch->dep_input_addrs);
     }
     else // error: active_ptr_branch is empty, namely in forwarding, but new taken found
     {

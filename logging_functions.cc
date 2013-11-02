@@ -160,8 +160,6 @@ inline void compute_branch_mem_dependency()
                 (*ptr_branch_iter)->dep_other_addrs.insert(dta_graph[*vertex_iter].mem);
               }
               
-//               std::cout << "branch at " << (*ptr_branch_iter)->trace.size() << " depends on " 
-//                         << remove_leading_zeros(StringFromAddrint(current_addr)) << "\n";
               (*ptr_branch_iter)->dep_backward_traces[current_addr] = backward_trace(*vertex_iter, 
                                                                                      prec_vertex_iter->second);
             }
@@ -183,49 +181,73 @@ inline void compute_branch_mem_dependency()
 
 inline void compute_branch_min_checkpoint() 
 {
-  std::vector<ptr_branch>::iterator ptr_branch_iter;
-  std::vector<ptr_checkpoint>::iterator ptr_chkpt_iter;
-  std::set<ADDRINT>::iterator addr_iter;
+  std::vector<ptr_branch>::iterator     ptr_branch_iter;
+  std::vector<ptr_checkpoint>::iterator ptr_checkpoint_iter;
+  std::set<ADDRINT>::iterator           addr_iter;
   
-  bool minimal_checkpoint_found;
+  ptr_checkpoint nearest_ptr_checkpoint;
   
   std::set<ADDRINT> intersec_mems;
   
-  for (ptr_branch_iter = tainted_ptr_branches.begin(); ptr_branch_iter != tainted_ptr_branches.end(); ++ptr_branch_iter) 
+  ptr_branch_iter = tainted_ptr_branches.begin();
+  for (; ptr_branch_iter != tainted_ptr_branches.end(); ++ptr_branch_iter) 
   {
     if ((*ptr_branch_iter)->dep_input_addrs.empty()) 
     {
-      (*ptr_branch_iter)->chkpnt.reset();
+      (*ptr_branch_iter)->checkpoint.reset();
     }
     else 
     {
-      minimal_checkpoint_found = false;
-      for (ptr_chkpt_iter = saved_ptr_checkpoints.begin(); 
-           ptr_chkpt_iter != saved_ptr_checkpoints.end(); ++ptr_chkpt_iter)
+      nearest_ptr_checkpoint.reset();
+      
+      ptr_checkpoint_iter = saved_ptr_checkpoints.begin(); 
+      for (; ptr_checkpoint_iter != saved_ptr_checkpoints.end(); ++ptr_checkpoint_iter)
       {
-        for (addr_iter = (*ptr_chkpt_iter)->dep_mems.begin(); 
-             addr_iter != (*ptr_chkpt_iter)->dep_mems.end(); ++addr_iter) 
+        if ((*ptr_checkpoint_iter)->trace.size() >= (*ptr_branch_iter)->trace.size())
         {
-          if (
-              std::find((*ptr_branch_iter)->dep_input_addrs.begin(), (*ptr_branch_iter)->dep_input_addrs.end(), 
-                        *addr_iter) != (*ptr_branch_iter)->dep_input_addrs.end()
-             ) 
-          {
-            minimal_checkpoint_found = true;
-            break;
-          }
-        }
-
-        if (minimal_checkpoint_found) 
-        {
-          (*ptr_branch_iter)->chkpnt = *ptr_chkpt_iter;
           break;
+        }
+        else 
+        {
+          addr_iter = (*ptr_checkpoint_iter)->dep_mems.begin(); 
+          for (; addr_iter != (*ptr_checkpoint_iter)->dep_mems.end(); ++addr_iter) 
+          {
+            if (
+                std::find
+                (
+                  (*ptr_branch_iter)->dep_input_addrs.begin(), (*ptr_branch_iter)->dep_input_addrs.end(), *addr_iter
+                ) 
+                != (*ptr_branch_iter)->dep_input_addrs.end()
+              ) 
+            {
+              break;
+            }
+          }
+
+          if (addr_iter != (*ptr_checkpoint_iter)->dep_mems.end()) 
+          {
+            if (!nearest_ptr_checkpoint) 
+            {
+              nearest_ptr_checkpoint = *ptr_checkpoint_iter;
+            }
+            else 
+            {
+              if (nearest_ptr_checkpoint->trace.size() < (*ptr_checkpoint_iter)->trace.size()) 
+              {
+                nearest_ptr_checkpoint = *ptr_checkpoint_iter;
+              }
+            }
+          }
         }
       }
       
-      if (!minimal_checkpoint_found) 
+      if (nearest_ptr_checkpoint) 
       {
-        std::cerr << "Critical error: minimal checkpoint cannot found!\n";
+        (*ptr_branch_iter)->checkpoint = nearest_ptr_checkpoint;
+      }
+      else 
+      {
+        std::cerr << "Critical error: nearest checkpoint cannot found!\n";
         PIN_ExitApplication(0);
       }
     }
