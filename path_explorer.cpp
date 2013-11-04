@@ -195,6 +195,7 @@ VOID stop_tracing(INT32 code, VOID *data)
 /* ------------------------------------------------------------------------------------------------------------------ */
 int main(int argc, char *argv[])
 {
+  PIN_InitSymbols();
   PIN_Init(argc, argv);
   
   // 0 is the (unused) input data

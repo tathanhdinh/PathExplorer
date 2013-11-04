@@ -7,6 +7,8 @@ extern "C" {
 
 #include "stuffs.h"
 
+// static std::string contained_func_name = "";
+
 /*====================================================================================================================*/
 
 instruction::instruction()
@@ -17,10 +19,23 @@ instruction::instruction()
 
 instruction::instruction(const INS& ins)
 {
-  this->address  = INS_Address(ins);
-  this->disass   = INS_Disassemble(ins);
-  this->category = static_cast<xed_category_enum_t>(INS_Category(ins));
-  this->opcode   = INS_Opcode(ins);
+  this->address         = INS_Address(ins);
+  this->disass          = INS_Disassemble(ins);
+  this->category        = static_cast<xed_category_enum_t>(INS_Category(ins));
+  this->opcode          = INS_Opcode(ins);
+  this->contained_image = contained_image_name(this->address);
+  
+  if (INS_IsDirectBranchOrCall(ins))
+  {
+//     contained_func_name = RTN_FindNameByAddress(INS_DirectBranchOrCallTargetAddress(ins));
+    this->contained_function = RTN_FindNameByAddress(INS_DirectBranchOrCallTargetAddress(ins));
+  }
+  else 
+  {
+    this->contained_function = "";
+  }
+//   this->contained_function = contained_func_name;
+//   std::cout << this->contained_function << "\n";
   
   if (INS_IsMemoryRead(ins)) 
   {
@@ -105,6 +120,9 @@ instruction::instruction(const instruction& other)
   this->disass            = other.disass;
   this->category          = other.category;
   
+  this->contained_function  = other.contained_function;
+  this->contained_image     = other.contained_image;
+  
   this->mem_read_size     = other.mem_read_size;
   this->mem_written_size  = other.mem_written_size;  
   
@@ -121,6 +139,9 @@ instruction& instruction::operator=(const instruction& other)
   this->address           = other.address;
   this->disass            = other.disass;
   this->category          = other.category;
+  
+  this->contained_function  = other.contained_function;
+  this->contained_image     = other.contained_image;
   
   this->mem_read_size     = other.mem_read_size;
   this->mem_written_size  = other.mem_written_size;

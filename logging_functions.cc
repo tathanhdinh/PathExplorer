@@ -407,15 +407,6 @@ VOID logging_cond_br_analyzer(ADDRINT ins_addr, bool br_taken)
   {
     tainted_ptr_branches.push_back(new_ptr_branch);
   }
-  
-//   if (!new_ptr_branch->dep_input_addrs.empty()) // input dependent branch
-//   {
-//     input_dep_ptr_branches.push_back(new_ptr_branch);    
-//   }
-//   else // input independent branch
-//   {
-//     input_indep_ptr_branches.push_back(new_ptr_branch);
-//   }
 
   return;
 }

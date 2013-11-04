@@ -42,7 +42,7 @@ VOID ins_instrumenter(INS ins, VOID *data)
   ADDRINT ins_addr = INS_Address(ins);
   
   addr_ins_static_map[ins_addr] = instruction(ins);
-  addr_ins_static_map[ins_addr].img = contained_image_name(ins_addr);
+//   addr_ins_static_map[ins_addr].contained_image = contained_image_name(ins_addr);
   
   if (
       false 

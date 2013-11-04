@@ -170,7 +170,7 @@ void journal_static_trace(const std::string& filename)
     out_file << boost::format("%-20s %-45s (R: %-i, W: %-i) %-50s\n") 
                 % StringFromAddrint(addr_ins_iter->first) % addr_ins_iter->second.disass
                 % addr_ins_iter->second.mem_read_size % addr_ins_iter->second.mem_written_size
-                % addr_ins_iter->second.img;
+                % addr_ins_iter->second.contained_image;
   }
   out_file.close();
   
@@ -510,11 +510,13 @@ void journal_tainting_log()
             }
             
             // input independent branch
-            tainting_log_file << boost::format("\033[33m%-4i %-16s %-34s %-16s %-19s %-40s %-40s %-2i\033[0m\n")
+            tainting_log_file << boost::format("\033[33m%-4i %-16s %-34s %-16s %-19s %-40s %-40s %-2i %s %s\033[0m\n")
                                   % idx % remove_leading_zeros(StringFromAddrint(order_ins_dynamic_map[idx].address)) 
                                   % order_ins_dynamic_map[idx].disass  
                                   % sstream_sregs.str() % sstream_dregs.str() % sstream_smems.str() % sstream_dmems.str()
-                                  % (*ptr_branch_iter)->br_taken;
+                                  % (*ptr_branch_iter)->br_taken
+                                  % order_ins_dynamic_map[idx].contained_image
+                                  % order_ins_dynamic_map[idx].contained_function;
           }
           else 
           {
@@ -550,11 +552,13 @@ void journal_tainting_log()
             sstream_bpaths << "======================================================\n";
                           
             // an input dependent branch
-            tainting_log_file << boost::format("\033[32m%-4i %-16s %-34s %-16s %-19s %-40s %-40s %-2i %-4i\033[0m\n")
+            tainting_log_file << boost::format("\033[32m%-4i %-16s %-34s %-16s %-19s %-40s %-40s %-2i %-4i %s %s\033[0m\n")
                                   % idx % remove_leading_zeros(StringFromAddrint(order_ins_dynamic_map[idx].address)) 
                                   % order_ins_dynamic_map[idx].disass  
                                   % sstream_sregs.str() % sstream_dregs.str() % sstream_smems.str() % sstream_dmems.str()
-                                  % (*ptr_branch_iter)->br_taken % (*ptr_branch_iter)->checkpoint->trace.size();
+                                  % (*ptr_branch_iter)->br_taken % (*ptr_branch_iter)->checkpoint->trace.size()
+                                  % order_ins_dynamic_map[idx].contained_image
+                                  % order_ins_dynamic_map[idx].contained_function;
                                   
             backward_log_file << sstream_bpaths.str();
           }
@@ -598,18 +602,22 @@ void journal_tainting_log()
            )
         {
           // a checkpoint
-          tainting_log_file << boost::format("\033[36m%-4i %-16s %-34s %-16s %-19s %-40s %-40s\033[0m\n")
+          tainting_log_file << boost::format("\033[36m%-4i %-16s %-34s %-16s %-19s %-40s %-40s %s %s\033[0m\n")
                                 % idx % remove_leading_zeros(StringFromAddrint(order_ins_dynamic_map[idx].address)) 
                                 % order_ins_dynamic_map[idx].disass 
-                                % sstream_sregs.str() % sstream_dregs.str() % sstream_smems.str() % sstream_dmems.str();
+                                % sstream_sregs.str() % sstream_dregs.str() % sstream_smems.str() % sstream_dmems.str()
+                                % order_ins_dynamic_map[idx].contained_image
+                                % order_ins_dynamic_map[idx].contained_function;
         }
         else 
         {
           // a normal instruction
-          tainting_log_file << boost::format("\033[0m%-4i %-16s %-34s %-16s %-19s %-40s %-40s\033[0m\n")
+          tainting_log_file << boost::format("\033[0m%-4i %-16s %-34s %-16s %-19s %-40s %-40s %s %s\033[0m\n")
                                 % idx % remove_leading_zeros(StringFromAddrint(order_ins_dynamic_map[idx].address)) 
                                 % order_ins_dynamic_map[idx].disass 
-                                % sstream_sregs.str() % sstream_dregs.str() % sstream_smems.str() % sstream_dmems.str();
+                                % sstream_sregs.str() % sstream_dregs.str() % sstream_smems.str() % sstream_dmems.str()
+                                % order_ins_dynamic_map[idx].contained_image
+                                % order_ins_dynamic_map[idx].contained_function;
         }
       }
     }
