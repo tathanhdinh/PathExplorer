@@ -16,33 +16,33 @@ variable::variable()
 
 /*====================================================================================================================*/
 
-variable::variable(ADDRINT new_mem) : mem(new_mem)
+variable::variable ( ADDRINT new_mem ) : mem ( new_mem )
 {
-  this->name = remove_leading_zeros(StringFromAddrint(new_mem));
+  this->name = remove_leading_zeros ( StringFromAddrint ( new_mem ) );
   this->type = MEM_VAR;
 }
 
 /*====================================================================================================================*/
 
-variable::variable(REG new_reg) : reg(new_reg)
+variable::variable ( REG new_reg ) : reg ( new_reg )
 {
-  REG full_reg = REG_FullRegName(reg);
-  this->name = REG_StringShort(full_reg);
+  REG full_reg = REG_FullRegName ( reg );
+  this->name = REG_StringShort ( full_reg );
 //   this->name = REG_StringShort(reg_name);
   this->type = REG_VAR;
 }
 
 /*====================================================================================================================*/
 
-variable::variable(UINT32 new_imm) : imm(new_imm)
+variable::variable ( UINT32 new_imm ) : imm ( new_imm )
 {
-  this->name = hexstr(imm);
+  this->name = hexstr ( imm );
   this->type = IMM_VAR;
 }
 
 /*====================================================================================================================*/
 
-variable::variable(const variable& var)
+variable::variable ( const variable& var )
 {
   this->name = var.name;
   this->type = var.type;
@@ -52,7 +52,7 @@ variable::variable(const variable& var)
 
 /*====================================================================================================================*/
 
-variable& variable::operator=(const variable& var)
+variable& variable::operator= ( const variable& var )
 {
   this->name = var.name;
   this->type = var.type;
