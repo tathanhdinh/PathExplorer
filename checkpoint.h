@@ -62,7 +62,7 @@ class ptr_checkpoint_less
 public:
   bool operator()(ptr_checkpoint const& a, ptr_checkpoint const& b) 
   {
-    return (a->trace.size() < b->trace.size())
+    return (a->trace.size() < b->trace.size());
   }
 };
 
