@@ -228,8 +228,6 @@ inline void compute_branch_min_checkpoint()
         }
       }
       
-      std::cout << "Branch at " << (*ptr_branch_iter)->trace.size() << " has " 
-                << (*ptr_branch_iter)->nearest_checkpoints.size() << " checkpoints\n";
       if ((*ptr_branch_iter)->nearest_checkpoints.size() != 0) 
       {
         (*ptr_branch_iter)->checkpoint = (*ptr_branch_iter)->nearest_checkpoints.rbegin()->first;
