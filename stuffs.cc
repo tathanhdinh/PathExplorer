@@ -363,23 +363,24 @@ void print_debug_found_new ( ADDRINT ins_addr, ptr_branch& found_ptr_branch )
 
 void print_debug_lost_forward ( ADDRINT ins_addr, ptr_branch& lost_ptr_branch )
 {
-  if ( print_debug_text ) {
-    std::cerr << boost::format ( "\033[31mBranch  %-1i   %-5i %-20s %-35s (lost: new branch taken in forward)\033[0m\n" )
-              % !lost_ptr_branch->br_taken % explored_trace.size()
-              % remove_leading_zeros ( StringFromAddrint ( ins_addr ) )
-              % addr_ins_static_map[ins_addr].disass;
+  if (print_debug_text) {
+    std::cerr << boost::format("\033[31mBranch  %-1i   %-5i %-20s %-35s (lost: new branch taken in forward)\033[0m\n")
+                  % !lost_ptr_branch->br_taken % explored_trace.size()
+                  % remove_leading_zeros(StringFromAddrint(ins_addr))
+                  % addr_ins_static_map[ins_addr].disass;
   }
   return;
 }
 
 /*====================================================================================================================*/
 
-void print_debug_unknown_branch ( ADDRINT ins_addr, ptr_branch& unknown_ptr_branch )
+void print_debug_unknown_branch(ADDRINT ins_addr, ptr_branch& unknown_ptr_branch)
 {
-  if ( print_debug_text ) {
-    std::cerr << boost::format ( "\033[31mLost at     %-5i %-20s %-35s (unknown branch met)\033[0m\n" )
-              % explored_trace.size() % remove_leading_zeros ( StringFromAddrint ( ins_addr ) )
-              % addr_ins_static_map[ins_addr].disass;
+  if (print_debug_text) 
+  {
+    std::cerr << boost::format("\033[31mLost at     %-5i %-20s %-35s (unknown branch met)\033[0m\n")
+                  % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr))
+                  % addr_ins_static_map[ins_addr].disass;
   }
   return;
 }
@@ -388,7 +389,8 @@ void print_debug_unknown_branch ( ADDRINT ins_addr, ptr_branch& unknown_ptr_bran
 
 void print_debug_start_rollbacking()
 {
-  if ( print_debug_text ) {
+  if (print_debug_text) 
+  {
     std::cout << "\033[33mTainting phase stopped at " << explored_trace.size() << ", "
               << input_dep_ptr_branches.size() << " tainted branches, "
               << input_indep_ptr_branches.size() << " untainted branches, "
@@ -400,13 +402,14 @@ void print_debug_start_rollbacking()
 //                  % remove_leading_zeros(StringFromAddrint(saved_ptr_checkpoints[0]->addr))
 //                  % addr_ins_static_map[saved_ptr_checkpoints[0]->addr].disass;
 
-    std::string tainted_trace_filename ( "tainted_trace" );
-    if ( exploring_ptr_branch ) {
+    std::string tainted_trace_filename("tainted_trace");
+    if (exploring_ptr_branch)
+    {
       std::stringstream ss;
       ss << exploring_ptr_branch->trace.size();
       tainted_trace_filename = tainted_trace_filename + "_" + ss.str();
     }
-    journal_explored_trace ( tainted_trace_filename.c_str(), explored_trace );
+    journal_explored_trace(tainted_trace_filename.c_str(), explored_trace);
   }
 
   return;

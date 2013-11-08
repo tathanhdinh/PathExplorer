@@ -121,7 +121,10 @@ void rollback_with_input_replacement(ptr_checkpoint& ptr_chkpnt, UINT8* backup_i
   explored_trace.pop_back();
 
   // increase rollback times
-  ptr_chkpnt->rb_times++;
+//   ptr_chkpnt->rb_times++;
+  
+  // reset rollback times
+  ptr_chkpnt->rb_times = 0;
 
   // restore written memories
   UINT8 single_byte;
