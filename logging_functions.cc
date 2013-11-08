@@ -211,6 +211,8 @@ inline void compute_branch_min_checkpoint()
     }
     else // compute nearest checkpoint for *ptr_branch_iter
     {
+      std::cout << "Analyse the branch at " << (*ptr_branch_iter)->trace.size() 
+                << " with dependent memory size " << (*ptr_branch_iter)->dep_input_addrs.size() << "\n";
       nearest_ptr_checkpoint.reset();
 
       ptr_checkpoint_iter = saved_ptr_checkpoints.begin();
@@ -223,9 +225,13 @@ inline void compute_branch_min_checkpoint()
         else
         {
           // find the earliest checkpoint that use *addr_iter
+          std::cout << "Scanning the checkpoint at " << (*ptr_checkpoint_iter)->trace.size() 
+                    << " with dependent memory size " << (*ptr_checkpoint_iter)->dep_mems.size() << "\n";
+                    
           addr_iter = (*ptr_checkpoint_iter)->dep_mems.begin();
           for (; addr_iter != (*ptr_checkpoint_iter)->dep_mems.end(); ++addr_iter)
           {
+            std::cout << "mem addr " << remove_leading_zeros(StringFromAddrint(*addr_iter)) << "\n";
             if (
                 std::find
                 (
@@ -242,6 +248,10 @@ inline void compute_branch_min_checkpoint()
           if (addr_iter != (*ptr_checkpoint_iter)->dep_mems.end()) 
           {
             (*ptr_branch_iter)->nearest_checkpoints[*ptr_checkpoint_iter].insert(*addr_iter);
+            
+            std::cout << "Branch at " << (*ptr_branch_iter)->trace.size() << " depends on the address "
+                      << remove_leading_zeros(StringFromAddrint(*addr_iter)) << " accessed at the nearest checkpoint at " 
+                      << (*ptr_checkpoint_iter)->trace.size() << "\n";
             
 //             if (!nearest_ptr_checkpoint)
 //             {
@@ -260,6 +270,9 @@ inline void compute_branch_min_checkpoint()
       
       if ((*ptr_branch_iter)->nearest_checkpoints.size() != 0) 
       {
+        std::cout << "Number of checkpoint at " << (*ptr_branch_iter)->trace.size() 
+                  << " " << (*ptr_branch_iter)->nearest_checkpoints.size() 
+                  << "\n";
         (*ptr_branch_iter)->checkpoint = (*ptr_branch_iter)->nearest_checkpoints.rbegin()->first;
       }
       else 
