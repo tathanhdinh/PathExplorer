@@ -211,52 +211,62 @@ inline void compute_branch_min_checkpoint()
     }
     else // compute nearest checkpoint for *ptr_branch_iter
     {
-      nearest_ptr_checkpoint.reset();
-
-      ptr_checkpoint_iter = saved_ptr_checkpoints.begin();
-      for (; ptr_checkpoint_iter != saved_ptr_checkpoints.end(); ++ptr_checkpoint_iter)
+      // for each *addr_iter in (*ptr_branch_iter)->dep_input_addrs, find the nearest checkpoint that uses it
+      addr_iter = (*ptr_branch_iter)->dep_input_addrs.begin();
+      for (; addr_iter != (*ptr_branch_iter)->dep_input_addrs.end(); ++addr_iter) 
       {
-        if ((*ptr_checkpoint_iter)->trace.size() >= (*ptr_branch_iter)->trace.size())
+        ptr_checkpoint_iter = saved_ptr_checkpoints.begin();
+        for (; ptr_checkpoint_iter != saved_ptr_checkpoints.end(); ++ptr_checkpoint_iter) 
         {
-          break;
-        }
-        else
-        {
-          // find the earliest checkpoint that use *addr_iter
-          addr_iter = (*ptr_checkpoint_iter)->dep_mems.begin();
-          for (; addr_iter != (*ptr_checkpoint_iter)->dep_mems.end(); ++addr_iter)
-          {
-            if (
-                std::find
-                (
-                  (*ptr_branch_iter)->dep_input_addrs.begin(), (*ptr_branch_iter)->dep_input_addrs.end(), *addr_iter
-                )
-                != (*ptr_branch_iter)->dep_input_addrs.end()
-               )
-            {
-              break;
-            }
-          }
-
-          // *ptr_checkpoint_iter is the earliest checkpoint using *addr_iter
-          if (addr_iter != (*ptr_checkpoint_iter)->dep_mems.end()) 
+          if (
+              std::find
+              (
+                (*ptr_checkpoint_iter)->dep_mems.begin(), (*ptr_checkpoint_iter)->dep_mems.end(), *addr_iter
+              )
+              != (*ptr_checkpoint_iter)->dep_mems.end()
+             ) // *addr_iter is found in (*ptr_checkpoint_iter)->dep_mems
           {
             (*ptr_branch_iter)->nearest_checkpoints[*ptr_checkpoint_iter].insert(*addr_iter);
-            
-//             if (!nearest_ptr_checkpoint)
-//             {
-//               nearest_ptr_checkpoint = *ptr_checkpoint_iter;
-//             }
-//             else
-//             {
-//               if (nearest_ptr_checkpoint->trace.size() < (*ptr_checkpoint_iter)->trace.size())
-//               {
-//                 nearest_ptr_checkpoint = *ptr_checkpoint_iter;
-//               }
-//             }
+            break;
           }
         }
       }
+      
+      
+//       nearest_ptr_checkpoint.reset();
+// 
+//       ptr_checkpoint_iter = saved_ptr_checkpoints.begin();
+//       for (; ptr_checkpoint_iter != saved_ptr_checkpoints.end(); ++ptr_checkpoint_iter)
+//       {
+//         if ((*ptr_checkpoint_iter)->trace.size() >= (*ptr_branch_iter)->trace.size())
+//         {
+//           break;
+//         }
+//         else
+//         {
+//           // find the earliest checkpoint that use *addr_iter
+//           addr_iter = (*ptr_checkpoint_iter)->dep_mems.begin();
+//           for (; addr_iter != (*ptr_checkpoint_iter)->dep_mems.end(); ++addr_iter)
+//           {
+//             if (
+//                 std::find
+//                 (
+//                   (*ptr_branch_iter)->dep_input_addrs.begin(), (*ptr_branch_iter)->dep_input_addrs.end(), *addr_iter
+//                 )
+//                 != (*ptr_branch_iter)->dep_input_addrs.end()
+//                )
+//             {
+//               break;
+//             }
+//           }
+// 
+//           // *ptr_checkpoint_iter is the earliest checkpoint using *addr_iter
+//           if (addr_iter != (*ptr_checkpoint_iter)->dep_mems.end()) 
+//           {
+//             (*ptr_branch_iter)->nearest_checkpoints[*ptr_checkpoint_iter].insert(*addr_iter);
+//           }
+//         }
+//       }
       
       if ((*ptr_branch_iter)->nearest_checkpoints.size() != 0) 
       {
@@ -267,16 +277,6 @@ inline void compute_branch_min_checkpoint()
         std::cerr << "Critical error: nearest checkpoint cannot found!\n";
         PIN_ExitApplication(0);
       }
-
-//       if (nearest_ptr_checkpoint)
-//       {
-//         (*ptr_branch_iter)->checkpoint = nearest_ptr_checkpoint;
-//       }
-//       else
-//       {
-//         std::cerr << "Critical error: nearest checkpoint cannot found!\n";
-//         PIN_ExitApplication(0);
-//       }
     }
   }
 
