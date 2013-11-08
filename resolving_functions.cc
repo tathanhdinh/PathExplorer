@@ -23,6 +23,8 @@ extern std::map< UINT32,
        std::vector<ptr_checkpoint> >    exepoint_checkpoints_map;
 
 extern UINT32                                     total_rollback_times;
+extern UINT32                                     max_total_rollback_times;
+extern UINT32                                     max_local_rollback_times;
 
 extern ADDRINT                                    received_msg_addr;
 extern UINT32                                     received_msg_size;
@@ -219,37 +221,37 @@ inline void exploring_new_branch_or_stop()
 
 inline void process_tainted_and_resolved_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& tainted_ptr_branch)
 {
-    if (tainted_ptr_branch->br_taken != br_taken) // new branch taken
+  if (tainted_ptr_branch->br_taken != br_taken) // new branch taken
+  {
+    // the branch has been marked as "bypassed" before, then is resolved accidentally
+    if (tainted_ptr_branch->is_bypassed)
     {
-        // the branch has been marked as "bypassed" before, then is resolved accidentally
-        if (tainted_ptr_branch->is_bypassed)
-        {
-            print_debug_met_again(ins_addr, tainted_ptr_branch);
-            accept_branch(tainted_ptr_branch);
-        }
-
-        if (active_ptr_branch->checkpoint->rb_times <= max_local_rollback.Value())
-        {
-            // we will lost out of the original trace if go further, so we must rollback
-            total_rollback_times++;
-            rollback_with_input_random_modification(active_ptr_branch->checkpoint, active_ptr_branch->dep_input_addrs);
-        }
-        else
-        {
-//       print_debug_resolving_failed(ins_addr, tainted_ptr_branch);
-            print_debug_resolving_failed(active_ptr_branch->addr, active_ptr_branch);
-
-            bypass_branch(active_ptr_branch);
-
-            ptr_branch tmp_ptr_branch = active_ptr_branch;
-            disable_active_branch();
-
-            total_rollback_times++;
-            rollback_with_input_replacement(tmp_ptr_branch->checkpoint, tmp_ptr_branch->inputs[tmp_ptr_branch->br_taken][0].get());
-        }
+      print_debug_met_again(ins_addr, tainted_ptr_branch);
+      accept_branch(tainted_ptr_branch);
     }
 
-    return;
+    if (active_ptr_branch->checkpoint->rollback_times <= max_local_rollback_times /*max_local_rollback.Value()*/)
+    {
+      // we will lost out of the original trace if go further, so we must rollback
+      total_rollback_times++;
+      rollback_with_input_random_modification(active_ptr_branch->checkpoint, active_ptr_branch->dep_input_addrs);
+    }
+    else
+    {
+//       print_debug_resolving_failed(ins_addr, tainted_ptr_branch);
+      print_debug_resolving_failed(active_ptr_branch->addr, active_ptr_branch);
+
+      bypass_branch(active_ptr_branch);
+
+      ptr_branch tmp_ptr_branch = active_ptr_branch;
+      disable_active_branch();
+
+      total_rollback_times++;
+      rollback_with_input_replacement(tmp_ptr_branch->checkpoint, tmp_ptr_branch->inputs[tmp_ptr_branch->br_taken][0].get());
+    }
+  }
+
+  return;
 }
 
 /*====================================================================================================================*/
@@ -301,7 +303,7 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
         print_debug_resolving_rollback(ins_addr, tainted_ptr_branch);
     }
 
-    if (active_ptr_branch->checkpoint->rb_times <= max_local_rollback.Value())
+    if (active_ptr_branch->checkpoint->rollback_times <= max_local_rollback.Value())
     {
         // this branch is not resolved yet, now modify the input and rollback again
         total_rollback_times++;
@@ -328,14 +330,14 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
 
 inline void process_tainted_but_unresolved_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& tainted_ptr_branch)
 {
-    if (tainted_ptr_branch->br_taken != br_taken) // other branch is taken,
-    {
-        new_branch_taken_processing(ins_addr, br_taken, tainted_ptr_branch);
-    }
-    else // other branch is not taken yet, take a rollback to try to resolve this branch
-    {
-        same_branch_taken_processing(ins_addr, br_taken, tainted_ptr_branch);
-    }
+  if (tainted_ptr_branch->br_taken != br_taken) // other branch is taken,
+  {
+    new_branch_taken_processing(ins_addr, br_taken, tainted_ptr_branch);
+  }
+  else // other branch is not taken yet, take a rollback to try to resolve this branch
+  {
+    same_branch_taken_processing(ins_addr, br_taken, tainted_ptr_branch);
+  }
 
     return;
 }
@@ -344,29 +346,29 @@ inline void process_tainted_but_unresolved_branch(ADDRINT ins_addr, bool br_take
 
 inline void process_tainted_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& tainted_ptr_branch)
 {
-    if (total_rollback_times > max_total_rollback.Value())
-    {
-        PIN_ExitApplication(0);
-    }
+  if (total_rollback_times > max_total_rollback.Value())
+  {
+    PIN_ExitApplication(0);
+  }
 
-    if (tainted_ptr_branch->is_resolved) // which is resolved
+  if (tainted_ptr_branch->is_resolved) // which is resolved
+  {
+    if (tainted_ptr_branch == input_dep_ptr_branches.back()) // and is the current last branch
     {
-        if (tainted_ptr_branch == input_dep_ptr_branches.back()) // and is the current last branch
-        {
-            /* FOR TESTING ONLY */
-            PIN_ExitApplication(0);
+        /* FOR TESTING ONLY */
+      PIN_ExitApplication(0);
 
-            exploring_new_branch_or_stop();
-        }
-        else // it is not the last branch
-        {
-            process_tainted_and_resolved_branch(ins_addr, br_taken, tainted_ptr_branch);
-        }
+      exploring_new_branch_or_stop();
     }
-    else // it is not resolved yet
+    else // it is not the last branch
     {
-        process_tainted_but_unresolved_branch(ins_addr, br_taken, tainted_ptr_branch);
+      process_tainted_and_resolved_branch(ins_addr, br_taken, tainted_ptr_branch);
     }
+  }
+  else // it is not resolved yet
+  {
+    process_tainted_but_unresolved_branch(ins_addr, br_taken, tainted_ptr_branch);
+  }
 
     return;
 }

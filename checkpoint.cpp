@@ -22,7 +22,7 @@ checkpoint::checkpoint()
 
   std::set<ADDRINT>().swap(this->dep_mems);
 
-  this->rb_times = 0;
+  this->rollback_times = 0;
 }
 
 /*====================================================================================================================*/
@@ -53,7 +53,7 @@ checkpoint::checkpoint(ADDRINT ip_addr,
     }
   }
 
-  this->rb_times = 0;
+  this->rollback_times = 0;
 }
 
 /*====================================================================================================================*/
@@ -69,7 +69,7 @@ checkpoint& checkpoint::operator=(checkpoint const& other_chkpnt)
   this->dep_mems        = other_chkpnt.dep_mems;
   this->trace           = other_chkpnt.trace;
 
-  this->rb_times        = other_chkpnt.rb_times;
+  this->rollback_times        = other_chkpnt.rollback_times;
 
   return *this;
 }
@@ -121,7 +121,7 @@ void rollback_with_input_replacement(ptr_checkpoint& ptr_chkpnt, UINT8* backup_i
   explored_trace.pop_back();
 
   // increase rollback times
-  ptr_chkpnt->rb_times++;
+  ptr_chkpnt->rollback_times++;
 
   // restore written memories
   UINT8 single_byte;
@@ -149,7 +149,7 @@ void rollback_with_input_random_modification(ptr_checkpoint& ptr_chkpnt, std::se
   explored_trace.pop_back();
 
   // increase rollback times
-  ptr_chkpnt->rb_times++;
+  ptr_chkpnt->rollback_times++;
 
   // restore written memories
   UINT8 single_byte;

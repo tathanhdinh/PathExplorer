@@ -39,6 +39,8 @@ ADDRINT                                       logged_syscall_index;   // logged 
 ADDRINT                                       logged_syscall_args[6]; // logged syscall arguments
 
 UINT32                                        total_rollback_times;
+UINT32                                        max_total_rollback_times;
+UINT32                                        max_local_rollback_times;
 UINT32                                        trace_max_size;
 
 bool                                          in_tainting;
@@ -51,7 +53,7 @@ std::vector<ptr_checkpoint>                   saved_ptr_checkpoints;
 ptr_checkpoint                                master_ptr_checkpoint;
 
 std::map< UINT32,
-    std::vector<ptr_checkpoint> >       exepoint_checkpoints_map;
+          std::vector<ptr_checkpoint> >       exepoint_checkpoints_map;
 
 std::vector<ptr_branch>                       input_dep_ptr_branches;
 std::vector<ptr_branch>                       input_indep_ptr_branches;
@@ -76,28 +78,31 @@ boost::shared_ptr<boost::posix_time::ptime>   stop_ptr_time;
 /* ------------------------------------------------------------------------------------------------------------------ */
 /*                                               input handler functions                                              */
 /* ------------------------------------------------------------------------------------------------------------------ */
-KNOB<BOOL>    print_debug_text ( KNOB_MODE_WRITEONCE, "pintool",
-                                 "d", "1",
-                                 "print debug text" );
+KNOB<BOOL>    print_debug_text    (KNOB_MODE_WRITEONCE, "pintool",
+                                   "d", "1",
+                                   "print debug text" );
 
-KNOB<UINT32>  max_local_rollback ( KNOB_MODE_WRITEONCE, "pintool",
+KNOB<UINT32>  max_local_rollback  (KNOB_MODE_WRITEONCE, "pintool",
                                    "r", "7000",
                                    "specify the maximum local number of rollback" );
 
-KNOB<UINT32>  max_total_rollback ( KNOB_MODE_WRITEONCE, "pintool",
+KNOB<UINT32>  max_total_rollback  (KNOB_MODE_WRITEONCE, "pintool",
                                    "t", "4000000000",
                                    "specify the maximum total number of rollback" );
 
-KNOB<UINT32>  max_trace_length ( KNOB_MODE_WRITEONCE, "pintool",
-                                 "l", "100",
-                                 "specify the length of the longest trace" );
+KNOB<UINT32>  max_trace_length    (KNOB_MODE_WRITEONCE, "pintool", 
+                                   "l", "100", "specify the length of the longest trace" );
 
 /* ------------------------------------------------------------------------------------------------------------------ */
 /*                                                instrumental functions                                              */
 /* -------------------------------------------------------+---------------------------------------------------------- */
-VOID start_tracing ( VOID *data )
+VOID start_tracing(VOID *data)
 {
   trace_max_size        = max_trace_length.Value();
+
+  max_total_rollback_times = max_total_rollback.Value();
+  max_local_rollback_times = max_local_rollback.Value();
+  
   in_tainting           = true;
   total_rollback_times  = 0;
   received_msg_num      = 0;

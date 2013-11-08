@@ -43,7 +43,7 @@ public:
   
   std::vector<ADDRINT>      trace;
   
-  UINT32                    rb_times;
+  UINT32                    rollback_times;
     
 public:
   checkpoint();

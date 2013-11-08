@@ -292,7 +292,7 @@ void print_debug_met_again ( ADDRINT ins_addr, ptr_branch &met_ptr_branch )
   if ( print_debug_text ) {
     std::cerr << boost::format ( "\033[36mMet again   %-5i %-20s %-35s (%-10i rollbacks)\033[0m\n" )
               % explored_trace.size() % remove_leading_zeros ( StringFromAddrint ( ins_addr ) ) % addr_ins_static_map[ins_addr].disass
-              % met_ptr_branch->checkpoint->rb_times;
+              % met_ptr_branch->checkpoint->rollback_times;
   }
   return;
 }
@@ -330,7 +330,7 @@ void print_debug_succeed ( ADDRINT ins_addr, ptr_branch& succeed_ptr_branch )
     std::cout << boost::format ( "\033[32mSucceeded   %-5i %-20s %-35s (%i rollbacks)\033[0m\n" )
               % explored_trace.size() % remove_leading_zeros ( StringFromAddrint ( ins_addr ) )
               % addr_ins_static_map[ins_addr].disass
-              % succeed_ptr_branch->checkpoint->rb_times;
+              % succeed_ptr_branch->checkpoint->rollback_times;
   }
   return;
 }
@@ -343,7 +343,7 @@ void print_debug_resolving_failed ( ADDRINT ins_addr, ptr_branch& failed_ptr_bra
     std::cout << boost::format ( "\033[31mFailed      %-5i %-20s %-35s (%i rollbacks)\033[0m\n" )
               % failed_ptr_branch->trace.size() /*explored_trace.size()*/
               % remove_leading_zeros ( StringFromAddrint ( ins_addr ) ) % addr_ins_static_map[ins_addr].disass
-              % failed_ptr_branch->checkpoint->rb_times;
+              % failed_ptr_branch->checkpoint->rollback_times;
   }
   return;
 }
