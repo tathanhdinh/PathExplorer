@@ -39,6 +39,7 @@ ADDRINT                                       logged_syscall_index;   // logged 
 ADDRINT                                       logged_syscall_args[6]; // logged syscall arguments
 
 UINT32                                        total_rollback_times;
+UINT32                                        local_rollback_times;
 UINT32                                        max_total_rollback_times;
 UINT32                                        max_local_rollback_times;
 UINT32                                        trace_max_size;
@@ -100,14 +101,15 @@ VOID start_tracing(VOID *data)
 {
   trace_max_size        = max_trace_length.Value();
 
+  total_rollback_times = 0;
+  local_rollback_times = 0;
   max_total_rollback_times = max_total_rollback.Value();
   max_local_rollback_times = max_local_rollback.Value();
   
   in_tainting           = true;
-  total_rollback_times  = 0;
   received_msg_num      = 0;
   logged_syscall_index  = syscall_inexist;
-  ::srand ( ::time ( 0 ) );
+  ::srand(::time(0));
 
   if ( print_debug_text ) {
 //     tainting_log_file.open("tainting_log", std::ofstream::trunc);
@@ -121,8 +123,9 @@ VOID start_tracing(VOID *data)
 
 VOID stop_tracing ( INT32 code, VOID *data )
 {
-  if ( !stop_ptr_time ) {
-    stop_ptr_time.reset ( new boost::posix_time::ptime ( boost::posix_time::microsec_clock::local_time() ) );
+  if ( !stop_ptr_time ) 
+  {
+    stop_ptr_time.reset(new boost::posix_time::ptime(boost::posix_time::microsec_clock::local_time()));
   }
 
   boost::posix_time::time_duration elapsed_time = *stop_ptr_time - *start_ptr_time;
