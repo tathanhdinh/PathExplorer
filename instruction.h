@@ -19,7 +19,8 @@ extern "C"
 class instruction;
 // class checkpoint;
 
-typedef enum {
+typedef enum 
+{
   syscall_inexist  = 0,
   syscall_sendto   = 44,
   syscall_recvfrom = 45
@@ -47,9 +48,9 @@ public:
 
 public:
   instruction();
-  instruction ( INS const& ins );
-  instruction ( instruction const& other_ins );
-  instruction& operator= ( instruction const& other_ins );
+  instruction(INS const& ins);
+  instruction(instruction const& other_ins);
+  instruction& operator=(instruction const& other_ins);
 };
 
 #endif // INSTRUCTION_H

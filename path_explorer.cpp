@@ -12,7 +12,7 @@
 
 #include <boost/progress.hpp>
 #include <boost/timer.hpp>
-#include <boost/random.hpp>
+// #include <boost/random.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/format.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -25,7 +25,8 @@
 #include "instrumentation_functions.h"
 #include "analysis_functions.h"
 
-extern "C" {
+extern "C" 
+{
 #include <xed-interface.h>
 }
 
@@ -121,9 +122,9 @@ VOID start_tracing(VOID *data)
 
 /*====================================================================================================================*/
 
-VOID stop_tracing ( INT32 code, VOID *data )
+VOID stop_tracing(INT32 code, VOID *data)
 {
-  if ( !stop_ptr_time ) 
+  if (!stop_ptr_time) 
   {
     stop_ptr_time.reset(new boost::posix_time::ptime(boost::posix_time::microsec_clock::local_time()));
   }
@@ -133,34 +134,44 @@ VOID stop_tracing ( INT32 code, VOID *data )
 
   UINT32 succeeded_branches = 0;
   std::vector<ptr_branch>::iterator ptr_br_iter = input_dep_ptr_branches.begin();
-  for ( ; ptr_br_iter != input_dep_ptr_branches.end(); ++ptr_br_iter ) {
-    if ( ( *ptr_br_iter )->is_resolved && ! ( *ptr_br_iter )->is_bypassed ) {
+  for (; ptr_br_iter != input_dep_ptr_branches.end(); ++ptr_br_iter) 
+  {
+    if ((*ptr_br_iter)->is_resolved && ! (*ptr_br_iter )->is_bypassed) 
+    {
       succeeded_branches++;
     }
   }
 
   UINT32 new_branches = 0;
   ptr_br_iter = input_indep_ptr_branches.begin();
-  for ( ; ptr_br_iter != input_indep_ptr_branches.end(); ++ptr_br_iter ) {
-    if ( ( *ptr_br_iter )->is_resolved ) {
+  for (; ptr_br_iter != input_indep_ptr_branches.end(); ++ptr_br_iter) 
+  {
+    if ((*ptr_br_iter)->is_resolved) 
+    {
       new_branches++;
     }
   }
 
   UINT32 used_rollback_times;
-  if ( total_rollback_times > max_total_rollback.Value() ) {
+  if (total_rollback_times > max_total_rollback.Value()) 
+  {
     used_rollback_times = total_rollback_times - 1;
-  } else {
+  } 
+  else 
+  {
     used_rollback_times = total_rollback_times;
   }
 
-  if ( print_debug_text ) {
+  if (print_debug_text) 
+  {
     UINT32 resolved_branch_num = resolved_ptr_branches.size();
     UINT32 input_dep_branch_num = found_new_ptr_branches.size();
 
     std::vector<ptr_branch>::iterator ptr_branch_iter = tainted_ptr_branches.begin();
-    for ( ; ptr_branch_iter != tainted_ptr_branches.end(); ++ptr_branch_iter ) {
-      if ( ! ( *ptr_branch_iter )->dep_input_addrs.empty() ) {
+    for (; ptr_branch_iter != tainted_ptr_branches.end(); ++ptr_branch_iter) 
+    {
+      if (!(*ptr_branch_iter)->dep_input_addrs.empty()) 
+      {
         input_dep_branch_num++;
       }
     }
@@ -173,8 +184,8 @@ VOID stop_tracing ( INT32 code, VOID *data )
               << "-------------------------------------------------------------------------------------------------\n";
 
 //     journal_explored_trace("explored_trace", explored_trace);
-    journal_static_trace ( "static_trace" );
-    journal_tainting_graph ( "tainting_graph.dot" );
+    journal_static_trace("static_trace");
+    journal_tainting_graph("tainting_graph.dot");
 
 //     journal_branch_messages(resolved_ptr_branches[0]);
 //     tainting_log_file.close();
@@ -189,23 +200,22 @@ VOID stop_tracing ( INT32 code, VOID *data )
 /* ------------------------------------------------------------------------------------------------------------------ */
 /*                                                        main function                                               */
 /* ------------------------------------------------------------------------------------------------------------------ */
-int main ( int argc, char *argv[] )
+int main (int argc, char *argv[])
 {
   PIN_InitSymbols();
-  PIN_Init ( argc, argv );
+  PIN_Init(argc, argv);
 
   // 0 is the (unused) input data
-  PIN_AddApplicationStartFunction ( start_tracing, 0 );
+  PIN_AddApplicationStartFunction(start_tracing, 0);
 
-  INS_AddInstrumentFunction ( ins_instrumenter, 0 );
+  INS_AddInstrumentFunction(ins_instrumenter, 0);
 
-  PIN_AddSyscallEntryFunction ( syscall_entry_analyzer, 0 );
-  PIN_AddSyscallExitFunction ( syscall_exit_analyzer, 0 );
+  PIN_AddSyscallEntryFunction(syscall_entry_analyzer, 0 );
+  PIN_AddSyscallExitFunction(syscall_exit_analyzer, 0 );
 
-  PIN_AddFiniFunction ( stop_tracing, 0 );
+  PIN_AddFiniFunction(stop_tracing, 0 );
 
   // now the control is passed to pin, so the main function will never return
   PIN_StartProgram();
   return 0;
 }
-

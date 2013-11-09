@@ -7,7 +7,9 @@
 #include "stuffs.h"
 
 extern std::map< ADDRINT,
-       instruction >                              addr_ins_static_map;
+                 instruction >                    addr_ins_static_map;
+extern std::map< UINT32, 
+                 instruction >                    order_ins_dynamic_map;
 
 extern bool                                       in_tainting;
 
@@ -482,5 +484,17 @@ VOID resolving_cond_branch_analyzer(ADDRINT ins_addr, bool br_taken)
     }
   }
 
+  return;
+}
+
+/*====================================================================================================================*/
+
+VOID resolving_indirect_branch_call_analyzer(ADDRINT ins_addr, ADDRINT target_addr)
+{
+  if (order_ins_dynamic_map[explored_trace.size() + 1].address != target_addr) 
+  {
+    std::cerr << "Critical error: indirect branch leads to a different instruction\n";
+    PIN_ExitApplication(0);
+  }
   return;
 }

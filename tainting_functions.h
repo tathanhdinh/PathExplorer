@@ -3,7 +3,7 @@
 
 #include <pin.H>
 
-VOID tainting_general_instruction_analyzer ( ADDRINT ins_addr );
+extern VOID tainting_general_instruction_analyzer (ADDRINT ins_addr);
 
 // VOID tainting_mem_to_st_analyzer(ADDRINT ins_addr, ADDRINT mem_read_addr, UINT32 mem_read_size);
 

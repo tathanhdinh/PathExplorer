@@ -19,7 +19,7 @@
 /*====================================================================================================================*/
 
 extern std::map< ADDRINT,
-       instruction >                      addr_ins_static_map;
+       instruction >                                addr_ins_static_map;
 
 extern std::vector<ADDRINT>                         explored_trace;
 
@@ -28,8 +28,6 @@ extern bool                                         in_tainting;
 extern map_ins_io                                   dta_inss_io;
 
 extern UINT8                                        received_msg_num;
-
-// extern std::ofstream                                tainting_log_file;
 
 extern boost::shared_ptr<boost::posix_time::ptime>  start_ptr_time;
 extern boost::shared_ptr<boost::posix_time::ptime>  stop_ptr_time;
@@ -152,7 +150,11 @@ VOID ins_instrumenter ( INS ins, VOID *data )
         {
           if (INS_IsIndirectBranchOrCall(ins)) 
           {
-            INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)resolving_indirect_branch_call_analyzer, IARG_INST_PTR, )
+            INS_InsertPredicatedCall(ins, IPOINT_BEFORE, 
+                                     (AFUNPTR)resolving_indirect_branch_call_analyzer, 
+                                     IARG_INST_PTR, 
+                                     IARG_BRANCH_TARGET_ADDR, 
+                                     IARG_END);
           }
         }
       }

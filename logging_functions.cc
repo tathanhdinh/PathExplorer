@@ -40,7 +40,7 @@ extern std::vector<ptr_checkpoint>              saved_ptr_checkpoints;
 extern ptr_checkpoint                           master_ptr_checkpoint;
 
 extern std::map< UINT32,
-       std::vector<ptr_checkpoint> >  exepoint_checkpoints_map;
+                 std::vector<ptr_checkpoint> >  exepoint_checkpoints_map;
 
 extern ADDRINT                                  received_msg_addr;
 extern UINT32                                   received_msg_size;
@@ -51,62 +51,62 @@ extern KNOB<UINT32>                             max_trace_length;
 /*====================================================================================================================*/
 
 static std::map<vdep_vertex_desc,
-       vdep_vertex_desc>   prec_vertex_desc;
+                vdep_vertex_desc>   prec_vertex_desc;
 
 /*====================================================================================================================*/
 
 class dep_bfs_visitor : public boost::default_bfs_visitor
 {
 public:
-    template <typename Edge, typename Graph>
-    void tree_edge(Edge e, const Graph& g)
-    {
-        prec_vertex_desc[boost::target(e, g)] = boost::source(e, g);
-    }
+  template <typename Edge, typename Graph>
+  void tree_edge(Edge e, const Graph& g)
+  {
+    prec_vertex_desc[boost::target(e, g)] = boost::source(e, g);
+  }
 };
 
 /*====================================================================================================================*/
 
 inline void omit_branch(ptr_branch& omitted_ptr_branch)
 {
-    omitted_ptr_branch->is_resolved = true;
-    omitted_ptr_branch->is_bypassed = false;
-    omitted_ptr_branch->is_just_resolved = false;
+  omitted_ptr_branch->is_resolved = true;
+  omitted_ptr_branch->is_bypassed = false;
+  omitted_ptr_branch->is_just_resolved = false;
 
-    return;
+  return;
 }
 
 /*====================================================================================================================*/
 
 std::vector<UINT32> backward_trace(vdep_vertex_desc root_vertex, vdep_vertex_desc last_vertex)
 {
-    std::vector<UINT32> backward_trace;
+  std::vector<UINT32> backward_trace;
 
-    vdep_vertex_desc current_vertex = last_vertex;
-    vdep_vertex_desc backward_vertex;
+  vdep_vertex_desc current_vertex = last_vertex;
+  vdep_vertex_desc backward_vertex;
 
-    vdep_edge_desc current_edge;
-    bool edge_exist;
+  vdep_edge_desc current_edge;
+  bool edge_exist;
 
-    while (current_vertex != root_vertex)
+  while (current_vertex != root_vertex)
+  {
+    backward_vertex = prec_vertex_desc[current_vertex];
+
+    boost::tie(current_edge, edge_exist) = boost::edge(backward_vertex, current_vertex, dta_graph);
+    if (edge_exist)
     {
-        backward_vertex = prec_vertex_desc[current_vertex];
-
-        boost::tie(current_edge, edge_exist) = boost::edge(backward_vertex, current_vertex, dta_graph);
-        if (edge_exist)
-        {
-            backward_trace.push_back(dta_graph[current_edge].second);
-        }
-        else
-        {
-            std::cerr << "Critical error: edge not found in backward trace construction.\n";
-            PIN_ExitApplication(0);
-        }
-
-        current_vertex = backward_vertex;
+      backward_trace.push_back(dta_graph[current_edge].second);
+    }
+    else
+    {
+      std::cout << "Critical error: edge not found in backward trace construction.\n";
+      PIN_ExitApplication(0);
     }
 
-    return backward_trace;
+    current_vertex = backward_vertex;
+  }
+
+  return backward_trace;
 }
 
 /*====================================================================================================================*/
@@ -160,8 +160,8 @@ inline void compute_branch_mem_dependency()
                 (*ptr_branch_iter)->dep_other_addrs.insert(dta_graph[*vertex_iter].mem);
               }
 
-              (*ptr_branch_iter)->dep_backward_traces[current_addr] = backward_trace(*vertex_iter,
-                      prec_vertex_iter->second);
+              (*ptr_branch_iter)->dep_backward_traces[current_addr] = backward_trace(*vertex_iter, 
+                                                                                     prec_vertex_iter->second);
             }
           }
         }
@@ -315,10 +315,8 @@ VOID logging_mem_read_instruction_analyzer(ADDRINT ins_addr,
                                            CONTEXT* p_ctxt)
 {
   // a new checkpoint found
-  if (
-      std::max(mem_read_addr, received_msg_addr) <
-      std::min(mem_read_addr + mem_read_size, received_msg_addr + received_msg_size)
-     )
+  if (std::max(mem_read_addr, received_msg_addr) <
+      std::min(mem_read_addr + mem_read_size, received_msg_addr + received_msg_size))
   {
     ptr_checkpoint new_ptr_checkpoint(new checkpoint(ins_addr, p_ctxt, explored_trace, mem_read_addr, mem_read_size));
     saved_ptr_checkpoints.push_back(new_ptr_checkpoint);

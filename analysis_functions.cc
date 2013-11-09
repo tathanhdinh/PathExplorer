@@ -21,7 +21,7 @@ extern KNOB<BOOL>   print_debug_text;
 
 /*====================================================================================================================*/
 
-VOID unhandled_analyzer ( ADDRINT ins_addr, UINT32 dst_opr_id, UINT32 src_opr_id )
+VOID unhandled_analyzer(ADDRINT ins_addr, UINT32 dst_opr_id, UINT32 src_opr_id)
 {
   std::cerr << addr_ins_static_map[ins_addr].disass;
 
