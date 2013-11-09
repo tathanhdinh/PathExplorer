@@ -138,6 +138,7 @@ VOID ins_instrumenter ( INS ins, VOID *data )
           }
         }
         
+        // note that conditional branches are always direct
         if (addr_ins_static_map[ins_addr].category == XED_CATEGORY_COND_BR) 
         {
           INS_InsertPredicatedCall(ins, IPOINT_BEFORE,

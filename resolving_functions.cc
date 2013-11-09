@@ -1,5 +1,7 @@
 #include <pin.H>
 
+#include <boost/format.hpp>
+
 #include "variable.h"
 #include "instruction.h"
 #include "checkpoint.h"
@@ -48,6 +50,142 @@ extern KNOB<UINT32>                               max_total_rollback;
 extern KNOB<UINT32>                               max_local_rollback;
 extern KNOB<UINT32>                               max_trace_length;
 extern KNOB<BOOL>                                 print_debug_text;
+
+/*====================================================================================================================*/
+
+inline void print_debug_unknown_branch(ADDRINT ins_addr/*, ptr_branch& unknown_ptr_branch*/)
+{
+  if (print_debug_text) 
+  {
+    std::cerr << boost::format("\033[31mLost at     %-5i %-20s %-35s (unknown branch met)\033[0m\n")
+              % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr))
+              % addr_ins_static_map[ins_addr].disass;
+  }
+  return;
+}
+
+/*====================================================================================================================*/
+
+inline void print_debug_lost_forward(ADDRINT ins_addr/*, ptr_branch& lost_ptr_branch*/)
+{
+  if (print_debug_text) 
+  {
+    std::cerr << boost::format("\033[31mBranch at   %-5i %-20s %-35s (lost: new branch taken in forward)\033[0m\n")
+//     boost::format("\033[31mBranch  %-1i   %-5i %-20s %-35s (lost: new branch taken in forward)\033[0m\n")
+                  % /*!lost_ptr_branch->br_taken %*/ explored_trace.size()
+                  % remove_leading_zeros(StringFromAddrint(ins_addr))
+                  % addr_ins_static_map[ins_addr].disass;
+  }
+  return;
+}
+
+/*====================================================================================================================*/
+
+inline void print_debug_failed_active_forward (ADDRINT ins_addr, ptr_branch& failed_ptr_branch)
+{
+  if (print_debug_text) 
+  {
+    std::cerr << boost::format("\033[31mFailed      %-5i %-20s %-35s (active branch not met in forward)\033[0m\n")
+                  % explored_trace.size() % remove_leading_zeros(StringFromAddrint (ins_addr))
+                  % addr_ins_static_map[ins_addr].disass;
+  }
+  return;
+}
+
+/*====================================================================================================================*/
+
+inline void print_debug_met_again(ADDRINT ins_addr, ptr_branch &met_ptr_branch)
+{
+  if (print_debug_text) 
+  {
+    std::cerr << boost::format ("\033[36mMet again   %-5i %-20s %-35s (%-10i rollbacks)\033[0m\n")
+                  % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr)) 
+                  % addr_ins_static_map[ins_addr].disass % met_ptr_branch->checkpoint->rollback_times;
+  }
+  return;
+}
+
+/*====================================================================================================================*/
+
+inline void print_debug_rollbacking_stop(ptr_branch& unexplored_ptr_branch)
+{
+  if (print_debug_text) 
+  {
+    UINT32 resolved_branch_num = resolved_ptr_branches.size();
+    UINT32 input_dep_branch_num = found_new_ptr_branches.size();
+
+    std::vector<ptr_branch>::iterator ptr_branch_iter = tainted_ptr_branches.begin();
+    for (; ptr_branch_iter != tainted_ptr_branches.end(); ++ptr_branch_iter) 
+    {
+      if (!(*ptr_branch_iter)->dep_input_addrs.empty()) 
+      {
+        input_dep_branch_num++;
+      }
+    }
+
+
+    std::cerr << "\033[33mRollbacking phase stopped: " << resolved_branch_num << "/"
+              << input_dep_branch_num << " branches resolved.\033[0m\n";
+    std::cerr << "\033[35m-------------------------------------------------------------------------------------------------\n"
+              << "Start tainting phase exploring branch at " << unexplored_ptr_branch->trace.size() << ".\033[0m\n";
+  }
+  return;
+}
+
+/*====================================================================================================================*/
+
+inline void print_debug_resolving_failed(ADDRINT ins_addr, ptr_branch& failed_ptr_branch)
+{
+  if (print_debug_text) 
+  {
+    std::cout << boost::format("\033[31mFailed      %-5i %-20s %-35s (%i rollbacks)\033[0m\n")
+                  % failed_ptr_branch->trace.size() /*explored_trace.size()*/
+                  % remove_leading_zeros(StringFromAddrint(ins_addr)) % addr_ins_static_map[ins_addr].disass
+                  % failed_ptr_branch->checkpoint->rollback_times;
+  }
+  return;
+}
+
+/*====================================================================================================================*/
+
+inline void print_debug_succeed(ADDRINT ins_addr, ptr_branch& succeed_ptr_branch)
+{
+  if (print_debug_text) 
+  {
+    std::cout << boost::format ("\033[32mSucceeded   %-5i %-20s %-35s (%i rollbacks)\033[0m\n")
+                  % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr))
+                  % addr_ins_static_map[ins_addr].disass
+                  % succeed_ptr_branch->checkpoint->rollback_times;
+  }
+  return;
+}
+
+/*====================================================================================================================*/
+
+inline void print_debug_resolving_rollback(ADDRINT ins_addr, ptr_branch& new_ptr_branch)
+{
+  if (print_debug_text) 
+  {
+    std::cerr << boost::format("Resolving   %-5i %-20s %-35s (rollback to %i)\n")
+                  % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr))
+                  % addr_ins_static_map[ins_addr].disass
+                  % active_ptr_branch->checkpoint->trace.size();
+  }
+  return;
+}
+
+/*====================================================================================================================*/
+
+inline void print_debug_found_new(ADDRINT ins_addr, ptr_branch& found_ptr_branch)
+{
+  if (print_debug_text) 
+  {
+    std::cout << boost::format("\033[35mFound new   %-5i %-20s %-35s\033[0m\n")
+                  % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr)) 
+                  % addr_ins_static_map[ins_addr].disass;
+  }
+  return;
+}
 
 /*====================================================================================================================*/
 
@@ -154,7 +292,7 @@ inline std::vector<ptr_branch>::iterator first_unexplored_branch()
 inline void error_lost_in_forwarding(ADDRINT ins_addr, ptr_branch& err_ptr_branch)
 {
   journal_buffer("failed_rollback_msg", reinterpret_cast<UINT8*>(received_msg_addr), received_msg_size);
-  print_debug_lost_forward(ins_addr, err_ptr_branch);
+  print_debug_lost_forward(ins_addr/*, err_ptr_branch*/);
 
   return;
 }
@@ -291,7 +429,8 @@ inline void new_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_bra
   }
   else // error: in forward but new branch taken found
   {
-    error_lost_in_forwarding(ins_addr, tainted_ptr_branch);
+//     error_lost_in_forwarding(ins_addr, tainted_ptr_branch);
+    print_debug_lost_forward(ins_addr/*, tainted_ptr_branch*/);
     std::cout << "2\n";
     PIN_ExitApplication(0);
   }
@@ -299,8 +438,14 @@ inline void new_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_bra
   return;
 }
 
-/*====================================================================================================================*/
-
+/**
+ * @brief handle the case where the branch (being re-executed) takes the same target.
+ * 
+ * @param ins_addr ...
+ * @param br_taken ...
+ * @param tainted_ptr_branch ...
+ * @return void
+ */
 inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_branch& tainted_ptr_branch)
 {
   bool current_br_taken;
@@ -420,7 +565,7 @@ inline void process_untainted_branch(ADDRINT ins_addr, bool br_taken, ptr_branch
     }
     else // error: active_ptr_branch is empty, namely in forwarding, but new taken found
     {
-      print_debug_lost_forward(ins_addr, untainted_ptr_branch);
+      print_debug_lost_forward(ins_addr/*, untainted_ptr_branch*/);
       PIN_ExitApplication(0);
     }
   }
@@ -479,7 +624,7 @@ VOID resolving_cond_branch_analyzer(ADDRINT ins_addr, bool br_taken)
     }
     else // error: the branch is not tainted neither untainted (normally by indirect jumps)
     {
-      print_debug_unknown_branch(ins_addr, *ptr_branch_iter);
+      print_debug_unknown_branch(ins_addr/*, *ptr_branch_iter*/);
       PIN_ExitApplication(0);
     }
   }
@@ -487,14 +632,34 @@ VOID resolving_cond_branch_analyzer(ADDRINT ins_addr, bool br_taken)
   return;
 }
 
-/*====================================================================================================================*/
 
+/**
+ * @brief handle the case where the indirect branch (being re-executed) may leads to a new target.
+ * 
+ * @param ins_addr instruction address.
+ * @param target_addr target address.
+ * @return VOID
+ */
 VOID resolving_indirect_branch_call_analyzer(ADDRINT ins_addr, ADDRINT target_addr)
 {
   if (order_ins_dynamic_map[explored_trace.size() + 1].address != target_addr) 
   {
-    std::cerr << "Critical error: indirect branch leads to a different instruction\n";
-    PIN_ExitApplication(0);
+    if (active_ptr_branch) 
+    {
+      // the original trace will lost if go further, so rollback
+      total_rollback_times++;
+      local_rollback_times++;
+      
+      rollback_with_input_random_modification(active_ptr_branch->checkpoint, active_ptr_branch->dep_input_addrs);
+    }
+    else // active_ptr_branch is empty, namely in forwarding, but new target found
+    {
+      print_debug_lost_forward(ins_addr);
+      PIN_ExitApplication(0);
+    }
+    
+//     std::cerr << "Critical error: indirect branch leads to a different instruction\n";
+//     PIN_ExitApplication(0);
   }
   return;
 }

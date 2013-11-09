@@ -43,24 +43,6 @@ void        store_input ( ptr_branch& ptr_br, bool br_taken );
 
 void        print_debug_message_received();
 
-void        print_debug_rollbacking_stop ( ptr_branch& unexplored_ptr_branch );
-
-void        print_debug_met_again ( ADDRINT ins_addr, ptr_branch &met_ptr_branch );
-
-void        print_debug_failed_active_forward ( ADDRINT ins_addr, ptr_branch& failed_ptr_branch );
-
-void        print_debug_resolving_rollback ( ADDRINT ins_addr, ptr_branch& new_ptr_branch );
-
-void        print_debug_succeed ( ADDRINT ins_addr, ptr_branch& succeed_ptr_branch );
-
-void        print_debug_resolving_failed ( ADDRINT ins_addr, ptr_branch& failed_ptr_branch );
-
-void        print_debug_found_new ( ADDRINT ins_addr, ptr_branch& found_ptr_branch );
-
-void        print_debug_lost_forward ( ADDRINT ins_addr, ptr_branch& lost_ptr_branch );
-
-void        print_debug_unknown_branch ( ADDRINT ins_addr, ptr_branch& unknown_ptr_branch );
-
 void        print_debug_start_rollbacking();
 
 void        print_debug_new_checkpoint ( ADDRINT ins_addr );
