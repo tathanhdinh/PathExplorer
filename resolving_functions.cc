@@ -19,7 +19,7 @@ extern vdep_graph                                 dta_graph;
 
 extern std::vector<ADDRINT>                       explored_trace;
 
-// extern ptr_checkpoint                             active_ptr_checkpoint;
+extern ptr_checkpoint                             active_ptr_checkpoint;
 extern ptr_checkpoint                             master_ptr_checkpoint;
 extern std::vector<ptr_checkpoint>                saved_ptr_checkpoints;
 
@@ -385,7 +385,11 @@ inline void process_tainted_and_resolved_branch(ADDRINT ins_addr, bool br_taken,
       total_rollback_times++;
       local_rollback_times++;
       
-      rollback_with_input_random_modification(active_ptr_branch->checkpoint, active_ptr_branch->dep_input_addrs);
+      active_ptr_checkpoint = active_ptr_branch->nearest_checkpoints.rbegin()->first;
+      rollback_with_input_random_modification(/*active_ptr_branch->checkpoint*/
+                                              /*active_ptr_branch->dep_input_addrs*/
+                                              active_ptr_checkpoint,
+                                              active_ptr_branch->nearest_checkpoints[active_ptr_checkpoint]);
     }
     else
     {
@@ -573,7 +577,9 @@ inline void process_untainted_branch(ADDRINT ins_addr, bool br_taken, ptr_branch
       total_rollback_times++;
       local_rollback_times++;
       
-      rollback_with_input_random_modification(active_ptr_branch->checkpoint, active_ptr_branch->dep_input_addrs);
+      rollback_with_input_random_modification(active_ptr_branch->checkpoint, 
+                                              /*active_ptr_branch->dep_input_addrs*/
+                                              active_ptr_branch->nearest_checkpoints[active_ptr_branch->checkpoint]);
     }
     else // error: active_ptr_branch is empty, namely in forwarding, but new taken found
     {
