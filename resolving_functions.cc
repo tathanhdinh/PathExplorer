@@ -140,8 +140,9 @@ inline void print_debug_resolving_failed(ADDRINT ins_addr, ptr_branch& failed_pt
   {
     std::cout << boost::format("\033[31mFailed      %-5i %-20s %-35s (%i rollbacks)\033[0m\n")
                   % failed_ptr_branch->trace.size() /*explored_trace.size()*/
-                  % remove_leading_zeros(StringFromAddrint(ins_addr)) % addr_ins_static_map[ins_addr].disass
-                  % failed_ptr_branch->checkpoint->rollback_times;
+                  % remove_leading_zeros(StringFromAddrint(ins_addr)) % addr_ins_static_map[ins_addr].disass 
+                  % local_rollback_times;
+//                   % failed_ptr_branch->checkpoint->rollback_times;
   }
   return;
 }
@@ -155,7 +156,8 @@ inline void print_debug_succeed(ADDRINT ins_addr, ptr_branch& succeed_ptr_branch
     std::cout << boost::format ("\033[32mSucceeded   %-5i %-20s %-35s (%i rollbacks)\033[0m\n")
                   % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr))
                   % addr_ins_static_map[ins_addr].disass
-                  % succeed_ptr_branch->checkpoint->rollback_times;
+                  % local_rollback_times;
+//                   % succeed_ptr_branch->checkpoint->rollback_times;
   }
   return;
 }
@@ -192,10 +194,10 @@ inline void print_debug_found_new(ADDRINT ins_addr, ptr_branch& found_ptr_branch
 VOID resolving_ins_count_analyzer(ADDRINT ins_addr)
 {
   explored_trace.push_back(ins_addr);
-  std::cout << explored_trace.size() << "  " 
-            << remove_leading_zeros(StringFromAddrint(ins_addr)) << " "
-            << addr_ins_static_map[ins_addr].disass 
-            << "\n";
+//   std::cout << explored_trace.size() << "  " 
+//             << remove_leading_zeros(StringFromAddrint(ins_addr)) << " "
+//             << addr_ins_static_map[ins_addr].disass 
+//             << "\n";
   return;
 }
 
@@ -405,8 +407,15 @@ inline void process_tainted_and_resolved_branch(ADDRINT ins_addr, bool br_taken,
   return;
 }
 
-/*====================================================================================================================*/
 
+/**
+ * @brief handle the case where the branch (being re-executed) takes a different target.
+ * 
+ * @param ins_addr ...
+ * @param br_taken ...
+ * @param tainted_ptr_branch ...
+ * @return void
+ */
 inline void new_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_branch& tainted_ptr_branch)
 {
   ptr_branch tmp_ptr_branch;
