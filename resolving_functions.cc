@@ -447,6 +447,7 @@ inline void new_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_bra
   return;
 }
 
+
 /**
  * @brief handle the case where the branch (being re-executed) takes the same target.
  * 
@@ -481,7 +482,9 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
       total_rollback_times++;
       local_rollback_times++;
       
-      rollback_with_input_random_modification(active_ptr_branch->checkpoint, active_ptr_branch->dep_input_addrs);
+      rollback_with_input_random_modification(active_ptr_branch->checkpoint, 
+                                              /*active_ptr_branch->dep_input_addrs*/
+                                              active_ptr_branch->nearest_checkpoints[active_ptr_branch->checkpoint]);
     }
     else // the rollback number bypasses the maximum value
     {
@@ -659,7 +662,9 @@ VOID resolving_indirect_branch_call_analyzer(ADDRINT ins_addr, ADDRINT target_ad
       total_rollback_times++;
       local_rollback_times++;
       
-      rollback_with_input_random_modification(active_ptr_branch->checkpoint, active_ptr_branch->dep_input_addrs);
+      rollback_with_input_random_modification(active_ptr_branch->checkpoint, 
+                                              /*active_ptr_branch->dep_input_addrs*/
+                                              active_ptr_branch->nearest_checkpoints[active_ptr_branch->checkpoint]);
     }
     else // active_ptr_branch is empty, namely in forwarding, but new target found
     {
