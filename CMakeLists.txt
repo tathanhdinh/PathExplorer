@@ -5,7 +5,7 @@ project(PathExplorer)
 include(FindPin.cmake)
 include(UsePin.cmake)
 
-# set(PINTOOL_LINK_LIBS z3)
+set(PINTOOL_LINK_LIBS boost_log pthread)
 
 ADD_PINTOOL(path_explorer branch.cpp 
   variable.cpp

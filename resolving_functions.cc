@@ -1,6 +1,7 @@
 #include <pin.H>
 
 #include <boost/format.hpp>
+#include <boost/log/trivial.hpp>
 
 #include "variable.h"
 #include "instruction.h"
@@ -58,8 +59,8 @@ inline void print_debug_unknown_branch(ADDRINT ins_addr/*, ptr_branch& unknown_p
   if (print_debug_text) 
   {
     std::cerr << boost::format("\033[31mLost at     %-5i %-20s %-35s (unknown branch met)\033[0m\n")
-              % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr))
-              % addr_ins_static_map[ins_addr].disass;
+                  % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr))
+                  % addr_ins_static_map[ins_addr].disass;
   }
   return;
 }
@@ -540,7 +541,8 @@ inline void process_tainted_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& 
     if (tainted_ptr_branch == input_dep_ptr_branches.back()) // and is the current last branch
     {
       /* FOR TESTING ONLY */
-      std::cout << "4\n";
+//       std::cout << "4\n";
+      BOOST_LOG_TRIVIAL(warning) << "For TESTING only: stop at the last branch of the first tainting result.";
       PIN_ExitApplication(0);
 
       exploring_new_branch_or_stop();
