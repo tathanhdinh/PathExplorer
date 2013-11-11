@@ -44,6 +44,8 @@ extern std::vector<ptr_branch>                    resolved_ptr_branches;
 extern ptr_branch                                 active_ptr_branch;
 extern ptr_branch                                 exploring_ptr_branch;
 
+extern std::set<ADDRINT>                          active_input_dep_addrs;
+
 extern UINT32                                     input_dep_branch_num;
 extern UINT32                                     resolved_branch_num;
 
@@ -475,13 +477,15 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
   }
   else // in forward and meet a branch to resolve, so enable active_ptr_branch
   {
-    enable_active_branch(tainted_ptr_branch);
+    active_ptr_branch = tainted_ptr_branch;
+//     enable_active_branch(tainted_ptr_branch);
+    
     local_rollback_times = 0;
     
     print_debug_resolving_rollback(ins_addr, tainted_ptr_branch);
   }
 
-    if (/*active_ptr_branch->checkpoint->rollback_times*/local_rollback_times <= max_local_rollback.Value())
+    if (local_rollback_times <= max_local_rollback.Value())
     {
       // this branch is not resolved yet, now modify the input and rollback again
       total_rollback_times++;
@@ -532,7 +536,8 @@ inline void process_tainted_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& 
 {
   if (total_rollback_times >= max_total_rollback_times /*max_total_rollback.Value()*/)
   {
-    std::cout << "3\n";
+//     std::cout << "3\n";
+    BOOST_LOG_TRIVIAL(info) << "STOP: total rollback number exceeds its limit value.";
     PIN_ExitApplication(0);
   }
 
@@ -542,7 +547,7 @@ inline void process_tainted_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& 
     {
       /* FOR TESTING ONLY */
 //       std::cout << "4\n";
-      BOOST_LOG_TRIVIAL(warning) << "For TESTING only: stop at the last branch of the first tainting result.";
+      BOOST_LOG_TRIVIAL(warning) << "FOR TESTING ONLY: stop at the last branch of the first tainting result.";
       PIN_ExitApplication(0);
 
       exploring_new_branch_or_stop();
@@ -670,9 +675,11 @@ VOID resolving_indirect_branch_call_analyzer(ADDRINT ins_addr, ADDRINT target_ad
       total_rollback_times++;
       local_rollback_times++;
       
-      rollback_with_input_random_modification(active_ptr_branch->checkpoint, 
+      active_ptr_checkpoint = active_ptr_branch->nearest_checkpoints.rbegin()->first;
+      rollback_with_input_random_modification(/*active_ptr_branch->checkpoint, */
                                               /*active_ptr_branch->dep_input_addrs*/
-                                              active_ptr_branch->nearest_checkpoints[active_ptr_branch->checkpoint]);
+                                              active_ptr_checkpoint,
+                                              active_ptr_branch->nearest_checkpoints[active_ptr_checkpoint]);
     }
     else // active_ptr_branch is empty, namely in forwarding, but new target found
     {
