@@ -369,15 +369,17 @@ inline void get_next_nearest_checkpoint(ptr_branch& input_branch)
     
     if (nearest_checkpoint_iter != input_branch->nearest_checkpoints.end()) 
     {
-      active_nearest_checkpoint.first = (*next_nearest_checkpoint_iter).first;
-      if (active_nearest_checkpoint != input_branch->nearest_checkpoints.end()) 
+      if (next_nearest_checkpoint_iter != input_branch->nearest_checkpoints.end()) 
       {
+        active_nearest_checkpoint.first = (*next_nearest_checkpoint_iter).first;
         active_nearest_checkpoint.second.insert((*next_nearest_checkpoint_iter).second.begin(), 
                                                 (*next_nearest_checkpoint_iter).second.end());
       }
       else 
       {
-        std::set<ADDRINT>().swap(active_nearest_checkpoint.second);
+        active_nearest_checkpoint.first.reset();
+        active_nearest_checkpoint.second.clear();
+//         std::set<ADDRINT>().swap(active_nearest_checkpoint.second);
       }
     }
     else 
@@ -435,7 +437,7 @@ inline void process_tainted_and_resolved_branch(ADDRINT ins_addr, bool br_taken,
       accept_branch(tainted_ptr_branch);
     }
 
-    if (/*active_ptr_branch->checkpoint->rollback_times*/local_rollback_times < max_local_rollback_times)
+    if (local_rollback_times < max_local_rollback_times)
     {
       // we will lost out of the original trace if go further, so we must rollback
       total_rollback_times++;
