@@ -3,6 +3,8 @@
 #include <boost/format.hpp>
 #include <boost/log/trivial.hpp>
 
+#include <algorithm>
+
 #include "variable.h"
 #include "instruction.h"
 #include "checkpoint.h"
@@ -23,6 +25,9 @@ extern std::vector<ADDRINT>                       explored_trace;
 extern ptr_checkpoint                             active_ptr_checkpoint;
 extern ptr_checkpoint                             master_ptr_checkpoint;
 extern std::vector<ptr_checkpoint>                saved_ptr_checkpoints;
+
+extern std::pair< ptr_checkpoint, 
+                  std::set<ADDRINT> >             active_nearest_checkpoint;
 
 extern std::map< UINT32,
        std::vector<ptr_checkpoint> >              exepoint_checkpoints_map;
@@ -338,6 +343,54 @@ inline void enable_active_branch(ptr_branch& new_branch)
 {
   active_ptr_branch = new_branch;
   return;
+}
+
+inline void get_next_nearest_checkpoint(ptr_branch& input_branch) 
+{
+  std::map< ptr_checkpoint, std::set<ADDRINT>, ptr_checkpoint_less >::iterator nearest_checkpoint_iter;
+  std::map< ptr_checkpoint, std::set<ADDRINT>, ptr_checkpoint_less >::iterator next_nearest_checkpoint_iter;
+  
+  if (active_nearest_checkpoint.first) 
+  {
+    nearest_checkpoint_iter = input_branch->nearest_checkpoints.begin();
+    next_nearest_checkpoint_iter = input_branch->nearest_checkpoints.end();
+    
+    for (; nearest_checkpoint_iter != input_branch->nearest_checkpoints.end(); ++nearest_checkpoint_iter) 
+    {
+      if ((*nearest_checkpoint_iter).first == active_nearest_checkpoint.first) 
+      {
+        break;
+      }
+      else 
+      {
+        next_nearest_checkpoint_iter = nearest_checkpoint_iter;
+      }
+    }
+    
+    if (nearest_checkpoint_iter != input_branch->nearest_checkpoints.end()) 
+    {
+      active_nearest_checkpoint.first = (*next_nearest_checkpoint_iter).first;
+      if (active_nearest_checkpoint != input_branch->nearest_checkpoints.end()) 
+      {
+        active_nearest_checkpoint.second.insert((*next_nearest_checkpoint_iter).second.begin(), 
+                                                (*next_nearest_checkpoint_iter).second.end());
+      }
+      else 
+      {
+        std::set<ADDRINT>().swap(active_nearest_checkpoint.second);
+      }
+    }
+    else 
+    {
+      BOOST_LOG_TRIVIAL(fatal) << "FATAL: nearest checkpoint cannot found in the branch's nearest checkpoint list";
+      PIN_ExitApplication(0);
+    }
+  }
+  else 
+  {
+    active_nearest_checkpoint.first = input_branch->nearest_checkpoints.rbegin()->first;
+    active_nearest_checkpoint.second = input_branch->nearest_checkpoints.rbegin()->second;
+  }
 }
 
 /*====================================================================================================================*/

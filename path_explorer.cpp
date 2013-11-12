@@ -57,6 +57,9 @@ ptr_checkpoint                                active_ptr_checkpoint;
 
 std::set<ADDRINT>                             active_input_dep_addrs;
 
+std::pair< ptr_checkpoint, 
+           std::set<ADDRINT> >                active_nearest_checkpoint;
+
 std::map< UINT32,
           std::vector<ptr_checkpoint> >       exepoint_checkpoints_map;
 

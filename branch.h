@@ -45,19 +45,16 @@ public:
   std::set<ADDRINT>     dep_input_addrs;
   std::set<ADDRINT>     dep_other_addrs;
   
-  std::map< 
-            ADDRINT, 
+  std::map< ADDRINT, 
             std::vector<UINT32> 
           >             dep_backward_traces;
   
-  std::map< 
-            bool, 
+  std::map< bool, 
             std::vector< boost::shared_ptr<UINT8> > 
           >             inputs;
     
   ptr_checkpoint        checkpoint;
-  std::map< 
-            ptr_checkpoint, 
+  std::map< ptr_checkpoint, 
             std::set<ADDRINT>, 
             ptr_checkpoint_less
           >             nearest_checkpoints;
