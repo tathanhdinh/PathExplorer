@@ -393,6 +393,8 @@ inline void get_next_nearest_checkpoint(ptr_branch& input_branch)
     active_nearest_checkpoint.first = input_branch->nearest_checkpoints.rbegin()->first;
     active_nearest_checkpoint.second = input_branch->nearest_checkpoints.rbegin()->second;
   }
+  
+  return;
 }
 
 /*====================================================================================================================*/
@@ -522,6 +524,66 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
 {
   bool current_br_taken;
 
+  if (active_ptr_branch) // active branch is enabled, namely in some rollback
+  {
+    // so verify that
+    if (active_ptr_branch != tainted_ptr_branch) 
+    {
+      BOOST_LOG_TRIVIAL(fatal) << "In rollback but the tainted and active branches are not matched";
+      PIN_ExitApplication(0);
+    }
+  }
+  else // active_ptr_branch is disabled, namely in some forward and meet a new tainted branch
+  {
+    // so enable active_ptr_branch
+    active_ptr_branch = tainted_ptr_branch;
+    get_next_nearest_checkpoint(active_ptr_branch); // the active_nearest_checkpoint is updated 
+    
+    local_rollback_times = 0;
+    
+    BOOST_LOG_TRIVIAL(trace) << boost::format("Resolve the branch at %d by rollback to the checkpoint at %d") 
+                                % tainted_ptr_branch->trace.size() % active_nearest_checkpoint.first->trace.size();
+  }
+  
+  // resolve the active_ptr_branch
+  total_rollback_times++;
+  
+  if (local_rollback_times <= max_local_rollback_times) 
+  {
+    local_rollback_times++;
+    
+    rollback_with_input_random_modification(active_nearest_checkpoint.first, active_nearest_checkpoint.second);
+  }
+  else // we have reached the limit number of rollback test for the current active_nearest_checkpoint
+  {
+    // so we get try to get new active_nearest_checkpoint
+    get_next_nearest_checkpoint(active_ptr_branch);
+    
+    local_rollback_times = 0;
+    
+    if (active_nearest_checkpoint.first) // found a new active_nearest_checkpoint
+    {
+      // then rollback to it
+      BOOST_LOG_TRIVIAL(trace) << boost::format("Resolve the branch at %d by rollback to the checkpoint at %d") 
+                                  % active_ptr_branch->trace.size() % active_nearest_checkpoint.first->trace.size();
+                                  
+      rollback_with_input_random_modification(active_nearest_checkpoint.first, active_nearest_checkpoint.second);
+    }
+    else // cannot found a new active_nearest_checkpoint
+    {
+      // so bypass this branch
+      BOOST_LOG_TRIVIAL(trace) << boost::format("Cannot resolve the branch at %d") % active_ptr_branch->trace.size();
+      
+      bypass_branch(active_ptr_branch);
+      
+      ptr_branch tmp_ptr_branch = active_ptr_branch;
+      active_ptr_branch.reset();
+      
+      rollback_with_input_replacement(tmp_ptr_branch->checkpoint, 
+                                      tmp_ptr_branch->inputs[tmp_ptr_branch->br_taken][0].get());
+    }
+  }
+  
   if (active_ptr_branch) // in some rollback
   {
     if (active_ptr_branch != tainted_ptr_branch) // error:
@@ -539,32 +601,32 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
     
     print_debug_resolving_rollback(ins_addr, tainted_ptr_branch);
   }
+  
+  if (local_rollback_times <= max_local_rollback_times/*max_local_rollback.Value()*/)
+  {
+    // this branch is not resolved yet, now modify the input and rollback again
+    total_rollback_times++;
+    local_rollback_times++;
+    
+    rollback_with_input_random_modification(active_ptr_branch->checkpoint, 
+                                            /*active_ptr_branch->dep_input_addrs*/
+                                            active_ptr_branch->nearest_checkpoints[active_ptr_branch->checkpoint]);
+  }
+  else // the rollback number bypasses the maximum value
+  {
+    print_debug_resolving_failed(ins_addr, tainted_ptr_branch);
 
-    if (local_rollback_times <= max_local_rollback.Value())
-    {
-      // this branch is not resolved yet, now modify the input and rollback again
-      total_rollback_times++;
-      local_rollback_times++;
-      
-      rollback_with_input_random_modification(active_ptr_branch->checkpoint, 
-                                              /*active_ptr_branch->dep_input_addrs*/
-                                              active_ptr_branch->nearest_checkpoints[active_ptr_branch->checkpoint]);
-    }
-    else // the rollback number bypasses the maximum value
-    {
-      print_debug_resolving_failed(ins_addr, tainted_ptr_branch);
+    bypass_branch(active_ptr_branch);
 
-      bypass_branch(active_ptr_branch);
+    ptr_branch tmp_ptr_branch = active_ptr_branch;
+    disable_active_branch();
 
-      ptr_branch tmp_ptr_branch = active_ptr_branch;
-      disable_active_branch();
-
-      total_rollback_times++;
-      local_rollback_times = 0;
-      
-      current_br_taken = tmp_ptr_branch->br_taken;
-      rollback_with_input_replacement(tmp_ptr_branch->checkpoint, tmp_ptr_branch->inputs[current_br_taken][0].get());
-    }
+    total_rollback_times++;
+    local_rollback_times = 0;
+    
+    current_br_taken = tmp_ptr_branch->br_taken;
+    rollback_with_input_replacement(tmp_ptr_branch->checkpoint, tmp_ptr_branch->inputs[current_br_taken][0].get());
+  }
 
     return;
 }
