@@ -483,6 +483,13 @@ inline void process_tainted_and_resolved_branch(ADDRINT ins_addr, bool br_taken,
 inline void new_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_branch& tainted_ptr_branch)
 {
   ptr_branch tmp_ptr_branch;
+  
+  if (active_ptr_branch) // in some rollback
+  {
+  }
+  else 
+  {
+  }
 
   if (active_ptr_branch) // so this branch is resolved
   {
@@ -522,8 +529,6 @@ inline void new_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_bra
  */
 inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_branch& tainted_ptr_branch)
 {
-  bool current_br_taken;
-
   if (active_ptr_branch) // active branch is enabled, namely in some rollback
   {
     // so verify that
@@ -584,51 +589,51 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
     }
   }
   
-  if (active_ptr_branch) // in some rollback
-  {
-    if (active_ptr_branch != tainted_ptr_branch) // error:
-    {
-      print_debug_failed_active_forward(ins_addr, tainted_ptr_branch);
-      PIN_ExitApplication(0);
-    }
-  }
-  else // in forward and meet a branch to resolve, so enable active_ptr_branch
-  {
-    active_ptr_branch = tainted_ptr_branch;
-//     enable_active_branch(tainted_ptr_branch);
-    
-    local_rollback_times = 0;
-    
-    print_debug_resolving_rollback(ins_addr, tainted_ptr_branch);
-  }
-  
-  if (local_rollback_times <= max_local_rollback_times/*max_local_rollback.Value()*/)
-  {
-    // this branch is not resolved yet, now modify the input and rollback again
-    total_rollback_times++;
-    local_rollback_times++;
-    
-    rollback_with_input_random_modification(active_ptr_branch->checkpoint, 
-                                            /*active_ptr_branch->dep_input_addrs*/
-                                            active_ptr_branch->nearest_checkpoints[active_ptr_branch->checkpoint]);
-  }
-  else // the rollback number bypasses the maximum value
-  {
-    print_debug_resolving_failed(ins_addr, tainted_ptr_branch);
+//   if (active_ptr_branch) // in some rollback
+//   {
+//     if (active_ptr_branch != tainted_ptr_branch) // error:
+//     {
+//       print_debug_failed_active_forward(ins_addr, tainted_ptr_branch);
+//       PIN_ExitApplication(0);
+//     }
+//   }
+//   else // in forward and meet a branch to resolve, so enable active_ptr_branch
+//   {
+//     active_ptr_branch = tainted_ptr_branch;
+// //     enable_active_branch(tainted_ptr_branch);
+//     
+//     local_rollback_times = 0;
+//     
+//     print_debug_resolving_rollback(ins_addr, tainted_ptr_branch);
+//   }
+//   
+//   if (local_rollback_times <= max_local_rollback_times/*max_local_rollback.Value()*/)
+//   {
+//     // this branch is not resolved yet, now modify the input and rollback again
+//     total_rollback_times++;
+//     local_rollback_times++;
+//     
+//     rollback_with_input_random_modification(active_ptr_branch->checkpoint, 
+//                                             /*active_ptr_branch->dep_input_addrs*/
+//                                             active_ptr_branch->nearest_checkpoints[active_ptr_branch->checkpoint]);
+//   }
+//   else // the rollback number bypasses the maximum value
+//   {
+//     print_debug_resolving_failed(ins_addr, tainted_ptr_branch);
+// 
+//     bypass_branch(active_ptr_branch);
+// 
+//     ptr_branch tmp_ptr_branch = active_ptr_branch;
+//     disable_active_branch();
+// 
+//     total_rollback_times++;
+//     local_rollback_times = 0;
+//     
+//     bool current_br_taken = tmp_ptr_branch->br_taken;
+//     rollback_with_input_replacement(tmp_ptr_branch->checkpoint, tmp_ptr_branch->inputs[current_br_taken][0].get());
+//   }
 
-    bypass_branch(active_ptr_branch);
-
-    ptr_branch tmp_ptr_branch = active_ptr_branch;
-    disable_active_branch();
-
-    total_rollback_times++;
-    local_rollback_times = 0;
-    
-    current_br_taken = tmp_ptr_branch->br_taken;
-    rollback_with_input_replacement(tmp_ptr_branch->checkpoint, tmp_ptr_branch->inputs[current_br_taken][0].get());
-  }
-
-    return;
+  return;
 }
 
 /*====================================================================================================================*/
