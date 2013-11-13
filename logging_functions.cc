@@ -29,8 +29,8 @@ extern map_ins_io                               dta_inss_io;
 
 extern std::vector<ADDRINT>                     explored_trace;
 
-extern std::vector<ptr_branch>                  input_dep_ptr_branches;
-extern std::vector<ptr_branch>                  input_indep_ptr_branches;
+extern std::map<UINT32, ptr_branch>             order_input_dep_ptr_branch_map;
+extern std::map<UINT32, ptr_branch>             order_input_indep_ptr_branch_map;
 
 extern std::vector<ptr_branch>                  tainted_ptr_branches;
 extern std::map<UINT32, ptr_branch>             order_tainted_ptr_branch_map;
@@ -173,8 +173,7 @@ inline void compute_branch_mem_dependency()
         }
         else
         {
-//           std::cerr << "Critical error: backward edge not found in BFS.\n";
-          BOOST_LOG_TRIVIAL(fatal) << "FATAL: backward edge not found in BFS.";
+          BOOST_LOG_TRIVIAL(fatal) << "Backward edge not found in BFS.";
           PIN_ExitApplication(0);
         }
       }
@@ -187,11 +186,13 @@ inline void compute_branch_mem_dependency()
     current_ptr_branch = order_ptr_branch_iter->second;
     if (!current_ptr_branch->dep_input_addrs.empty()) 
     {
-      input_dep_ptr_branches.push_back(current_ptr_branch);
+//       input_dep_ptr_branches.push_back(current_ptr_branch);
+      order_input_dep_ptr_branch_map[current_ptr_branch->trace.size()]= current_ptr_branch;
     }
     else 
     {
-      input_indep_ptr_branches.push_back(current_ptr_branch);
+//       input_indep_ptr_branches.push_back(current_ptr_branch);
+      order_input_indep_ptr_branch_map[current_ptr_branch->trace.size()] = current_ptr_branch;
     }
   }
 
@@ -261,7 +262,12 @@ inline void compute_branch_min_checkpoint()
 
 inline void prepare_new_rollbacking_phase()
 {
-  print_debug_start_rollbacking();
+//   print_debug_start_rollbacking();
+  BOOST_LOG_TRIVIAL(info) << boost::format("Tainting phase stop, %d instructions analyzed, %d checkpoints") 
+                              % explored_trace.size() % saved_ptr_checkpoints.size() 
+                          << boost::format(" and %d input dependent branches over %d total.") 
+                              % order_input_dep_ptr_branch_map.size() % order_tainted_ptr_branch_map.size()
+                          << " Start rollbacking phase.";
 
   in_tainting = false;
   PIN_RemoveInstrumentation();
@@ -273,10 +279,11 @@ inline void prepare_new_rollbacking_phase()
   }
   else
   {
-    if (!input_dep_ptr_branches.empty())
+    if (!order_input_dep_ptr_branch_map.empty())
     {
-      rollback_with_input_replacement(master_ptr_checkpoint,
-                                      input_dep_ptr_branches[0]->inputs[input_dep_ptr_branches[0]->br_taken][0].get());
+      ptr_branch first_ptr_branch = order_input_dep_ptr_branch_map.begin()->second;
+      rollback_with_input_replacement(master_ptr_checkpoint, 
+                                      first_ptr_branch->inputs[first_ptr_branch->br_taken][0].get());
     }
     else
     {

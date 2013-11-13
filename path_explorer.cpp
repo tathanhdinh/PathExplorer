@@ -144,36 +144,6 @@ VOID stop_tracing(INT32 code, VOID *data)
   boost::posix_time::time_duration elapsed_time = *stop_ptr_time - *start_ptr_time;
   long elapsed_millisec = elapsed_time.total_milliseconds();
 
-  UINT32 succeeded_branches = 0;
-  std::vector<ptr_branch>::iterator ptr_br_iter = input_dep_ptr_branches.begin();
-  for (; ptr_br_iter != input_dep_ptr_branches.end(); ++ptr_br_iter) 
-  {
-    if ((*ptr_br_iter)->is_resolved && ! (*ptr_br_iter )->is_bypassed) 
-    {
-      succeeded_branches++;
-    }
-  }
-
-  UINT32 new_branches = 0;
-  ptr_br_iter = input_indep_ptr_branches.begin();
-  for (; ptr_br_iter != input_indep_ptr_branches.end(); ++ptr_br_iter) 
-  {
-    if ((*ptr_br_iter)->is_resolved) 
-    {
-      new_branches++;
-    }
-  }
-
-  UINT32 used_rollback_times;
-  if (total_rollback_times > max_total_rollback.Value()) 
-  {
-    used_rollback_times = total_rollback_times - 1;
-  } 
-  else 
-  {
-    used_rollback_times = total_rollback_times;
-  }
-
   if (print_debug_text) 
   {
     UINT32 resolved_branch_num = resolved_ptr_branches.size();
@@ -191,7 +161,7 @@ VOID stop_tracing(INT32 code, VOID *data)
     std::cerr << "\033[33mExamining stopped.\033[0m\n"
               << "-------------------------------------------------------------------------------------------------\n"
               << elapsed_millisec << " milli-seconds elapsed.\n"
-              << used_rollback_times << " rollbacks used.\n"
+              << total_rollback_times << " rollbacks used.\n"
               << resolved_branch_num << "/" << input_dep_branch_num << " branches successfully resolved.\n"
               << "-------------------------------------------------------------------------------------------------\n";
 

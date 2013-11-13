@@ -40,10 +40,8 @@ extern UINT32                                     max_local_rollback_times;
 extern ADDRINT                                    received_msg_addr;
 extern UINT32                                     received_msg_size;
 
-extern std::vector<ptr_branch>                    input_dep_ptr_branches;
 extern std::map<UINT32, ptr_branch>               order_input_dep_ptr_branch_map;
 
-extern std::vector<ptr_branch>                    input_indep_ptr_branches;
 extern std::map<UINT32, ptr_branch>               order_input_indep_ptr_branch_map;
 
 extern std::vector<ptr_branch>                    tainted_ptr_branches;
@@ -121,30 +119,30 @@ inline void print_debug_met_again(ADDRINT ins_addr, ptr_branch &met_ptr_branch)
 
 /*====================================================================================================================*/
 
-inline void print_debug_rollbacking_stop(ptr_branch& unexplored_ptr_branch)
-{
-  if (print_debug_text) 
-  {
-    UINT32 resolved_branch_num = resolved_ptr_branches.size();
-    UINT32 input_dep_branch_num = found_new_ptr_branches.size();
-
-    std::vector<ptr_branch>::iterator ptr_branch_iter = tainted_ptr_branches.begin();
-    for (; ptr_branch_iter != tainted_ptr_branches.end(); ++ptr_branch_iter) 
-    {
-      if (!(*ptr_branch_iter)->dep_input_addrs.empty()) 
-      {
-        input_dep_branch_num++;
-      }
-    }
-
-
-    std::cerr << "\033[33mRollbacking phase stopped: " << resolved_branch_num << "/"
-              << input_dep_branch_num << " branches resolved.\033[0m\n";
-    std::cerr << "\033[35m-------------------------------------------------------------------------------------------------\n"
-              << "Start tainting phase exploring branch at " << unexplored_ptr_branch->trace.size() << ".\033[0m\n";
-  }
-  return;
-}
+// inline void print_debug_rollbacking_stop(ptr_branch& unexplored_ptr_branch)
+// {
+//   if (print_debug_text) 
+//   {
+//     UINT32 resolved_branch_num = resolved_ptr_branches.size();
+//     UINT32 input_dep_branch_num = found_new_ptr_branches.size();
+// 
+//     std::vector<ptr_branch>::iterator ptr_branch_iter = tainted_ptr_branches.begin();
+//     for (; ptr_branch_iter != tainted_ptr_branches.end(); ++ptr_branch_iter) 
+//     {
+//       if (!(*ptr_branch_iter)->dep_input_addrs.empty()) 
+//       {
+//         input_dep_branch_num++;
+//       }
+//     }
+// 
+// 
+//     std::cerr << "\033[33mRollbacking phase stopped: " << resolved_branch_num << "/"
+//               << input_dep_branch_num << " branches resolved.\033[0m\n";
+//     std::cerr << "\033[35m-------------------------------------------------------------------------------------------------\n"
+//               << "Start tainting phase exploring branch at " << unexplored_ptr_branch->trace.size() << ".\033[0m\n";
+//   }
+//   return;
+// }
 
 /*====================================================================================================================*/
 
@@ -256,11 +254,17 @@ inline void prepare_new_tainting_phase(ptr_branch& unexplored_ptr_branch)
   in_tainting = true;
   exploring_ptr_branch = unexplored_ptr_branch;
 
-  vdep_graph().swap(dta_graph);
-  std::vector<ptr_branch>().swap(input_dep_ptr_branches);
-  std::vector<ptr_branch>().swap(input_indep_ptr_branches);
-  std::vector<ptr_checkpoint>().swap(saved_ptr_checkpoints);
-  std::map< UINT32, std::vector<ptr_checkpoint> >().swap(exepoint_checkpoints_map);
+//   vdep_graph().swap(dta_graph);
+//   std::vector<ptr_branch>().swap(input_dep_ptr_branches);
+//   std::vector<ptr_branch>().swap(input_indep_ptr_branches);
+//   std::vector<ptr_checkpoint>().swap(saved_ptr_checkpoints);
+//   std::map< UINT32, std::vector<ptr_checkpoint> >().swap(exepoint_checkpoints_map);
+  
+  dta_graph.clear();
+  order_input_dep_ptr_branch_map.clear();
+  order_input_indep_ptr_branch_map.clear();
+  saved_ptr_checkpoints.clear();
+  exepoint_checkpoints_map.clear();
 
   unexplored_ptr_branch->is_explored = true;
 
@@ -429,7 +433,7 @@ inline void exploring_new_branch_or_stop()
   }
   else 
   {
-    BOOST_LOG_TRIVIAL(info) << "Stop exploring, all branches are exlored.";
+    BOOST_LOG_TRIVIAL(info) << "Stop exploring, all branches are explored.";
     PIN_ExitApplication(0);
   }
   
@@ -557,7 +561,7 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
     local_rollback_times = 0;
     
     BOOST_LOG_TRIVIAL(trace) << boost::format("Resolve the branch at %d by rollback to the checkpoint at %d") 
-                                % tainted_ptr_branch->trace.size() % active_nearest_checkpoint.first->trace.size();
+                                  % tainted_ptr_branch->trace.size() % active_nearest_checkpoint.first->trace.size();
   }
   
   // resolve the active_ptr_branch
@@ -598,50 +602,6 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
                                       tmp_ptr_branch->inputs[tmp_ptr_branch->br_taken][0].get());
     }
   }
-  
-//   if (active_ptr_branch) // in some rollback
-//   {
-//     if (active_ptr_branch != tainted_ptr_branch) // error:
-//     {
-//       print_debug_failed_active_forward(ins_addr, tainted_ptr_branch);
-//       PIN_ExitApplication(0);
-//     }
-//   }
-//   else // in forward and meet a branch to resolve, so enable active_ptr_branch
-//   {
-//     active_ptr_branch = tainted_ptr_branch;
-// //     enable_active_branch(tainted_ptr_branch);
-//     
-//     local_rollback_times = 0;
-//     
-//     print_debug_resolving_rollback(ins_addr, tainted_ptr_branch);
-//   }
-//   
-//   if (local_rollback_times <= max_local_rollback_times/*max_local_rollback.Value()*/)
-//   {
-//     // this branch is not resolved yet, now modify the input and rollback again
-//     total_rollback_times++;
-//     local_rollback_times++;
-//     
-//     rollback_with_input_random_modification(active_ptr_branch->checkpoint, 
-//                                             /*active_ptr_branch->dep_input_addrs*/
-//                                             active_ptr_branch->nearest_checkpoints[active_ptr_branch->checkpoint]);
-//   }
-//   else // the rollback number bypasses the maximum value
-//   {
-//     print_debug_resolving_failed(ins_addr, tainted_ptr_branch);
-// 
-//     bypass_branch(active_ptr_branch);
-// 
-//     ptr_branch tmp_ptr_branch = active_ptr_branch;
-//     disable_active_branch();
-// 
-//     total_rollback_times++;
-//     local_rollback_times = 0;
-//     
-//     bool current_br_taken = tmp_ptr_branch->br_taken;
-//     rollback_with_input_replacement(tmp_ptr_branch->checkpoint, tmp_ptr_branch->inputs[current_br_taken][0].get());
-//   }
 
   return;
 }
@@ -668,14 +628,13 @@ inline void process_tainted_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& 
 {
   if (total_rollback_times >= max_total_rollback_times)
   {
-//     std::cout << "3\n";
-    BOOST_LOG_TRIVIAL(info) << "STOP: total rollback number exceeds its limit value.";
+    BOOST_LOG_TRIVIAL(info) << "Stop exploring, the total rollback number exceeds its limit value.";
     PIN_ExitApplication(0);
   }
 
   if (tainted_ptr_branch->is_resolved) // which is resolved
   {
-    if (tainted_ptr_branch == input_dep_ptr_branches.back()) // and is the current last branch
+    if (tainted_ptr_branch == order_input_indep_ptr_branch_map.rbegin()->second) // and is the current last branch
     {
       /* FOR TESTING ONLY */
 //       std::cout << "4\n";
@@ -821,10 +780,7 @@ VOID resolving_indirect_branch_call_analyzer(ADDRINT ins_addr, ADDRINT target_ad
     {
       print_debug_lost_forward(ins_addr);
       PIN_ExitApplication(0);
-    }
-    
-//     std::cerr << "Critical error: indirect branch leads to a different instruction\n";
-//     PIN_ExitApplication(0);
+    }    
   }
   return;
 }
