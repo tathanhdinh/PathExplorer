@@ -43,7 +43,7 @@ UINT32                                        total_rollback_times;
 UINT32                                        local_rollback_times;
 UINT32                                        max_total_rollback_times;
 UINT32                                        max_local_rollback_times;
-UINT32                                        trace_max_size;
+UINT32                                        max_trace_size;
 
 bool                                          in_tainting;
 
@@ -64,8 +64,14 @@ std::map< UINT32,
           std::vector<ptr_checkpoint> >       exepoint_checkpoints_map;
 
 std::vector<ptr_branch>                       input_dep_ptr_branches;
+std::map<UINT32, ptr_branch>                  order_input_dep_ptr_branch_map;
+
 std::vector<ptr_branch>                       input_indep_ptr_branches;
+std::map<UINT32, ptr_branch>                  order_input_indep_ptr_branch_map;
+
 std::vector<ptr_branch>                       tainted_ptr_branches;
+std::map<UINT32, ptr_branch>                  order_tainted_ptr_branch_map;
+
 std::vector<ptr_branch>                       found_new_ptr_branches;
 std::vector<ptr_branch>                       resolved_ptr_branches;
 
@@ -106,7 +112,7 @@ KNOB<UINT32>  max_trace_length    (KNOB_MODE_WRITEONCE, "pintool",
 /* -------------------------------------------------------+---------------------------------------------------------- */
 VOID start_tracing(VOID *data)
 {
-  trace_max_size        = max_trace_length.Value();
+  max_trace_size        = max_trace_length.Value();
 
   total_rollback_times = 0;
   local_rollback_times = 0;

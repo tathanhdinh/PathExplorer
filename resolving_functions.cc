@@ -41,8 +41,14 @@ extern ADDRINT                                    received_msg_addr;
 extern UINT32                                     received_msg_size;
 
 extern std::vector<ptr_branch>                    input_dep_ptr_branches;
+extern std::map<UINT32, ptr_branch>               order_input_dep_ptr_branch_map;
+
 extern std::vector<ptr_branch>                    input_indep_ptr_branches;
+extern std::map<UINT32, ptr_branch>               order_input_indep_ptr_branch_map;
+
 extern std::vector<ptr_branch>                    tainted_ptr_branches;
+extern std::map<UINT32, ptr_branch>               order_tainted_ptr_branch_map;
+
 extern std::vector<ptr_branch>                    found_new_ptr_branches;
 extern std::vector<ptr_branch>                    resolved_ptr_branches;
 
@@ -284,17 +290,20 @@ inline std::vector<ptr_branch>::iterator search_in(std::vector<ptr_branch>& ptr_
 
 /*====================================================================================================================*/
 
-inline std::vector<ptr_branch>::iterator first_unexplored_branch()
+inline ptr_branch first_unexplored_branch()
 {
+  ptr_branch unexplored_ptr_branch;
+  
   std::vector<ptr_branch>::iterator unexplored_ptr_branch_iter = resolved_ptr_branches.begin();
   for (; unexplored_ptr_branch_iter != resolved_ptr_branches.end(); ++unexplored_ptr_branch_iter)
   {
     if (!(*unexplored_ptr_branch_iter)->is_explored)
     {
+      unexplored_ptr_branch = *unexplored_ptr_branch_iter;
       break;
     }
   }
-  return unexplored_ptr_branch_iter;
+  return unexplored_ptr_branch;
 }
 
 /*====================================================================================================================*/
@@ -384,7 +393,7 @@ inline void get_next_nearest_checkpoint(ptr_branch& input_branch)
     }
     else 
     {
-      BOOST_LOG_TRIVIAL(fatal) << "FATAL: nearest checkpoint cannot found in the branch's nearest checkpoint list";
+      BOOST_LOG_TRIVIAL(fatal) << "Nearest checkpoint cannot found in the branch's nearest checkpoint list";
       PIN_ExitApplication(0);
     }
   }
@@ -401,14 +410,15 @@ inline void get_next_nearest_checkpoint(ptr_branch& input_branch)
 
 inline void exploring_new_branch_or_stop()
 {
-  std::vector<ptr_branch>::iterator unexplored_ptr_branch_iter = first_unexplored_branch();
-  if (unexplored_ptr_branch_iter != resolved_ptr_branches.end())   // unexplored branch found
+  ptr_branch unexplored_ptr_branch = first_unexplored_branch();
+  if (unexplored_ptr_branch) 
   {
-    print_debug_rollbacking_stop(*unexplored_ptr_branch_iter);
-
-    // rollback to the first unexplored branch
-    prepare_new_tainting_phase(*unexplored_ptr_branch_iter);
-
+    BOOST_LOG_TRIVIAL(info) << boost::format("Rollbacking phase stop at %d, %d / %d branches resolved") 
+                                % resolved_ptr_branches.size() 
+                                % resolved_ptr_branches.size() % tainted_ptr_branches.size();
+                                
+    prepare_new_tainting_phase(unexplored_ptr_branch);
+    
     total_rollback_times++;
     local_rollback_times++;
     
@@ -417,13 +427,13 @@ inline void exploring_new_branch_or_stop()
     bool new_br_taken = !exploring_ptr_branch->br_taken;
     rollback_with_input_replacement(master_ptr_checkpoint, exploring_ptr_branch->inputs[new_br_taken][0].get());
   }
-  else // all branches are explored
+  else 
   {
-    std::cout << "1\n";
+    BOOST_LOG_TRIVIAL(info) << "Stop exploring, all branches are exlored.";
     PIN_ExitApplication(0);
   }
-
-    return;
+  
+  return;
 }
 
 /*====================================================================================================================*/
@@ -656,7 +666,7 @@ inline void process_tainted_but_unresolved_branch(ADDRINT ins_addr, bool br_take
 
 inline void process_tainted_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& tainted_ptr_branch)
 {
-  if (total_rollback_times >= max_total_rollback_times /*max_total_rollback.Value()*/)
+  if (total_rollback_times >= max_total_rollback_times)
   {
 //     std::cout << "3\n";
     BOOST_LOG_TRIVIAL(info) << "STOP: total rollback number exceeds its limit value.";
@@ -731,18 +741,19 @@ inline void process_untainted_branch(ADDRINT ins_addr, bool br_taken, ptr_branch
 
 inline void log_input(ADDRINT ins_addr, bool br_taken)
 {
-  std::vector<ptr_branch>::iterator ptr_branch_iter = search_in(tainted_ptr_branches, ins_addr);
-  if (ptr_branch_iter != tainted_ptr_branches.end())
+  std::map<UINT32, ptr_branch>::iterator order_ptr_branch_iter;
+  
+  order_ptr_branch_iter = order_tainted_ptr_branch_map.find(explored_trace.max_size());
+  if (order_ptr_branch_iter != order_tainted_ptr_branch_map.end()) 
   {
-    if ((*ptr_branch_iter)->inputs[br_taken].empty())
+    if (order_ptr_branch_iter->second->inputs[br_taken].empty()) 
     {
-      store_input(*ptr_branch_iter, br_taken);
+      store_input(order_ptr_branch_iter->second, br_taken);
     }
   }
-  else
+  else 
   {
-//     print_debug_unknown_branch(ins_addr, *ptr_branch_iter);
-    std::cout << "5\n";
+    BOOST_LOG_TRIVIAL(fatal) << boost::format("Branch at %d cannot found.") % explored_trace.size();
     PIN_ExitApplication(0);
   }
 
@@ -754,24 +765,27 @@ inline void log_input(ADDRINT ins_addr, bool br_taken)
 VOID resolving_cond_branch_analyzer(ADDRINT ins_addr, bool br_taken)
 {
   log_input(ins_addr, br_taken);
-
-  // search in the list of tainted branches
-  std::vector<ptr_branch>::iterator ptr_branch_iter = search_in(input_dep_ptr_branches, ins_addr);
-  if (ptr_branch_iter != input_dep_ptr_branches.end()) // found a tainted branch
+  
+  std::map<UINT32, ptr_branch>::iterator order_ptr_branch_iter;
+  
+  // search in the list of input dependent branches
+  order_ptr_branch_iter = order_input_dep_ptr_branch_map.find(explored_trace.size());
+  if (order_ptr_branch_iter != order_input_dep_ptr_branch_map.end()) 
   {
-    process_tainted_branch(ins_addr, br_taken, *ptr_branch_iter);
+    process_tainted_branch(ins_addr, br_taken, order_ptr_branch_iter->second);
   }
-  else // not found in the list of tainted branches
+  else 
   {
-    // search in the list of untainted branches
-    ptr_branch_iter = search_in(input_indep_ptr_branches, ins_addr);
-    if (ptr_branch_iter != input_indep_ptr_branches.end()) // a untainted branch found
+    // search in the list of input independent branches
+    order_ptr_branch_iter = order_input_indep_ptr_branch_map.find(explored_trace.size());
+    
+    if (order_ptr_branch_iter != order_input_indep_ptr_branch_map.end()) 
     {
-      process_untainted_branch(ins_addr, br_taken, *ptr_branch_iter);
+      process_untainted_branch(ins_addr, br_taken, order_ptr_branch_iter->second);
     }
-    else // error: the branch is not tainted neither untainted (normally by indirect jumps)
+    else 
     {
-      print_debug_unknown_branch(ins_addr/*, *ptr_branch_iter*/);
+      BOOST_LOG_TRIVIAL(fatal) << boost::format("Branch at %d cannot found.") % explored_trace.size();
       PIN_ExitApplication(0);
     }
   }
@@ -781,7 +795,7 @@ VOID resolving_cond_branch_analyzer(ADDRINT ins_addr, bool br_taken)
 
 
 /**
- * @brief handle the case where the indirect branch (being re-executed) may leads to a new target.
+ * @brief handle the case where the indirect branch may leads to a new target.
  * 
  * @param ins_addr instruction address.
  * @param target_addr target address.

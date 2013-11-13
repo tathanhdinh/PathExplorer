@@ -6,6 +6,7 @@
 #include <set>
 
 #include <boost/format.hpp>
+#include <boost/log/trivial.hpp>
 #include <boost/graph/breadth_first_search.hpp>
 
 #include "stuffs.h"
@@ -30,7 +31,9 @@ extern std::vector<ADDRINT>                     explored_trace;
 
 extern std::vector<ptr_branch>                  input_dep_ptr_branches;
 extern std::vector<ptr_branch>                  input_indep_ptr_branches;
+
 extern std::vector<ptr_branch>                  tainted_ptr_branches;
+extern std::map<UINT32, ptr_branch>             order_tainted_ptr_branch_map;
 
 extern ptr_branch                               exploring_ptr_branch;
 
@@ -47,6 +50,8 @@ extern UINT32                                   received_msg_size;
 
 extern KNOB<BOOL>                               print_debug_text;
 extern KNOB<UINT32>                             max_trace_length;
+
+extern UINT32                                   max_trace_size;
 
 /*====================================================================================================================*/
 
@@ -121,8 +126,8 @@ inline void compute_branch_mem_dependency()
 
   dep_bfs_visitor dep_vis;
 
-  std::set<vdep_edge_desc>::iterator edge_iter;
-  std::vector<ptr_branch>::iterator  ptr_branch_iter;
+  std::map<UINT32, ptr_branch>::iterator order_ptr_branch_iter;
+  ptr_branch current_ptr_branch;
 
   std::map<vdep_vertex_desc, vdep_vertex_desc>::iterator prec_vertex_iter;
 
@@ -144,102 +149,111 @@ inline void compute_branch_mem_dependency()
                                                         prec_vertex_iter->first, dta_graph);
         if (edge_exist)
         {
-          for (ptr_branch_iter = tainted_ptr_branches.begin();
-                  ptr_branch_iter != tainted_ptr_branches.end(); ++ptr_branch_iter)
+          order_ptr_branch_iter = order_tainted_ptr_branch_map.begin();
+          for (; order_ptr_branch_iter != order_tainted_ptr_branch_map.end(); ++order_ptr_branch_iter) 
           {
-            if (dta_graph[edge_desc].second == (*ptr_branch_iter)->trace.size())
+            current_ptr_branch = order_ptr_branch_iter->second;
+            if (dta_graph[edge_desc].second == current_ptr_branch->trace.size()) 
             {
               current_addr = dta_graph[*vertex_iter].mem;
-
-              if ((received_msg_addr <= current_addr) && (current_addr < received_msg_addr + received_msg_size))
+              
+              if ((received_msg_addr <= current_addr) && (current_addr < received_msg_addr + received_msg_size)) 
               {
-                (*ptr_branch_iter)->dep_input_addrs.insert(current_addr);
+                current_ptr_branch->dep_input_addrs.insert(current_addr);
               }
-              else
+              else 
               {
-                (*ptr_branch_iter)->dep_other_addrs.insert(dta_graph[*vertex_iter].mem);
+                current_ptr_branch->dep_other_addrs.insert(current_addr);
               }
-
-              (*ptr_branch_iter)->dep_backward_traces[current_addr] = backward_trace(*vertex_iter, 
+              
+              current_ptr_branch->dep_backward_traces[current_addr] = backward_trace(*vertex_iter, 
                                                                                      prec_vertex_iter->second);
             }
           }
         }
         else
         {
-          std::cerr << "Critical error: backward edge not found in BFS.\n";
+//           std::cerr << "Critical error: backward edge not found in BFS.\n";
+          BOOST_LOG_TRIVIAL(fatal) << "FATAL: backward edge not found in BFS.";
           PIN_ExitApplication(0);
         }
       }
     }
   }
 
-  ptr_branch_iter = tainted_ptr_branches.begin();
-  for (; ptr_branch_iter != tainted_ptr_branches.end(); ++ptr_branch_iter)
+  order_ptr_branch_iter = order_tainted_ptr_branch_map.begin();
+  for (; order_ptr_branch_iter != order_tainted_ptr_branch_map.end(); ++order_ptr_branch_iter) 
   {
-    if (!(*ptr_branch_iter)->dep_input_addrs.empty())
+    current_ptr_branch = order_ptr_branch_iter->second;
+    if (!current_ptr_branch->dep_input_addrs.empty()) 
     {
-      input_dep_ptr_branches.push_back(*ptr_branch_iter);
+      input_dep_ptr_branches.push_back(current_ptr_branch);
     }
-    else
+    else 
     {
-      input_indep_ptr_branches.push_back(*ptr_branch_iter);
+      input_indep_ptr_branches.push_back(current_ptr_branch);
     }
   }
 
-    return;
+  return;
 }
 
 /*====================================================================================================================*/
 
 inline void compute_branch_min_checkpoint()
 {
-  std::vector<ptr_branch>::iterator     ptr_branch_iter;
-  std::vector<ptr_checkpoint>::iterator ptr_checkpoint_iter;
-  std::set<ADDRINT>::iterator           addr_iter;
+  std::vector<ptr_checkpoint>::iterator   ptr_checkpoint_iter;
+  std::set<ADDRINT>::iterator             addr_iter;
+  std::map<UINT32, ptr_branch>::iterator  order_ptr_branch_iter;
 
-  ptr_checkpoint nearest_ptr_checkpoint;
+  ptr_branch      current_ptr_branch;
+  ptr_checkpoint  nearest_ptr_checkpoint;
 
   std::set<ADDRINT> intersec_mems;
 
-  ptr_branch_iter = tainted_ptr_branches.begin();
-  for (; ptr_branch_iter != tainted_ptr_branches.end(); ++ptr_branch_iter)
+  order_ptr_branch_iter = order_tainted_ptr_branch_map.begin();
+  for (; order_ptr_branch_iter != order_tainted_ptr_branch_map.end(); ++order_ptr_branch_iter) 
   {
-    if ((*ptr_branch_iter)->dep_input_addrs.empty())
+    current_ptr_branch = order_ptr_branch_iter->second;
+    if (current_ptr_branch->dep_input_addrs.empty()) 
     {
-        (*ptr_branch_iter)->checkpoint.reset();
+      current_ptr_branch->checkpoint.reset();
     }
-    else // compute nearest checkpoint for *ptr_branch_iter
+    else // compute the nearest checkpoint for current_ptr_branch
     {
-      // for each *addr_iter in (*ptr_branch_iter)->dep_input_addrs, find the earliest checkpoint that uses it
-      addr_iter = (*ptr_branch_iter)->dep_input_addrs.begin();
-      for (; addr_iter != (*ptr_branch_iter)->dep_input_addrs.end(); ++addr_iter) 
+      // for each *addr_iter in current_ptr_branch->dep_input_addrs, find the earliest checkpoint that uses it
+      addr_iter = current_ptr_branch->dep_input_addrs.begin();
+      for (; addr_iter != current_ptr_branch->dep_input_addrs.end(); ++addr_iter) 
       {
         ptr_checkpoint_iter = saved_ptr_checkpoints.begin();
         for (; ptr_checkpoint_iter != saved_ptr_checkpoints.end(); ++ptr_checkpoint_iter) 
         {
           // *addr_iter is found in (*ptr_checkpoint_iter)->dep_mems
-          if (std::find((*ptr_checkpoint_iter)->dep_mems.begin(), (*ptr_checkpoint_iter)->dep_mems.end(), *addr_iter) 
+          if (std::find
+              (
+                (*ptr_checkpoint_iter)->dep_mems.begin(), (*ptr_checkpoint_iter)->dep_mems.end(), *addr_iter
+              ) 
               != (*ptr_checkpoint_iter)->dep_mems.end()) 
           {
-            (*ptr_branch_iter)->nearest_checkpoints[*ptr_checkpoint_iter].insert(*addr_iter);
+            current_ptr_branch->nearest_checkpoints[*ptr_checkpoint_iter].insert(*addr_iter);
             break;
           }
         }
       }
       
-      if ((*ptr_branch_iter)->nearest_checkpoints.size() != 0) 
+      if (current_ptr_branch->nearest_checkpoints.size() != 0) 
       {
-        (*ptr_branch_iter)->checkpoint = (*ptr_branch_iter)->nearest_checkpoints.rbegin()->first;
+        current_ptr_branch->checkpoint = current_ptr_branch->nearest_checkpoints.rbegin()->first;
       }
       else 
       {
-        std::cerr << "Critical error: nearest checkpoint cannot found!\n";
+//         std::cerr << "Critical error: nearest checkpoint cannot found!\n";
+        BOOST_LOG_TRIVIAL(fatal) << "FATAL: nearest checkpoint cannot found!";
         PIN_ExitApplication(0);
       }
     }
   }
-
+ 
   return;
 }
 
@@ -290,7 +304,7 @@ VOID logging_syscall_instruction_analyzer(ADDRINT ins_addr)
 
 VOID logging_general_instruction_analyzer(ADDRINT ins_addr)
 {
-  if (explored_trace.size() < max_trace_length.Value())
+  if (explored_trace.size() < max_trace_size/*max_trace_length.Value()*/)
   {
     explored_trace.push_back(ins_addr);
     order_ins_dynamic_map[explored_trace.size()] = addr_ins_static_map[ins_addr];
@@ -372,12 +386,13 @@ VOID logging_cond_br_analyzer(ADDRINT ins_addr, bool br_taken)
     }
     else
     {
-      tainted_ptr_branches.push_back(new_ptr_branch);
+      order_tainted_ptr_branch_map[explored_trace.size()] = new_ptr_branch;
     }
   }
-  else // it is always a new tainted branch in the first tainting phase
+  else 
   {
-    tainted_ptr_branches.push_back(new_ptr_branch);
+    // it is always a new tainted branch in the first tainting phase
+    order_tainted_ptr_branch_map[explored_trace.size()] = new_ptr_branch;
   }
 
   return;
