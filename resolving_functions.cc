@@ -419,7 +419,6 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
   }
   else // we have reached the limit number of rollback test for the current active_nearest_checkpoint
   {
-    std::cout << "hahaha\n";
     // so we get try to get new active_nearest_checkpoint
     get_next_nearest_checkpoint(active_ptr_branch);
     

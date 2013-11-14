@@ -269,7 +269,7 @@ inline void prepare_new_rollbacking_phase()
   
   BOOST_LOG_TRIVIAL(info) << boost::format("\033[33mTainting phase stopped, %d instructions analyzed, %d checkpoints") 
                               % explored_trace.size() % saved_ptr_checkpoints.size() 
-                          << boost::format(" and %d input dependent branches over %d total.\033[0m") 
+                          << boost::format(" and %d/%d branches.\033[0m") 
                               % order_input_dep_ptr_branch_map.size() % order_tainted_ptr_branch_map.size()
                           << "\n-------------------------------------------------------------------------------------------------\n"
                           << "\033[33mStart rollbacking.\033[0m";
@@ -296,7 +296,7 @@ inline void prepare_new_rollbacking_phase()
     }
   }
 
-    return;
+  return;
 }
 
 /*====================================================================================================================*/
