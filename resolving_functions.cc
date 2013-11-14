@@ -114,10 +114,6 @@ inline void print_debug_met_again(ADDRINT ins_addr, ptr_branch &met_ptr_branch)
 
 /*====================================================================================================================*/
 
-
-
-/*====================================================================================================================*/
-
 inline void print_debug_resolving_failed(ADDRINT ins_addr, ptr_branch& failed_ptr_branch)
 {
   if (print_debug_text) 
@@ -177,8 +173,8 @@ inline void print_debug_found_new(ADDRINT ins_addr, ptr_branch& found_ptr_branch
 VOID resolving_ins_count_analyzer(ADDRINT ins_addr)
 {
   explored_trace.push_back(ins_addr);
-  BOOST_LOG_TRIVIAL(trace) << explored_trace.size() << "  " << remove_leading_zeros(StringFromAddrint(ins_addr)) << " "
-                           << addr_ins_static_map[ins_addr].disass;
+//   BOOST_LOG_TRIVIAL(trace) << explored_trace.size() << "  " << remove_leading_zeros(StringFromAddrint(ins_addr)) << " "
+//                            << addr_ins_static_map[ins_addr].disass;
    
   return;
 }
@@ -380,17 +376,25 @@ inline void exploring_new_branch_or_stop()
   return;
 }
 
-/*====================================================================================================================*/
 
-inline void process_tainted_and_resolved_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& tainted_ptr_branch)
+/**
+ * @brief handle the case where the examined branch is marked as input dependent but it is resolved. Note that 
+ * a resolved branch is examined only in rollback.
+ * 
+ * @param ins_addr ...
+ * @param br_taken ...
+ * @param examined_ptr_branch ...
+ * @return void
+ */
+inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& examined_ptr_branch)
 {
-  if (tainted_ptr_branch->br_taken != br_taken) // new branch taken
+  if (examined_ptr_branch->br_taken != br_taken) // new branch taken
   {
-    // the branch has been marked as "bypassed" before, then is resolved accidentally
-    if (tainted_ptr_branch->is_bypassed)
+    if (examined_ptr_branch->is_bypassed)
     {
-      print_debug_met_again(ins_addr, tainted_ptr_branch);
-      accept_branch(tainted_ptr_branch);
+      // the branch has been marked as bypassed before, then is resolved accidentally
+      print_debug_met_again(ins_addr, examined_ptr_branch);
+      accept_branch(examined_ptr_branch);
     }
 
     if (local_rollback_times < max_local_rollback_times)
@@ -404,13 +408,16 @@ inline void process_tainted_and_resolved_branch(ADDRINT ins_addr, bool br_taken,
     else
     {
 //       print_debug_resolving_failed(active_ptr_branch->addr, active_ptr_branch);
-      BOOST_LOG_TRIVIAL(warning) << boost::format("Cannot resolve the branch at %d, bypass it.") 
-                                      % tainted_ptr_branch->trace.size();
+      BOOST_LOG_TRIVIAL(warning) << boost::format("\033[31mCannot resolve the branch at %d, bypass it.\033[0m") 
+                                      % active_ptr_branch->trace.size();
 
       bypass_branch(active_ptr_branch);
 
       ptr_branch tmp_ptr_branch = active_ptr_branch;
+      
       active_ptr_branch.reset();
+      active_nearest_checkpoint.first.reset();
+      active_nearest_checkpoint.second.clear();
 
       total_rollback_times++;
       local_rollback_times = 0;
@@ -425,19 +432,22 @@ inline void process_tainted_and_resolved_branch(ADDRINT ins_addr, bool br_taken,
 
 
 /**
- * @brief handle the case where the branch (being re-executed) takes a different target.
+ * @brief handle the case where the examined branch takes a different target.
  * 
  * @param ins_addr ...
  * @param br_taken ...
  * @param tainted_ptr_branch ...
  * @return void
  */
-inline void new_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_branch& tainted_ptr_branch)
+inline void new_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_branch& examined_ptr_branch)
 {
   if (active_ptr_branch) // active_ptr_branch is enabled, namely in some rollback
   {
     // so this branch is resolved
-    print_debug_succeed(ins_addr, tainted_ptr_branch);
+//     print_debug_succeed(ins_addr, examined_ptr_branch);
+    BOOST_LOG_TRIVIAL(trace) << boost::format("\033[32mThe branch at %d is successfully resolved after %d rollbacks.\033[0m") 
+                                  % examined_ptr_branch->trace.size() % local_rollback_times;
+    
     accept_branch(active_ptr_branch);
     
     // now restore the input to back to the original trace
@@ -464,22 +474,22 @@ inline void new_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_bra
 
 
 /**
- * @brief handle the case where the branch (being re-executed) takes the same target.
+ * @brief handle the case where the examined branch takes the same decision.
  * 
  * @param ins_addr ...
  * @param br_taken ...
  * @param tainted_ptr_branch ...
  * @return void
  */
-inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_branch& current_ptr_branch)
+inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_branch& examined_ptr_branch)
 {
   if (active_ptr_branch) // active_ptr_branch is enabled, namely in some rollback
   {
     // so verify that
-    if (active_ptr_branch != current_ptr_branch) 
+    if (active_ptr_branch != examined_ptr_branch) 
     {
       BOOST_LOG_TRIVIAL(fatal) << boost::format("In rollback but the tainted (at %d) and the active branch (at %d) ") 
-                                    % current_ptr_branch->trace.size() % active_ptr_branch->trace.size()
+                                    % examined_ptr_branch->trace.size() % active_ptr_branch->trace.size()
                                << "are not matched.";
       PIN_ExitApplication(3);
     }
@@ -487,13 +497,13 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
   else // active_ptr_branch is disabled, namely in some forward and meet a new tainted branch
   {
     // so enable active_ptr_branch
-    active_ptr_branch = current_ptr_branch;
+    active_ptr_branch = examined_ptr_branch;
     get_next_nearest_checkpoint(active_ptr_branch); // the active_nearest_checkpoint is updated 
     
     local_rollback_times = 0;
     
-    BOOST_LOG_TRIVIAL(trace) << boost::format("Resolve the branch at %d by rollback to the checkpoint at %d") 
-                                  % current_ptr_branch->trace.size() % active_nearest_checkpoint.first->trace.size();
+    BOOST_LOG_TRIVIAL(trace) << boost::format("Resolve the branch at %d by rollback to the checkpoint at %d.") 
+                                  % examined_ptr_branch->trace.size() % active_nearest_checkpoint.first->trace.size();
   }
   
   // resolve the active_ptr_branch
@@ -544,23 +554,30 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
 
 /*====================================================================================================================*/
 
-inline void process_tainted_but_unresolved_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& tainted_ptr_branch)
+inline void process_input_dependent_but_unresolved_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& examined_ptr_branch)
 {
-  if (tainted_ptr_branch->br_taken != br_taken) // other branch is taken,
+  if (examined_ptr_branch->br_taken != br_taken) // other decision is taken,
   {
-    new_branch_taken_processing(ins_addr, br_taken, tainted_ptr_branch);
+    new_branch_taken_processing(ins_addr, br_taken, examined_ptr_branch);
   }
-  else // other branch is not taken yet, take a rollback to try to resolve this branch
+  else // the same decision is taken, take a rollback to try to resolve this branch
   {
-    same_branch_taken_processing(ins_addr, br_taken, tainted_ptr_branch);
+    same_branch_taken_processing(ins_addr, br_taken, examined_ptr_branch);
   }
 
   return;
 }
 
-/*====================================================================================================================*/
 
-inline void process_tainted_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& tainted_ptr_branch)
+/**
+ * @brief handle the case where the examined branch is detected as input dependent.
+ * 
+ * @param ins_addr ...
+ * @param br_taken ...
+ * @param tainted_ptr_branch ...
+ * @return void
+ */
+inline void process_input_dependent_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& examined_ptr_branch)
 {
   if (total_rollback_times >= max_total_rollback_times)
   {
@@ -569,9 +586,9 @@ inline void process_tainted_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& 
   }
   else 
   {
-    if (tainted_ptr_branch->is_resolved) // which is resolved
+    if (examined_ptr_branch->is_resolved) // which is resolved
     {
-      if (tainted_ptr_branch == order_input_indep_ptr_branch_map.rbegin()->second) // and is the current last branch
+      if (examined_ptr_branch == order_input_indep_ptr_branch_map.rbegin()->second) // and is the current last branch
       {
         /* FOR TESTING ONLY */
         BOOST_LOG_TRIVIAL(warning) << "FOR TESTING ONLY: stop at the last branch of the first tainting result.";
@@ -581,12 +598,12 @@ inline void process_tainted_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& 
       }
       else // it is not the last branch
       {
-        process_tainted_and_resolved_branch(ins_addr, br_taken, tainted_ptr_branch);
+        process_input_dependent_and_resolved_branch(ins_addr, br_taken, examined_ptr_branch);
       }
     }
     else // it is not resolved yet
     {
-      process_tainted_but_unresolved_branch(ins_addr, br_taken, tainted_ptr_branch);
+      process_input_dependent_but_unresolved_branch(ins_addr, br_taken, examined_ptr_branch);
     }
   }
 
@@ -595,40 +612,33 @@ inline void process_tainted_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& 
 
 /*====================================================================================================================*/
 
-inline void process_untainted_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& untainted_ptr_branch)
+inline void process_input_independent_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& examined_ptr_branch)
 {
-  if (untainted_ptr_branch->br_taken != br_taken) // new taken found
+  if (examined_ptr_branch->br_taken != br_taken) // new taken found
   {
-    if (active_ptr_branch)
+    if (active_ptr_branch) // active_ptr_branch is enabled, namely in some rollback
     {
-      if (!untainted_ptr_branch->is_resolved)
+      if (!examined_ptr_branch->is_resolved)
       {
-        print_debug_found_new(ins_addr, untainted_ptr_branch);
-        accept_branch(untainted_ptr_branch);
-        found_new_ptr_branches.push_back(untainted_ptr_branch);
+        print_debug_found_new(ins_addr, examined_ptr_branch);
+        accept_branch(examined_ptr_branch);
+        found_new_ptr_branches.push_back(examined_ptr_branch);
       }
 
       // the original trace will lost if go further, so rollback
       total_rollback_times++;
       local_rollback_times++;
       
-      rollback_with_input_random_modification(active_ptr_branch->checkpoint, 
-                                              /*active_ptr_branch->dep_input_addrs*/
-                                              active_ptr_branch->nearest_checkpoints[active_ptr_branch->checkpoint]);
+      rollback_with_input_random_modification(active_nearest_checkpoint.first, active_nearest_checkpoint.second);
     }
-    else // error: active_ptr_branch is empty, namely in forwarding, but new taken found
+    else // active_ptr_branch is disabled, namely in forwarding
     {
-      print_debug_lost_forward(ins_addr/*, untainted_ptr_branch*/);
+      // but new taken found
+      BOOST_LOG_TRIVIAL(fatal) << boost::format("The branch at %d takes a new decision in forwarding.") 
+                                    % examined_ptr_branch->trace.size();
       PIN_ExitApplication(0);
     }
   }
-//   else
-//   {
-//     if (untainted_ptr_branch->is_resolved)
-//     {
-//       store_input(untainted_ptr_branch, br_taken);
-//     }
-//   }
 
   return;
 }
@@ -649,7 +659,7 @@ inline void log_input(ADDRINT ins_addr, bool br_taken)
   }
   else 
   {
-    BOOST_LOG_TRIVIAL(fatal) << boost::format("Branch at %d cannot found.") % explored_trace.size();
+    BOOST_LOG_TRIVIAL(fatal) << boost::format("The branch at %d cannot found.") % explored_trace.size();
     PIN_ExitApplication(0);
   }
 
@@ -668,20 +678,19 @@ VOID resolving_cond_branch_analyzer(ADDRINT ins_addr, bool br_taken)
   order_ptr_branch_iter = order_input_dep_ptr_branch_map.find(explored_trace.size());
   if (order_ptr_branch_iter != order_input_dep_ptr_branch_map.end()) 
   {
-    process_tainted_branch(ins_addr, br_taken, order_ptr_branch_iter->second);
+    process_input_dependent_branch(ins_addr, br_taken, order_ptr_branch_iter->second);
   }
   else 
   {
     // search in the list of input independent branches
     order_ptr_branch_iter = order_input_indep_ptr_branch_map.find(explored_trace.size());
-    
     if (order_ptr_branch_iter != order_input_indep_ptr_branch_map.end()) 
     {
-      process_untainted_branch(ins_addr, br_taken, order_ptr_branch_iter->second);
+      process_input_independent_branch(ins_addr, br_taken, order_ptr_branch_iter->second);
     }
     else 
     {
-      BOOST_LOG_TRIVIAL(fatal) << boost::format("Branch at %d cannot found.") % explored_trace.size();
+      BOOST_LOG_TRIVIAL(fatal) << boost::format("The branch at %d cannot found.") % explored_trace.size();
       PIN_ExitApplication(0);
     }
   }
@@ -711,7 +720,6 @@ VOID resolving_indirect_branch_call_analyzer(ADDRINT ins_addr, ADDRINT target_ad
     }
     else // active_ptr_branch is empty, namely in forwarding, but new target found
     {
-//       print_debug_lost_forward(ins_addr);
       BOOST_LOG_TRIVIAL(fatal) << boost::format("The indirect branch at %d takes a different decision in forwarding.") 
                                     % explored_trace.size();
       PIN_ExitApplication(0);

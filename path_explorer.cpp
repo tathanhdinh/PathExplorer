@@ -137,9 +137,9 @@ VOID stop_tracing(INT32 code, VOID *data)
   boost::posix_time::time_duration elapsed_time = *stop_ptr_time - *start_ptr_time;
   long elapsed_millisec = elapsed_time.total_milliseconds();
   
-  BOOST_LOG_TRIVIAL(info) << boost::format("Stop examining, %d milli-seconds elapsed and %d rollback used.") 
+  BOOST_LOG_TRIVIAL(info) << boost::format("\033[33mStop examining, %d milli-seconds elapsed, %d rollback used, ") 
                               % elapsed_millisec % total_rollback_times
-                          << boost::format("%d / %d branches resolved.") 
+                          << boost::format("and %d/%d branches resolved.\033[0m") 
                               % (resolved_ptr_branches.size() + found_new_ptr_branches.size()) 
                               % order_input_dep_ptr_branch_map.size();
 
