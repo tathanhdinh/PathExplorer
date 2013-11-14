@@ -52,7 +52,6 @@ vdep_vertex_desc_set                          dta_outer_vertices;
 
 std::vector<ptr_checkpoint>                   saved_ptr_checkpoints;
 ptr_checkpoint                                master_ptr_checkpoint;
-ptr_checkpoint                                active_ptr_checkpoint;
 
 std::set<ADDRINT>                             active_input_dep_addrs;
 
