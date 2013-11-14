@@ -40,9 +40,12 @@ ADDRINT                                       logged_syscall_args[6]; // logged 
 
 UINT32                                        total_rollback_times;
 UINT32                                        local_rollback_times;
+UINT32                                        trace_size;
+
 UINT32                                        max_total_rollback_times;
 UINT32                                        max_local_rollback_times;
 UINT32                                        max_trace_size;
+
 
 bool                                          in_tainting;
 
@@ -105,22 +108,22 @@ KNOB<UINT32>  max_trace_length    (KNOB_MODE_WRITEONCE, "pintool",
 /* -------------------------------------------------------+---------------------------------------------------------- */
 VOID start_tracing(VOID *data)
 {
-  max_trace_size        = max_trace_length.Value();
+  max_trace_size            = max_trace_length.Value();
+  trace_size                = 0;
 
-  total_rollback_times = 0;
-  local_rollback_times = 0;
-  max_total_rollback_times = max_total_rollback.Value();
-  max_local_rollback_times = max_local_rollback.Value();
+  total_rollback_times      = 0;
+  local_rollback_times      = 0;
   
-  in_tainting           = true;
-  received_msg_num      = 0;
-  logged_syscall_index  = syscall_inexist;
+  max_total_rollback_times  = max_total_rollback.Value();
+  total_rollback_times      = 0;
+  
+  max_local_rollback_times  = max_local_rollback.Value();
+  local_rollback_times      = 0;
+  
+  in_tainting               = true;
+  received_msg_num          = 0;
+  logged_syscall_index      = syscall_inexist;
   ::srand(::time(0));
-
-  if ( print_debug_text ) {
-//     tainting_log_file.open("tainting_log", std::ofstream::trunc);
-//     std::cout << "\033[2J\033[1;1H"; // clear screen
-  }
 
   return;
 }

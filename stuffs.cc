@@ -252,8 +252,9 @@ void store_input ( ptr_branch& ptr_br, bool br_taken )
 
 void print_debug_message_received()
 {
-  if ( print_debug_text ) {
-    std::cout << "\033[33mThe first message saved at " << remove_leading_zeros ( StringFromAddrint ( received_msg_addr ) )
+  if (print_debug_text) 
+  {
+    std::cout << "\033[33mThe first message saved at " << remove_leading_zeros(StringFromAddrint(received_msg_addr))
               << " with size " << received_msg_size << ".\033[0m\n";
     std::cout << "-------------------------------------------------------------------------------------------------\n";
     std::cout << "\033[33mStart tainting phase with maximum trace size "

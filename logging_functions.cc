@@ -242,12 +242,14 @@ inline void compute_branch_min_checkpoint()
       
       if (current_ptr_branch->nearest_checkpoints.size() != 0) 
       {
+        BOOST_LOG_TRIVIAL(info) << boost::format("The branch at %d has %d nearest checkpoints.") 
+                                     % current_ptr_branch->trace.size() % current_ptr_branch->nearest_checkpoints.size();
         current_ptr_branch->checkpoint = current_ptr_branch->nearest_checkpoints.rbegin()->first;
       }
       else 
       {
-//         std::cerr << "Critical error: nearest checkpoint cannot found!\n";
-        BOOST_LOG_TRIVIAL(fatal) << "Nearest checkpoint cannot found!";
+        BOOST_LOG_TRIVIAL(fatal) << boost::format("Cannot found any nearest checkpoint for the branch at %d.!") 
+                                      % current_ptr_branch->trace.size();
         PIN_ExitApplication(0);
       }
     }
@@ -265,11 +267,12 @@ inline void prepare_new_rollbacking_phase()
 
   journal_tainting_log();
   
-  BOOST_LOG_TRIVIAL(info) << boost::format("Tainting phase stopped, %d instructions analyzed, %d checkpoints") 
+  BOOST_LOG_TRIVIAL(info) << boost::format("\033[33mTainting phase stopped, %d instructions analyzed, %d checkpoints") 
                               % explored_trace.size() % saved_ptr_checkpoints.size() 
-                          << boost::format(" and %d input dependent branches over %d total.") 
+                          << boost::format(" and %d input dependent branches over %d total.\033[0m") 
                               % order_input_dep_ptr_branch_map.size() % order_tainted_ptr_branch_map.size()
-                          << " Start rollbacking phase.";
+                          << "\n-------------------------------------------------------------------------------------------------\n"
+                          << "\033[33mStart rollbacking.\033[0m";
 
   in_tainting = false;
   PIN_RemoveInstrumentation();

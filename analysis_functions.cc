@@ -3,6 +3,9 @@
 #include <iostream>
 #include <map>
 
+#include <boost/format.hpp>
+#include <boost/log/trivial.hpp>
+
 #include "instruction.h"
 #include "stuffs.h"
 
@@ -19,6 +22,8 @@ extern UINT32   received_msg_size;
 extern KNOB<UINT32> max_trace_length;
 extern KNOB<BOOL>   print_debug_text;
 
+extern UINT32       max_trace_size;
+
 /*====================================================================================================================*/
 
 VOID unhandled_analyzer(ADDRINT ins_addr, UINT32 dst_opr_id, UINT32 src_opr_id)
@@ -32,13 +37,16 @@ VOID unhandled_analyzer(ADDRINT ins_addr, UINT32 dst_opr_id, UINT32 src_opr_id)
 
 /*====================================================================================================================*/
 
-VOID syscall_entry_analyzer ( THREADID thread_id, CONTEXT* p_ctxt, SYSCALL_STANDARD syscall_std, VOID *data )
+VOID syscall_entry_analyzer(THREADID thread_id, CONTEXT* p_ctxt, SYSCALL_STANDARD syscall_std, VOID *data)
 {
-  if ( received_msg_num == 0 ) {
-    logged_syscall_index = PIN_GetSyscallNumber ( p_ctxt, syscall_std );
-    if ( logged_syscall_index == syscall_recvfrom ) {
-      for ( UINT8 arg_id = 0; arg_id < 6; ++arg_id ) {
-        logged_syscall_args[arg_id] = PIN_GetSyscallArgument ( p_ctxt, syscall_std, arg_id );
+  if (received_msg_num == 0) 
+  {
+    logged_syscall_index = PIN_GetSyscallNumber(p_ctxt, syscall_std);
+    if (logged_syscall_index == syscall_recvfrom) 
+    {
+      for (UINT8 arg_id = 0; arg_id < 6; ++arg_id) 
+      {
+        logged_syscall_args[arg_id] = PIN_GetSyscallArgument(p_ctxt, syscall_std, arg_id);
       }
     }
   }
@@ -48,18 +56,26 @@ VOID syscall_entry_analyzer ( THREADID thread_id, CONTEXT* p_ctxt, SYSCALL_STAND
 
 /*====================================================================================================================*/
 
-VOID syscall_exit_analyzer ( THREADID thread_id, CONTEXT* p_ctxt, SYSCALL_STANDARD syscall_std, VOID *data )
+VOID syscall_exit_analyzer(THREADID thread_id, CONTEXT* p_ctxt, SYSCALL_STANDARD syscall_std, VOID *data)
 {
-  if ( received_msg_num == 0 ) {
-    if ( logged_syscall_index == syscall_recvfrom ) {
-      ADDRINT ret_val = PIN_GetSyscallReturn ( p_ctxt, syscall_std );
-      if ( ret_val > 0 ) {
+  if (received_msg_num == 0) 
+  {
+    if (logged_syscall_index == syscall_recvfrom) 
+    {
+      ADDRINT ret_val = PIN_GetSyscallReturn (p_ctxt, syscall_std);
+      if (ret_val > 0) 
+      {
         received_msg_num++;
         received_msg_addr = logged_syscall_args[1];
         received_msg_size = ret_val;
-
-        print_debug_message_received();
-
+        
+        std::cout << std::endl;
+        BOOST_LOG_TRIVIAL(info) 
+          << boost::format("\033[33mThe first message saved at %s with size %d bytes.\033[0m") 
+              % remove_leading_zeros(StringFromAddrint(received_msg_addr)) % received_msg_size 
+          << "\n-------------------------------------------------------------------------------------------------\n" 
+          << boost::format("\033[33mStart tainting with trace size %d.\033[0m") % max_trace_size;
+          
         PIN_RemoveInstrumentation();
       }
     }

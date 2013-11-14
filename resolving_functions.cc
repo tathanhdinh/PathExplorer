@@ -59,45 +59,6 @@ extern KNOB<UINT32>                               max_local_rollback;
 extern KNOB<UINT32>                               max_trace_length;
 extern KNOB<BOOL>                                 print_debug_text;
 
-/*====================================================================================================================*/
-
-inline void print_debug_unknown_branch(ADDRINT ins_addr/*, ptr_branch& unknown_ptr_branch*/)
-{
-  if (print_debug_text) 
-  {
-    std::cerr << boost::format("\033[31mLost at     %-5i %-20s %-35s (unknown branch met)\033[0m\n")
-                  % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr))
-                  % addr_ins_static_map[ins_addr].disass;
-  }
-  return;
-}
-
-/*====================================================================================================================*/
-
-inline void print_debug_lost_forward(ADDRINT ins_addr/*, ptr_branch& lost_ptr_branch*/)
-{
-  if (print_debug_text) 
-  {
-    std::cerr << boost::format("\033[31mBranch at   %-5i %-20s %-35s (lost: new branch taken in forward)\033[0m\n")
-                  % explored_trace.size()
-                  % remove_leading_zeros(StringFromAddrint(ins_addr))
-                  % addr_ins_static_map[ins_addr].disass;
-  }
-  return;
-}
-
-/*====================================================================================================================*/
-
-inline void print_debug_failed_active_forward (ADDRINT ins_addr, ptr_branch& failed_ptr_branch)
-{
-  if (print_debug_text) 
-  {
-    std::cerr << boost::format("\033[31mFailed      %-5i %-20s %-35s (active branch not met in forward)\033[0m\n")
-                  % explored_trace.size() % remove_leading_zeros(StringFromAddrint (ins_addr))
-                  % addr_ins_static_map[ins_addr].disass;
-  }
-  return;
-}
 
 /*====================================================================================================================*/
 
@@ -108,49 +69,6 @@ inline void print_debug_met_again(ADDRINT ins_addr, ptr_branch &met_ptr_branch)
     std::cerr << boost::format ("\033[36mMet again   %-5i %-20s %-35s (%-10i rollbacks)\033[0m\n")
                   % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr)) 
                   % addr_ins_static_map[ins_addr].disass % met_ptr_branch->checkpoint->rollback_times;
-  }
-  return;
-}
-
-/*====================================================================================================================*/
-
-inline void print_debug_resolving_failed(ADDRINT ins_addr, ptr_branch& failed_ptr_branch)
-{
-  if (print_debug_text) 
-  {
-    std::cout << boost::format("\033[31mFailed      %-5i %-20s %-35s (%i rollbacks)\033[0m\n")
-                  % failed_ptr_branch->trace.size() /*explored_trace.size()*/
-                  % remove_leading_zeros(StringFromAddrint(ins_addr)) % addr_ins_static_map[ins_addr].disass 
-                  % local_rollback_times;
-//                   % failed_ptr_branch->checkpoint->rollback_times;
-  }
-  return;
-}
-
-/*====================================================================================================================*/
-
-inline void print_debug_succeed(ADDRINT ins_addr, ptr_branch& succeed_ptr_branch)
-{
-  if (print_debug_text) 
-  {
-    std::cout << boost::format ("\033[32mSucceeded   %-5i %-20s %-35s (%i rollbacks)\033[0m\n")
-                  % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr))
-                  % addr_ins_static_map[ins_addr].disass
-                  % local_rollback_times;
-  }
-  return;
-}
-
-/*====================================================================================================================*/
-
-inline void print_debug_resolving_rollback(ADDRINT ins_addr, ptr_branch& new_ptr_branch)
-{
-  if (print_debug_text) 
-  {
-    std::cerr << boost::format("Resolving   %-5i %-20s %-35s (rollback to %i)\n")
-                  % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr))
-                  % addr_ins_static_map[ins_addr].disass
-                  % active_ptr_branch->checkpoint->trace.size();
   }
   return;
 }
@@ -233,11 +151,6 @@ inline void prepare_new_tainting_phase(ptr_branch& unexplored_ptr_branch)
   active_nearest_checkpoint.first.reset();
   active_nearest_checkpoint.second.clear();
 
-//   if (active_ptr_branch)
-//   {
-//     active_ptr_branch.reset();
-//   }
-
   return;
 }
 
@@ -257,16 +170,6 @@ inline ptr_branch first_unexplored_branch()
     }
   }
   return unexplored_ptr_branch;
-}
-
-/*====================================================================================================================*/
-
-inline void error_lost_in_forwarding(ADDRINT ins_addr, ptr_branch& err_ptr_branch)
-{
-  journal_buffer("failed_rollback_msg", reinterpret_cast<UINT8*>(received_msg_addr), received_msg_size);
-  print_debug_lost_forward(ins_addr/*, err_ptr_branch*/);
-
-  return;
 }
 
 /*====================================================================================================================*/
@@ -295,8 +198,8 @@ inline void bypass_branch(ptr_branch& bypassed_ptr_branch)
 
 inline void get_next_nearest_checkpoint(ptr_branch& current_ptr_branch) 
 {
-  std::map< ptr_checkpoint, std::set<ADDRINT>, ptr_checkpoint_less >::iterator nearest_checkpoint_iter;
-  std::map< ptr_checkpoint, std::set<ADDRINT>, ptr_checkpoint_less >::iterator next_nearest_checkpoint_iter;
+  std::map<ptr_checkpoint, std::set<ADDRINT>, ptr_checkpoint_less>::iterator nearest_checkpoint_iter;
+  std::map<ptr_checkpoint, std::set<ADDRINT>, ptr_checkpoint_less>::iterator next_nearest_checkpoint_iter;
   
   if (active_nearest_checkpoint.first) 
   {
@@ -396,7 +299,7 @@ inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr, bool b
       print_debug_met_again(ins_addr, examined_ptr_branch);
       accept_branch(examined_ptr_branch);
     }
-
+    
     if (local_rollback_times < max_local_rollback_times)
     {
       // we will lost out of the original trace if go further, so we must rollback
@@ -407,7 +310,6 @@ inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr, bool b
     }
     else
     {
-//       print_debug_resolving_failed(active_ptr_branch->addr, active_ptr_branch);
       BOOST_LOG_TRIVIAL(warning) << boost::format("\033[31mCannot resolve the branch at %d, bypass it.\033[0m") 
                                       % active_ptr_branch->trace.size();
 
@@ -506,10 +408,10 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
                                   % examined_ptr_branch->trace.size() % active_nearest_checkpoint.first->trace.size();
   }
   
-  // resolve the active_ptr_branch
+  // and resolve the active_ptr_branch
   total_rollback_times++;
   
-  if (local_rollback_times <= max_local_rollback_times) 
+  if (local_rollback_times < max_local_rollback_times) 
   {
     local_rollback_times++;
     
@@ -517,6 +419,7 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
   }
   else // we have reached the limit number of rollback test for the current active_nearest_checkpoint
   {
+    std::cout << "hahaha\n";
     // so we get try to get new active_nearest_checkpoint
     get_next_nearest_checkpoint(active_ptr_branch);
     
@@ -588,7 +491,7 @@ inline void process_input_dependent_branch(ADDRINT ins_addr, bool br_taken, ptr_
   {
     if (examined_ptr_branch->is_resolved) // which is resolved
     {
-      if (examined_ptr_branch == order_input_indep_ptr_branch_map.rbegin()->second) // and is the current last branch
+      if (examined_ptr_branch == order_input_dep_ptr_branch_map.rbegin()->second) // and is the current last branch
       {
         /* FOR TESTING ONLY */
         BOOST_LOG_TRIVIAL(warning) << "FOR TESTING ONLY: stop at the last branch of the first tainting result.";
