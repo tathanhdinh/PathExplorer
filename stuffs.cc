@@ -43,7 +43,6 @@ extern ptr_branch                   exploring_ptr_branch;
 
 extern std::vector<ptr_branch>      resolved_ptr_branches;
 extern std::vector<ptr_branch>      found_new_ptr_branches;
-extern std::vector<ptr_branch>      tainted_ptr_branches;
 
 extern std::map<UINT32, ptr_branch> order_input_indep_ptr_branch_map;
 extern std::map<UINT32, ptr_branch> order_input_dep_ptr_branch_map;
@@ -441,21 +440,21 @@ void journal_tainting_log()
         {
           // a checkpoint
           tainting_log_file << boost::format ("\033[36m%-4i %-16s %-34s %-16s %-19s %-40s %-40s %s %s\033[0m\n")
-                            % idx % remove_leading_zeros(StringFromAddrint(order_ins_dynamic_map[idx].address))
-                            % order_ins_dynamic_map[idx].disass
-                            % sstream_sregs.str() % sstream_dregs.str() % sstream_smems.str() % sstream_dmems.str()
-                            % order_ins_dynamic_map[idx].contained_image
-                            % order_ins_dynamic_map[idx].contained_function;
+                                % idx % remove_leading_zeros(StringFromAddrint(order_ins_dynamic_map[idx].address))
+                                % order_ins_dynamic_map[idx].disass
+                                % sstream_sregs.str() % sstream_dregs.str() % sstream_smems.str() % sstream_dmems.str()
+                                % order_ins_dynamic_map[idx].contained_image
+                                % order_ins_dynamic_map[idx].contained_function;
         } 
         else 
         {
           // a normal instruction
           tainting_log_file << boost::format("\033[0m%-4i %-16s %-34s %-16s %-19s %-40s %-40s %s %s\033[0m\n")
-                            % idx % remove_leading_zeros ( StringFromAddrint ( order_ins_dynamic_map[idx].address))
-                            % order_ins_dynamic_map[idx].disass
-                            % sstream_sregs.str() % sstream_dregs.str() % sstream_smems.str() % sstream_dmems.str()
-                            % order_ins_dynamic_map[idx].contained_image
-                            % order_ins_dynamic_map[idx].contained_function;
+                                % idx % remove_leading_zeros(StringFromAddrint(order_ins_dynamic_map[idx].address))
+                                % order_ins_dynamic_map[idx].disass
+                                % sstream_sregs.str() % sstream_dregs.str() % sstream_smems.str() % sstream_dmems.str()
+                                % order_ins_dynamic_map[idx].contained_image
+                                % order_ins_dynamic_map[idx].contained_function;
         }
       }
     }

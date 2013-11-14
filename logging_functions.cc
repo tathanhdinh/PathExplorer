@@ -31,8 +31,6 @@ extern std::vector<ADDRINT>                     explored_trace;
 
 extern std::map<UINT32, ptr_branch>             order_input_dep_ptr_branch_map;
 extern std::map<UINT32, ptr_branch>             order_input_indep_ptr_branch_map;
-
-extern std::vector<ptr_branch>                  tainted_ptr_branches;
 extern std::map<UINT32, ptr_branch>             order_tainted_ptr_branch_map;
 
 extern ptr_branch                               exploring_ptr_branch;
@@ -249,7 +247,7 @@ inline void compute_branch_min_checkpoint()
       else 
       {
 //         std::cerr << "Critical error: nearest checkpoint cannot found!\n";
-        BOOST_LOG_TRIVIAL(fatal) << "FATAL: nearest checkpoint cannot found!";
+        BOOST_LOG_TRIVIAL(fatal) << "Nearest checkpoint cannot found!";
         PIN_ExitApplication(0);
       }
     }
@@ -262,8 +260,12 @@ inline void compute_branch_min_checkpoint()
 
 inline void prepare_new_rollbacking_phase()
 {
-//   print_debug_start_rollbacking();
-  BOOST_LOG_TRIVIAL(info) << boost::format("Tainting phase stop, %d instructions analyzed, %d checkpoints") 
+  compute_branch_mem_dependency();
+  compute_branch_min_checkpoint();
+
+  journal_tainting_log();
+  
+  BOOST_LOG_TRIVIAL(info) << boost::format("Tainting phase stopped, %d instructions analyzed, %d checkpoints") 
                               % explored_trace.size() % saved_ptr_checkpoints.size() 
                           << boost::format(" and %d input dependent branches over %d total.") 
                               % order_input_dep_ptr_branch_map.size() % order_tainted_ptr_branch_map.size()
@@ -298,11 +300,6 @@ inline void prepare_new_rollbacking_phase()
 
 VOID logging_syscall_instruction_analyzer(ADDRINT ins_addr)
 {
-  compute_branch_mem_dependency();
-  compute_branch_min_checkpoint();
-
-  journal_tainting_log();
-
   prepare_new_rollbacking_phase();
   return;
 }
@@ -318,11 +315,6 @@ VOID logging_general_instruction_analyzer(ADDRINT ins_addr)
   }
   else // trace length limit reached
   {
-    compute_branch_mem_dependency();
-    compute_branch_min_checkpoint();
-
-    journal_tainting_log();
-
     prepare_new_rollbacking_phase();
   }
 

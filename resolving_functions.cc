@@ -41,10 +41,7 @@ extern ADDRINT                                    received_msg_addr;
 extern UINT32                                     received_msg_size;
 
 extern std::map<UINT32, ptr_branch>               order_input_dep_ptr_branch_map;
-
 extern std::map<UINT32, ptr_branch>               order_input_indep_ptr_branch_map;
-
-extern std::vector<ptr_branch>                    tainted_ptr_branches;
 extern std::map<UINT32, ptr_branch>               order_tainted_ptr_branch_map;
 
 extern std::vector<ptr_branch>                    found_new_ptr_branches;
@@ -119,30 +116,7 @@ inline void print_debug_met_again(ADDRINT ins_addr, ptr_branch &met_ptr_branch)
 
 /*====================================================================================================================*/
 
-// inline void print_debug_rollbacking_stop(ptr_branch& unexplored_ptr_branch)
-// {
-//   if (print_debug_text) 
-//   {
-//     UINT32 resolved_branch_num = resolved_ptr_branches.size();
-//     UINT32 input_dep_branch_num = found_new_ptr_branches.size();
-// 
-//     std::vector<ptr_branch>::iterator ptr_branch_iter = tainted_ptr_branches.begin();
-//     for (; ptr_branch_iter != tainted_ptr_branches.end(); ++ptr_branch_iter) 
-//     {
-//       if (!(*ptr_branch_iter)->dep_input_addrs.empty()) 
-//       {
-//         input_dep_branch_num++;
-//       }
-//     }
-// 
-// 
-//     std::cerr << "\033[33mRollbacking phase stopped: " << resolved_branch_num << "/"
-//               << input_dep_branch_num << " branches resolved.\033[0m\n";
-//     std::cerr << "\033[35m-------------------------------------------------------------------------------------------------\n"
-//               << "Start tainting phase exploring branch at " << unexplored_ptr_branch->trace.size() << ".\033[0m\n";
-//   }
-//   return;
-// }
+
 
 /*====================================================================================================================*/
 
@@ -206,10 +180,10 @@ inline void print_debug_found_new(ADDRINT ins_addr, ptr_branch& found_ptr_branch
 VOID resolving_ins_count_analyzer(ADDRINT ins_addr)
 {
   explored_trace.push_back(ins_addr);
-//   std::cout << explored_trace.size() << "  " 
-//             << remove_leading_zeros(StringFromAddrint(ins_addr)) << " "
-//             << addr_ins_static_map[ins_addr].disass 
-//             << "\n";
+  BOOST_LOG_TRIVIAL(trace) << explored_trace.size() << "  " 
+                           << remove_leading_zeros(StringFromAddrint(ins_addr)) << " "
+                           << addr_ins_static_map[ins_addr].disass;
+   
   return;
 }
 
@@ -217,8 +191,6 @@ VOID resolving_ins_count_analyzer(ADDRINT ins_addr)
 
 VOID resolving_mem_to_st_analyzer(ADDRINT ins_addr, ADDRINT mem_read_addr, UINT32 mem_read_size) // memory read
 {
-  // copy memory read values
-//   copy_instruction_mem_access(ins_addr, mem_read_addr, mem_read_size, 0);
   return;
 }
 
@@ -226,9 +198,6 @@ VOID resolving_mem_to_st_analyzer(ADDRINT ins_addr, ADDRINT mem_read_addr, UINT3
 
 VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 mem_written_size) // memory written
 {
-  // copy memory written values
-//   copy_instruction_mem_access(ins_addr, mem_written_addr, mem_written_size, 1);
-
   if (active_ptr_branch) // in resolving
   {
     active_ptr_branch->checkpoint->mem_written_logging(ins_addr, mem_written_addr, mem_written_size);
@@ -274,22 +243,6 @@ inline void prepare_new_tainting_phase(ptr_branch& unexplored_ptr_branch)
   }
 
   return;
-}
-
-/*====================================================================================================================*/
-
-inline std::vector<ptr_branch>::iterator search_in(std::vector<ptr_branch>& ptr_branches, ADDRINT ins_addr)
-{
-  std::vector<ptr_branch>::iterator ptr_branch_iter = ptr_branches.begin();
-  for (; ptr_branch_iter != ptr_branches.end(); ++ptr_branch_iter)
-  {
-    if (((*ptr_branch_iter)->trace.size() == explored_trace.size()) && ((*ptr_branch_iter)->addr == ins_addr))
-    {
-      break;
-    }
-  }
-
-  return ptr_branch_iter;
 }
 
 /*====================================================================================================================*/
@@ -419,7 +372,7 @@ inline void exploring_new_branch_or_stop()
   {
     BOOST_LOG_TRIVIAL(info) << boost::format("Rollbacking phase stop at %d, %d / %d branches resolved") 
                                 % resolved_ptr_branches.size() 
-                                % resolved_ptr_branches.size() % tainted_ptr_branches.size();
+                                % resolved_ptr_branches.size() % order_tainted_ptr_branch_map.size();
                                 
     prepare_new_tainting_phase(unexplored_ptr_branch);
     
@@ -702,7 +655,7 @@ inline void log_input(ADDRINT ins_addr, bool br_taken)
 {
   std::map<UINT32, ptr_branch>::iterator order_ptr_branch_iter;
   
-  order_ptr_branch_iter = order_tainted_ptr_branch_map.find(explored_trace.max_size());
+  order_ptr_branch_iter = order_tainted_ptr_branch_map.find(explored_trace.size());
   if (order_ptr_branch_iter != order_tainted_ptr_branch_map.end()) 
   {
     if (order_ptr_branch_iter->second->inputs[br_taken].empty()) 

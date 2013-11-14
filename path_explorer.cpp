@@ -10,12 +10,11 @@
 #include <iostream>
 #include <limits>
 
-#include <boost/progress.hpp>
 #include <boost/timer.hpp>
-// #include <boost/random.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/format.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/log/trivial.hpp>
 
 #include "instruction.h"
 #include "checkpoint.h"
@@ -63,13 +62,8 @@ std::pair< ptr_checkpoint,
 std::map< UINT32,
           std::vector<ptr_checkpoint> >       exepoint_checkpoints_map;
 
-std::vector<ptr_branch>                       input_dep_ptr_branches;
 std::map<UINT32, ptr_branch>                  order_input_dep_ptr_branch_map;
-
-std::vector<ptr_branch>                       input_indep_ptr_branches;
 std::map<UINT32, ptr_branch>                  order_input_indep_ptr_branch_map;
-
-std::vector<ptr_branch>                       tainted_ptr_branches;
 std::map<UINT32, ptr_branch>                  order_tainted_ptr_branch_map;
 
 std::vector<ptr_branch>                       found_new_ptr_branches;
@@ -143,35 +137,42 @@ VOID stop_tracing(INT32 code, VOID *data)
 
   boost::posix_time::time_duration elapsed_time = *stop_ptr_time - *start_ptr_time;
   long elapsed_millisec = elapsed_time.total_milliseconds();
+  
+  BOOST_LOG_TRIVIAL(info) << boost::format("Stop examining, %d milli-seconds elapsed and %d rollback used.") 
+                              % elapsed_millisec % total_rollback_times
+                          << boost::format("%d / %d branches resolved.") 
+                              % (resolved_ptr_branches.size() + found_new_ptr_branches.size()) 
+                              % order_input_dep_ptr_branch_map.size();
 
-  if (print_debug_text) 
-  {
-    UINT32 resolved_branch_num = resolved_ptr_branches.size();
-    UINT32 input_dep_branch_num = found_new_ptr_branches.size();
-
-    std::vector<ptr_branch>::iterator ptr_branch_iter = tainted_ptr_branches.begin();
-    for (; ptr_branch_iter != tainted_ptr_branches.end(); ++ptr_branch_iter) 
-    {
-      if (!(*ptr_branch_iter)->dep_input_addrs.empty()) 
-      {
-        input_dep_branch_num++;
-      }
-    }
-
-    std::cerr << "\033[33mExamining stopped.\033[0m\n"
-              << "-------------------------------------------------------------------------------------------------\n"
-              << elapsed_millisec << " milli-seconds elapsed.\n"
-              << total_rollback_times << " rollbacks used.\n"
-              << resolved_branch_num << "/" << input_dep_branch_num << " branches successfully resolved.\n"
-              << "-------------------------------------------------------------------------------------------------\n";
-
-//     journal_explored_trace("explored_trace", explored_trace);
-    journal_static_trace("static_trace");
-    journal_tainting_graph("tainting_graph.dot");
-
-//     journal_branch_messages(resolved_ptr_branches[0]);
-//     tainting_log_file.close();
-  }
+                          
+//   if (print_debug_text) 
+//   {
+//     UINT32 resolved_branch_num = resolved_ptr_branches.size();
+//     UINT32 input_dep_branch_num = found_new_ptr_branches.size();
+// 
+//     std::vector<ptr_branch>::iterator ptr_branch_iter = tainted_ptr_branches.begin();
+//     for (; ptr_branch_iter != tainted_ptr_branches.end(); ++ptr_branch_iter) 
+//     {
+//       if (!(*ptr_branch_iter)->dep_input_addrs.empty()) 
+//       {
+//         input_dep_branch_num++;
+//       }
+//     }
+// 
+//     std::cerr << "\033[33mExamining stopped.\033[0m\n"
+//               << "-------------------------------------------------------------------------------------------------\n"
+//               << elapsed_millisec << " milli-seconds elapsed.\n"
+//               << total_rollback_times << " rollbacks used.\n"
+//               << resolved_branch_num << "/" << input_dep_branch_num << " branches successfully resolved.\n"
+//               << "-------------------------------------------------------------------------------------------------\n";
+// 
+// //     journal_explored_trace("explored_trace", explored_trace);
+//     journal_static_trace("static_trace");
+//     journal_tainting_graph("tainting_graph.dot");
+// 
+// //     journal_branch_messages(resolved_ptr_branches[0]);
+// //     tainting_log_file.close();
+//   }
 
 //   journal_result_total(max_total_rollback.Value(), used_rollback_times,
 //                        max_trace_length.Value(), input_dep_ptr_branches.size(), succeeded_branches);
