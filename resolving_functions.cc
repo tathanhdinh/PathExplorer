@@ -61,20 +61,6 @@ extern KNOB<UINT32>                               max_local_rollback;
 extern KNOB<UINT32>                               max_trace_length;
 extern KNOB<BOOL>                                 print_debug_text;
 
-
-/*====================================================================================================================*/
-
-inline void print_debug_met_again(ADDRINT ins_addr, ptr_branch &met_ptr_branch)
-{
-  if (print_debug_text) 
-  {
-    std::cerr << boost::format ("\033[36mMet again   %-5i %-20s %-35s (%-10i rollbacks)\033[0m\n")
-                  % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr)) 
-                  % addr_ins_static_map[ins_addr].disass % met_ptr_branch->checkpoint->rollback_times;
-  }
-  return;
-}
-
 /*====================================================================================================================*/
 
 inline void print_debug_found_new(ADDRINT ins_addr, ptr_branch& found_ptr_branch)
@@ -100,15 +86,15 @@ VOID resolving_ins_count_analyzer(ADDRINT ins_addr)
 }
 
 /*====================================================================================================================*/
-
-VOID resolving_mem_to_st_analyzer(ADDRINT ins_addr, ADDRINT mem_read_addr, UINT32 mem_read_size) // memory read
+// memory read
+VOID resolving_mem_to_st_analyzer(ADDRINT ins_addr, ADDRINT mem_read_addr, UINT32 mem_read_size) 
 {
   return;
 }
 
 /*====================================================================================================================*/
-
-VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 mem_written_size) // memory written
+// memory written
+VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 mem_written_size) 
 {
   if (active_ptr_branch) // in resolving
   {
@@ -300,7 +286,7 @@ inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr, bool b
     if (examined_ptr_branch->is_bypassed)
     {
       // the branch has been marked as bypassed before, then is resolved accidentally
-      BOOST_LOG_TRIVIAL(trace) << boost::format("The branch at %d is resolved accidentally in resolving the branch at %d.") 
+      BOOST_LOG_TRIVIAL(trace) << boost::format("\033[36mThe branch at %d is resolved accidentally in resolving the branch at %d.\033[0m") 
                                     % examined_ptr_branch->trace.size() % active_ptr_branch->trace.size();
       accept_branch(examined_ptr_branch);
     }
@@ -315,24 +301,23 @@ inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr, bool b
     else
     {
       // back to the original trace
-      local_rollback_times++;
+      local_rollback_times = 0;
       rollback_with_input_replacement(active_nearest_checkpoint.first, 
                                       active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());
 //       BOOST_LOG_TRIVIAL(warning) << boost::format("\033[31mCannot resolve the branch at %d, bypass it.\033[0m") 
 //                                       % active_ptr_branch->trace.size();
-// 
-//       bypass_branch(active_ptr_branch);
-// 
-//       ptr_branch tmp_ptr_branch = active_ptr_branch;
 //       
-//       active_ptr_branch.reset();
+//       bypass_branch(active_ptr_branch);
+//       
+//       last_active_ptr_checkpoint = active_nearest_checkpoint.first;
+//       
 //       active_nearest_checkpoint.first.reset();
 //       active_nearest_checkpoint.second.clear();
-// 
+//                                       
+//       // back to the original trace
 //       local_rollback_times = 0;
-//       
-//       rollback_with_input_replacement(tmp_ptr_branch->checkpoint, 
-//                                       tmp_ptr_branch->inputs[tmp_ptr_branch->br_taken][0].get());
+//       rollback_with_input_replacement(last_active_ptr_checkpoint, 
+//                                       active_ptr_branch->inputs[last_active_ptr_branch->br_taken][0].get());
     }
   }
 
@@ -359,8 +344,7 @@ inline void new_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_bra
     
     accept_branch(active_ptr_branch);
     
-    // now restore the input to back to the original trace
-//     ptr_branch tmp_ptr_branch = active_ptr_branch;
+    // now restore the original trace
     last_active_ptr_branch = active_ptr_branch;
     last_active_ptr_checkpoint = active_nearest_checkpoint.first;
     
@@ -410,7 +394,7 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
       PIN_ExitApplication(3);
     }
   }
-  else // active_ptr_branch is disabled, namely in some forward and meet a new tainted branch
+  else // active_ptr_branch is disabled, namely in some forward and meet a new input dependent branch
   {
     // so enable active_ptr_branch
     active_ptr_branch = examined_ptr_branch;
