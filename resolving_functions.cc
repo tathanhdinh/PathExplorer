@@ -48,6 +48,7 @@ extern std::vector<ptr_branch>                    found_new_ptr_branches;
 extern std::vector<ptr_branch>                    resolved_ptr_branches;
 
 extern ptr_branch                                 active_ptr_branch;
+extern ptr_branch                                 last_active_ptr_branch;
 extern ptr_branch                                 exploring_ptr_branch;
 
 extern std::set<ADDRINT>                          active_input_dep_addrs;
@@ -227,8 +228,9 @@ inline void get_next_nearest_checkpoint(ptr_branch& current_ptr_branch)
         active_nearest_checkpoint.second.insert((*next_nearest_checkpoint_iter).second.begin(), 
                                                 (*next_nearest_checkpoint_iter).second.end());
       }
-      else 
+      else // the next nearest checkpoint cannot found, 
       {
+        // so reset the active nearest checkpoint
         active_nearest_checkpoint.first.reset();
         active_nearest_checkpoint.second.clear();
 //         std::set<ADDRINT>().swap(active_nearest_checkpoint.second);
@@ -358,7 +360,10 @@ inline void new_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_bra
     accept_branch(active_ptr_branch);
     
     // now restore the input to back to the original trace
-    ptr_branch tmp_ptr_branch = active_ptr_branch;
+//     ptr_branch tmp_ptr_branch = active_ptr_branch;
+    last_active_ptr_branch = active_ptr_branch;
+    last_active_ptr_checkpoint = active_nearest_checkpoint.first;
+    
     active_ptr_branch.reset();
     active_nearest_checkpoint.first.reset();
     active_nearest_checkpoint.second.clear();
@@ -366,8 +371,9 @@ inline void new_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_bra
     total_rollback_times++;
     local_rollback_times = 0;
 
-    bool current_br_taken = tmp_ptr_branch->br_taken;
-    rollback_with_input_replacement(tmp_ptr_branch->checkpoint, tmp_ptr_branch->inputs[current_br_taken][0].get());
+    bool current_br_taken = last_active_ptr_branch->br_taken;
+    rollback_with_input_replacement(last_active_ptr_checkpoint, 
+                                    last_active_ptr_branch->inputs[current_br_taken][0].get());
   }
   else // active_ptr_branch is disabled, namely in some forward
   {
@@ -428,6 +434,7 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
   else // we have reached the limit number of rollback test for the current active_nearest_checkpoint
   {
     // so we get try to get new active_nearest_checkpoint
+    last_active_ptr_checkpoint = active_nearest_checkpoint.first;
     get_next_nearest_checkpoint(active_ptr_branch);
     
     local_rollback_times = 0;
@@ -446,21 +453,9 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
       BOOST_LOG_TRIVIAL(trace) << boost::format("\033[31mCannot resolve the branch at %d, bypass it.\033[0m") 
                                     % active_ptr_branch->trace.size();
       
-      bypass_branch(active_ptr_branch);
-      
-      last_active_ptr_checkpoint = active_nearest_checkpoint.first;
-      std::cerr << "haha\n";
-      
+      bypass_branch(active_ptr_branch);      
       active_ptr_branch.reset();
-//       active_nearest_checkpoint.first.reset();
-      active_nearest_checkpoint.second.clear();
-      std::cerr << "hahaha\n";
-      
-      if (!last_active_ptr_checkpoint) 
-      {
-        BOOST_LOG_TRIVIAL(fatal) << "Checkpoint is destroyed.";
-        PIN_ExitApplication(1);
-      }
+
       rollback_with_input_replacement(last_active_ptr_checkpoint, 
                                       examined_ptr_branch->inputs[examined_ptr_branch->br_taken][0].get());
     }
@@ -473,11 +468,11 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
 
 inline void process_input_dependent_but_unresolved_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& examined_ptr_branch)
 {
-  if (examined_ptr_branch->br_taken != br_taken) // other decision is taken,
+  if (examined_ptr_branch->br_taken != br_taken) // other decision is taken
   {
     new_branch_taken_processing(ins_addr, br_taken, examined_ptr_branch);
   }
-  else // the same decision is taken, take a rollback to try to resolve this branch
+  else // the same decision is taken
   {
     same_branch_taken_processing(ins_addr, br_taken, examined_ptr_branch);
   }

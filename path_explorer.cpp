@@ -73,6 +73,7 @@ std::vector<ptr_branch>                       found_new_ptr_branches;
 std::vector<ptr_branch>                       resolved_ptr_branches;
 
 ptr_branch                                    active_ptr_branch;
+ptr_branch                                    last_active_ptr_branch;
 ptr_branch                                    exploring_ptr_branch;
 
 std::vector<ADDRINT>                          explored_trace;

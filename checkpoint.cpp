@@ -117,23 +117,23 @@ void checkpoint::mem_written_logging(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 
 
 /*====================================================================================================================*/
 
-void rollback_with_input_replacement(ptr_checkpoint& current_ptr_checkpoint, UINT8* backup_input_addr)
+void rollback_with_input_replacement(ptr_checkpoint& dest_ptr_checkpoint, UINT8* backup_input_addr)
 {
   // restore the current trace
-  explored_trace = current_ptr_checkpoint->trace;
+  explored_trace = dest_ptr_checkpoint->trace;
   explored_trace.pop_back();
 
   // restore written memories
 //   UINT8 single_byte;
   
-  std::map<ADDRINT, UINT8>::iterator mem_map_iter = current_ptr_checkpoint->mem_written_log.begin();
-  for (; mem_map_iter != current_ptr_checkpoint->mem_written_log.end(); ++mem_map_iter)
+  std::map<ADDRINT, UINT8>::iterator mem_map_iter = dest_ptr_checkpoint->mem_written_log.begin();
+  for (; mem_map_iter != dest_ptr_checkpoint->mem_written_log.end(); ++mem_map_iter)
   {
 //     single_byte = mem_map_iter->second;
 //     PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_map_iter->first), &single_byte, 1);
     *(reinterpret_cast<UINT8*>(mem_map_iter->first)) = mem_map_iter->second;
   }
-  std::map<ADDRINT, UINT8>().swap(current_ptr_checkpoint->mem_written_log);
+  std::map<ADDRINT, UINT8>().swap(dest_ptr_checkpoint->mem_written_log);
 
   // replace input and go back
 //   PIN_SafeCopy(reinterpret_cast<UINT8*>(received_msg_addr), backup_input_addr, received_msg_size);
@@ -143,7 +143,7 @@ void rollback_with_input_replacement(ptr_checkpoint& current_ptr_checkpoint, UIN
   }
   
   // go back
-  PIN_ExecuteAt(current_ptr_checkpoint->ptr_ctxt.get());
+  PIN_ExecuteAt(dest_ptr_checkpoint->ptr_ctxt.get());
 
   return;
 }
