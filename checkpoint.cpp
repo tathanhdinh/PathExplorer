@@ -133,7 +133,8 @@ void rollback_with_input_replacement(ptr_checkpoint& dest_ptr_checkpoint, UINT8*
 //     PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_map_iter->first), &single_byte, 1);
     *(reinterpret_cast<UINT8*>(mem_map_iter->first)) = mem_map_iter->second;
   }
-  std::map<ADDRINT, UINT8>().swap(dest_ptr_checkpoint->mem_written_log);
+  dest_ptr_checkpoint->mem_read_log.clear();
+//   std::map<ADDRINT, UINT8>().swap(dest_ptr_checkpoint->mem_written_log);
 
   // replace input and go back
 //   PIN_SafeCopy(reinterpret_cast<UINT8*>(received_msg_addr), backup_input_addr, received_msg_size);
