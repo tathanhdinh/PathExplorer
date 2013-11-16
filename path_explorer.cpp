@@ -147,40 +147,6 @@ VOID stop_tracing(INT32 code, VOID *data)
                           << boost::format("and %d/%d branches resolved.\033[0m") 
                               % (resolved_ptr_branches.size() + found_new_ptr_branches.size()) 
                               % order_input_dep_ptr_branch_map.size();
-
-                          
-//   if (print_debug_text) 
-//   {
-//     UINT32 resolved_branch_num = resolved_ptr_branches.size();
-//     UINT32 input_dep_branch_num = found_new_ptr_branches.size();
-// 
-//     std::vector<ptr_branch>::iterator ptr_branch_iter = tainted_ptr_branches.begin();
-//     for (; ptr_branch_iter != tainted_ptr_branches.end(); ++ptr_branch_iter) 
-//     {
-//       if (!(*ptr_branch_iter)->dep_input_addrs.empty()) 
-//       {
-//         input_dep_branch_num++;
-//       }
-//     }
-// 
-//     std::cerr << "\033[33mExamining stopped.\033[0m\n"
-//               << "-------------------------------------------------------------------------------------------------\n"
-//               << elapsed_millisec << " milli-seconds elapsed.\n"
-//               << total_rollback_times << " rollbacks used.\n"
-//               << resolved_branch_num << "/" << input_dep_branch_num << " branches successfully resolved.\n"
-//               << "-------------------------------------------------------------------------------------------------\n";
-// 
-// //     journal_explored_trace("explored_trace", explored_trace);
-//     journal_static_trace("static_trace");
-//     journal_tainting_graph("tainting_graph.dot");
-// 
-// //     journal_branch_messages(resolved_ptr_branches[0]);
-// //     tainting_log_file.close();
-//   }
-
-//   journal_result_total(max_total_rollback.Value(), used_rollback_times,
-//                        max_trace_length.Value(), input_dep_ptr_branches.size(), succeeded_branches);
-
   return;
 }
 

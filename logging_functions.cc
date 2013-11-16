@@ -366,7 +366,7 @@ VOID logging_mem_write_instruction_analyzer(ADDRINT ins_addr, ADDRINT mem_writte
     order_ins_dynamic_map[explored_trace.size()].dst_mems.insert(mem_written_addr + idx);
   }
 
-    return;
+  return;
 }
 
 /*====================================================================================================================*/

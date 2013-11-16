@@ -79,9 +79,9 @@ inline void print_debug_found_new(ADDRINT ins_addr, ptr_branch& found_ptr_branch
 VOID resolving_ins_count_analyzer(ADDRINT ins_addr)
 {
   explored_trace.push_back(ins_addr);
-  BOOST_LOG_TRIVIAL(trace) 
-    << explored_trace.size() << "  " << remove_leading_zeros(StringFromAddrint(ins_addr)) << " " 
-    << addr_ins_static_map[ins_addr].disass;
+//   BOOST_LOG_TRIVIAL(trace) 
+//     << explored_trace.size() << "  " << remove_leading_zeros(StringFromAddrint(ins_addr)) << " " 
+//     << addr_ins_static_map[ins_addr].disass;
   return;
 }
 
@@ -96,10 +96,8 @@ VOID resolving_mem_to_st_analyzer(ADDRINT ins_addr, ADDRINT mem_read_addr, UINT3
 // memory written
 VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 mem_written_size) 
 {
-//   if (active_ptr_branch) // in resolving
   if (active_nearest_checkpoint.first) // in rollbacking
   {
-//     active_ptr_branch->checkpoint->mem_written_logging(ins_addr, mem_written_addr, mem_written_size);
     active_nearest_checkpoint.first->mem_written_logging(ins_addr, mem_written_addr, mem_written_size);
   }
   else // in forwarding
@@ -110,7 +108,7 @@ VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr, ADDRINT mem_written_addr, UI
       (*ptr_checkpoint_iter)->mem_written_logging(ins_addr, mem_written_addr, mem_written_size);
     }
 
-    master_ptr_checkpoint->mem_written_logging(ins_addr, mem_written_addr, mem_written_size);
+//     master_ptr_checkpoint->mem_written_logging(ins_addr, mem_written_addr, mem_written_size);
   }
 
   return;
@@ -147,7 +145,7 @@ inline void prepare_new_tainting_phase(ptr_branch& unexplored_ptr_branch)
 
 /*====================================================================================================================*/
 
-inline ptr_branch first_unexplored_branch()
+inline ptr_branch next_unexplored_branch()
 {
   ptr_branch unexplored_ptr_branch;
   
@@ -244,7 +242,7 @@ inline void get_next_nearest_checkpoint(ptr_branch& current_ptr_branch)
 
 inline void exploring_new_branch_or_stop()
 {
-  ptr_branch unexplored_ptr_branch = first_unexplored_branch();
+  ptr_branch unexplored_ptr_branch = next_unexplored_branch();
   if (unexplored_ptr_branch) 
   {
     std::cout << boost::format("\033[33m\nExploring the branch at %d (%s) by start tainting a new path.\n\033[0m") 
@@ -253,7 +251,7 @@ inline void exploring_new_branch_or_stop()
     prepare_new_tainting_phase(unexplored_ptr_branch);
     PIN_RemoveInstrumentation();
     
-//     bool new_br_taken = !exploring_ptr_branch->br_taken;
+    // explore new branch
     total_rollback_times++;
     local_rollback_times++;
     rollback_with_input_replacement(master_ptr_checkpoint, 
@@ -270,9 +268,9 @@ inline void exploring_new_branch_or_stop()
 
 
 /**
- * @brief handle the case where the examined branch is marked as input dependent but it is resolved. Note that 
- * a resolved branch is examined only in rollback, moreover in the following procedure the examined branch is not the 
- * active branch.
+ * @brief handle the case where the examined branch is marked as input dependent but it is resolved. 
+ * Note that a resolved branch is examined if and only if: in rollback or in some forward which omit it.
+ * Moreover in the following procedure the examined branch is not the active branch.
  * 
  * @param ins_addr ...
  * @param br_taken ...
@@ -281,6 +279,8 @@ inline void exploring_new_branch_or_stop()
  */
 inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& examined_ptr_branch)
 {
+  if (active_ptr_branch) 
+  {
   if (examined_ptr_branch == active_ptr_branch) // this is a re-execution from a rollback_with_input_replacement
   {
     // go forward
@@ -318,6 +318,7 @@ inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr, bool b
                                         active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());
       }
     }
+  }
   }
 
   return;
@@ -470,8 +471,8 @@ inline void process_input_dependent_branch(ADDRINT ins_addr, bool br_taken, ptr_
     if (examined_ptr_branch == order_input_dep_ptr_branch_map.rbegin()->second) // and is the current last branch
     {
       /* FOR TESTING ONLY */
-//       BOOST_LOG_TRIVIAL(warning) << "FOR TESTING ONLY: stop at the last branch of the first tainting result.";
-//       PIN_ExitApplication(0);
+      BOOST_LOG_TRIVIAL(warning) << "FOR TESTING ONLY: stop at the last branch of the first tainting result.";
+      PIN_ExitApplication(0);
 
       BOOST_LOG_TRIVIAL(info) 
         << boost::format("\033[33mRollbacking phase stopped, %d/%d branches resolved.\033[0m") 
@@ -509,15 +510,18 @@ inline void process_input_independent_branch(ADDRINT ins_addr, bool br_taken, pt
     {
       if (!examined_ptr_branch->is_resolved)
       {
-        print_debug_found_new(ins_addr, examined_ptr_branch);
+        BOOST_LOG_TRIVIAL(warning) 
+          << boost::format("\033[35mThe branch at %d (%s) is input independent, but takes a new decision.\033[0m") 
+              % examined_ptr_branch->trace.size() % order_ins_dynamic_map[examined_ptr_branch->trace.size()].disass ;
+        
         accept_branch(examined_ptr_branch);
         found_new_ptr_branches.push_back(examined_ptr_branch);
       }
 
+      std::cerr << "hahaha\n";
       // the original trace will lost if go further, so rollback
       total_rollback_times++;
       local_rollback_times++;
-      
       rollback_with_input_random_modification(active_nearest_checkpoint.first, active_nearest_checkpoint.second);
     }
     else // active_ptr_branch is disabled, namely in forwarding
