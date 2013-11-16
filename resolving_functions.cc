@@ -79,6 +79,9 @@ inline void print_debug_found_new(ADDRINT ins_addr, ptr_branch& found_ptr_branch
 VOID resolving_ins_count_analyzer(ADDRINT ins_addr)
 {
   explored_trace.push_back(ins_addr);
+  BOOST_LOG_TRIVIAL(trace) 
+    << explored_trace.size() << "  " << remove_leading_zeros(StringFromAddrint(ins_addr)) << " " 
+    << addr_ins_static_map[ins_addr].disass;
   return;
 }
 
@@ -127,6 +130,7 @@ inline void prepare_new_tainting_phase(ptr_branch& unexplored_ptr_branch)
 //   std::map< UINT32, std::vector<ptr_checkpoint> >().swap(exepoint_checkpoints_map);
   
   dta_graph.clear();
+  order_ins_dynamic_map.clear();
   order_input_dep_ptr_branch_map.clear();
   order_input_indep_ptr_branch_map.clear();
   saved_ptr_checkpoints.clear();
@@ -243,10 +247,9 @@ inline void exploring_new_branch_or_stop()
   ptr_branch unexplored_ptr_branch = first_unexplored_branch();
   if (unexplored_ptr_branch) 
   {
-    BOOST_LOG_TRIVIAL(info) << boost::format("Rollbacking phase stop at %d, %d/%d branches resolved") 
-                                % resolved_ptr_branches.size() 
-                                % resolved_ptr_branches.size() % order_tainted_ptr_branch_map.size();
-                                
+    std::cout << boost::format("\033[33m\nExploring the branch at %d (%s) by start tainting a new path.\n\033[0m") 
+      % unexplored_ptr_branch->trace.size() % order_ins_dynamic_map[unexplored_ptr_branch->trace.size()].disass;
+      
     prepare_new_tainting_phase(unexplored_ptr_branch);
     PIN_RemoveInstrumentation();
     
@@ -467,8 +470,12 @@ inline void process_input_dependent_branch(ADDRINT ins_addr, bool br_taken, ptr_
     if (examined_ptr_branch == order_input_dep_ptr_branch_map.rbegin()->second) // and is the current last branch
     {
       /* FOR TESTING ONLY */
-      BOOST_LOG_TRIVIAL(warning) << "FOR TESTING ONLY: stop at the last branch of the first tainting result.";
-      PIN_ExitApplication(0);
+//       BOOST_LOG_TRIVIAL(warning) << "FOR TESTING ONLY: stop at the last branch of the first tainting result.";
+//       PIN_ExitApplication(0);
+
+      BOOST_LOG_TRIVIAL(info) 
+        << boost::format("\033[33mRollbacking phase stopped, %d/%d branches resolved.\033[0m") 
+            % resolved_ptr_branches.size() % order_input_dep_ptr_branch_map.size();
 
       exploring_new_branch_or_stop();
     }

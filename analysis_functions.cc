@@ -74,7 +74,7 @@ VOID syscall_exit_analyzer(THREADID thread_id, CONTEXT* p_ctxt, SYSCALL_STANDARD
           << boost::format("\033[33mThe first message saved at %s with size %d bytes.\033[0m") 
               % remove_leading_zeros(StringFromAddrint(received_msg_addr)) % received_msg_size 
           << "\n-------------------------------------------------------------------------------------------------\n" 
-          << boost::format("\033[33mStart tainting with trace size %d.\033[0m") % max_trace_size;
+          << boost::format("\033[33mStart tainting the first time with trace size %d.\033[0m") % max_trace_size;
           
         PIN_RemoveInstrumentation();
       }

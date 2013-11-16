@@ -267,15 +267,11 @@ void print_debug_message_received()
 
 void print_debug_start_rollbacking()
 {
-  if ( print_debug_text ) {
-//     std::cout << "\033[33mTainting phase stopped at " << explored_trace.size() << ", "
-//               << input_dep_ptr_branches.size() << " tainted branches, "
-//               << input_indep_ptr_branches.size() << " untainted branches, "
-//               << saved_ptr_checkpoints.size() << " checkpoints. "
-//               << "Start rollbacking phase.\033[0m\n";
-
-    std::string tainted_trace_filename ( "tainted_trace" );
-    if ( exploring_ptr_branch ) {
+  if (print_debug_text) 
+  {
+    std::string tainted_trace_filename("tainted_trace");
+    if (exploring_ptr_branch) 
+    {
       std::stringstream ss;
       ss << exploring_ptr_branch->trace.size();
       tainted_trace_filename = tainted_trace_filename + "_" + ss.str();
