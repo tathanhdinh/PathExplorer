@@ -243,19 +243,18 @@ inline void exploring_new_branch_or_stop()
   ptr_branch unexplored_ptr_branch = first_unexplored_branch();
   if (unexplored_ptr_branch) 
   {
-    BOOST_LOG_TRIVIAL(info) << boost::format("Rollbacking phase stop at %d, %d / %d branches resolved") 
+    BOOST_LOG_TRIVIAL(info) << boost::format("Rollbacking phase stop at %d, %d/%d branches resolved") 
                                 % resolved_ptr_branches.size() 
                                 % resolved_ptr_branches.size() % order_tainted_ptr_branch_map.size();
                                 
     prepare_new_tainting_phase(unexplored_ptr_branch);
-    
-    total_rollback_times++;
-    local_rollback_times++;
-    
     PIN_RemoveInstrumentation();
     
-    bool new_br_taken = !exploring_ptr_branch->br_taken;
-    rollback_with_input_replacement(master_ptr_checkpoint, exploring_ptr_branch->inputs[new_br_taken][0].get());
+//     bool new_br_taken = !exploring_ptr_branch->br_taken;
+    total_rollback_times++;
+    local_rollback_times++;
+    rollback_with_input_replacement(master_ptr_checkpoint, 
+                                    exploring_ptr_branch->inputs[!exploring_ptr_branch->br_taken][0].get());
   }
   else 
   {
@@ -462,17 +461,7 @@ inline void process_input_dependent_but_unresolved_branch(ADDRINT ins_addr, bool
  * @return void
  */
 inline void process_input_dependent_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& examined_ptr_branch)
-{
-//   if (total_rollback_times >= max_total_rollback_times)
-//   {
-//     BOOST_LOG_TRIVIAL(info) << "Stop exploring, the total rollback number exceeds its limit value.";
-//     PIN_ExitApplication(0);
-//   }
-//   else 
-//   {
-//     
-//   }
-  
+{  
   if (examined_ptr_branch->is_resolved) // which is resolved
   {
     if (examined_ptr_branch == order_input_dep_ptr_branch_map.rbegin()->second) // and is the current last branch
