@@ -473,32 +473,34 @@ inline void process_input_dependent_but_unresolved_branch(ADDRINT ins_addr, bool
  */
 inline void process_input_dependent_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& examined_ptr_branch)
 {
-  if (total_rollback_times >= max_total_rollback_times)
+//   if (total_rollback_times >= max_total_rollback_times)
+//   {
+//     BOOST_LOG_TRIVIAL(info) << "Stop exploring, the total rollback number exceeds its limit value.";
+//     PIN_ExitApplication(0);
+//   }
+//   else 
+//   {
+//     
+//   }
+  
+  if (examined_ptr_branch->is_resolved) // which is resolved
   {
-    BOOST_LOG_TRIVIAL(info) << "Stop exploring, the total rollback number exceeds its limit value.";
-    PIN_ExitApplication(0);
-  }
-  else 
-  {
-    if (examined_ptr_branch->is_resolved) // which is resolved
+    if (examined_ptr_branch == order_input_dep_ptr_branch_map.rbegin()->second) // and is the current last branch
     {
-      if (examined_ptr_branch == order_input_dep_ptr_branch_map.rbegin()->second) // and is the current last branch
-      {
-        /* FOR TESTING ONLY */
-        BOOST_LOG_TRIVIAL(warning) << "FOR TESTING ONLY: stop at the last branch of the first tainting result.";
-        PIN_ExitApplication(0);
+      /* FOR TESTING ONLY */
+      BOOST_LOG_TRIVIAL(warning) << "FOR TESTING ONLY: stop at the last branch of the first tainting result.";
+      PIN_ExitApplication(0);
 
-        exploring_new_branch_or_stop();
-      }
-      else // it is not the last branch
-      {
-        process_input_dependent_and_resolved_branch(ins_addr, br_taken, examined_ptr_branch);
-      }
+      exploring_new_branch_or_stop();
     }
-    else // it is not resolved yet
+    else // it is not the last branch
     {
-      process_input_dependent_but_unresolved_branch(ins_addr, br_taken, examined_ptr_branch);
+      process_input_dependent_and_resolved_branch(ins_addr, br_taken, examined_ptr_branch);
     }
+  }
+  else // it is not resolved yet
+  {
+    process_input_dependent_but_unresolved_branch(ins_addr, br_taken, examined_ptr_branch);
   }
 
   return;
