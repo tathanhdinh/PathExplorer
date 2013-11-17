@@ -95,7 +95,8 @@ std::vector<UINT32> backward_trace(vdep_vertex_desc root_vertex, vdep_vertex_des
   {
     backward_vertex = prec_vertex_desc[current_vertex];
 
-    boost::tie(current_edge, edge_exist) = boost::edge(backward_vertex, current_vertex, dta_graph);
+    boost::tie(current_edge, edge_exist) = boost::edge(backward_vertex, 
+                                                       current_vertex, dta_graph);
     if (edge_exist)
     {
       backward_trace.push_back(dta_graph[current_edge].second);
@@ -182,6 +183,7 @@ inline void compute_branch_mem_dependency()
   order_ptr_branch_iter = order_tainted_ptr_branch_map.begin();
   for (; order_ptr_branch_iter != order_tainted_ptr_branch_map.end(); ++order_ptr_branch_iter) 
   {
+    std::cerr << order_ptr_branch_iter->first << "\n";
     current_ptr_branch = order_ptr_branch_iter->second;
     if (!current_ptr_branch->dep_input_addrs.empty()) 
     {
@@ -219,7 +221,8 @@ inline void compute_branch_min_checkpoint()
     }
     else // compute the nearest checkpoint for current_ptr_branch
     {
-      // for each *addr_iter in current_ptr_branch->dep_input_addrs, find the earliest checkpoint that uses it
+      // for each *addr_iter in current_ptr_branch->dep_input_addrs, 
+      // find the earliest checkpoint that uses it
       addr_iter = current_ptr_branch->dep_input_addrs.begin();
       for (; addr_iter != current_ptr_branch->dep_input_addrs.end(); ++addr_iter) 
       {
@@ -227,10 +230,8 @@ inline void compute_branch_min_checkpoint()
         for (; ptr_checkpoint_iter != saved_ptr_checkpoints.end(); ++ptr_checkpoint_iter) 
         {
           // *addr_iter is found in (*ptr_checkpoint_iter)->dep_mems
-          if (std::find
-              (
-                (*ptr_checkpoint_iter)->dep_mems.begin(), (*ptr_checkpoint_iter)->dep_mems.end(), *addr_iter
-              ) 
+          if (std::find((*ptr_checkpoint_iter)->dep_mems.begin(), 
+                        (*ptr_checkpoint_iter)->dep_mems.end(), *addr_iter) 
               != (*ptr_checkpoint_iter)->dep_mems.end()) 
           {
             current_ptr_branch->nearest_checkpoints[*ptr_checkpoint_iter].insert(*addr_iter);
@@ -242,8 +243,9 @@ inline void compute_branch_min_checkpoint()
       if (current_ptr_branch->nearest_checkpoints.size() != 0) 
       {
         BOOST_LOG_TRIVIAL(info) 
-          << boost::format("The branch at %d has %d nearest checkpoints.") 
-              % current_ptr_branch->trace.size() % current_ptr_branch->nearest_checkpoints.size();
+          << boost::format("The branch at %d (%s) has %d nearest checkpoints.") 
+              % current_ptr_branch->trace.size() % order_ins_dynamic_map[current_ptr_branch->trace.size()].disass
+              % current_ptr_branch->nearest_checkpoints.size();
               
         current_ptr_branch->checkpoint = current_ptr_branch->nearest_checkpoints.rbegin()->first;
       }
@@ -317,6 +319,7 @@ VOID logging_general_instruction_analyzer(ADDRINT ins_addr)
   {
     explored_trace.push_back(ins_addr);
     order_ins_dynamic_map[explored_trace.size()] = addr_ins_static_map[ins_addr];
+//     std::cout << order_ins_dynamic_map[explored_trace.size()].disass << "\n";
   }
   else // trace length limit reached
   {
@@ -388,11 +391,13 @@ VOID logging_cond_br_analyzer(ADDRINT ins_addr, bool br_taken)
   store_input(new_ptr_branch, br_taken);
 
   // verify if the branch is a new tainted branch
-  if (exploring_ptr_branch && (new_ptr_branch->trace.size() <= exploring_ptr_branch->trace.size()))
+  if (exploring_ptr_branch && 
+      (new_ptr_branch->trace.size() <= exploring_ptr_branch->trace.size()))
   {
     omit_branch(new_ptr_branch); // then omit it
   }
   
+  std::cerr << "qq " << explored_trace.size() << "\n";
   order_tainted_ptr_branch_map[explored_trace.size()] = new_ptr_branch;
 
   return;
