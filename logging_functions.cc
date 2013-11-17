@@ -183,7 +183,6 @@ inline void compute_branch_mem_dependency()
   order_ptr_branch_iter = order_tainted_ptr_branch_map.begin();
   for (; order_ptr_branch_iter != order_tainted_ptr_branch_map.end(); ++order_ptr_branch_iter) 
   {
-    std::cerr << order_ptr_branch_iter->first << "\n";
     current_ptr_branch = order_ptr_branch_iter->second;
     if (!current_ptr_branch->dep_input_addrs.empty()) 
     {
@@ -397,7 +396,7 @@ VOID logging_cond_br_analyzer(ADDRINT ins_addr, bool br_taken)
     omit_branch(new_ptr_branch); // then omit it
   }
   
-  std::cerr << "qq " << explored_trace.size() << "\n";
+//   std::cerr << "qq " << explored_trace.size() << "\n";
   order_tainted_ptr_branch_map[explored_trace.size()] = new_ptr_branch;
 
   return;

@@ -313,7 +313,8 @@ void journal_tainting_log()
     std::ofstream tainting_log_file(tainting_log_filename.str().c_str(), std::ofstream::trunc);
     std::ofstream backward_log_file("backward_traces_log", std::ofstream::trunc);
 
-    for (idx = 1; idx <= explored_trace.size(); ++idx) 
+    for (idx = (*saved_ptr_checkpoints.begin())->trace.size(); 
+         idx <= explored_trace.size(); ++idx) 
     {
       sstream_sregs.str("");
       sstream_sregs.clear();

@@ -123,31 +123,22 @@ inline void prepare_new_tainting_phase(ptr_branch& unexplored_ptr_branch)
   in_tainting = true;
   exploring_ptr_branch = unexplored_ptr_branch;
 
-  vdep_graph().swap(dta_graph);
+//   vdep_graph().swap(dta_graph);
 //   std::vector<ptr_branch>().swap(input_dep_ptr_branches);
 //   std::vector<ptr_branch>().swap(input_indep_ptr_branches);
 //   std::vector<ptr_checkpoint>().swap(saved_ptr_checkpoints);
 //   std::map< UINT32, std::vector<ptr_checkpoint> >().swap(exepoint_checkpoints_map);
   
   master_ptr_checkpoint = *saved_ptr_checkpoints.begin();
-  
-  order_ins_dynamic_map.erase(order_ins_dynamic_map.find(master_ptr_checkpoint->trace.size()), 
-                              order_ins_dynamic_map.end());
-  
-  order_tainted_ptr_branch_map.erase(order_tainted_ptr_branch_map.find(master_ptr_checkpoint->trace.size()), 
-                                     order_tainted_ptr_branch_map.end());
-  
-  order_input_dep_ptr_branch_map.erase(order_input_dep_ptr_branch_map.find(master_ptr_checkpoint->trace.size()), 
-                                       order_input_dep_ptr_branch_map.end());
-  
-  order_input_indep_ptr_branch_map.erase(order_input_indep_ptr_branch_map.find(master_ptr_checkpoint->trace.size()), 
-                                         order_input_indep_ptr_branch_map.end());
+
+  std::map<UINT32, instruction>::iterator order_ins_map_iter = order_ins_dynamic_map.find(master_ptr_checkpoint->trace.size());
+  order_ins_dynamic_map.erase(order_ins_map_iter, order_ins_dynamic_map.end());
     
-//   dta_graph.clear();
+  dta_graph.clear();
 //   order_ins_dynamic_map.clear();
-//   order_tainted_ptr_branch_map.clear();
-//   order_input_dep_ptr_branch_map.clear();
-//   order_input_indep_ptr_branch_map.clear();
+  order_tainted_ptr_branch_map.clear();
+  order_input_dep_ptr_branch_map.clear();
+  order_input_indep_ptr_branch_map.clear();
   saved_ptr_checkpoints.clear();
   exepoint_checkpoints_map.clear();
   
