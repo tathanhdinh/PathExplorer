@@ -103,9 +103,11 @@ VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr, ADDRINT mem_written_addr, UI
   else // in forwarding
   {
     std::vector<ptr_checkpoint>::iterator ptr_checkpoint_iter = exepoint_checkpoints_map[explored_trace.size()].begin();
-    for (; ptr_checkpoint_iter != exepoint_checkpoints_map[explored_trace.size()].end(); ++ptr_checkpoint_iter)
+    for (; ptr_checkpoint_iter != exepoint_checkpoints_map[explored_trace.size()].end(); 
+         ++ptr_checkpoint_iter)
     {
-      (*ptr_checkpoint_iter)->mem_written_logging(ins_addr, mem_written_addr, mem_written_size);
+      (*ptr_checkpoint_iter)->mem_written_logging(ins_addr, 
+                                                  mem_written_addr, mem_written_size);
     }
 
 //     master_ptr_checkpoint->mem_written_logging(ins_addr, mem_written_addr, mem_written_size);
@@ -121,7 +123,7 @@ inline void prepare_new_tainting_phase(ptr_branch& unexplored_ptr_branch)
   in_tainting = true;
   exploring_ptr_branch = unexplored_ptr_branch;
 
-//   vdep_graph().swap(dta_graph);
+  vdep_graph().swap(dta_graph);
 //   std::vector<ptr_branch>().swap(input_dep_ptr_branches);
 //   std::vector<ptr_branch>().swap(input_indep_ptr_branches);
 //   std::vector<ptr_checkpoint>().swap(saved_ptr_checkpoints);
@@ -139,16 +141,16 @@ inline void prepare_new_tainting_phase(ptr_branch& unexplored_ptr_branch)
                                        order_input_dep_ptr_branch_map.end());
   
   order_input_indep_ptr_branch_map.erase(order_input_indep_ptr_branch_map.find(master_ptr_checkpoint->trace.size()), 
-                                         order_input_dep_ptr_branch_map.end());
+                                         order_input_indep_ptr_branch_map.end());
     
-  dta_graph.clear();
+//   dta_graph.clear();
 //   order_ins_dynamic_map.clear();
 //   order_tainted_ptr_branch_map.clear();
 //   order_input_dep_ptr_branch_map.clear();
 //   order_input_indep_ptr_branch_map.clear();
   saved_ptr_checkpoints.clear();
   exepoint_checkpoints_map.clear();
-
+  
   unexplored_ptr_branch->is_explored = true;
   
   active_ptr_branch.reset();
@@ -210,7 +212,8 @@ inline void get_next_nearest_checkpoint(ptr_branch& current_ptr_branch)
     nearest_checkpoint_iter = current_ptr_branch->nearest_checkpoints.begin();
     next_nearest_checkpoint_iter = current_ptr_branch->nearest_checkpoints.end();
     
-    for (; nearest_checkpoint_iter != current_ptr_branch->nearest_checkpoints.end(); ++nearest_checkpoint_iter) 
+    for (; nearest_checkpoint_iter != current_ptr_branch->nearest_checkpoints.end(); 
+         ++nearest_checkpoint_iter) 
     {
       if ((*nearest_checkpoint_iter).first == active_nearest_checkpoint.first) 
       {
@@ -239,8 +242,9 @@ inline void get_next_nearest_checkpoint(ptr_branch& current_ptr_branch)
     }
     else 
     {
-      BOOST_LOG_TRIVIAL(fatal) << boost::format("Nearest checkpoint for the branch at %d cannot found.") 
-                                    % current_ptr_branch->trace.size();
+      BOOST_LOG_TRIVIAL(fatal) 
+        << boost::format("Nearest checkpoint for the branch at %d cannot found.") 
+            % current_ptr_branch->trace.size();
       PIN_ExitApplication(4);
     }
   }
@@ -303,7 +307,8 @@ inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr, bool b
 {
   if (active_ptr_branch) 
   {
-    if (examined_ptr_branch == active_ptr_branch) // this is a re-execution from a rollback_with_input_replacement
+    // this is a re-execution from a rollback_with_input_replacement
+    if (examined_ptr_branch == active_ptr_branch) 
     {
       // go forward
       active_ptr_branch.reset();

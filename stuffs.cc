@@ -286,6 +286,13 @@ void print_debug_start_rollbacking()
 
 void journal_tainting_log()
 {
+  static UINT32 exploring_times = 0;
+  
+  exploring_times++;
+  std::stringstream tainting_log_filename;
+  tainting_log_filename << "tainting_log_";
+  tainting_log_filename << exploring_times;
+  
   std::vector<ADDRINT>::iterator ins_addr_iter;
 
   std::set<REG>::iterator reg_iter;
@@ -303,24 +310,24 @@ void journal_tainting_log()
 
   if (print_debug_text) 
   {
-    std::ofstream tainting_log_file("tainting_log", std::ofstream::trunc);
+    std::ofstream tainting_log_file(tainting_log_filename.str().c_str(), std::ofstream::trunc);
     std::ofstream backward_log_file("backward_traces_log", std::ofstream::trunc);
 
     for (idx = 1; idx <= explored_trace.size(); ++idx) 
     {
-      sstream_sregs.str ("");
+      sstream_sregs.str("");
       sstream_sregs.clear();
       
-      sstream_dregs.str ("");
+      sstream_dregs.str("");
       sstream_dregs.clear();
       
-      sstream_smems.str ( "" );
+      sstream_smems.str("");
       sstream_smems.clear();
       
-      sstream_dmems.str ( "" );
+      sstream_dmems.str("");
       sstream_dmems.clear();
       
-      sstream_bpaths.str ( "" );
+      sstream_bpaths.str("");
       sstream_bpaths.clear();
 
       sstream_sregs << "sregs: ";
@@ -342,7 +349,6 @@ void journal_tainting_log()
         sstream_dmems << "dmems: []";
 
         idx_ptr_branch = order_tainted_ptr_branch_map[idx];
-        std::cerr << idx_ptr_branch->trace.size() << "\n";
 
         if (idx_ptr_branch->dep_input_addrs.empty()) 
         {

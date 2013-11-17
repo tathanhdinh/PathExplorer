@@ -44,14 +44,16 @@ inline std::set<vdep_vertex_desc> source_variables(UINT32 idx)
   vdep_vertex_desc_set::iterator vertex_iter;
   vdep_vertex_desc new_vertex_desc;
 
-  for (var_set::iterator src_iter = src_vars.begin(); src_iter != src_vars.end(); ++src_iter) 
+  for (var_set::iterator src_iter = src_vars.begin(); 
+       src_iter != src_vars.end(); ++src_iter) 
   {
-    for (vertex_iter = dta_outer_vertices.begin(); vertex_iter != dta_outer_vertices.end(); ++vertex_iter) 
+    for (vertex_iter = dta_outer_vertices.begin(); 
+         vertex_iter != dta_outer_vertices.end(); ++vertex_iter) 
     {
       // the current source operand is found in the outer interface
       if (*src_iter == dta_graph[*vertex_iter]) 
       {
-        src_vertex_descs.insert ( *vertex_iter );
+        src_vertex_descs.insert (*vertex_iter);
         break;
       }
     }
@@ -80,14 +82,16 @@ inline std::set<vdep_vertex_desc> destination_variables (UINT32 idx)
   var_set dst_vars;
   std::set<vdep_vertex_desc> dst_vertex_descs;
 
-  for ( reg_iter = order_ins_dynamic_map[idx].dst_regs.begin();
-        reg_iter != order_ins_dynamic_map[idx].dst_regs.end(); ++reg_iter ) {
-    dst_vars.insert ( variable ( *reg_iter ) );
+  for (reg_iter = order_ins_dynamic_map[idx].dst_regs.begin();
+       reg_iter != order_ins_dynamic_map[idx].dst_regs.end(); ++reg_iter) 
+  {
+    dst_vars.insert(variable(*reg_iter));
   }
 
-  for ( mem_iter = order_ins_dynamic_map[idx].dst_mems.begin();
-        mem_iter != order_ins_dynamic_map[idx].dst_mems.end(); ++mem_iter ) {
-    dst_vars.insert ( variable ( *mem_iter ) );
+  for (mem_iter = order_ins_dynamic_map[idx].dst_mems.begin();
+       mem_iter != order_ins_dynamic_map[idx].dst_mems.end(); ++mem_iter) 
+  {
+    dst_vars.insert(variable(*mem_iter));
   }
 
   // insert the destination variables into the tainting graph and its outer interface
@@ -97,33 +101,38 @@ inline std::set<vdep_vertex_desc> destination_variables (UINT32 idx)
 
   vdep_vertex_desc new_vertex_desc;
 
-  for ( var_set::iterator dst_iter = dst_vars.begin(); dst_iter != dst_vars.end(); ++dst_iter ) {
+  for (var_set::iterator dst_iter = dst_vars.begin(); dst_iter != dst_vars.end(); ++dst_iter) 
+  {
     vertex_iter = dta_outer_vertices.begin();
-    for ( next_vertex_iter = vertex_iter; vertex_iter != dta_outer_vertices.end(); vertex_iter = next_vertex_iter ) {
+    for (next_vertex_iter = vertex_iter; vertex_iter != dta_outer_vertices.end(); 
+         vertex_iter = next_vertex_iter ) 
+    {
       ++next_vertex_iter;
 
       // the current destination operand is found in the outer interface
-      if ( *dst_iter == dta_graph[*vertex_iter] ) {
+      if (*dst_iter == dta_graph[*vertex_iter]) 
+      {
         // first, insert a new vertex into the dependency graph
-        new_vertex_desc = boost::add_vertex ( *dst_iter, dta_graph );
+        new_vertex_desc = boost::add_vertex(*dst_iter, dta_graph);
 
         // then modify the outer interface
-        dta_outer_vertices.erase ( vertex_iter );
-        dta_outer_vertices.insert ( new_vertex_desc );
+        dta_outer_vertices.erase(vertex_iter);
+        dta_outer_vertices.insert(new_vertex_desc);
 
-        dst_vertex_descs.insert ( new_vertex_desc );
+        dst_vertex_descs.insert(new_vertex_desc);
         break;
       }
     }
 
     // not found
-    if ( vertex_iter == dta_outer_vertices.end() ) {
-      new_vertex_desc = boost::add_vertex ( *dst_iter, dta_graph );
+    if (vertex_iter == dta_outer_vertices.end()) 
+    {
+      new_vertex_desc = boost::add_vertex(*dst_iter, dta_graph);
 
       // modify the outer interface
-      dta_outer_vertices.insert ( new_vertex_desc );
+      dta_outer_vertices.insert(new_vertex_desc);
 
-      dst_vertex_descs.insert ( new_vertex_desc );
+      dst_vertex_descs.insert(new_vertex_desc);
     }
   }
 
@@ -133,10 +142,9 @@ inline std::set<vdep_vertex_desc> destination_variables (UINT32 idx)
 
 /*====================================================================================================================*/
 
-VOID tainting_general_instruction_analyzer ( ADDRINT ins_addr )
+VOID tainting_general_instruction_analyzer(ADDRINT ins_addr)
 {
-  UINT32 current_ins_order = static_cast<UINT32>(explored_trace.size());
-//   std::cout << current_ins_order;
+  UINT32 current_ins_order = explored_trace.size();
 
   std::set<vdep_vertex_desc> src_vertex_descs = source_variables(current_ins_order);
   std::set<vdep_vertex_desc> dst_vertex_descs = destination_variables(current_ins_order);
@@ -151,8 +159,8 @@ VOID tainting_general_instruction_analyzer ( ADDRINT ins_addr )
     for (dst_vertex_desc_iter = dst_vertex_descs.begin();
          dst_vertex_desc_iter != dst_vertex_descs.end(); ++dst_vertex_desc_iter) 
     {
-      boost::add_edge (*src_vertex_desc_iter, *dst_vertex_desc_iter,
-                       std::make_pair (ins_addr, current_ins_order), dta_graph);
+      boost::add_edge(*src_vertex_desc_iter, *dst_vertex_desc_iter,
+                      std::make_pair(ins_addr, current_ins_order), dta_graph);
     }
   }
 

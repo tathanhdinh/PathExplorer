@@ -155,7 +155,8 @@ inline void compute_branch_mem_dependency()
             {
               current_addr = dta_graph[*vertex_iter].mem;
               
-              if ((received_msg_addr <= current_addr) && (current_addr < received_msg_addr + received_msg_size)) 
+              if ((received_msg_addr <= current_addr) && 
+                  (current_addr < received_msg_addr + received_msg_size)) 
               {
                 current_ptr_branch->dep_input_addrs.insert(current_addr);
               }
@@ -184,12 +185,10 @@ inline void compute_branch_mem_dependency()
     current_ptr_branch = order_ptr_branch_iter->second;
     if (!current_ptr_branch->dep_input_addrs.empty()) 
     {
-//       input_dep_ptr_branches.push_back(current_ptr_branch);
       order_input_dep_ptr_branch_map[current_ptr_branch->trace.size()]= current_ptr_branch;
     }
     else 
     {
-//       input_indep_ptr_branches.push_back(current_ptr_branch);
       order_input_indep_ptr_branch_map[current_ptr_branch->trace.size()] = current_ptr_branch;
     }
   }
@@ -245,6 +244,7 @@ inline void compute_branch_min_checkpoint()
         BOOST_LOG_TRIVIAL(info) 
           << boost::format("The branch at %d has %d nearest checkpoints.") 
               % current_ptr_branch->trace.size() % current_ptr_branch->nearest_checkpoints.size();
+              
         current_ptr_branch->checkpoint = current_ptr_branch->nearest_checkpoints.rbegin()->first;
       }
       else 
@@ -252,6 +252,7 @@ inline void compute_branch_min_checkpoint()
         BOOST_LOG_TRIVIAL(fatal) 
           << boost::format("Cannot found any nearest checkpoint for the branch at %d.!") 
               % current_ptr_branch->trace.size();
+              
         PIN_ExitApplication(0);
       }
     }
@@ -269,18 +270,18 @@ inline void prepare_new_rollbacking_phase()
 
   journal_tainting_log();
   
-  BOOST_LOG_TRIVIAL(info) << boost::format("\033[33mTainting phase stopped, %d instructions analyzed, %d checkpoints") 
-                              % explored_trace.size() % saved_ptr_checkpoints.size() 
-                          << boost::format(" and %d/%d branches.\n") 
-                              % order_input_dep_ptr_branch_map.size() % order_tainted_ptr_branch_map.size()
-                          << "Start rollbacking.\033[0m";
+  BOOST_LOG_TRIVIAL(info) 
+    << boost::format("\033[33mTainting phase stopped, %d instructions analyzed, %d checkpoints and %d/%d branches.\n") 
+        % explored_trace.size() % saved_ptr_checkpoints.size() 
+        % order_input_dep_ptr_branch_map.size() % order_tainted_ptr_branch_map.size()
+    << "Start rollbacking.\033[0m";
 
   in_tainting = false;
   PIN_RemoveInstrumentation();
 
   if (exploring_ptr_branch)
   {
-    rollback_with_input_replacement(/*master_ptr_checkpoint*/saved_ptr_checkpoints[0],
+    rollback_with_input_replacement(saved_ptr_checkpoints[0],
                                     exploring_ptr_branch->inputs[!exploring_ptr_branch->br_taken][0].get());
   }
   else
@@ -288,7 +289,7 @@ inline void prepare_new_rollbacking_phase()
     if (!order_input_dep_ptr_branch_map.empty())
     {
       ptr_branch first_ptr_branch = order_input_dep_ptr_branch_map.begin()->second;
-      rollback_with_input_replacement(/*master_ptr_checkpoint*/saved_ptr_checkpoints[0], 
+      rollback_with_input_replacement(saved_ptr_checkpoints[0], 
                                       first_ptr_branch->inputs[first_ptr_branch->br_taken][0].get());
     }
     else
@@ -390,23 +391,9 @@ VOID logging_cond_br_analyzer(ADDRINT ins_addr, bool br_taken)
   if (exploring_ptr_branch && (new_ptr_branch->trace.size() <= exploring_ptr_branch->trace.size()))
   {
     omit_branch(new_ptr_branch); // then omit it
-//     if (new_ptr_branch->trace.size() <= exploring_ptr_branch->trace.size()) // it is not
-//     {
-//       omit_branch(new_ptr_branch); // then omit it
-//     }
-//     order_tainted_ptr_branch_map[explored_trace.size()] = new_ptr_branch;
-//     else
-//     {
-//       order_tainted_ptr_branch_map[explored_trace.size()] = new_ptr_branch;
-//     }
   }
   
   order_tainted_ptr_branch_map[explored_trace.size()] = new_ptr_branch;
-//   else 
-//   {
-    // it is always a new tainted branch in the first tainting phase
-//     order_tainted_ptr_branch_map[explored_trace.size()] = new_ptr_branch;
-//   }
 
   return;
 }
