@@ -127,10 +127,25 @@ inline void prepare_new_tainting_phase(ptr_branch& unexplored_ptr_branch)
 //   std::vector<ptr_checkpoint>().swap(saved_ptr_checkpoints);
 //   std::map< UINT32, std::vector<ptr_checkpoint> >().swap(exepoint_checkpoints_map);
   
+  master_ptr_checkpoint = *saved_ptr_checkpoints.begin();
+  
+  order_ins_dynamic_map.erase(order_ins_dynamic_map.find(master_ptr_checkpoint->trace.size()), 
+                              order_ins_dynamic_map.end());
+  
+  order_tainted_ptr_branch_map.erase(order_tainted_ptr_branch_map.find(master_ptr_checkpoint->trace.size()), 
+                                     order_tainted_ptr_branch_map.end());
+  
+  order_input_dep_ptr_branch_map.erase(order_input_dep_ptr_branch_map.find(master_ptr_checkpoint->trace.size()), 
+                                       order_input_dep_ptr_branch_map.end());
+  
+  order_input_indep_ptr_branch_map.erase(order_input_indep_ptr_branch_map.find(master_ptr_checkpoint->trace.size()), 
+                                         order_input_dep_ptr_branch_map.end());
+    
   dta_graph.clear();
-  order_ins_dynamic_map.clear();
-  order_input_dep_ptr_branch_map.clear();
-  order_input_indep_ptr_branch_map.clear();
+//   order_ins_dynamic_map.clear();
+//   order_tainted_ptr_branch_map.clear();
+//   order_input_dep_ptr_branch_map.clear();
+//   order_input_indep_ptr_branch_map.clear();
   saved_ptr_checkpoints.clear();
   exepoint_checkpoints_map.clear();
 
@@ -238,23 +253,30 @@ inline void get_next_nearest_checkpoint(ptr_branch& current_ptr_branch)
   return;
 }
 
-/*====================================================================================================================*/
 
+/**
+ * @brief ...
+ * 
+ * @return void
+ */
 inline void exploring_new_branch_or_stop()
 {
   ptr_branch unexplored_ptr_branch = next_unexplored_branch();
   if (unexplored_ptr_branch) 
   {
-    std::cout << boost::format("\033[33m\nExploring the branch at %d (%s) by start tainting a new path.\n\033[0m") 
-      % unexplored_ptr_branch->trace.size() % order_ins_dynamic_map[unexplored_ptr_branch->trace.size()].disass;
-      
+    std::cout 
+      << boost::format("\033[33m\nExploring the branch at %d (%s) by start tainting a new path.\n\033[0m") 
+          % unexplored_ptr_branch->trace.size() 
+          % order_ins_dynamic_map[unexplored_ptr_branch->trace.size()].disass;
+    
+//     master_ptr_checkpoint = saved_ptr_checkpoints[0];
     prepare_new_tainting_phase(unexplored_ptr_branch);
     PIN_RemoveInstrumentation();
     
     // explore new branch
     total_rollback_times++;
     local_rollback_times++;
-    rollback_with_input_replacement(master_ptr_checkpoint, 
+    rollback_with_input_replacement(master_ptr_checkpoint,
                                     exploring_ptr_branch->inputs[!exploring_ptr_branch->br_taken][0].get());
   }
   else 
@@ -281,44 +303,44 @@ inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr, bool b
 {
   if (active_ptr_branch) 
   {
-  if (examined_ptr_branch == active_ptr_branch) // this is a re-execution from a rollback_with_input_replacement
-  {
-    // go forward
-    active_ptr_branch.reset();
-    active_nearest_checkpoint.first.reset();
-    active_nearest_checkpoint.second.clear();
-    local_rollback_times = 0;
-  }
-  else 
-  {
-    if (examined_ptr_branch->br_taken != br_taken) // new branch taken
+    if (examined_ptr_branch == active_ptr_branch) // this is a re-execution from a rollback_with_input_replacement
     {
-      if (examined_ptr_branch->is_bypassed)
+      // go forward
+      active_ptr_branch.reset();
+      active_nearest_checkpoint.first.reset();
+      active_nearest_checkpoint.second.clear();
+      local_rollback_times = 0;
+    }
+    else 
+    {
+      if (examined_ptr_branch->br_taken != br_taken) // new branch taken
       {
-        BOOST_LOG_TRIVIAL(trace) 
-          << boost::format("\033[36mThe branch at %d is resolved accidentally in resolving the branch at %d.\033[0m") 
-              % examined_ptr_branch->trace.size() % active_ptr_branch->trace.size();
-              
-        // the branch has been marked as bypassed before, then is resolved accidentally
-        accept_branch(examined_ptr_branch);
-      }
-      
-      total_rollback_times++; 
-      if (local_rollback_times < max_local_rollback_times)
-      {
-        // the original trace will be lost if go further, so rollback
-        local_rollback_times++;
-        rollback_with_input_random_modification(active_nearest_checkpoint.first, active_nearest_checkpoint.second);
-      }
-      else
-      {
-        // back to the original trace
-        local_rollback_times++;
-        rollback_with_input_replacement(active_nearest_checkpoint.first, 
-                                        active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());
+        if (examined_ptr_branch->is_bypassed)
+        {
+          BOOST_LOG_TRIVIAL(trace) 
+            << boost::format("\033[36mThe branch at %d is resolved accidentally in resolving the branch at %d.\033[0m") 
+                % examined_ptr_branch->trace.size() % active_ptr_branch->trace.size();
+                
+          // the branch has been marked as bypassed before, then is resolved accidentally
+          accept_branch(examined_ptr_branch);
+        }
+        
+        total_rollback_times++; 
+        if (local_rollback_times < max_local_rollback_times)
+        {
+          // the original trace will be lost if go further, so rollback
+          local_rollback_times++;
+          rollback_with_input_random_modification(active_nearest_checkpoint.first, active_nearest_checkpoint.second);
+        }
+        else
+        {
+          // back to the original trace
+          local_rollback_times++;
+          rollback_with_input_replacement(active_nearest_checkpoint.first, 
+                                          active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());
+        }
       }
     }
-  }
   }
 
   return;
@@ -394,7 +416,8 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
   if ((local_rollback_times < max_local_rollback_times) && (active_nearest_checkpoint.first)) 
   {
     local_rollback_times++;
-    rollback_with_input_random_modification(active_nearest_checkpoint.first, active_nearest_checkpoint.second);
+    rollback_with_input_random_modification(active_nearest_checkpoint.first, 
+                                            active_nearest_checkpoint.second);
   }
   else 
   {
@@ -412,13 +435,15 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
             % order_ins_dynamic_map[active_nearest_checkpoint.first->trace.size()].disass;
      
       local_rollback_times++;
-      rollback_with_input_random_modification(active_nearest_checkpoint.first, active_nearest_checkpoint.second);
+      rollback_with_input_random_modification(active_nearest_checkpoint.first, 
+                                              active_nearest_checkpoint.second);
     }
     else // cannot get any new active_nearest_checkpoint
     {
       // so bypass this branch
-      BOOST_LOG_TRIVIAL(trace) << boost::format("\033[31mCannot resolve the branch at %d, bypass it.\033[0m") 
-                                    % active_ptr_branch->trace.size();
+      BOOST_LOG_TRIVIAL(trace) 
+        << boost::format("\033[31mCannot resolve the branch at %d, bypass it.\033[0m") 
+            % active_ptr_branch->trace.size();
                                     
       bypass_branch(active_ptr_branch);      
 
@@ -441,7 +466,8 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
  * @param examined_ptr_branch ...
  * @return void
  */
-inline void process_input_dependent_but_unresolved_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& examined_ptr_branch)
+inline void process_input_dependent_but_unresolved_branch(ADDRINT ins_addr, 
+                                                          bool br_taken, ptr_branch& examined_ptr_branch)
 {
   if (examined_ptr_branch->br_taken != br_taken) // other decision is taken
   {
@@ -471,8 +497,8 @@ inline void process_input_dependent_branch(ADDRINT ins_addr, bool br_taken, ptr_
     if (examined_ptr_branch == order_input_dep_ptr_branch_map.rbegin()->second) // and is the current last branch
     {
       /* FOR TESTING ONLY */
-      BOOST_LOG_TRIVIAL(warning) << "FOR TESTING ONLY: stop at the last branch of the first tainting result.";
-      PIN_ExitApplication(0);
+//       BOOST_LOG_TRIVIAL(warning) << "FOR TESTING ONLY: stop at the last branch of the first tainting result.";
+//       PIN_ExitApplication(0);
 
       BOOST_LOG_TRIVIAL(info) 
         << boost::format("\033[33mRollbacking phase stopped, %d/%d branches resolved.\033[0m") 

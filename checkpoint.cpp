@@ -48,9 +48,8 @@ checkpoint::checkpoint(ADDRINT ip_addr,
 
   for (UINT32 idx = 0; idx < mem_read_size; ++idx)
   {
-    if (
-        (received_msg_addr <= mem_read_addr + idx) && (mem_read_addr + idx < received_msg_addr + received_msg_size)
-       )
+    if ((received_msg_addr <= mem_read_addr + idx) && 
+        (mem_read_addr + idx < received_msg_addr + received_msg_size))
     {
       this->dep_mems.insert(mem_read_addr + idx);
     }
@@ -151,25 +150,23 @@ void rollback_with_input_replacement(ptr_checkpoint& dest_ptr_checkpoint, UINT8*
 
 /*====================================================================================================================*/
 
-void rollback_with_input_random_modification(ptr_checkpoint& ptr_chkpnt, std::set<ADDRINT>& dep_mems)
+void rollback_with_input_random_modification(ptr_checkpoint& current_ptr_checkpoint, 
+                                             std::set<ADDRINT>& dep_mems)
 {
   // restore the current trace
-  explored_trace = ptr_chkpnt->trace;
+  explored_trace = current_ptr_checkpoint->trace;
   explored_trace.pop_back();
-
-  // increase rollback times
-//   ptr_chkpnt->rollback_times++;
 
   // restore written memories
 //   UINT8 single_byte;
-  std::map<ADDRINT, UINT8>::iterator mem_map_iter = ptr_chkpnt->mem_written_log.begin();
-  for (; mem_map_iter != ptr_chkpnt->mem_written_log.end(); ++mem_map_iter)
+  std::map<ADDRINT, UINT8>::iterator mem_map_iter = current_ptr_checkpoint->mem_written_log.begin();
+  for (; mem_map_iter != current_ptr_checkpoint->mem_written_log.end(); ++mem_map_iter)
   {
 //     single_byte = mem_map_iter->second;
 //     PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_map_iter->first), &single_byte, 1);
     *(reinterpret_cast<UINT8*>(mem_map_iter->first)) = mem_map_iter->second;
   }
-  std::map<ADDRINT, UINT8>().swap(ptr_chkpnt->mem_written_log);
+  std::map<ADDRINT, UINT8>().swap(current_ptr_checkpoint->mem_written_log);
 
   // modify input
   std::set<ADDRINT>::iterator mem_set_iter = dep_mems.begin();
@@ -181,7 +178,7 @@ void rollback_with_input_random_modification(ptr_checkpoint& ptr_chkpnt, std::se
   }
 
   // go back
-  PIN_ExecuteAt(ptr_chkpnt->ptr_ctxt.get());
+  PIN_ExecuteAt(current_ptr_checkpoint->ptr_ctxt.get());
 
   return;
 }

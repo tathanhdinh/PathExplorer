@@ -242,19 +242,21 @@ inline void compute_branch_min_checkpoint()
       
       if (current_ptr_branch->nearest_checkpoints.size() != 0) 
       {
-        BOOST_LOG_TRIVIAL(info) << boost::format("The branch at %d has %d nearest checkpoints.") 
-                                     % current_ptr_branch->trace.size() % current_ptr_branch->nearest_checkpoints.size();
+        BOOST_LOG_TRIVIAL(info) 
+          << boost::format("The branch at %d has %d nearest checkpoints.") 
+              % current_ptr_branch->trace.size() % current_ptr_branch->nearest_checkpoints.size();
         current_ptr_branch->checkpoint = current_ptr_branch->nearest_checkpoints.rbegin()->first;
       }
       else 
       {
-        BOOST_LOG_TRIVIAL(fatal) << boost::format("Cannot found any nearest checkpoint for the branch at %d.!") 
-                                      % current_ptr_branch->trace.size();
+        BOOST_LOG_TRIVIAL(fatal) 
+          << boost::format("Cannot found any nearest checkpoint for the branch at %d.!") 
+              % current_ptr_branch->trace.size();
         PIN_ExitApplication(0);
       }
     }
   }
- 
+   
   return;
 }
 
@@ -278,7 +280,7 @@ inline void prepare_new_rollbacking_phase()
 
   if (exploring_ptr_branch)
   {
-    rollback_with_input_replacement(master_ptr_checkpoint,
+    rollback_with_input_replacement(/*master_ptr_checkpoint*/saved_ptr_checkpoints[0],
                                     exploring_ptr_branch->inputs[!exploring_ptr_branch->br_taken][0].get());
   }
   else
@@ -286,7 +288,7 @@ inline void prepare_new_rollbacking_phase()
     if (!order_input_dep_ptr_branch_map.empty())
     {
       ptr_branch first_ptr_branch = order_input_dep_ptr_branch_map.begin()->second;
-      rollback_with_input_replacement(master_ptr_checkpoint, 
+      rollback_with_input_replacement(/*master_ptr_checkpoint*/saved_ptr_checkpoints[0], 
                                       first_ptr_branch->inputs[first_ptr_branch->br_taken][0].get());
     }
     else
@@ -310,7 +312,7 @@ VOID logging_syscall_instruction_analyzer(ADDRINT ins_addr)
 
 VOID logging_general_instruction_analyzer(ADDRINT ins_addr)
 {
-  if (explored_trace.size() < max_trace_size/*max_trace_length.Value()*/)
+  if (explored_trace.size() < max_trace_size)
   {
     explored_trace.push_back(ins_addr);
     order_ins_dynamic_map[explored_trace.size()] = addr_ins_static_map[ins_addr];
@@ -333,13 +335,14 @@ VOID logging_mem_read_instruction_analyzer(ADDRINT ins_addr,
   if (std::max(mem_read_addr, received_msg_addr) <
       std::min(mem_read_addr + mem_read_size, received_msg_addr + received_msg_size))
   {
-    ptr_checkpoint new_ptr_checkpoint(new checkpoint(ins_addr, p_ctxt, explored_trace, mem_read_addr, mem_read_size));
+    ptr_checkpoint new_ptr_checkpoint(new checkpoint(ins_addr, p_ctxt, explored_trace, 
+                                                     mem_read_addr, mem_read_size));
     saved_ptr_checkpoints.push_back(new_ptr_checkpoint);
 
-    if (!master_ptr_checkpoint)
-    {
-      master_ptr_checkpoint = saved_ptr_checkpoints[0];
-    }
+//     if (!master_ptr_checkpoint)
+//     {
+//       master_ptr_checkpoint = saved_ptr_checkpoints[0];
+//     }
   }
 
   for (UINT32 idx = 0; idx < mem_read_size; ++idx)
@@ -352,11 +355,16 @@ VOID logging_mem_read_instruction_analyzer(ADDRINT ins_addr,
 
 /*====================================================================================================================*/
 // memory written
-VOID logging_mem_write_instruction_analyzer(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 mem_written_size)
+VOID logging_mem_write_instruction_analyzer(ADDRINT ins_addr, 
+                                            ADDRINT mem_written_addr, UINT32 mem_written_size)
 {
-  if (master_ptr_checkpoint)
+//   if (master_ptr_checkpoint)
+//   {
+//     master_ptr_checkpoint->mem_written_logging(ins_addr, mem_written_addr, mem_written_size);
+//   }
+  if (!saved_ptr_checkpoints.empty()) 
   {
-    master_ptr_checkpoint->mem_written_logging(ins_addr, mem_written_addr, mem_written_size);
+    saved_ptr_checkpoints[0]->mem_written_logging(ins_addr, mem_written_addr, mem_written_size);
   }
 
   exepoint_checkpoints_map[explored_trace.size()] = saved_ptr_checkpoints;
@@ -379,22 +387,26 @@ VOID logging_cond_br_analyzer(ADDRINT ins_addr, bool br_taken)
   store_input(new_ptr_branch, br_taken);
 
   // verify if the branch is a new tainted branch
-  if (exploring_ptr_branch)
+  if (exploring_ptr_branch && (new_ptr_branch->trace.size() <= exploring_ptr_branch->trace.size()))
   {
-    if (new_ptr_branch->trace.size() <= exploring_ptr_branch->trace.size()) // it is not
-    {
-      omit_branch(new_ptr_branch); // then omit it
-    }
-    else
-    {
-      order_tainted_ptr_branch_map[explored_trace.size()] = new_ptr_branch;
-    }
+    omit_branch(new_ptr_branch); // then omit it
+//     if (new_ptr_branch->trace.size() <= exploring_ptr_branch->trace.size()) // it is not
+//     {
+//       omit_branch(new_ptr_branch); // then omit it
+//     }
+//     order_tainted_ptr_branch_map[explored_trace.size()] = new_ptr_branch;
+//     else
+//     {
+//       order_tainted_ptr_branch_map[explored_trace.size()] = new_ptr_branch;
+//     }
   }
-  else 
-  {
+  
+  order_tainted_ptr_branch_map[explored_trace.size()] = new_ptr_branch;
+//   else 
+//   {
     // it is always a new tainted branch in the first tainting phase
-    order_tainted_ptr_branch_map[explored_trace.size()] = new_ptr_branch;
-  }
+//     order_tainted_ptr_branch_map[explored_trace.size()] = new_ptr_branch;
+//   }
 
   return;
 }

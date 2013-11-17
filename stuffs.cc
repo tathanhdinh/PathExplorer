@@ -342,6 +342,7 @@ void journal_tainting_log()
         sstream_dmems << "dmems: []";
 
         idx_ptr_branch = order_tainted_ptr_branch_map[idx];
+        std::cerr << idx_ptr_branch->trace.size() << "\n";
 
         if (idx_ptr_branch->dep_input_addrs.empty()) 
         {
