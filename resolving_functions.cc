@@ -109,6 +109,8 @@ VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr, ADDRINT mem_written_addr, UI
       (*ptr_checkpoint_iter)->mem_written_logging(ins_addr, 
                                                   mem_written_addr, mem_written_size);
     }
+    
+    saved_ptr_checkpoints[0]->mem_written_logging(ins_addr, mem_written_addr, mem_written_size);
 
 //     master_ptr_checkpoint->mem_written_logging(ins_addr, mem_written_addr, mem_written_size);
   }
@@ -294,7 +296,8 @@ inline void exploring_new_branch_or_stop()
  * @param examined_ptr_branch ...
  * @return void
  */
-inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& examined_ptr_branch)
+inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr, 
+                                                        bool br_taken, ptr_branch& examined_ptr_branch)
 {
   if (active_ptr_branch) 
   {
@@ -326,13 +329,14 @@ inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr, bool b
         {
           // the original trace will be lost if go further, so rollback
           local_rollback_times++;
-          rollback_with_input_random_modification(active_nearest_checkpoint.first, active_nearest_checkpoint.second);
+          rollback_with_input_random_modification(active_nearest_checkpoint.first, 
+                                                  active_nearest_checkpoint.second);
         }
         else
         {
           // back to the original trace
           local_rollback_times++;
-          rollback_with_input_replacement(active_nearest_checkpoint.first, 
+          rollback_with_input_replacement(active_nearest_checkpoint.first/*saved_ptr_checkpoints[0]*/, 
                                           active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());
         }
       }
@@ -528,7 +532,8 @@ inline void process_input_independent_branch(ADDRINT ins_addr, bool br_taken, pt
 {
   if (examined_ptr_branch->br_taken != br_taken) // new taken found
   {
-    if (active_ptr_branch) // active_ptr_branch is enabled, namely in some rollback
+    // active_nearest_checkpoint is enabled, namely in some rollback
+    if (/*active_ptr_branch*/active_nearest_checkpoint.first) 
     {
       if (!examined_ptr_branch->is_resolved)
       {
@@ -540,7 +545,7 @@ inline void process_input_independent_branch(ADDRINT ins_addr, bool br_taken, pt
         found_new_ptr_branches.push_back(examined_ptr_branch);
       }
 
-      std::cerr << "hahaha\n";
+//       std::cerr << "hahaha\n";
       // the original trace will lost if go further, so rollback
       total_rollback_times++;
       local_rollback_times++;
