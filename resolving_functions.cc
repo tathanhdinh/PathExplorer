@@ -96,9 +96,16 @@ VOID resolving_mem_to_st_analyzer(ADDRINT ins_addr, ADDRINT mem_read_addr, UINT3
 // memory written
 VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 mem_written_size) 
 {
-  if (active_nearest_checkpoint.first) // in rollbacking
+  if (/*active_nearest_checkpoint.first*/active_ptr_branch) // in rollbacking
   {
-    active_nearest_checkpoint.first->mem_written_logging(ins_addr, mem_written_addr, mem_written_size);
+    if (active_nearest_checkpoint.first) 
+    {
+      active_nearest_checkpoint.first->mem_written_logging(ins_addr, mem_written_addr, mem_written_size);
+    }
+    else 
+    {
+      last_active_ptr_checkpoint->mem_written_logging(ins_addr, mem_written_addr, mem_written_size);
+    }
   }
   else // in forwarding
   {
@@ -110,7 +117,7 @@ VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr, ADDRINT mem_written_addr, UI
                                                   mem_written_addr, mem_written_size);
     }
     
-    saved_ptr_checkpoints[0]->mem_written_logging(ins_addr, mem_written_addr, mem_written_size);
+//     saved_ptr_checkpoints[0]->mem_written_logging(ins_addr, mem_written_addr, mem_written_size);
 
 //     master_ptr_checkpoint->mem_written_logging(ins_addr, mem_written_addr, mem_written_size);
   }
@@ -395,7 +402,7 @@ inline void new_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_bra
  */
 inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_branch& examined_ptr_branch)
 {
-  if (active_ptr_branch) // active_ptr_branch is enabled, namely in some rollback
+  if (/*active_ptr_branch*/active_nearest_checkpoint.first) // active_ptr_branch is enabled, namely in some rollback
   {
     // so verify that
     if (active_ptr_branch != examined_ptr_branch) 
@@ -413,13 +420,14 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
     local_rollback_times = 0;
   }
   
+  // current active_nearest_checkpoint is still valid for testing
   if ((local_rollback_times < max_local_rollback_times) && (active_nearest_checkpoint.first)) 
   {
     local_rollback_times++;
     rollback_with_input_random_modification(active_nearest_checkpoint.first, 
                                             active_nearest_checkpoint.second);
   }
-  else 
+  else // test the next active_nearest_checkpoint (if it exists)
   {
     local_rollback_times = 0;
     last_active_ptr_checkpoint = active_nearest_checkpoint.first;
