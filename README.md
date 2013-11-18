@@ -1,3 +1,3 @@
-A Pintool for Code Coveraging (Warning: current version is crappy!!!). But something are (hopefully) stable:
+A Pintool for Binary Code Coveraging. The current version is CRAPPY, but something are (hopefully) stable:
 
-1. Graphical tainting mechanism based on liveness analysis (using the outer interface of live variables).
+Graphical tainting mechanism based on the liveness analysis (using the outer interface of live variables).
