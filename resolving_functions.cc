@@ -273,7 +273,6 @@ inline void exploring_new_branch_or_stop()
           % unexplored_ptr_branch->trace.size() 
           % order_ins_dynamic_map[unexplored_ptr_branch->trace.size()].disass;
     
-//     master_ptr_checkpoint = saved_ptr_checkpoints[0];
     prepare_new_tainting_phase(unexplored_ptr_branch);
     PIN_RemoveInstrumentation();
     
@@ -306,6 +305,7 @@ inline void exploring_new_branch_or_stop()
 inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr, 
                                                         bool br_taken, ptr_branch& examined_ptr_branch)
 {
+  // active_ptr_branch is enabled, namely in some rollback
   if (active_ptr_branch) 
   {
     // this is a re-execution from a rollback_with_input_replacement
@@ -315,11 +315,13 @@ inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr,
       active_ptr_branch.reset();
       active_nearest_checkpoint.first.reset();
       active_nearest_checkpoint.second.clear();
+      last_active_ptr_checkpoint.reset();
       local_rollback_times = 0;
     }
-    else 
+    else // 
     {
-      if (examined_ptr_branch->br_taken != br_taken) // new branch taken
+      // new branch taken
+      if (examined_ptr_branch->br_taken != br_taken) 
       {
         if (examined_ptr_branch->is_bypassed)
         {
@@ -467,7 +469,7 @@ inline void same_branch_taken_processing(ADDRINT ins_addr, bool br_taken, ptr_br
 
 
 /**
- * @brief ...
+ * @brief handle the case where the examined branch is an input 
  * 
  * @param ins_addr ...
  * @param br_taken ...
@@ -498,7 +500,8 @@ inline void process_input_dependent_but_unresolved_branch(ADDRINT ins_addr,
  * @param tainted_ptr_branch ...
  * @return void
  */
-inline void process_input_dependent_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& examined_ptr_branch)
+inline void process_input_dependent_branch(ADDRINT ins_addr, 
+                                           bool br_taken, ptr_branch& examined_ptr_branch)
 {  
   if (examined_ptr_branch->is_resolved) // which is resolved
   {
@@ -529,41 +532,54 @@ inline void process_input_dependent_branch(ADDRINT ins_addr, bool br_taken, ptr_
 
 
 /**
- * @brief ...
+ * @brief handle the case where the examined branch is detected as input independent
  * 
  * @param ins_addr ...
  * @param br_taken ...
  * @param examined_ptr_branch ...
  * @return void
  */
-inline void process_input_independent_branch(ADDRINT ins_addr, bool br_taken, ptr_branch& examined_ptr_branch)
+inline void process_input_independent_branch(ADDRINT ins_addr, 
+                                             bool br_taken, ptr_branch& examined_ptr_branch)
 {
-  if (examined_ptr_branch->br_taken != br_taken) // new taken found
+  // new taken found
+  if (examined_ptr_branch->br_taken != br_taken) 
   {
-    // active_nearest_checkpoint is enabled, namely in some rollback
-    if (/*active_ptr_branch*/active_nearest_checkpoint.first) 
+    // active_ptr_branch is enabled, namely in some rollback
+    if (active_ptr_branch) 
     {
       if (!examined_ptr_branch->is_resolved)
       {
         BOOST_LOG_TRIVIAL(warning) 
           << boost::format("\033[35mThe branch at %d (%s) is input independent, but takes a new decision.\033[0m") 
-              % examined_ptr_branch->trace.size() % order_ins_dynamic_map[examined_ptr_branch->trace.size()].disass ;
+              % examined_ptr_branch->trace.size() 
+              % order_ins_dynamic_map[examined_ptr_branch->trace.size()].disass ;
         
         accept_branch(examined_ptr_branch);
         found_new_ptr_branches.push_back(examined_ptr_branch);
       }
 
-//       std::cerr << "hahaha\n";
       // the original trace will lost if go further, so rollback
       total_rollback_times++;
       local_rollback_times++;
-      rollback_with_input_random_modification(active_nearest_checkpoint.first, active_nearest_checkpoint.second);
+      
+      // this is a re-execution from a rollback_with_input_random_modification
+      if (active_nearest_checkpoint.first) 
+      {
+        rollback_with_input_random_modification(active_nearest_checkpoint.first, 
+                                                active_nearest_checkpoint.second);
+      }
+      else 
+      {
+        
+      }
     }
     else // active_ptr_branch is disabled, namely in forwarding
     {
       // but new taken found
-      BOOST_LOG_TRIVIAL(fatal) << boost::format("The branch at %d takes a new decision in forwarding.") 
-                                    % examined_ptr_branch->trace.size();
+      BOOST_LOG_TRIVIAL(fatal) 
+        << boost::format("The branch at %d takes a new decision in forwarding.") 
+            % examined_ptr_branch->trace.size();
       PIN_ExitApplication(0);
     }
   }
