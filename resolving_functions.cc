@@ -293,6 +293,22 @@ inline void exploring_new_branch_or_stop()
 
 
 /**
+ * @brief reset all active branche and checkpoints to continue resolve the next branch.
+ * 
+ * @return void
+ */
+inline void reset_current_active_branch_checkpoints() 
+{
+  active_ptr_branch.reset();
+  active_nearest_checkpoint.first.reset();
+  active_nearest_checkpoint.second.clear();
+  last_active_ptr_checkpoint.reset();
+  local_rollback_times = 0; 
+  return;
+}
+
+
+/**
  * @brief handle the case where the examined branch is marked as input dependent but it is resolved. 
  * Note that a resolved branch is examined if and only if: in rollback or in some forward which omit it.
  * Moreover in the following procedure the examined branch is not the active branch.
@@ -305,22 +321,20 @@ inline void exploring_new_branch_or_stop()
 inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr, 
                                                         bool br_taken, ptr_branch& examined_ptr_branch)
 {
-  // active_ptr_branch is enabled, namely in some rollback
+  // consider only when active_ptr_branch is enabled, 
+  // namely in some rollback of the current exploration.
   if (active_ptr_branch) 
   {
-    // this is a re-execution from a rollback_with_input_replacement
+    // when the examined branch is also the active branch and it is resolved, 
+    // that means this is a re-execution from a rollback_with_input_replacement
     if (examined_ptr_branch == active_ptr_branch) 
     {
       // go forward
-      active_ptr_branch.reset();
-      active_nearest_checkpoint.first.reset();
-      active_nearest_checkpoint.second.clear();
-      last_active_ptr_checkpoint.reset();
-      local_rollback_times = 0;
+     reset_current_active_branch_checkpoints();
     }
-    else // 
+    else // the examined branch is not the active branch
     {
-      // new branch taken
+      // the examined branch takes a new decision
       if (examined_ptr_branch->br_taken != br_taken) 
       {
         if (examined_ptr_branch->is_bypassed)
@@ -329,7 +343,8 @@ inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr,
             << boost::format("\033[36mThe branch at %d is resolved accidentally in resolving the branch at %d.\033[0m") 
                 % examined_ptr_branch->trace.size() % active_ptr_branch->trace.size();
                 
-          // the branch has been marked as bypassed before, then is resolved accidentally
+          // the branch has been marked as bypassed before, 
+          // then it is resolved accidentally
           accept_branch(examined_ptr_branch);
         }
         
@@ -345,7 +360,7 @@ inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr,
         {
           // back to the original trace
           local_rollback_times++;
-          rollback_with_input_replacement(active_nearest_checkpoint.first/*saved_ptr_checkpoints[0]*/, 
+          rollback_with_input_replacement(active_nearest_checkpoint.first,
                                           active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());
         }
       }
@@ -357,15 +372,17 @@ inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr,
 
 
 /**
- * @brief handle the case where the examined branch takes a different target. Note that this branch is always the active 
- * branch because the following procedure is used in process_input_dependent_but_unresolved_branch.
+ * @brief handle the case where the examined branch takes a different target. 
+ * Note that this branch is always the active branch because the following procedure is used in 
+ * process_input_dependent_but_unresolved_branch.
  * 
  * @param ins_addr ...
  * @param br_taken ...
  * @param examined_ptr_branch ...
  * @return void
  */
-inline void unresolved_branch_takes_new_decision(ADDRINT ins_addr, bool br_taken, ptr_branch& examined_ptr_branch)
+inline void unresolved_branch_takes_new_decision(ADDRINT ins_addr, 
+                                                 bool br_taken, ptr_branch& examined_ptr_branch)
 {
   if (active_ptr_branch) // active_ptr_branch is enabled, namely in some rollback
   {
