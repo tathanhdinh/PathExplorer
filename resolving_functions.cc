@@ -96,7 +96,7 @@ VOID resolving_mem_to_st_analyzer(ADDRINT ins_addr, ADDRINT mem_read_addr, UINT3
 // memory written
 VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 mem_written_size) 
 {
-  if (/*active_nearest_checkpoint.first*/active_ptr_branch) // in rollbacking
+  if (active_ptr_branch) // in rollbacking
   {
     if (active_nearest_checkpoint.first) 
     {
@@ -116,10 +116,6 @@ VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr, ADDRINT mem_written_addr, UI
       (*ptr_checkpoint_iter)->mem_written_logging(ins_addr, 
                                                   mem_written_addr, mem_written_size);
     }
-    
-//     saved_ptr_checkpoints[0]->mem_written_logging(ins_addr, mem_written_addr, mem_written_size);
-
-//     master_ptr_checkpoint->mem_written_logging(ins_addr, mem_written_addr, mem_written_size);
   }
 
   return;
@@ -140,7 +136,8 @@ inline void prepare_new_tainting_phase(ptr_branch& unexplored_ptr_branch)
   
   master_ptr_checkpoint = *saved_ptr_checkpoints.begin();
 
-  std::map<UINT32, instruction>::iterator order_ins_map_iter = order_ins_dynamic_map.find(master_ptr_checkpoint->trace.size());
+  std::map<UINT32, instruction>::iterator order_ins_map_iter; 
+  order_ins_map_iter = order_ins_dynamic_map.find(master_ptr_checkpoint->trace.size());
   order_ins_dynamic_map.erase(order_ins_map_iter, order_ins_dynamic_map.end());
     
   dta_graph.clear();
@@ -200,9 +197,14 @@ inline void bypass_branch(ptr_branch& bypassed_ptr_branch)
   return;
 }
 
-/*====================================================================================================================*/
 
-inline void get_next_nearest_checkpoint(ptr_branch& current_ptr_branch) 
+/**
+ * @brief set the active_nearest_checkpoint.
+ * 
+ * @param current_ptr_branch ...
+ * @return void
+ */
+inline void set_next_active_nearest_checkpoint(ptr_branch& current_ptr_branch) 
 {
   std::map<ptr_checkpoint, std::set<ADDRINT>, ptr_checkpoint_less>::iterator nearest_checkpoint_iter;
   std::map<ptr_checkpoint, std::set<ADDRINT>, ptr_checkpoint_less>::iterator next_nearest_checkpoint_iter;
@@ -259,7 +261,7 @@ inline void get_next_nearest_checkpoint(ptr_branch& current_ptr_branch)
 
 
 /**
- * @brief ...
+ * @brief if there exists a unexplored branch then continue resolving it, if not then stop.
  * 
  * @return void
  */
@@ -273,7 +275,11 @@ inline void exploring_new_branch_or_stop()
           % unexplored_ptr_branch->trace.size() 
           % order_ins_dynamic_map[unexplored_ptr_branch->trace.size()].disass;
     
+    // the master checkpoint is the first element of saved_ptr_checkpoints, 
+    // it will be update here because the prepare_new_tainting_phase will 
+    // reset all branches and checkpoints saved in the current exploration.
     prepare_new_tainting_phase(unexplored_ptr_branch);
+    
     PIN_RemoveInstrumentation();
     
     // explore new branch
@@ -420,7 +426,7 @@ inline void unresolved_branch_takes_new_decision(ADDRINT ins_addr,
  * @param tainted_ptr_branch ...
  * @return void
  */
-inline void unresolved_branch_take_same_decision(ADDRINT ins_addr, 
+inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr, 
                                                  bool br_taken, ptr_branch& examined_ptr_branch)
 {
   // active_ptr_branch is enabled, namely in some rollback
@@ -439,7 +445,6 @@ inline void unresolved_branch_take_same_decision(ADDRINT ins_addr,
   {
     // so enable active_ptr_branch
     active_ptr_branch = examined_ptr_branch;
-//     local_rollback_times = 0;
   }
   
   // the current active_nearest_checkpoint (if it exists) is still valid for testing
@@ -452,11 +457,22 @@ inline void unresolved_branch_take_same_decision(ADDRINT ins_addr,
   }
   else // test the next active_nearest_checkpoint (if it exists)
   {
+    if (active_nearest_checkpoint.first) 
+    {
+      //
+    }
+    else 
+    {
+      //
+    }
+    
     local_rollback_times = 0;
     last_active_ptr_checkpoint = active_nearest_checkpoint.first;
-    get_next_nearest_checkpoint(active_ptr_branch);
     
-    if (active_nearest_checkpoint.first) // found a new active_nearest_checkpoint
+    set_next_active_nearest_checkpoint(active_ptr_branch);
+    
+    // found a new active_nearest_checkpoint
+    if (active_nearest_checkpoint.first) 
     {
       // then rollback to it
       BOOST_LOG_TRIVIAL(trace) 
@@ -465,7 +481,7 @@ inline void unresolved_branch_take_same_decision(ADDRINT ins_addr,
             % order_ins_dynamic_map[active_ptr_branch->trace.size()].disass 
             % active_nearest_checkpoint.first->trace.size() 
             % order_ins_dynamic_map[active_nearest_checkpoint.first->trace.size()].disass;
-     
+    
       local_rollback_times++;
       rollback_with_input_random_modification(active_nearest_checkpoint.first, 
                                               active_nearest_checkpoint.second);
@@ -507,7 +523,7 @@ inline void process_input_dependent_but_unresolved_branch(ADDRINT ins_addr,
   }
   else // the same decision is taken
   {
-    unresolved_branch_take_same_decision(ins_addr, br_taken, examined_ptr_branch);
+    unresolved_branch_takes_same_decision(ins_addr, br_taken, examined_ptr_branch);
   }
 
   return;
