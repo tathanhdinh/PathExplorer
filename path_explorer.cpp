@@ -41,6 +41,7 @@ ADDRINT                                       logged_syscall_args[6]; // logged 
 UINT32                                        total_rollback_times;
 UINT32                                        local_rollback_times;
 UINT32                                        trace_size;
+UINT32                                        used_checkpoint_number;
 
 UINT32                                        max_total_rollback_times;
 UINT32                                        max_local_rollback_times;
@@ -115,6 +116,7 @@ VOID start_tracing(VOID *data)
 
   total_rollback_times      = 0;
   local_rollback_times      = 0;
+  used_checkpoint_number    = 0;
   
   max_total_rollback_times  = max_total_rollback.Value();
   total_rollback_times      = 0;

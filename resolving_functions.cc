@@ -36,6 +36,7 @@ extern UINT32                                     total_rollback_times;
 extern UINT32                                     local_rollback_times;
 extern UINT32                                     max_total_rollback_times;
 extern UINT32                                     max_local_rollback_times;
+extern UINT32                                     used_checkpoint_number;
 
 extern ADDRINT                                    received_msg_addr;
 extern UINT32                                     received_msg_size;
@@ -231,6 +232,7 @@ inline void set_next_active_nearest_checkpoint(ptr_branch& current_ptr_branch)
     {
       if (next_nearest_checkpoint_iter != current_ptr_branch->nearest_checkpoints.end()) 
       {
+        used_checkpoint_number++;
         active_nearest_checkpoint.first = (*next_nearest_checkpoint_iter).first;
         active_nearest_checkpoint.second.insert((*next_nearest_checkpoint_iter).second.begin(), 
                                                 (*next_nearest_checkpoint_iter).second.end());
@@ -252,6 +254,7 @@ inline void set_next_active_nearest_checkpoint(ptr_branch& current_ptr_branch)
   }
   else 
   {
+    used_checkpoint_number = 1;
     active_nearest_checkpoint.first = current_ptr_branch->nearest_checkpoints.rbegin()->first;
     active_nearest_checkpoint.second = current_ptr_branch->nearest_checkpoints.rbegin()->second;
   }
@@ -395,7 +398,8 @@ inline void unresolved_branch_takes_new_decision(ADDRINT ins_addr,
     // so this branch is resolved
     BOOST_LOG_TRIVIAL(trace) 
       << boost::format("\033[32mThe branch at %d is successfully resolved after %d rollbacks.\033[0m") 
-          % examined_ptr_branch->trace.size() % local_rollback_times;
+          % examined_ptr_branch->trace.size() 
+          % (local_rollback_times + (used_checkpoint_number - 1) * max_local_rollback_times) ;
     
     accept_branch(active_ptr_branch);
     
@@ -440,90 +444,98 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
             % examined_ptr_branch->trace.size() % active_ptr_branch->trace.size();
       PIN_ExitApplication(3);
     }
+    else 
+    {
+      if ((local_rollback_times < max_local_rollback_times) && 
+          active_nearest_checkpoint.first) 
+      {
+        local_rollback_times++;
+        rollback_with_input_random_modification(active_nearest_checkpoint.first, 
+                                                active_nearest_checkpoint.second);
+      }
+      else 
+      {
+        // this comes from the last rollback_with_input_random_modification
+        if (local_rollback_times == max_local_rollback_times) 
+        {
+          // back to the original trace
+          local_rollback_times++;
+          rollback_with_input_replacement(active_nearest_checkpoint.first, 
+                                          active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());
+        }
+        else 
+        {
+          // this comes from the rollback_with_input_replacement
+          if (local_rollback_times > max_local_rollback_times) 
+          {
+            // store the last active checkpoint
+            last_active_ptr_checkpoint = active_nearest_checkpoint.first;
+            
+            // and get the next active checkpoint
+            set_next_active_nearest_checkpoint(active_ptr_branch);
+            
+            if (active_nearest_checkpoint.first) 
+            {
+              local_rollback_times = 0;
+              
+              // then rollback to it
+              BOOST_LOG_TRIVIAL(trace) 
+                << boost::format("Resolve the branch at %d (%s) by rollback to the checkpoint at %d (%s).") 
+                    % active_ptr_branch->trace.size() 
+                    % order_ins_dynamic_map[active_ptr_branch->trace.size()].disass 
+                    % active_nearest_checkpoint.first->trace.size() 
+                    % order_ins_dynamic_map[active_nearest_checkpoint.first->trace.size()].disass;
+          
+              local_rollback_times++;
+              rollback_with_input_random_modification(active_nearest_checkpoint.first, 
+                                                    active_nearest_checkpoint.second);
+            }
+            else // cannot get any new nearest checkpoint
+            {
+              // so bypass this branch
+              BOOST_LOG_TRIVIAL(trace) 
+              << boost::format("\033[31mCannot resolve the branch at %d, bypass it.\033[0m") 
+                  % active_ptr_branch->trace.size();
+                                          
+              bypass_branch(active_ptr_branch);      
+
+              // and back to the original trace
+              local_rollback_times++;
+              rollback_with_input_replacement(last_active_ptr_checkpoint, 
+                                              active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());
+            }
+          }
+          else // the active_nearest_checkpoint is empty
+          {
+            // that contradict to the fact that the active_branch is not empty
+            // and unresolved
+            BOOST_LOG_TRIVIAL(fatal) 
+              << boost::format("The branch at %d is unresolved but the nearest checkpoint is empty.") 
+                  % active_ptr_branch->trace.size();
+          }
+        }
+      }
+    }
   }
   else // active_ptr_branch is disabled, namely in some forward and meet a new input dependent branch
   {
     // so enable active_ptr_branch
     active_ptr_branch = examined_ptr_branch;
-  }
-  
-  // the current active_nearest_checkpoint (if it exists) is still valid for testing
-  if ((local_rollback_times < max_local_rollback_times) && 
-      active_nearest_checkpoint.first) 
-  {
+    
+    // and rollback
+    set_next_active_nearest_checkpoint(active_ptr_branch);
+    
+    // then rollback to it
+    BOOST_LOG_TRIVIAL(trace) 
+      << boost::format("Resolve the branch at %d (%s) by rollback to the checkpoint at %d (%s).") 
+          % active_ptr_branch->trace.size() 
+          % order_ins_dynamic_map[active_ptr_branch->trace.size()].disass 
+          % active_nearest_checkpoint.first->trace.size() 
+          % order_ins_dynamic_map[active_nearest_checkpoint.first->trace.size()].disass;
+          
     local_rollback_times++;
     rollback_with_input_random_modification(active_nearest_checkpoint.first, 
                                             active_nearest_checkpoint.second);
-  }
-  else // test the next active_nearest_checkpoint (if it exists)
-  {
-    // the orginal trace must be restored
-    if (local_rollback_times == total_rollback_times) 
-    {
-      if (active_nearest_checkpoint.first) 
-      {
-        rollback_with_input_replacement(active_nearest_checkpoint.first, 
-                                        active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());
-      }
-      else 
-      {
-        BOOST_LOG_TRIVIAL(fatal) 
-          << boost::format("The branch at %d gets an empty checkpoint when backs to the original trace.") 
-              % examined_ptr_branch->trace.size();
-      }
-    }
-    else 
-    {
-      if (local_rollback_times > total_rollback_times) 
-      {
-        if (active_nearest_checkpoint.first) 
-        {
-          // store the current active_nearest_checkpoint
-          local_rollback_times = 0;
-          last_active_ptr_checkpoint = active_nearest_checkpoint.first;
-          
-          // get the next active_nearest_checkpoint
-          set_next_active_nearest_checkpoint(active_ptr_branch);
-          
-          // found a new active_nearest_checkpoint
-          if (active_nearest_checkpoint.first) 
-          {
-            // then rollback to it
-            BOOST_LOG_TRIVIAL(trace) 
-              << boost::format("Resolve the branch at %d (%s) by rollback to the checkpoint at %d (%s).") 
-                  % active_ptr_branch->trace.size() 
-                  % order_ins_dynamic_map[active_ptr_branch->trace.size()].disass 
-                  % active_nearest_checkpoint.first->trace.size() 
-                  % order_ins_dynamic_map[active_nearest_checkpoint.first->trace.size()].disass;
-          
-            local_rollback_times++;
-            rollback_with_input_random_modification(active_nearest_checkpoint.first, 
-                                                    active_nearest_checkpoint.second);
-          }
-          else // cannot get any new active_nearest_checkpoint
-          {
-            // so bypass this branch
-            BOOST_LOG_TRIVIAL(trace) 
-              << boost::format("\033[31mCannot resolve the branch at %d, bypass it.\033[0m") 
-                  % active_ptr_branch->trace.size();
-                                          
-            bypass_branch(active_ptr_branch);      
-
-            // and back to the original trace
-            local_rollback_times++;
-            rollback_with_input_replacement(last_active_ptr_checkpoint, 
-                                            active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());
-          }
-        }
-        else 
-        {
-          if (last_active_ptr_checkpoint) 
-          {
-            last_active_ptr_checkpoint.reset();
-          }
-        }
-      }
-    }
   }
   
   return;
