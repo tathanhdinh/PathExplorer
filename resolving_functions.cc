@@ -289,6 +289,7 @@ inline void exploring_new_branch_or_stop()
     PIN_RemoveInstrumentation();
     
     // explore new branch
+    local_rollback_times++;
     rollback_with_input_replacement(master_ptr_checkpoint,
                                     exploring_ptr_branch->inputs[!exploring_ptr_branch->br_taken][0].get());
   }
@@ -329,7 +330,8 @@ inline void reset_current_active_branch_checkpoints()
  * @return void
  */
 inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr, 
-                                                        bool br_taken, ptr_branch& examined_ptr_branch)
+                                                        bool br_taken, 
+                                                        ptr_branch& examined_ptr_branch)
 {
   // consider only when active_ptr_branch is enabled, 
   // namely in some rollback of the current exploration.
@@ -369,6 +371,7 @@ inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr,
         else
         {
           // back to the original trace
+          local_rollback_times++;
           rollback_with_input_replacement(active_nearest_checkpoint.first,
                                           active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());
         }
@@ -391,7 +394,8 @@ inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr,
  * @return void
  */
 inline void unresolved_branch_takes_new_decision(ADDRINT ins_addr, 
-                                                 bool br_taken, ptr_branch& examined_ptr_branch)
+                                                 bool br_taken, 
+                                                 ptr_branch& examined_ptr_branch)
 {
   // active_ptr_branch is enabled, namely in some rollback
   if (active_ptr_branch) 
@@ -405,7 +409,7 @@ inline void unresolved_branch_takes_new_decision(ADDRINT ins_addr,
     accept_branch(active_ptr_branch);
     
     // now back to the original trace
-//     local_rollback_times++;
+    local_rollback_times++;
     rollback_with_input_replacement(active_nearest_checkpoint.first, 
                                     active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());
   }
@@ -460,6 +464,7 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
         if (local_rollback_times == max_local_rollback_times) 
         {
           // back to the original trace
+          local_rollback_times++;
           rollback_with_input_replacement(active_nearest_checkpoint.first, 
                                           active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());
         }
@@ -487,7 +492,7 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
               total_rollback_times++;
               local_rollback_times++;
               rollback_with_input_random_modification(active_nearest_checkpoint.first, 
-                                                    active_nearest_checkpoint.second);
+                                                      active_nearest_checkpoint.second);
             }
             else // cannot get any new nearest checkpoint
             {
@@ -499,6 +504,7 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
               bypass_branch(active_ptr_branch);      
 
               // and back to the original trace
+              local_rollback_times++;
               rollback_with_input_replacement(last_active_ptr_checkpoint, 
                                               active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());
             }
@@ -531,7 +537,8 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
           % order_ins_dynamic_map[active_ptr_branch->trace.size()].disass 
           % active_nearest_checkpoint.first->trace.size() 
           % order_ins_dynamic_map[active_nearest_checkpoint.first->trace.size()].disass;
-          
+   
+    total_rollback_times++;
     local_rollback_times++;
     rollback_with_input_random_modification(active_nearest_checkpoint.first, 
                                             active_nearest_checkpoint.second);

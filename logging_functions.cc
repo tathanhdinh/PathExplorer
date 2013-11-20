@@ -308,7 +308,7 @@ inline void prepare_new_rollbacking_phase()
 
 VOID logging_syscall_instruction_analyzer(ADDRINT ins_addr)
 {
-  std::cerr << addr_ins_static_map[ins_addr].disass << "\n";
+//   std::cerr << addr_ins_static_map[ins_addr].disass << "\n";
   prepare_new_rollbacking_phase();
   return;
 }
@@ -317,7 +317,7 @@ VOID logging_syscall_instruction_analyzer(ADDRINT ins_addr)
 
 VOID logging_general_instruction_analyzer(ADDRINT ins_addr)
 {
-  std::cerr << addr_ins_static_map[ins_addr].disass << "\n";
+//   std::cerr << addr_ins_static_map[ins_addr].disass << "\n";
   if (explored_trace.size() < max_trace_size)
   {
     explored_trace.push_back(ins_addr);
@@ -337,7 +337,7 @@ VOID logging_mem_read_instruction_analyzer(ADDRINT ins_addr,
                                            ADDRINT mem_read_addr, UINT32 mem_read_size, 
                                            CONTEXT* p_ctxt)
 {
-  std::cerr << mem_read_addr << " " << StringFromAddrint(mem_read_addr) << "\n";
+//   std::cerr << mem_read_addr << " " << StringFromAddrint(mem_read_addr) << "\n";
   // a new checkpoint found
   if (std::max(mem_read_addr, received_msg_addr) <
       std::min(mem_read_addr + mem_read_size, received_msg_addr + received_msg_size))
