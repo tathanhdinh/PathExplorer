@@ -34,12 +34,12 @@ extern boost::shared_ptr<boost::posix_time::ptime>  stop_ptr_time;
 
 /*====================================================================================================================*/
 
-VOID ins_instrumenter ( INS ins, VOID *data )
+VOID ins_instrumenter(INS ins, VOID *data)
 {
   // logging the parsed instructions statically
-  ADDRINT ins_addr = INS_Address (ins);
+  ADDRINT ins_addr = INS_Address(ins);
 
-  addr_ins_static_map[ins_addr] = instruction (ins);
+  addr_ins_static_map[ins_addr] = instruction(ins);
 //   addr_ins_static_map[ins_addr].contained_image = contained_image_name(ins_addr);
 
   if (
