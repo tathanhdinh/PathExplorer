@@ -149,6 +149,7 @@ VOID stop_tracing(INT32 code, VOID *data)
                           << boost::format("and %d/%d branches resolved.\033[0m") 
                               % (resolved_ptr_branches.size() + found_new_ptr_branches.size()) 
                               % order_input_dep_ptr_branch_map.size();
+                              
   return;
 }
 

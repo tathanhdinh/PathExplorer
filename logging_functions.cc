@@ -287,6 +287,7 @@ inline void prepare_new_rollbacking_phase()
   }
   else
   {
+    journal_static_trace("static_trace");
     // the first rollbacking phase
     if (!order_input_dep_ptr_branch_map.empty())
     {      

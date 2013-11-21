@@ -152,17 +152,18 @@ void journal_result_total ( UINT32 max_rollback_times, UINT32 used_rollback_time
 
 /*====================================================================================================================*/
 
-void journal_static_trace ( const std::string& filename )
+void journal_static_trace(const std::string& filename)
 {
-  std::ofstream out_file ( filename.c_str(), std::ofstream::out | std::ofstream::trunc );
+  std::ofstream out_file (filename.c_str(), std::ofstream::out | std::ofstream::trunc);
 
   std::map<ADDRINT, instruction>::iterator addr_ins_iter = addr_ins_static_map.begin();
-  for ( ; addr_ins_iter != addr_ins_static_map.end(); ++addr_ins_iter ) {
+  for (; addr_ins_iter != addr_ins_static_map.end(); ++addr_ins_iter) 
+  {
 //     out_file << boost::format("%-15s %-35s (r: %-i, w: %-i) %-25s %-25s\n")
-    out_file << boost::format ( "%-15s %-35s %-25s %-25s\n" )
-             % remove_leading_zeros ( StringFromAddrint ( addr_ins_iter->first ) ) % addr_ins_iter->second.disass
+    out_file << boost::format("%-15s %-35s %-25s %-25s\n")
+                  % remove_leading_zeros(StringFromAddrint(addr_ins_iter->first)) % addr_ins_iter->second.disass
 //                 % addr_ins_iter->second.mem_read_size % addr_ins_iter->second.mem_written_size
-             % addr_ins_iter->second.contained_image % addr_ins_iter->second.contained_function;
+                  % addr_ins_iter->second.contained_image % addr_ins_iter->second.contained_function;
   }
   out_file.close();
 
