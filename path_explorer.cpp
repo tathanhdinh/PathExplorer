@@ -71,7 +71,8 @@ std::map<UINT32, ptr_branch>                  order_input_indep_ptr_branch_map;
 std::map<UINT32, ptr_branch>                  order_tainted_ptr_branch_map;
 
 std::vector<ptr_branch>                       found_new_ptr_branches;
-std::vector<ptr_branch>                       resolved_ptr_branches;
+std::vector<ptr_branch>                       total_resolved_ptr_branches;
+std::vector<ptr_branch>                       total_input_dep_ptr_branches;
 
 ptr_branch                                    active_ptr_branch;
 ptr_branch                                    last_active_ptr_branch;
@@ -147,8 +148,9 @@ VOID stop_tracing(INT32 code, VOID *data)
   BOOST_LOG_TRIVIAL(info) << boost::format("\033[33mStop examining, %d milli-seconds elapsed, %d rollback used, ") 
                               % elapsed_millisec % total_rollback_times
                           << boost::format("and %d/%d branches resolved.\033[0m") 
-                              % (resolved_ptr_branches.size() + found_new_ptr_branches.size()) 
-                              % order_input_dep_ptr_branch_map.size();
+                              % (total_resolved_ptr_branches.size() + found_new_ptr_branches.size()) 
+//                               % order_input_dep_ptr_branch_map.size();
+                              % total_input_dep_ptr_branches.size();
                               
   return;
 }

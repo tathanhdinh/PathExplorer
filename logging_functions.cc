@@ -35,7 +35,9 @@ extern std::map<UINT32, ptr_branch>             order_tainted_ptr_branch_map;
 
 extern ptr_branch                               exploring_ptr_branch;
 
-extern UINT32                                   input_dep_branch_num;
+extern std::vector<ptr_branch>                  total_input_dep_ptr_branches;
+
+// extern UINT32                                   input_dep_branch_num;
 
 extern std::vector<ptr_checkpoint>              saved_ptr_checkpoints;
 extern ptr_checkpoint                           master_ptr_checkpoint;
@@ -187,6 +189,18 @@ inline void compute_branch_mem_dependency()
     if (!current_ptr_branch->dep_input_addrs.empty()) 
     {
       order_input_dep_ptr_branch_map[current_ptr_branch->trace.size()]= current_ptr_branch;
+      
+      if (exploring_ptr_branch) 
+      {
+        if (current_ptr_branch->trace.size() > exploring_ptr_branch->trace.size()) 
+        {
+          total_input_dep_ptr_branches.push_back(current_ptr_branch);
+        }
+      }
+      else 
+      {
+        total_input_dep_ptr_branches.push_back(current_ptr_branch);
+      }
     }
     else 
     {

@@ -66,21 +66,24 @@ VOID ins_instrumenter(INS ins, VOID *data)
         /* START LOGGING */
         if (INS_IsSyscall(ins))
         {
-          INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)logging_syscall_instruction_analyzer,
+          INS_InsertPredicatedCall(ins, IPOINT_BEFORE, 
+                                   (AFUNPTR)logging_syscall_instruction_analyzer,
                                    IARG_INST_PTR,
                                    IARG_END);
         } 
         else 
         {
           // general logging
-          INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)logging_general_instruction_analyzer,
-                                    IARG_INST_PTR,
-                                    IARG_END );
+          INS_InsertPredicatedCall(ins, IPOINT_BEFORE, 
+                                   (AFUNPTR)logging_general_instruction_analyzer,
+                                   IARG_INST_PTR,
+                                   IARG_END);
 
           if (addr_ins_static_map[ins_addr].category == XED_CATEGORY_COND_BR) 
           {
             // conditional branch logging
-            INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)logging_cond_br_analyzer,
+            INS_InsertPredicatedCall(ins, IPOINT_BEFORE, 
+                                     (AFUNPTR)logging_cond_br_analyzer,
                                      IARG_INST_PTR,
                                      IARG_BRANCH_TAKEN,
                                      IARG_END);
@@ -90,7 +93,8 @@ VOID ins_instrumenter(INS ins, VOID *data)
             if (INS_IsMemoryRead(ins)) 
             {
               // memory read logging
-              INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)logging_mem_read_instruction_analyzer,
+              INS_InsertPredicatedCall(ins, IPOINT_BEFORE, 
+                                       (AFUNPTR)logging_mem_read_instruction_analyzer,
                                        IARG_INST_PTR,
                                        IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE,
                                        IARG_CONTEXT,
@@ -100,7 +104,8 @@ VOID ins_instrumenter(INS ins, VOID *data)
             if (INS_IsMemoryWrite(ins)) 
             {
               // memory written logging
-              INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)logging_mem_write_instruction_analyzer,
+              INS_InsertPredicatedCall(ins, IPOINT_BEFORE, 
+                                       (AFUNPTR)logging_mem_write_instruction_analyzer,
                                        IARG_INST_PTR,
                                        IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE,
                                        IARG_END );
@@ -109,14 +114,16 @@ VOID ins_instrumenter(INS ins, VOID *data)
         }
 
         /* START TAINTING */
-        INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)tainting_general_instruction_analyzer,
+        INS_InsertPredicatedCall(ins, IPOINT_BEFORE, 
+                                 (AFUNPTR)tainting_general_instruction_analyzer,
                                  IARG_INST_PTR,
                                  IARG_END );
       } 
       else // in rollbacking 
       { 
         /* START RESOLVING */
-        INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)resolving_ins_count_analyzer,
+        INS_InsertPredicatedCall(ins, IPOINT_BEFORE, 
+                                 (AFUNPTR)resolving_ins_count_analyzer,
                                  IARG_INST_PTR,
                                  IARG_END );
 
@@ -131,7 +138,8 @@ VOID ins_instrumenter(INS ins, VOID *data)
         {
           if (INS_IsMemoryWrite(ins)) 
           {
-            INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)resolving_st_to_mem_analyzer,
+            INS_InsertPredicatedCall(ins, IPOINT_BEFORE, 
+                                     (AFUNPTR)resolving_st_to_mem_analyzer,
                                      IARG_INST_PTR,
                                      IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE,
                                      IARG_END);

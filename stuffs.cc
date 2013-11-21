@@ -41,7 +41,7 @@ extern std::vector<ptr_checkpoint>  saved_ptr_checkpoints;
 extern ptr_branch                   active_ptr_branch;
 extern ptr_branch                   exploring_ptr_branch;
 
-extern std::vector<ptr_branch>      resolved_ptr_branches;
+extern std::vector<ptr_branch>      total_resolved_ptr_branches;
 extern std::vector<ptr_branch>      found_new_ptr_branches;
 
 extern std::map<UINT32, ptr_branch> order_input_indep_ptr_branch_map;
@@ -50,7 +50,7 @@ extern std::map<UINT32, ptr_branch> order_tainted_ptr_branch_map;
 
 extern std::vector<ADDRINT>         explored_trace;
 
-extern UINT32                       input_dep_branch_num;
+// extern UINT32                       input_dep_branch_num;
 // extern UINT32                       resolved_branch_num;
 
 extern KNOB<UINT32>                 max_trace_length;
@@ -85,18 +85,18 @@ std::string remove_leading_zeros ( std::string input )
 
 /*====================================================================================================================*/
 
-// std::string contained_image_name ( ADDRINT ins_addr )
-// {
-//   for ( IMG img = APP_ImgHead(); IMG_Valid ( img ); img = IMG_Next ( img ) ) {
-//     for ( SEC sec = IMG_SecHead ( img ); SEC_Valid ( sec ); sec = SEC_Next ( sec ) ) {
-//       if ( ( ins_addr >= SEC_Address ( sec ) ) && ( ins_addr < SEC_Address ( sec ) + SEC_Size ( sec ) ) ) {
-//         return IMG_Name ( img );
-//       }
-//     }
-//   }
-// 
-//   return "";
-// }
+// // std::string contained_image_name ( ADDRINT ins_addr )
+// // {
+// //   for ( IMG img = APP_ImgHead(); IMG_Valid ( img ); img = IMG_Next ( img ) ) {
+// //     for ( SEC sec = IMG_SecHead ( img ); SEC_Valid ( sec ); sec = SEC_Next ( sec ) ) {
+// //       if ( ( ins_addr >= SEC_Address ( sec ) ) && ( ins_addr < SEC_Address ( sec ) + SEC_Size ( sec ) ) ) {
+// //         return IMG_Name ( img );
+// //       }
+// //     }
+// //   }
+// // 
+// //   return "";
+// // }
 
 /*====================================================================================================================*/
 

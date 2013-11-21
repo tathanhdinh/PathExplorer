@@ -46,7 +46,8 @@ extern std::map<UINT32, ptr_branch>               order_input_indep_ptr_branch_m
 extern std::map<UINT32, ptr_branch>               order_tainted_ptr_branch_map;
 
 extern std::vector<ptr_branch>                    found_new_ptr_branches;
-extern std::vector<ptr_branch>                    resolved_ptr_branches;
+extern std::vector<ptr_branch>                    total_resolved_ptr_branches;
+extern std::vector<ptr_branch>                    total_input_dep_ptr_branches;
 
 extern ptr_branch                                 active_ptr_branch;
 extern ptr_branch                                 last_active_ptr_branch;
@@ -54,8 +55,8 @@ extern ptr_branch                                 exploring_ptr_branch;
 
 extern std::set<ADDRINT>                          active_input_dep_addrs;
 
-extern UINT32                                     input_dep_branch_num;
-extern UINT32                                     resolved_branch_num;
+// extern UINT32                                     input_dep_branch_num;
+// extern UINT32                                     resolved_branch_num;
 
 extern KNOB<UINT32>                               max_total_rollback;
 extern KNOB<UINT32>                               max_local_rollback;
@@ -64,16 +65,16 @@ extern KNOB<BOOL>                                 print_debug_text;
 
 /*====================================================================================================================*/
 
-inline void print_debug_found_new(ADDRINT ins_addr, ptr_branch& found_ptr_branch)
-{
-  if (print_debug_text) 
-  {
-    std::cout << boost::format("\033[35mFound new   %-5i %-20s %-35s\033[0m\n")
-                  % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr)) 
-                  % addr_ins_static_map[ins_addr].disass;
-  }
-  return;
-}
+// inline void print_debug_found_new(ADDRINT ins_addr, ptr_branch& found_ptr_branch)
+// {
+//   if (print_debug_text) 
+//   {
+//     std::cout << boost::format("\033[35mFound new   %-5i %-20s %-35s\033[0m\n")
+//                   % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr)) 
+//                   % addr_ins_static_map[ins_addr].disass;
+//   }
+//   return;
+// }
 
 /*====================================================================================================================*/
 
@@ -167,8 +168,8 @@ inline ptr_branch next_unexplored_branch()
 {
   ptr_branch unexplored_ptr_branch;
   
-  std::vector<ptr_branch>::iterator unexplored_ptr_branch_iter = resolved_ptr_branches.begin();
-  for (; unexplored_ptr_branch_iter != resolved_ptr_branches.end(); ++unexplored_ptr_branch_iter)
+  std::vector<ptr_branch>::iterator unexplored_ptr_branch_iter = total_resolved_ptr_branches.begin();
+  for (; unexplored_ptr_branch_iter != total_resolved_ptr_branches.end(); ++unexplored_ptr_branch_iter)
   {
     if (!(*unexplored_ptr_branch_iter)->is_explored)
     {
@@ -187,7 +188,7 @@ inline void accept_branch(ptr_branch& accepted_ptr_branch)
   accepted_ptr_branch->is_just_resolved = true;
   accepted_ptr_branch->is_bypassed      = false;
 
-  resolved_ptr_branches.push_back(accepted_ptr_branch);
+  total_resolved_ptr_branches.push_back(accepted_ptr_branch);
   return;
 }
 
@@ -594,7 +595,9 @@ inline void process_input_dependent_branch(ADDRINT ins_addr,
 
       BOOST_LOG_TRIVIAL(info) 
         << boost::format("\033[33mStop rollbacking, %d/%d branches resolved.\n\033[0m") 
-            % resolved_ptr_branches.size() % order_input_dep_ptr_branch_map.size()
+            % total_resolved_ptr_branches.size() 
+            % total_input_dep_ptr_branches.size()
+//             % order_input_dep_ptr_branch_map.size()
         << "-------------------------------------------------------------------------------------------------";
         
       exploring_new_branch_or_stop();
