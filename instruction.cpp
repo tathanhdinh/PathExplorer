@@ -7,7 +7,31 @@ extern "C" {
 
 #include "stuffs.h"
 
-// static std::string contained_func_name = "";
+/*====================================================================================================================*/
+
+inline std::string contained_image_name(ADDRINT ins_addr)
+{
+//   for (IMG img = APP_ImgHead(); IMG_Valid(img); img = IMG_Next(img)) 
+//   {
+//     for (SEC sec = IMG_SecHead(img); SEC_Valid(sec); sec = SEC_Next(sec)) 
+//     {
+//       if ((ins_addr >= SEC_Address(sec)) && 
+//           (ins_addr < SEC_Address(sec) + SEC_Size(sec))) 
+//       {
+//         return IMG_Name(img);
+//       }
+//     }
+//   }
+  IMG ins_img = IMG_FindByAddress(ins_addr);
+  std::string img_name = "";
+  
+  if (IMG_Valid(ins_img)) 
+  {
+    img_name = IMG_Name(ins_img);
+  }
+
+  return img_name;
+}
 
 /*====================================================================================================================*/
 
@@ -24,8 +48,8 @@ instruction::instruction(const INS& ins)
   this->category        = static_cast<xed_category_enum_t>(INS_Category(ins));
   this->opcode          = INS_Opcode (ins);
   this->contained_image = contained_image_name(this->address);
-
   this->contained_function = RTN_FindNameByAddress(this->address);
+  
 //   if (INS_IsDirectBranchOrCall(ins))
 //   {
 //     this->contained_function = RTN_FindNameByAddress(INS_DirectBranchOrCallTargetAddress(ins));

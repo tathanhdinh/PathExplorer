@@ -36,7 +36,7 @@ public:
   std::string         disass;
   std::string         contained_image;
   std::string         contained_function;
-
+  
   OPCODE              opcode;
   xed_category_enum_t category;
 

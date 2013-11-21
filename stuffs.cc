@@ -85,18 +85,18 @@ std::string remove_leading_zeros ( std::string input )
 
 /*====================================================================================================================*/
 
-std::string contained_image_name ( ADDRINT ins_addr )
-{
-  for ( IMG img = APP_ImgHead(); IMG_Valid ( img ); img = IMG_Next ( img ) ) {
-    for ( SEC sec = IMG_SecHead ( img ); SEC_Valid ( sec ); sec = SEC_Next ( sec ) ) {
-      if ( ( ins_addr >= SEC_Address ( sec ) ) && ( ins_addr < SEC_Address ( sec ) + SEC_Size ( sec ) ) ) {
-        return IMG_Name ( img );
-      }
-    }
-  }
-
-  return "";
-}
+// std::string contained_image_name ( ADDRINT ins_addr )
+// {
+//   for ( IMG img = APP_ImgHead(); IMG_Valid ( img ); img = IMG_Next ( img ) ) {
+//     for ( SEC sec = IMG_SecHead ( img ); SEC_Valid ( sec ); sec = SEC_Next ( sec ) ) {
+//       if ( ( ins_addr >= SEC_Address ( sec ) ) && ( ins_addr < SEC_Address ( sec ) + SEC_Size ( sec ) ) ) {
+//         return IMG_Name ( img );
+//       }
+//     }
+//   }
+// 
+//   return "";
+// }
 
 /*====================================================================================================================*/
 
