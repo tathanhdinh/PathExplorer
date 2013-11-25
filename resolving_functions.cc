@@ -560,15 +560,21 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
  * @return void
  */
 inline void process_input_dependent_but_unresolved_branch(ADDRINT ins_addr, 
-                                                          bool br_taken, ptr_branch& examined_ptr_branch)
+                                                          bool br_taken, 
+                                                          ptr_branch& examined_ptr_branch)
 {
-  if (examined_ptr_branch->br_taken != br_taken) // other decision is taken
+  // other decision is taken
+  if (examined_ptr_branch->br_taken != br_taken) 
   {
-    unresolved_branch_takes_new_decision(ins_addr, br_taken, examined_ptr_branch);
+    unresolved_branch_takes_new_decision(ins_addr, 
+                                         br_taken, 
+                                         examined_ptr_branch);
   }
   else // the same decision is taken
   {
-    unresolved_branch_takes_same_decision(ins_addr, br_taken, examined_ptr_branch);
+    unresolved_branch_takes_same_decision(ins_addr, 
+                                          br_taken, 
+                                          examined_ptr_branch);
   }
 
   return;
@@ -584,11 +590,13 @@ inline void process_input_dependent_but_unresolved_branch(ADDRINT ins_addr,
  * @return void
  */
 inline void process_input_dependent_branch(ADDRINT ins_addr, 
-                                           bool br_taken, ptr_branch& examined_ptr_branch)
+                                           bool br_taken, 
+                                           ptr_branch& examined_ptr_branch)
 {  
   if (examined_ptr_branch->is_resolved) // which is resolved
   {
-    if (examined_ptr_branch == order_input_dep_ptr_branch_map.rbegin()->second) // and is the current last branch
+    // and is the current last branch
+    if (examined_ptr_branch == order_input_dep_ptr_branch_map.rbegin()->second) 
     {
       /* FOR TESTING ONLY */
 //       BOOST_LOG_TRIVIAL(warning) 
@@ -606,12 +614,16 @@ inline void process_input_dependent_branch(ADDRINT ins_addr,
     }
     else // it is not the last branch
     {
-      process_input_dependent_and_resolved_branch(ins_addr, br_taken, examined_ptr_branch);
+      process_input_dependent_and_resolved_branch(ins_addr, 
+                                                  br_taken, 
+                                                  examined_ptr_branch);
     }
   }
   else // it is not resolved yet
   {
-    process_input_dependent_but_unresolved_branch(ins_addr, br_taken, examined_ptr_branch);
+    process_input_dependent_but_unresolved_branch(ins_addr, 
+                                                  br_taken, 
+                                                  examined_ptr_branch);
   }
 
   return;
@@ -627,7 +639,8 @@ inline void process_input_dependent_branch(ADDRINT ins_addr,
  * @return void
  */
 inline void process_input_independent_branch(ADDRINT ins_addr, 
-                                             bool br_taken, ptr_branch& examined_ptr_branch)
+                                             bool br_taken, 
+                                             ptr_branch& examined_ptr_branch)
 {
   // new taken found
   if (examined_ptr_branch->br_taken != br_taken) 

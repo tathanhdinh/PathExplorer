@@ -44,9 +44,9 @@ instruction::instruction()
 instruction::instruction(const INS& ins)
 {
   this->address         = INS_Address(ins);
-  this->disass          = INS_Disassemble ( ins );
+  this->disass          = INS_Disassemble(ins);
   this->category        = static_cast<xed_category_enum_t>(INS_Category(ins));
-  this->opcode          = INS_Opcode (ins);
+  this->opcode          = INS_Opcode(ins);
   this->contained_image = contained_image_name(this->address);
   this->contained_function = RTN_FindNameByAddress(this->address);
   
@@ -92,7 +92,7 @@ instruction::instruction(const INS& ins)
       } 
       else 
       {
-        this->src_regs.insert ( reg );
+        this->src_regs.insert(reg);
       }
     }
   }
