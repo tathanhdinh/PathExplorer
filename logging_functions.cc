@@ -256,8 +256,11 @@ inline void compute_branch_min_checkpoint()
       if (current_ptr_branch->nearest_checkpoints.size() != 0) 
       {
         BOOST_LOG_TRIVIAL(info) 
-          << boost::format("The branch at %d (%s) has %d nearest checkpoints.") 
-              % current_ptr_branch->trace.size() % order_ins_dynamic_map[current_ptr_branch->trace.size()].disass
+          << boost::format("The branch at %d:%d (%s: %s) has %d nearest checkpoints.") 
+              % current_ptr_branch->trace.size()
+              % current_ptr_branch->br_taken
+              % remove_leading_zeros(StringFromAddrint(current_ptr_branch->addr))
+              % order_ins_dynamic_map[current_ptr_branch->trace.size()].disass
               % current_ptr_branch->nearest_checkpoints.size();
               
         current_ptr_branch->checkpoint = current_ptr_branch->nearest_checkpoints.rbegin()->first;

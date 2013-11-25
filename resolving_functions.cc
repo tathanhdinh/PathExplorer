@@ -533,8 +533,10 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
     
     // then rollback to it
     BOOST_LOG_TRIVIAL(trace) 
-      << boost::format("Resolve the branch at %d (%s) by rollback to the checkpoint at %d (%s).") 
+      << boost::format("Resolve the branch at %d:%d (%s: %s) by rollback to the checkpoint at %d (%s).") 
           % active_ptr_branch->trace.size() 
+          % active_ptr_branch->br_taken
+          % remove_leading_zeros(StringFromAddrint(active_ptr_branch->addr))
           % order_ins_dynamic_map[active_ptr_branch->trace.size()].disass 
           % active_nearest_checkpoint.first->trace.size() 
           % order_ins_dynamic_map[active_nearest_checkpoint.first->trace.size()].disass;
