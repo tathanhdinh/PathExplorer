@@ -105,7 +105,8 @@ std::vector<UINT32> backward_trace(vdep_vertex_desc root_vertex, vdep_vertex_des
     }
     else
     {
-      std::cout << "Critical error: edge not found in backward trace construction.\n";
+//       std::cout << "Critical error: edge not found in backward trace construction.\n";
+      BOOST_LOG_TRIVIAL(fatal) << "Edge not found in backward trace construction.";
       PIN_ExitApplication(0);
     }
 
@@ -151,7 +152,8 @@ inline void compute_branch_mem_dependency()
         if (edge_exist)
         {
           order_ptr_branch_iter = order_tainted_ptr_branch_map.begin();
-          for (; order_ptr_branch_iter != order_tainted_ptr_branch_map.end(); ++order_ptr_branch_iter) 
+          for (; order_ptr_branch_iter != order_tainted_ptr_branch_map.end(); 
+               ++order_ptr_branch_iter) 
           {
             current_ptr_branch = order_ptr_branch_iter->second;
             if (dta_graph[edge_desc].second == current_ptr_branch->trace.size()) 
@@ -283,31 +285,35 @@ inline void compute_branch_min_checkpoint()
 
 inline void prepare_new_rollbacking_phase()
 {
+  BOOST_LOG_TRIVIAL(info) 
+    << boost::format("\033[33mStop exploring, %d instructions analyzed. Start detecting checkpoints.\033[0m") 
+        % explored_trace.size();
+  
   compute_branch_mem_dependency();
   compute_branch_min_checkpoint();
 
   journal_tainting_log();
   
   BOOST_LOG_TRIVIAL(info) 
-    << boost::format("\033[33mStop tainting, %d instructions analyzed, %d checkpoints and %d/%d branches detected.\n") 
-        % explored_trace.size() % saved_ptr_checkpoints.size() 
-        % order_input_dep_ptr_branch_map.size() % order_tainted_ptr_branch_map.size()
-    << "Start rollbacking.\033[0m";
+    << boost::format("\033[33mStop detecting, %d checkpoints and %d/%d branches detected. Start rollbacking.\033[0m") 
+        % saved_ptr_checkpoints.size() 
+        % order_input_dep_ptr_branch_map.size() % order_tainted_ptr_branch_map.size();
     
   in_tainting = false;
   PIN_RemoveInstrumentation();
   
   if (exploring_ptr_branch)
-  {      
+  {
     rollback_with_input_replacement(saved_ptr_checkpoints[0],
                                     exploring_ptr_branch->inputs[!exploring_ptr_branch->br_taken][0].get());
   }
   else
   {
     journal_static_trace("static_trace");
+    
     // the first rollbacking phase
     if (!order_input_dep_ptr_branch_map.empty())
-    {      
+    { 
       ptr_branch first_ptr_branch = order_input_dep_ptr_branch_map.begin()->second;
       rollback_with_input_replacement(saved_ptr_checkpoints[0], 
                                       first_ptr_branch->inputs[first_ptr_branch->br_taken][0].get());
