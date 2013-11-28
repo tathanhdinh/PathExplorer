@@ -289,6 +289,9 @@ inline void prepare_new_rollbacking_phase()
     << boost::format("\033[33mStop exploring, %d instructions analyzed. Start detecting checkpoints.\033[0m") 
         % explored_trace.size();
   
+  journal_tainting_graph("tainting_graph.dot");
+  PIN_ExitApplication(0);
+  
   compute_branch_mem_dependency();
   compute_branch_min_checkpoint();
 

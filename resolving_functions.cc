@@ -89,24 +89,32 @@ VOID resolving_ins_count_analyzer(ADDRINT ins_addr)
 
 /*====================================================================================================================*/
 // memory read
-VOID resolving_mem_to_st_analyzer(ADDRINT ins_addr, ADDRINT mem_read_addr, UINT32 mem_read_size) 
+VOID resolving_mem_to_st_analyzer(ADDRINT ins_addr, 
+                                  ADDRINT mem_read_addr, 
+                                  UINT32 mem_read_size) 
 {
   return;
 }
 
 /*====================================================================================================================*/
 // memory written
-VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 mem_written_size) 
+VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr, 
+                                  ADDRINT mem_written_addr, 
+                                  UINT32 mem_written_size) 
 {
   if (active_ptr_branch) // in rollbacking
   {
     if (active_nearest_checkpoint.first) 
     {
-      active_nearest_checkpoint.first->mem_written_logging(ins_addr, mem_written_addr, mem_written_size);
+      active_nearest_checkpoint.first->mem_written_logging(ins_addr, 
+                                                           mem_written_addr, 
+                                                           mem_written_size);
     }
     else 
     {
-      last_active_ptr_checkpoint->mem_written_logging(ins_addr, mem_written_addr, mem_written_size);
+      last_active_ptr_checkpoint->mem_written_logging(ins_addr, 
+                                                      mem_written_addr, 
+                                                      mem_written_size);
     }
   }
   else // in forwarding
@@ -116,7 +124,8 @@ VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr, ADDRINT mem_written_addr, UI
          ++ptr_checkpoint_iter)
     {
       (*ptr_checkpoint_iter)->mem_written_logging(ins_addr, 
-                                                  mem_written_addr, mem_written_size);
+                                                  mem_written_addr, 
+                                                  mem_written_size);
     }
   }
 
