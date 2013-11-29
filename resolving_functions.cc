@@ -658,10 +658,10 @@ inline void process_input_independent_branch(ADDRINT ins_addr,
     // a re-execution from rollback_with_input_replacement
     if (active_ptr_branch) 
     {
-      BOOST_LOG_TRIVIAL(warning) 
-        << boost::format("\033[35mThe branch at %d (%s) is input independent, but takes a new decision.\033[0m") 
-            % examined_ptr_branch->trace.size() 
-            % order_ins_dynamic_map[examined_ptr_branch->trace.size()].disass ;
+//       BOOST_LOG_TRIVIAL(warning) 
+//         << boost::format("\033[35mThe branch at %d (%s) is input independent, but takes a new decision.\033[0m") 
+//             % examined_ptr_branch->trace.size() 
+//             % order_ins_dynamic_map[examined_ptr_branch->trace.size()].disass ;
               
       if (!examined_ptr_branch->is_resolved)
       {

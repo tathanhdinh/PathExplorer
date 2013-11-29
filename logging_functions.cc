@@ -289,13 +289,13 @@ inline void prepare_new_rollbacking_phase()
     << boost::format("\033[33mStop exploring, %d instructions analyzed. Start detecting checkpoints.\033[0m") 
         % explored_trace.size();
   
-  journal_tainting_graph("tainting_graph.dot");
-  PIN_ExitApplication(0);
+//   journal_tainting_graph("tainting_graph.dot");
+//   PIN_ExitApplication(0);
   
   compute_branch_mem_dependency();
   compute_branch_min_checkpoint();
 
-  journal_tainting_log();
+//   journal_tainting_log();
   
   BOOST_LOG_TRIVIAL(info) 
     << boost::format("\033[33mStop detecting, %d checkpoints and %d/%d branches detected. Start rollbacking.\033[0m") 
@@ -312,7 +312,7 @@ inline void prepare_new_rollbacking_phase()
   }
   else
   {
-    journal_static_trace("static_trace");
+//     journal_static_trace("static_trace");
     
     // the first rollbacking phase
     if (!order_input_dep_ptr_branch_map.empty())
