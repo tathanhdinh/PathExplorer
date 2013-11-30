@@ -8,3 +8,8 @@
 ##### In development:
 
 * Reverse execution: an application-layer reverse execution mechanism.
+
+##### Known bugs:
+
+* Does not work for multiple threads programs.
+* Re-execution is lost for large CFG after many rollbacks (lost detected in testing for a CFG with depth of 1000 instructions after nearly 2.000.000 rollbacks).
