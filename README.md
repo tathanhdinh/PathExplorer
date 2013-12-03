@@ -9,6 +9,7 @@
 ##### In development:
 * Smarter treatment for multiple rollbacks in case of direction fields in the input.
 * DFA approximation for CFG.
+* A new algorithm for checkpoint detection to shorten the re-execution trace.
 
 
 ##### Known bugs:
