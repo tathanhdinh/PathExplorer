@@ -731,6 +731,7 @@ VOID resolving_cond_branch_analyzer(ADDRINT ins_addr, bool br_taken)
   
   std::map<UINT32, ptr_branch>::iterator order_ptr_branch_iter;
   
+  
   // search in the list of input dependent branches
   order_ptr_branch_iter = order_input_dep_ptr_branch_map.find(explored_trace.size());
   if (order_ptr_branch_iter != order_input_dep_ptr_branch_map.end()) 

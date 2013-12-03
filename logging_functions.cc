@@ -286,7 +286,7 @@ inline void compute_branch_min_checkpoint()
 inline void prepare_new_rollbacking_phase()
 {
   BOOST_LOG_TRIVIAL(info) 
-    << boost::format("\033[33mStop exploring, %d instructions analyzed. Start detecting checkpoints.\033[0m") 
+    << boost::format("\033[33mStop exploring, %d instructions analyzed. Start detecting checkpoints\033[0m") 
         % explored_trace.size();
   
 //   journal_tainting_graph("tainting_graph.dot");
@@ -294,13 +294,13 @@ inline void prepare_new_rollbacking_phase()
   
   compute_branch_mem_dependency();
   compute_branch_min_checkpoint();
-
-//   journal_tainting_log();
-  
+    
   BOOST_LOG_TRIVIAL(info) 
     << boost::format("\033[33mStop detecting, %d checkpoints and %d/%d branches detected. Start rollbacking.\033[0m") 
         % saved_ptr_checkpoints.size() 
         % order_input_dep_ptr_branch_map.size() % order_tainted_ptr_branch_map.size();
+
+//   journal_tainting_log();
     
   in_tainting = false;
   PIN_RemoveInstrumentation();

@@ -1,4 +1,4 @@
-#### PathExplorer: a Pintool for Binary Code Coveraging 
+#### PathExplorer: a Pintool for Binary Code Covering 
 
 ##### The current version is UNSTABLE, but the following are less unstable:
 
