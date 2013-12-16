@@ -85,21 +85,6 @@ std::string remove_leading_zeros (std::string input)
 
 /*====================================================================================================================*/
 
-// // std::string contained_image_name ( ADDRINT ins_addr )
-// // {
-// //   for ( IMG img = APP_ImgHead(); IMG_Valid ( img ); img = IMG_Next ( img ) ) {
-// //     for ( SEC sec = IMG_SecHead ( img ); SEC_Valid ( sec ); sec = SEC_Next ( sec ) ) {
-// //       if ( ( ins_addr >= SEC_Address ( sec ) ) && ( ins_addr < SEC_Address ( sec ) + SEC_Size ( sec ) ) ) {
-// //         return IMG_Name ( img );
-// //       }
-// //     }
-// //   }
-// // 
-// //   return "";
-// // }
-
-/*====================================================================================================================*/
-
 void journal_buffer ( const std::string& filename, UINT8* buffer_addr, UINT32 buffer_size )
 {
   std::ofstream file ( filename.c_str(),
@@ -108,45 +93,6 @@ void journal_buffer ( const std::string& filename, UINT8* buffer_addr, UINT32 bu
   std::copy ( buffer_addr, buffer_addr + buffer_size, std::ostreambuf_iterator<char> ( file ) );
   file.close();
 
-  return;
-}
-
-/*====================================================================================================================*/
-
-void journal_result ( UINT32 rollback_times, UINT32 trace_size, UINT32 total_br_num, UINT32 resolved_br_num )
-{
-  std::string file_name = "result." + boost::lexical_cast<std::string> ( rollback_times );
-  std::fstream result_file ( file_name.c_str(), std::ofstream::out | std::ofstream::app );
-
-  if ( result_file.tellp() == 0 ) {
-    result_file << "depth" << "\t" << "total" << "\t" << "solved" << "\t" << "percent" << "\n";
-  }
-
-  double_t resolved_percentage = ( static_cast<double_t> ( resolved_br_num ) / static_cast<double_t> ( total_br_num ) ) * 100.00;
-
-  result_file << trace_size << "\t" << total_br_num << "\t" << resolved_br_num << "\t" << resolved_percentage << "\n";
-
-  result_file.close();
-  return;
-}
-
-/*====================================================================================================================*/
-
-void journal_result_total ( UINT32 max_rollback_times, UINT32 used_rollback_times,
-                            UINT32 trace_size, UINT32 total_br_num, UINT32 resolved_br_num )
-{
-  std::string filename = "total_result";
-  std::fstream result_file ( filename.c_str(), std::ofstream::out | std::ofstream::app );
-
-  if ( result_file.tellp() == 0 ) {
-    result_file << "max_rollback" << "\t" << "used_rollback" << "\t"
-                << "trace_depth" << "\t" << "total_branch" << "\t" << "solved_branch" << "\n";
-  }
-
-  result_file << max_rollback_times << "\t" << used_rollback_times << "\t"
-              << trace_size << "\t" << total_br_num << "\t" << resolved_br_num << "\n";
-
-  result_file.close();
   return;
 }
 
@@ -454,27 +400,31 @@ void journal_tainting_log()
 
 /*====================================================================================================================*/
 
-void journal_branch_messages ( ptr_branch& ptr_resolved_branch )
+void journal_branch_messages(ptr_branch& ptr_resolved_branch)
 {
   std::stringstream msg_number_name;
   std::string msg_file_name;
   std::string br_taken_name;
 
   std::vector< boost::shared_ptr<UINT8> >::iterator msg_number_iter;
-
-  std::map< bool,
-      std::vector< boost::shared_ptr<UINT8> >
-      >::iterator msg_map_iter = ptr_resolved_branch->inputs.begin();
-  for ( ; msg_map_iter != ptr_resolved_branch->inputs.end(); ++msg_map_iter ) {
+  
+  std::map< bool, 
+            std::vector< boost::shared_ptr<UINT8> >
+          >::iterator msg_map_iter = ptr_resolved_branch->inputs.begin();
+          
+  for (; msg_map_iter != ptr_resolved_branch->inputs.end(); ++msg_map_iter) 
+  {
     br_taken_name = msg_map_iter->first ? "taken" : "nottaken";
     msg_file_name = "msg_" + br_taken_name + "_";
 
     msg_number_iter = msg_map_iter->second.begin();
-    for ( ; msg_number_iter != msg_map_iter->second.end(); ++msg_number_iter ) {
-      msg_number_name << ( msg_number_iter - msg_map_iter->second.begin() );
-      journal_buffer ( ( msg_file_name + msg_number_name.str() ).c_str(), ( *msg_number_iter ).get(), received_msg_size );
+    for (; msg_number_iter != msg_map_iter->second.end(); ++msg_number_iter) 
+    {
+      msg_number_name << (msg_number_iter - msg_map_iter->second.begin());
+      journal_buffer((msg_file_name + msg_number_name.str()).c_str(), 
+                     (*msg_number_iter).get(), received_msg_size);
       msg_number_name.clear();
-      msg_number_name.str ( "" );
+      msg_number_name.str("");
     }
   }
 

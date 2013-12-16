@@ -19,17 +19,6 @@ void        journal_buffer          (const std::string& filename,
                                      UINT8* buffer_addr, 
                                      UINT32 buffer_size );
 
-void        journal_result          (UINT32 rollback_times, 
-                                     UINT32 trace_size, 
-                                     UINT32 total_br_num, 
-                                     UINT32 resolved_br_num );
-
-void        journal_result_total    (UINT32 max_rollback_times, 
-                                     UINT32 used_rollback_times,
-                                     UINT32 trace_size, 
-                                     UINT32 total_br_num, 
-                                     UINT32 resolved_br_num);
-
 void        journal_static_trace    (const std::string& filename);
 
 void        journal_explored_trace  (const std::string& filename);
