@@ -65,19 +65,6 @@ extern KNOB<BOOL>                                 print_debug_text;
 
 /*====================================================================================================================*/
 
-// inline void print_debug_found_new(ADDRINT ins_addr, ptr_branch& found_ptr_branch)
-// {
-//   if (print_debug_text) 
-//   {
-//     std::cout << boost::format("\033[35mFound new   %-5i %-20s %-35s\033[0m\n")
-//                   % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr)) 
-//                   % addr_ins_static_map[ins_addr].disass;
-//   }
-//   return;
-// }
-
-/*====================================================================================================================*/
-
 VOID resolving_ins_count_analyzer(ADDRINT ins_addr)
 {
   explored_trace.push_back(ins_addr);
@@ -119,7 +106,8 @@ VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr,
   }
   else // in forwarding
   {
-    std::vector<ptr_checkpoint>::iterator ptr_checkpoint_iter = exepoint_checkpoints_map[explored_trace.size()].begin();
+    std::vector<ptr_checkpoint>::iterator 
+      ptr_checkpoint_iter = exepoint_checkpoints_map[explored_trace.size()].begin();
     for (; ptr_checkpoint_iter != exepoint_checkpoints_map[explored_trace.size()].end(); 
          ++ptr_checkpoint_iter)
     {
@@ -177,8 +165,10 @@ inline ptr_branch next_unexplored_branch()
 {
   ptr_branch unexplored_ptr_branch;
   
-  std::vector<ptr_branch>::iterator unexplored_ptr_branch_iter = total_resolved_ptr_branches.begin();
-  for (; unexplored_ptr_branch_iter != total_resolved_ptr_branches.end(); ++unexplored_ptr_branch_iter)
+  std::vector<ptr_branch>::iterator 
+    unexplored_ptr_branch_iter = total_resolved_ptr_branches.begin();
+  for (; unexplored_ptr_branch_iter != total_resolved_ptr_branches.end(); 
+       ++unexplored_ptr_branch_iter)
   {
     if (!(*unexplored_ptr_branch_iter)->is_explored)
     {
