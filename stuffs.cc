@@ -63,20 +63,20 @@ extern KNOB<BOOL>                   print_debug_text;
 /*                                                         implementation                                             */
 /* ------------------------------------------------------------------------------------------------------------------ */
 
-std::string remove_leading_zeros ( std::string input )
+std::string remove_leading_zeros (std::string input)
 {
   std::string::iterator str_iter = input.begin();
-  std::string output ( "0x" );
+  std::string output ("0x");
 
-  while (
-    ( str_iter != input.end() ) &&
-    ( ( *str_iter == '0' ) || ( *str_iter == 'x' ) )
-  ) {
+  while ((str_iter != input.end()) && 
+         ((*str_iter == '0') || (*str_iter == 'x'))) 
+  {
     ++str_iter;
   }
 
-  while ( str_iter != input.end() ) {
-    output.push_back ( *str_iter );
+  while (str_iter != input.end())
+  {
+    output.push_back(*str_iter);
     ++str_iter;
   }
 
@@ -182,13 +182,13 @@ void journal_static_trace(const std::string& filename)
 
 /*====================================================================================================================*/
 
-void journal_explored_trace(const std::string& filename, std::vector<ADDRINT>& trace)
+void journal_explored_trace(const std::string& filename)
 {
   std::ofstream out_file(filename.c_str(), 
                          std::ofstream::out | std::ofstream::trunc);
 
-  std::vector<ADDRINT>::iterator trace_iter = trace.begin();
-  for (; trace_iter != trace.end(); ++trace_iter) 
+  std::vector<ADDRINT>::iterator trace_iter = explored_trace.begin();
+  for (; trace_iter != explored_trace.end(); ++trace_iter) 
   {
     out_file << boost::format("%-20s %-45s")
                   % remove_leading_zeros(StringFromAddrint(*trace_iter)) 
@@ -198,11 +198,6 @@ void journal_explored_trace(const std::string& filename, std::vector<ADDRINT>& t
     out_file << boost::format("(R: %i   W: %i)\n") 
                   % addr_ins_static_map[*trace_iter].mem_read_size 
                   % addr_ins_static_map[*trace_iter].mem_written_size;
-
-//     out_file << boost::format(" W: %i)\n") 
-//                   % addr_ins_static_map[*trace_iter].mem_written_size;
-
-//     out_file << ")\n";
   }
   out_file.close();
 
@@ -236,37 +231,37 @@ void store_input ( ptr_branch& ptr_br, bool br_taken )
 
 /*====================================================================================================================*/
 
-void print_debug_message_received()
-{
-  if (print_debug_text) 
-  {
-    std::cout << "\033[33mThe first message saved at " << remove_leading_zeros(StringFromAddrint(received_msg_addr))
-              << " with size " << received_msg_size << ".\033[0m\n";
-    std::cout << "-------------------------------------------------------------------------------------------------\n";
-    std::cout << "\033[33mStart tainting phase with maximum trace size "
-              << max_trace_length.Value() << ".\033[0m\n";
-  }
-  return;
-}
+// void print_debug_message_received()
+// {
+//   if (print_debug_text) 
+//   {
+//     std::cout << "\033[33mThe first message saved at " << remove_leading_zeros(StringFromAddrint(received_msg_addr))
+//               << " with size " << received_msg_size << ".\033[0m\n";
+//     std::cout << "-------------------------------------------------------------------------------------------------\n";
+//     std::cout << "\033[33mStart tainting phase with maximum trace size "
+//               << max_trace_length.Value() << ".\033[0m\n";
+//   }
+//   return;
+// }
 
 /*====================================================================================================================*/
 
-void print_debug_start_rollbacking()
-{
-  if (print_debug_text) 
-  {
-    std::string tainted_trace_filename("tainted_trace");
-    if (exploring_ptr_branch) 
-    {
-      std::stringstream ss;
-      ss << exploring_ptr_branch->trace.size();
-      tainted_trace_filename = tainted_trace_filename + "_" + ss.str();
-    }
-    journal_explored_trace ( tainted_trace_filename.c_str(), explored_trace );
-  }
-
-  return;
-}
+// void print_debug_start_rollbacking()
+// {
+//   if (print_debug_text) 
+//   {
+//     std::string tainted_trace_filename("tainted_trace");
+//     if (exploring_ptr_branch) 
+//     {
+//       std::stringstream ss;
+//       ss << exploring_ptr_branch->trace.size();
+//       tainted_trace_filename = tainted_trace_filename + "_" + ss.str();
+//     }
+//     journal_explored_trace(tainted_trace_filename.c_str(), explored_trace);
+//   }
+// 
+//   return;
+// }
 
 /*====================================================================================================================*/
 
