@@ -313,6 +313,7 @@ inline void prepare_new_rollbacking_phase()
   else
   {
     journal_tainting_graph("tainting_graph.dot");
+    journal_explored_trace("explored_trace.log", explored_trace);
 //     journal_static_trace("static_trace");
     
     // the first rollbacking phase
