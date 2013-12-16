@@ -182,19 +182,23 @@ void journal_static_trace(const std::string& filename)
 
 /*====================================================================================================================*/
 
-void journal_explored_trace ( const std::string& filename, std::vector< ADDRINT >& trace )
+void journal_explored_trace(const std::string& filename, std::vector<ADDRINT>& trace)
 {
-  std::ofstream out_file ( filename.c_str(), std::ofstream::out | std::ofstream::trunc );
+  std::ofstream out_file(filename.c_str(), 
+                         std::ofstream::out | std::ofstream::trunc);
 
   std::vector<ADDRINT>::iterator trace_iter = trace.begin();
-  for ( ; trace_iter != trace.end(); ++trace_iter ) {
-    out_file << boost::format ( "%-20s %-45s" )
-             % StringFromAddrint ( *trace_iter ) % addr_ins_static_map[*trace_iter].disass;
+  for (; trace_iter != trace.end(); ++trace_iter) 
+  {
+    out_file << boost::format("%-20s %-45s")
+                  % remove_leading_zeros(StringFromAddrint(*trace_iter)) 
+                      % addr_ins_static_map[*trace_iter].disass;
 //                  % addr_ins_static_map[*trace_iter].mem_read_size % addr_ins_static_map[*trace_iter].mem_written_size;
 //                  % addr_ins_static_map[*trace_iter].img;
 
     std::map<ADDRINT, UINT8>::iterator mem_access_iter;
-    out_file << boost::format ( "(R : %i" ) % addr_ins_static_map[*trace_iter].mem_read_size;
+    out_file << boost::format("(R : %i") 
+                  % addr_ins_static_map[*trace_iter].mem_read_size;
 //     for (mem_access_iter = addr_ins_static_map[*trace_iter].mem_read_map.begin();
 //          mem_access_iter != addr_ins_static_map[*trace_iter].mem_read_map.end(); ++mem_access_iter)
 //     {
@@ -202,7 +206,8 @@ void journal_explored_trace ( const std::string& filename, std::vector< ADDRINT 
 //                   % StringFromAddrint(mem_access_iter->first) % static_cast<UINT32>(mem_access_iter->second);
 //     }
 
-    out_file << boost::format ( " W: %i" ) % addr_ins_static_map[*trace_iter].mem_written_size;
+    out_file << boost::format(" W: %i") 
+                  % addr_ins_static_map[*trace_iter].mem_written_size;
 //     for (mem_access_iter = addr_ins_static_map[*trace_iter].mem_written_map.begin();
 //          mem_access_iter != addr_ins_static_map[*trace_iter].mem_written_map.end(); ++mem_access_iter)
 //     {
