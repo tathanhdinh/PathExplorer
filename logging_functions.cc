@@ -15,7 +15,7 @@
 #include "branch.h"
 #include "variable.h"
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 extern bool                                     in_tainting;
 
@@ -53,12 +53,12 @@ extern KNOB<UINT32>                             max_trace_length;
 
 extern UINT32                                   max_trace_size;
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 static std::map<vdep_vertex_desc,
                 vdep_vertex_desc>               prec_vertex_desc;
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 class dep_bfs_visitor : public boost::default_bfs_visitor
 {
@@ -70,7 +70,7 @@ public:
   }
 };
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 inline void mark_resolved(ptr_branch& omitted_ptr_branch)
 {
@@ -115,7 +115,7 @@ std::vector<UINT32> backward_trace(vdep_vertex_desc root_vertex, vdep_vertex_des
   return backward_trace;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 inline void compute_branch_mem_dependency()
 {
@@ -139,7 +139,8 @@ inline void compute_branch_mem_dependency()
   {
     if (dta_graph[*vertex_iter].type == MEM_VAR)
     {
-      std::map<vdep_vertex_desc, vdep_vertex_desc>().swap(prec_vertex_desc);
+//       std::map<vdep_vertex_desc, vdep_vertex_desc>().swap(prec_vertex_desc);
+      prec_vertex_desc.clear();
 
       boost::breadth_first_search(dta_graph, *vertex_iter, boost::visitor(dep_vis));
 
@@ -216,7 +217,7 @@ inline void compute_branch_mem_dependency()
   return;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 inline void compute_branch_min_checkpoint()
 {
