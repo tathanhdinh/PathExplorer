@@ -7,7 +7,7 @@
 #include "variable.h"
 #include "branch.h"
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 extern vdep_graph               dta_graph;
 extern map_ins_io               dta_inss_io;
@@ -18,7 +18,7 @@ extern std::map< UINT32,
 
 extern std::vector<ADDRINT>     explored_trace;
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 // source variables construction
 inline std::set<vdep_vertex_desc> source_variables(UINT32 idx)
 {
@@ -72,7 +72,7 @@ inline std::set<vdep_vertex_desc> source_variables(UINT32 idx)
   return src_vertex_descs;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 // destination variable construction
 inline std::set<vdep_vertex_desc> destination_variables (UINT32 idx)
 {
@@ -140,7 +140,7 @@ inline std::set<vdep_vertex_desc> destination_variables (UINT32 idx)
   return dst_vertex_descs;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 VOID tainting_general_instruction_analyzer(ADDRINT ins_addr)
 {

@@ -20,7 +20,7 @@
 
 #include "instruction.h"
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 typedef enum 
 {
@@ -50,9 +50,7 @@ public:
 
 inline bool operator==(const variable& var_a, const variable& var_b)
 {
-  return (
-          (var_a.type == var_b.type) && (var_a.name == var_b.name)
-         );
+  return ((var_a.type == var_b.type) && (var_a.name == var_b.name));
 }
 
 /*====================================================================================================================*/
@@ -122,10 +120,8 @@ public:
     vdep_vertex vertex_var(graph[v]);
     std::string vertex_label;
         
-    if (
-        (vertex_var.type == MEM_VAR) && 
-        (received_msg_addr <= vertex_var.mem) && (vertex_var.mem < received_msg_addr + received_msg_size)
-       ) 
+    if ((vertex_var.type == MEM_VAR) && (received_msg_addr <= vertex_var.mem) && 
+        (vertex_var.mem < received_msg_addr + received_msg_size)) 
     {
       vertex_label = "[color=blue, style=filled, label=\"";
     }

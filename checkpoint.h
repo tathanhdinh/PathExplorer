@@ -20,8 +20,6 @@ class checkpoint;
 typedef boost::shared_ptr<CONTEXT>            ptr_context;
 typedef boost::shared_ptr<checkpoint>         ptr_checkpoint;
 
-// void modify_input                             (std::set<ADDRINT>& dep_mems);
-
 void replace_input                            (UINT8* backup_input_addr);
 
 void rollback_with_input_replacement          (ptr_checkpoint& ptr_chkpnt, UINT8* backup_input_addr);

@@ -56,7 +56,7 @@ extern UINT32                                   max_trace_size;
 /*====================================================================================================================*/
 
 static std::map<vdep_vertex_desc,
-                vdep_vertex_desc>   prec_vertex_desc;
+                vdep_vertex_desc>               prec_vertex_desc;
 
 /*====================================================================================================================*/
 
@@ -81,7 +81,7 @@ inline void mark_resolved(ptr_branch& omitted_ptr_branch)
   return;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 std::vector<UINT32> backward_trace(vdep_vertex_desc root_vertex, vdep_vertex_desc last_vertex)
 {
@@ -105,7 +105,6 @@ std::vector<UINT32> backward_trace(vdep_vertex_desc root_vertex, vdep_vertex_des
     }
     else
     {
-//       std::cout << "Critical error: edge not found in backward trace construction.\n";
       BOOST_LOG_TRIVIAL(fatal) << "Edge not found in backward trace construction.";
       PIN_ExitApplication(0);
     }
@@ -148,7 +147,8 @@ inline void compute_branch_mem_dependency()
               prec_vertex_iter != prec_vertex_desc.end(); ++prec_vertex_iter)
       {
         boost::tie(edge_desc, edge_exist) = boost::edge(prec_vertex_iter->second, 
-                                                        prec_vertex_iter->first, dta_graph);
+                                                        prec_vertex_iter->first, 
+                                                        dta_graph);
         if (edge_exist)
         {
           order_ptr_branch_iter = order_tainted_ptr_branch_map.begin();
@@ -170,8 +170,8 @@ inline void compute_branch_mem_dependency()
                 current_ptr_branch->dep_other_addrs.insert(current_addr);
               }
               
-              current_ptr_branch->dep_backward_traces[current_addr] = backward_trace(*vertex_iter, 
-                                                                                     prec_vertex_iter->second);
+              current_ptr_branch->dep_backward_traces[current_addr] 
+                = backward_trace(*vertex_iter, prec_vertex_iter->second);
             }
           }
         }
@@ -185,12 +185,14 @@ inline void compute_branch_mem_dependency()
   }
 
   order_ptr_branch_iter = order_tainted_ptr_branch_map.begin();
-  for (; order_ptr_branch_iter != order_tainted_ptr_branch_map.end(); ++order_ptr_branch_iter) 
+  for (; order_ptr_branch_iter != order_tainted_ptr_branch_map.end(); 
+       ++order_ptr_branch_iter) 
   {
     current_ptr_branch = order_ptr_branch_iter->second;
     if (!current_ptr_branch->dep_input_addrs.empty()) 
     {
-      order_input_dep_ptr_branch_map[current_ptr_branch->trace.size()]= current_ptr_branch;
+      order_input_dep_ptr_branch_map[current_ptr_branch->trace.size()] 
+        = current_ptr_branch;
       
       if (exploring_ptr_branch) 
       {
@@ -206,7 +208,8 @@ inline void compute_branch_mem_dependency()
     }
     else 
     {
-      order_input_indep_ptr_branch_map[current_ptr_branch->trace.size()] = current_ptr_branch;
+      order_input_indep_ptr_branch_map[current_ptr_branch->trace.size()] 
+        = current_ptr_branch;
     }
   }
 
@@ -281,7 +284,7 @@ inline void compute_branch_min_checkpoint()
   return;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 inline void prepare_new_rollbacking_phase()
 {
@@ -298,7 +301,8 @@ inline void prepare_new_rollbacking_phase()
   BOOST_LOG_TRIVIAL(info) 
     << boost::format("\033[33mStop detecting, %d checkpoints and %d/%d branches detected. Start rollbacking.\033[0m") 
         % saved_ptr_checkpoints.size() 
-        % order_input_dep_ptr_branch_map.size() % order_tainted_ptr_branch_map.size();
+        % order_input_dep_ptr_branch_map.size() 
+        % order_tainted_ptr_branch_map.size();
 
 //   journal_tainting_log();
     
@@ -308,12 +312,13 @@ inline void prepare_new_rollbacking_phase()
   if (exploring_ptr_branch)
   {
     rollback_with_input_replacement(saved_ptr_checkpoints[0],
-                                    exploring_ptr_branch->inputs[!exploring_ptr_branch->br_taken][0].get());
+                                    exploring_ptr_branch
+                                      ->inputs[!exploring_ptr_branch->br_taken][0].get());
   }
   else
   {
     journal_tainting_graph("tainting_graph.dot");
-    journal_explored_trace("explored_trace.log"/*, explored_trace*/);
+    journal_explored_trace("explored_trace.log");
 //     journal_static_trace("static_trace");
     
     // the first rollbacking phase
@@ -321,7 +326,8 @@ inline void prepare_new_rollbacking_phase()
     { 
       ptr_branch first_ptr_branch = order_input_dep_ptr_branch_map.begin()->second;
       rollback_with_input_replacement(saved_ptr_checkpoints[0], 
-                                      first_ptr_branch->inputs[first_ptr_branch->br_taken][0].get());
+                                      first_ptr_branch
+                                        ->inputs[first_ptr_branch->br_taken][0].get());
     }
     else
     {
@@ -333,20 +339,18 @@ inline void prepare_new_rollbacking_phase()
   return;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 VOID logging_syscall_instruction_analyzer(ADDRINT ins_addr)
 {
-//   std::cerr << addr_ins_static_map[ins_addr].disass << "\n";
   prepare_new_rollbacking_phase();
   return;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 VOID logging_general_instruction_analyzer(ADDRINT ins_addr)
 {
-//   std::cerr << addr_ins_static_map[ins_addr].disass << "\n";
   if ((explored_trace.size() < max_trace_size) && 
       (!addr_ins_static_map[ins_addr].contained_image.empty()))
   {
@@ -361,13 +365,12 @@ VOID logging_general_instruction_analyzer(ADDRINT ins_addr)
   return;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 // memmory read
 VOID logging_mem_read_instruction_analyzer(ADDRINT ins_addr, 
                                            ADDRINT mem_read_addr, UINT32 mem_read_size, 
                                            CONTEXT* p_ctxt)
 {
-//   std::cerr << mem_read_addr << " " << StringFromAddrint(mem_read_addr) << "\n";
   // a new checkpoint found
   if (std::max(mem_read_addr, received_msg_addr) <
       std::min(mem_read_addr + mem_read_size, received_msg_addr + received_msg_size))
@@ -389,7 +392,7 @@ VOID logging_mem_read_instruction_analyzer(ADDRINT ins_addr,
   return;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 // memory written
 VOID logging_mem_write_instruction_analyzer(ADDRINT ins_addr, 
                                             ADDRINT mem_written_addr, UINT32 mem_written_size)
@@ -410,7 +413,7 @@ VOID logging_mem_write_instruction_analyzer(ADDRINT ins_addr,
   return;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 VOID logging_cond_br_analyzer(ADDRINT ins_addr, bool br_taken)
 {

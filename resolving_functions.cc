@@ -201,6 +201,7 @@ inline void bypass_branch(ptr_branch& bypassed_ptr_branch)
   return;
 }
 
+/*====================================================================================================================*/
 
 /**
  * @brief set the active_nearest_checkpoint.
@@ -210,8 +211,13 @@ inline void bypass_branch(ptr_branch& bypassed_ptr_branch)
  */
 inline void set_next_active_nearest_checkpoint(ptr_branch& current_ptr_branch) 
 {
-  std::map<ptr_checkpoint, std::set<ADDRINT>, ptr_checkpoint_less>::iterator nearest_checkpoint_iter;
-  std::map<ptr_checkpoint, std::set<ADDRINT>, ptr_checkpoint_less>::iterator next_nearest_checkpoint_iter;
+  std::map<ptr_checkpoint, 
+           std::set<ADDRINT>, 
+           ptr_checkpoint_less>::iterator nearest_checkpoint_iter;
+  
+  std::map<ptr_checkpoint, 
+           std::set<ADDRINT>, 
+           ptr_checkpoint_less>::iterator next_nearest_checkpoint_iter;
   
   if (active_nearest_checkpoint.first) 
   {
