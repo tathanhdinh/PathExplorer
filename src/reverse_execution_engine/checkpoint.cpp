@@ -1,5 +1,4 @@
 /*
- * <one line to give the program's name and a brief idea of what it does.>
  * Copyright (C) 2013  Ta Thanh Dinh <thanhdinh.ta@inria.fr>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -20,17 +19,16 @@
 
 #include "checkpoint.h"
 
-extern std::vector<ADDRINT> explored_trace;
+extern boost::container::vector<ADDRINT> explored_trace;
 
 /*================================================================================================*/
 
 checkpoint::checkpoint(ADDRINT current_address, 
-                       CONTEXT* current_context, 
-                       std::vector<ADDRINT>& current_trace)
+                       CONTEXT* current_context)
 {
   this->address = current_address;
-  PIN_SaveContext(current_context, this->cpu_context.get());
-  this->trace = current_trace;
+  PIN_SaveContext(current_context, &(this->cpu_context));
+  this->trace = explored_trace;
 }
 
 /*================================================================================================*/
@@ -45,6 +43,7 @@ void checkpoint::log_memory_written(ADDRINT memory_written_address,
   {
     if (this->memory_log.find(address) == this->memory_log.end()) 
     {
+      // log the original value at this written address
       this->memory_log[address] = *(reinterpret_cast<UINT8*>(address));
     }
   }
@@ -60,5 +59,19 @@ void move_backward(ptr_checkpoint& target_checkpoint)
   explored_trace = target_checkpoint->trace;
   explored_trace.pop_back();
   
+  // restore the values of the written addresses
+  boost::container::map<ADDRINT, UINT8>::iterator 
+    memory_log_iter = target_checkpoint->memory_log.begin();
+  for (; memory_log_iter != target_checkpoint->memory_log.end(); ++memory_log_iter) 
+  {
+    *(reinterpret_cast<UINT8*>(memory_log_iter->first)) = memory_log_iter->second;
+  }
   
+  // clear the set of logged values
+  target_checkpoint->memory_log.clear();
+  
+  // move backward
+  PIN_ExecuteAt(&(target_checkpoint->cpu_context));
+
+  return;
 }

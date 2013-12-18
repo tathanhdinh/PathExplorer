@@ -22,9 +22,8 @@
 
 #include <pin.H>
 
-#include <map>
-#include <vector>
-
+#include <boost/container/map.hpp>
+#include <boost/container/vector.hpp>
 #include <boost/shared_ptr.hpp>
 
 /*================================================================================================*/
@@ -32,14 +31,14 @@
 class checkpoint
 {
 public:
-  ADDRINT                     address;
-  std::map<ADDRINT, UINT8>    memory_log;
-  boost::shared_ptr<CONTEXT>  cpu_context;
-  std::vector<ADDRINT>        trace;
+  ADDRINT                               address;
+  CONTEXT                               cpu_context;
+  
+  boost::container::map<ADDRINT, UINT8> memory_log;
+  boost::container::vector<ADDRINT>     trace;
   
 public:
-  checkpoint(ADDRINT current_address, CONTEXT* current_context, 
-             std::vector<ADDRINT>& current_trace);
+  checkpoint(ADDRINT current_address, CONTEXT* current_context);
   
   void log_memory_written(ADDRINT memory_written_address, UINT8 memory_written_length);
 };

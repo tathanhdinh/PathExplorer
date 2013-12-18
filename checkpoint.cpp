@@ -94,7 +94,7 @@ checkpoint& checkpoint::operator=(checkpoint const& other_chkpnt)
 //   return;
 // }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 void checkpoint::mem_written_logging(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_size)
 {
@@ -114,7 +114,7 @@ void checkpoint::mem_written_logging(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 
   return;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 void rollback_with_input_replacement(ptr_checkpoint& dest_ptr_checkpoint, UINT8* backup_input_addr)
 {
