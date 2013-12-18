@@ -20,21 +20,22 @@
 #ifndef INSTRUCTION_H
 #define INSTRUCTION_H
 
-#include <pin.H>
-
 #include "instruction_operand.h"
 
-#include <boost/utility/string_ref.hpp>
+#include <pin.H>
+
 #include <boost/unordered_set.hpp>
+
+#include <string>
 
 class instruction
 {
 public:
-  ADDRINT           address;
-  boost::string_ref dissasembled_name;
+  ADDRINT     address;
+  std::string dissasembled_name;
   
-  boost::unordered_set<instruction_operand> source_operands;
-  boost::unordered_set<instruction_operand> target_operands;
+  boost::unordered_set<instruction_operand, operand_hash> source_operands;
+  boost::unordered_set<instruction_operand, operand_hash> target_operands;
   
 public:
   instruction(const INS& current_instruction);

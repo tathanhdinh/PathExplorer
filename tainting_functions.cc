@@ -31,13 +31,13 @@ inline std::set<vdep_vertex_desc> source_variables(UINT32 idx)
   for (reg_iter = order_ins_dynamic_map[idx].src_regs.begin();
        reg_iter != order_ins_dynamic_map[idx].src_regs.end(); ++reg_iter) 
   {
-    src_vars.insert ( variable ( *reg_iter ) );
+    src_vars.insert(variable(*reg_iter));
   }
 
   for (mem_iter = order_ins_dynamic_map[idx].src_mems.begin();
        mem_iter != order_ins_dynamic_map[idx].src_mems.end(); ++mem_iter) 
   {
-    src_vars.insert ( variable ( *mem_iter ) );
+    src_vars.insert(variable(*mem_iter));
   }
 
   // insert the source variables into the tainting graph and its outer interface
@@ -61,11 +61,11 @@ inline std::set<vdep_vertex_desc> source_variables(UINT32 idx)
     // not found
     if (vertex_iter == dta_outer_vertices.end()) 
     {
-      new_vertex_desc = boost::add_vertex (*src_iter, dta_graph);
+      new_vertex_desc = boost::add_vertex(*src_iter, dta_graph);
 
-      dta_outer_vertices.insert (new_vertex_desc);
+      dta_outer_vertices.insert(new_vertex_desc);
 
-      src_vertex_descs.insert (new_vertex_desc);
+      src_vertex_descs.insert(new_vertex_desc);
     }
   }
 

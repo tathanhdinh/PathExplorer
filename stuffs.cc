@@ -63,7 +63,7 @@ extern KNOB<BOOL>                   print_debug_text;
 /*                                                         implementation                                             */
 /* ------------------------------------------------------------------------------------------------------------------ */
 
-std::string remove_leading_zeros (std::string input)
+std::string remove_leading_zeros(std::string input)
 {
   std::string::iterator str_iter = input.begin();
   std::string output ("0x");

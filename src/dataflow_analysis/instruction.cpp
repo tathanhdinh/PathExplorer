@@ -22,5 +22,37 @@
 
 instruction::instruction(const INS& current_instruction)
 {
-  this->address = INS_Address(ins);
+  this->address           = INS_Address(current_instruction);
+  this->dissasembled_name = INS_Disassemble(current_instruction);
+  
+  REG current_register;
+  uint8_t register_id;
+  uint8_t register_number; 
+  
+  register_number = INS_MaxNumRRegs(current_instruction);
+  for (register_id = 0; register_id < register_number; ++register_id) 
+  {
+    current_register = INS_RegR(current_instruction, register_id);
+    
+    // we dont count the instruction pointer as a source pointer, 
+    // namely the control tainting is not counted.
+    if (current_register != REG_INST_PTR) 
+    {
+      if (INS_IsRet(ins) && (current_register == REG_STACK_PTR))
+      {
+        //
+      }
+      else 
+      {
+        this->source_operands.insert(instruction_operand(current_register));
+      }
+    }
+  }
+  
+  register_number = INS_MaxNumWRegs(current_instruction);
+  for (register_id = 0; register_id < register_number; ++register_id) 
+  {
+    current_register = INS_RegW(current_instruction, register_id);
+    if (current_register)
+  }
 }

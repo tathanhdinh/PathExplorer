@@ -22,19 +22,38 @@
 
 #include <pin.H>
 
-#include <boost/utility/string_ref.hpp>
+#include <string>
+
+#include <boost/functional/hash.hpp>
 #include <boost/variant.hpp>
 
 class instruction_operand
 {
 public:
-  boost::string_ref name;
+  std::string name;
   boost::variant<ADDRINT, REG, UINT32> value;
   
 public:
   instruction_operand(ADDRINT memory_operand);
   instruction_operand(REG register_operand);
   instruction_operand(UINT32 immediate_operand);
+};
+
+inline bool operator==(const instruction_operand& operand_a, const instruction_operand& operand_b) 
+{
+  return (operand_a.name == operand_b.name);
+}
+
+/*================================================================================================*/
+
+class operand_hash
+{
+public:
+  std::size_t operator()(const instruction_operand& operand) const
+  {
+    boost::hash<std::string> string_ref_hash;
+    return string_ref_hash(operand.name);
+  }
 };
 
 #endif // INSTRUCTION_OPERAND_H

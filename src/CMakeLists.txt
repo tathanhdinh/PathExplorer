@@ -1,1 +1,4 @@
 add_subdirectory(reverse_execution_engine)
+add_subdirectory(dataflow_analysis)
+
+add_subdirectory(utils)

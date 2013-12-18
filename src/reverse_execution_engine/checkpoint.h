@@ -40,12 +40,14 @@ public:
 public:
   checkpoint(ADDRINT current_address, CONTEXT* current_context);
   
-  void log_memory_written(ADDRINT memory_written_address, UINT8 memory_written_length);
+  void log(ADDRINT memory_written_address, UINT8 memory_written_length);
 };
 
 /*================================================================================================*/
 
 typedef boost::shared_ptr<checkpoint> ptr_checkpoint;
+
+extern void move_backward(ptr_checkpoint& target_checkpoint);
 
 /*================================================================================================*/
 

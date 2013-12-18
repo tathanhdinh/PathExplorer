@@ -18,10 +18,16 @@
  */
 
 #include "instruction_operand.h"
+#include "../utils/utils.h"
+
+#include <boost/lexical_cast.hpp>
+
+/*================================================================================================*/
 
 instruction_operand::instruction_operand(ADDRINT memory_operand)
 {
   this->value = memory_operand;
+  this->name = utils::remove_leading_zeros(StringFromAddrint(memory_operand));
 }
 
 /*================================================================================================*/
@@ -30,6 +36,7 @@ instruction_operand::instruction_operand(ADDRINT memory_operand)
 instruction_operand::instruction_operand(REG register_operand)
 {
   this->value = REG_FullRegName(register_operand);
+  this->name = REG_StringShort(boost::get<REG>(this->value));
 }
 
 /*================================================================================================*/
@@ -37,5 +44,6 @@ instruction_operand::instruction_operand(REG register_operand)
 instruction_operand::instruction_operand(UINT32 immediate_operand)
 {
   this->value = immediate_operand;
+  this->name = boost::lexical_cast<std::string>(immediate_operand);
 }
 

@@ -33,7 +33,7 @@ checkpoint::checkpoint(ADDRINT current_address,
 
 /*================================================================================================*/
 
-void checkpoint::log_memory_written(ADDRINT memory_written_address, 
+void checkpoint::log(ADDRINT memory_written_address, 
                                     UINT8 memory_written_length)
 {
   ADDRINT upper_bound_address = memory_written_address + memory_written_length;
@@ -59,7 +59,7 @@ void move_backward(ptr_checkpoint& target_checkpoint)
   explored_trace = target_checkpoint->trace;
   explored_trace.pop_back();
   
-  // restore the values of the written addresses
+  // restore the logged values of the written addresses
   boost::container::map<ADDRINT, UINT8>::iterator 
     memory_log_iter = target_checkpoint->memory_log.begin();
   for (; memory_log_iter != target_checkpoint->memory_log.end(); ++memory_log_iter) 
