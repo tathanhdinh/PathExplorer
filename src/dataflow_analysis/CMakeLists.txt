@@ -1,3 +1,4 @@
 ADD_PINTOOL(dataflow_analysis
   instruction_operand.cpp 
-  instruction.cpp)
+  instruction.cpp
+  dataflow_graph.cpp)

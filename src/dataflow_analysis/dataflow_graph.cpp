@@ -1,4 +1,5 @@
 /*
+ * <one line to give the program's name and a brief idea of what it does.>
  * Copyright (C) 2013  Ta Thanh Dinh <email>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -17,27 +18,18 @@
  *
  */
 
-#ifndef INSTRUCTION_H
-#define INSTRUCTION_H
+#include "dataflow_graph.h"
 
-#include "instruction_operand.h"
+#include <boost/unordered_map.hpp>
 
-#include <pin.H>
+extern boost::unordered_map<ADDRINT, instruction> address_instruction_static_map;
+extern boost::unordered_map<UINT32, ADDRINT>      order_address_dynamic_map;
 
-#include <boost/unordered_set.hpp>
+/*================================================================================================*/
 
-#include <string>
-
-class instruction
+void dataflow_graph::propagate_forward(ADDRINT instruction_address)
 {
-public:
-  ADDRINT     address;
-  std::string dissasembled_name;
-  boost::unordered_set<instruction_operand, operand_hash> source_operands;
-  boost::unordered_set<instruction_operand, operand_hash> target_operands;
   
-public:
-  instruction(const INS& current_instruction);
-};
+}
 
-#endif // INSTRUCTION_H
+
