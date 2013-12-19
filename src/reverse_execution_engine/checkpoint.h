@@ -22,11 +22,13 @@
 
 #include <pin.H>
 
+#include <boost/unordered_map.hpp>
 #include <boost/container/map.hpp>
 #include <boost/container/vector.hpp>
 #include <boost/shared_ptr.hpp>
 
-/*================================================================================================*/
+class checkpoint;
+typedef boost::shared_ptr<checkpoint> ptr_checkpoint;
 
 class checkpoint
 {
@@ -34,21 +36,15 @@ public:
   ADDRINT                               address;
   CONTEXT                               cpu_context;
   
-  boost::container::map<ADDRINT, UINT8> memory_log;
+  boost::unordered_map<ADDRINT, UINT8>  memory_log;
   boost::container::vector<ADDRINT>     trace;
   
 public:
   checkpoint(ADDRINT current_address, CONTEXT* current_context);
   
   void log(ADDRINT memory_written_address, UINT8 memory_written_length);
+  
+  static void move_backward(ptr_checkpoint& target_checkpoint);
 };
-
-/*================================================================================================*/
-
-typedef boost::shared_ptr<checkpoint> ptr_checkpoint;
-
-extern void move_backward(ptr_checkpoint& target_checkpoint);
-
-/*================================================================================================*/
 
 #endif // CHECKPOINT_H

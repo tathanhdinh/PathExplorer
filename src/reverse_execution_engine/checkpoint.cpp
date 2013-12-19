@@ -21,8 +21,12 @@
 
 extern boost::container::vector<ADDRINT> explored_trace;
 
-/*================================================================================================*/
-
+/**
+ * @brief a checkpoint is created at when the instruction pointer pointes to some address.
+ * 
+ * @param current_address the address pointed by the instruction pointer (IP).
+ * @param current_context the cpu context (values of registers) when the IP is at this address.
+ */
 checkpoint::checkpoint(ADDRINT current_address, 
                        CONTEXT* current_context)
 {
@@ -31,10 +35,14 @@ checkpoint::checkpoint(ADDRINT current_address,
   this->trace = explored_trace;
 }
 
-/*================================================================================================*/
-
-void checkpoint::log(ADDRINT memory_written_address, 
-                                    UINT8 memory_written_length)
+/**
+ * @brief the checkpoint stores the original value at memory addresses before they are written.
+ * 
+ * @param memory_written_address the beginning address that will be written.
+ * @param memory_written_length the length of written addresses.
+ * @return void
+ */
+void checkpoint::log(ADDRINT memory_written_address, UINT8 memory_written_length)
 {
   ADDRINT upper_bound_address = memory_written_address + memory_written_length;
   ADDRINT address = memory_written_address;
@@ -51,17 +59,23 @@ void checkpoint::log(ADDRINT memory_written_address,
   return;
 }
 
-/*================================================================================================*/
-
-void move_backward(ptr_checkpoint& target_checkpoint)
+/**
+ * @brief the control moves back to a past checkpoint; this operation can always be invoked safely 
+ * (in the program's space) if the past checkpoint is logged fully (by invoking the log function 
+ * just before the execution of a memory written instruction).
+ * 
+ * @param target_checkpoint the past checkpoint.
+ * @return void
+ */
+void checkpoint::move_backward(ptr_checkpoint& target_checkpoint)
 {
   // restore the explored trace
   explored_trace = target_checkpoint->trace;
   explored_trace.pop_back();
   
   // restore the logged values of the written addresses
-  boost::container::map<ADDRINT, UINT8>::iterator 
-    memory_log_iter = target_checkpoint->memory_log.begin();
+  boost::unordered_map<ADDRINT, UINT8>::iterator memory_log_iter 
+                                                          = target_checkpoint->memory_log.begin();
   for (; memory_log_iter != target_checkpoint->memory_log.end(); ++memory_log_iter) 
   {
     *(reinterpret_cast<UINT8*>(memory_log_iter->first)) = memory_log_iter->second;

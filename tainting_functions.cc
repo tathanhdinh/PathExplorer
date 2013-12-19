@@ -74,7 +74,7 @@ inline std::set<vdep_vertex_desc> source_variables(UINT32 idx)
 
 /*================================================================================================*/
 // destination variable construction
-inline std::set<vdep_vertex_desc> destination_variables (UINT32 idx)
+inline std::set<vdep_vertex_desc> destination_variables(UINT32 idx)
 {
   std::set<REG>::iterator      reg_iter;
   std::set<ADDRINT>::iterator  mem_iter;
