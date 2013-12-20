@@ -32,8 +32,13 @@ extern UINT8                                        received_msg_num;
 extern boost::shared_ptr<boost::posix_time::ptime>  start_ptr_time;
 extern boost::shared_ptr<boost::posix_time::ptime>  stop_ptr_time;
 
-/*====================================================================================================================*/
-
+/**
+ * @brief instrumentation function.
+ * 
+ * @param ins current examined instruction.
+ * @param data not used.
+ * @return VOID
+ */
 VOID ins_instrumenter(INS ins, VOID *data)
 {
   // logging the parsed instructions statically

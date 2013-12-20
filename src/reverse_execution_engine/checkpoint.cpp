@@ -85,6 +85,7 @@ void checkpoint::move_backward(ptr_checkpoint& target_checkpoint)
   target_checkpoint->memory_log.clear();
   
   // move backward
+  // note that the instruction (pointed by the EIP register in the cpu context) will be re-executed.
   PIN_ExecuteAt(&(target_checkpoint->cpu_context));
 
   return;
