@@ -68,18 +68,18 @@ void engine::move_backward(boost::shared_ptr<checkpoint>& target_checkpoint)
  */
 void engine::move_forward(boost::shared_ptr<checkpoint>& target_checkpoint)
 {
-  // restore the explored trace: because the instruction will be re-executed so the last instruction 
-  // in the trace must be removed.
+  // restore the explored trace: the instruction will be re-executed so the last instruction in the 
+  // trace must be removed.
   explored_trace = target_checkpoint->trace;
   explored_trace.pop_back();
   
   // restore the total memory state
-  boost::unordered_map<ADDRINT, UINT8>::iterator total_memory_state_iter 
-                                                  = target_checkpoint->local_memory_state.begin();
-  for (; total_memory_state_iter != target_checkpoint->local_memory_state.end(); 
-       ++total_memory_state_iter)
+  boost::unordered_map<ADDRINT, 
+                       boost::compressed_pair<UINT8, UINT8>
+                       >::iterator mem_iter = target_checkpoint->local_memory_state.begin();
+  for (; mem_iter != target_checkpoint->local_memory_state.end(); ++mem_iter)
   {
-    *(reinterpret_cast<UINT8*>(total_memory_state_iter->first)) = total_memory_state_iter->second;
+    *(reinterpret_cast<UINT8*>(mem_iter->first)) = mem_iter->second;
   }
   
   // restore the cpu context

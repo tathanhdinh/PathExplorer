@@ -20,15 +20,13 @@
 #include <pin.H>
 #include "checkpoint.h"
 
-#include <boost/compressed_pair.hpp>
-
 extern boost::container::vector<ADDRINT> explored_trace;
 
 using namespace reverse_execution_engine;
 
 boost::unordered_map<ADDRINT, 
                      boost::compressed_pair<UINT8, UINT8>
-                                > global_memory_state;
+                     > global_memory_state;
 
 /**
  * @brief a checkpoint is created before the instruction (pointed by the current address) executes. 

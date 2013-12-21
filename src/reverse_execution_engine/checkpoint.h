@@ -25,6 +25,7 @@
 #include <boost/unordered_map.hpp>
 #include <boost/container/vector.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/compressed_pair.hpp>
 
 namespace reverse_execution_engine
 {
@@ -36,7 +37,9 @@ public:
   CONTEXT                               cpu_context;
   
   boost::unordered_map<ADDRINT, UINT8>  memory_log;
-  boost::unordered_map<ADDRINT, UINT8>  local_memory_state;
+  boost::unordered_map<ADDRINT, 
+                       boost::compressed_pair<UINT8, UINT8>
+                       >                local_memory_state;
   boost::container::vector<ADDRINT>     trace;
   
 public:
