@@ -26,7 +26,9 @@ extern boost::container::vector<ADDRINT> explored_trace;
 
 using namespace reverse_execution_engine;
 
-boost::unordered_map<ADDRINT, UINT8> global_memory_state;
+boost::unordered_map<ADDRINT, 
+                     boost::compressed_pair<UINT8, UINT8>
+                                > global_memory_state;
 
 /**
  * @brief a checkpoint is created before the instruction (pointed by the current address) executes. 
