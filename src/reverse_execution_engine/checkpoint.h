@@ -33,18 +33,25 @@ typedef boost::shared_ptr<checkpoint> ptr_checkpoint;
 class checkpoint
 {
 public:
+  static boost::unordered_map<ADDRINT, UINT8> total_memory_state;
+  static void log_after_execution(ADDRINT memory_written_address, UINT8 memory_written_length);
+
+public:
   ADDRINT                               address;
   CONTEXT                               cpu_context;
   
   boost::unordered_map<ADDRINT, UINT8>  memory_log;
+  boost::unordered_map<ADDRINT, UINT8>  local_memory_state;
   boost::container::vector<ADDRINT>     trace;
   
 public:
   checkpoint(ADDRINT current_address, CONTEXT* current_context);
   
-  void log(ADDRINT memory_written_address, UINT8 memory_written_length);
+  void log_before_execution(ADDRINT memory_written_address, UINT8 memory_written_length);
   
   static void move_backward(ptr_checkpoint& target_checkpoint);
+  
+  static void move_forward(ptr_checkpoint& target_checkpoint);
 };
 
 #endif // CHECKPOINT_H
