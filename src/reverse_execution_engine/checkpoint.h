@@ -23,7 +23,6 @@
 #include <pin.H>
 
 #include <boost/unordered_map.hpp>
-#include <boost/container/map.hpp>
 #include <boost/container/vector.hpp>
 #include <boost/shared_ptr.hpp>
 
@@ -45,8 +44,6 @@ public:
   
   void log_before_execution(ADDRINT memory_written_address, UINT8 memory_written_length);  
 };
-
-// void log_after_execution(ADDRINT memory_written_address, UINT8 memory_written_length);
 
 }
 #endif // CHECKPOINT_H

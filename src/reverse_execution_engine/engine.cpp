@@ -1,5 +1,4 @@
 /*
- * <one line to give the program's name and a brief idea of what it does.>
  * Copyright (C) 2013  Ta Thanh Dinh <thanhdinh.ta@inria.fr>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -18,6 +17,7 @@
  *
  */
 
+#include <pin.H>
 #include "engine.h"
 
 extern boost::container::vector<ADDRINT> explored_trace;
@@ -33,7 +33,7 @@ using namespace reverse_execution_engine;
  * @param target_checkpoint the checkpoint in the past.
  * @return void
  */
-void move_backward(boost::shared_ptr<checkpoint>& target_checkpoint)
+void engine::move_backward(boost::shared_ptr<checkpoint>& target_checkpoint)
 {
   // restore the explored trace: because the instruction will be re-executed so the last instruction 
   // in the trace must be removed.

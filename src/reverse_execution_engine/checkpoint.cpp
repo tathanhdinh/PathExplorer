@@ -17,13 +17,16 @@
  *
  */
 
+#include <pin.H>
 #include "checkpoint.h"
+
+#include <boost/compressed_pair.hpp>
 
 extern boost::container::vector<ADDRINT> explored_trace;
 
 using namespace reverse_execution_engine;
 
-boost::unordered_map<ADDRINT, UINT8> total_memory_state;
+boost::unordered_map<ADDRINT, UINT8> global_memory_state;
 
 /**
  * @brief a checkpoint is created before the instruction (pointed by the current address) executes. 
@@ -39,7 +42,7 @@ checkpoint::checkpoint(ADDRINT current_address, CONTEXT* current_context)
   PIN_SaveContext(current_context, &(this->cpu_context));
   
   // save the current memory state
-  this->local_memory_state = total_memory_state;
+  this->local_memory_state = global_memory_state;
   
   this->trace = explored_trace;
 }
@@ -65,35 +68,10 @@ void checkpoint::log_before_execution(ADDRINT memory_written_address, UINT8 memo
       // log the original value at this written address
       this->memory_log[address] = *(reinterpret_cast<UINT8*>(address));
     }
-  }
   
-  // update the total memory state
-  for (address = memory_written_address; address < upper_bound_address; ++address) 
-  {
-    total_memory_state[address] = *(reinterpret_cast<UINT8*>(address));
+    // update the total memory state
+    global_memory_state[address] = *(reinterpret_cast<UINT8*>(address));
   }
   
   return;
 }
-
-
-/**
- * @brief the checkpoint needs to update the total memory state after the executed instruction 
- * overwrites some memory addresses.
- * 
- * @param memory_written_address the beginning addresses that was written.
- * @param memory_written_length the length of written addresses
- * @return void
- */
-// void log_after_execution(ADDRINT memory_written_address, UINT8 memory_written_length)
-// {
-//   ADDRINT upper_bound_address = memory_written_address + memory_written_length;
-//   ADDRINT address = memory_written_address;
-//   
-//   for (; address < upper_bound_address; ++address) 
-//   {
-//     total_memory_state[address] = *(reinterpret_cast<UINT8*>(address));
-//   }
-//   
-//   return;
-// }
