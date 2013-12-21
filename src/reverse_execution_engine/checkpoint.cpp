@@ -21,6 +21,7 @@
 
 extern boost::container::vector<ADDRINT> explored_trace;
 
+using namespace reverse_execution_engine;
 
 /**
  * @brief a checkpoint is created before the instruction (pointed by the current address) executes. 
@@ -28,8 +29,7 @@ extern boost::container::vector<ADDRINT> explored_trace;
  * @param current_address the address pointed by the instruction pointer (IP).
  * @param current_context the cpu context (values of registers) when the IP is at this address.
  */
-checkpoint::checkpoint(ADDRINT current_address, 
-                       CONTEXT* current_context)
+checkpoint::checkpoint(ADDRINT current_address, CONTEXT* current_context)
 {
   this->address = current_address;
   
@@ -77,14 +77,14 @@ void checkpoint::log_before_execution(ADDRINT memory_written_address, UINT8 memo
  * @param memory_written_length the length of written addresses
  * @return void
  */
-void checkpoint::log_after_execution(ADDRINT memory_written_address, UINT8 memory_written_length)
+void log_after_execution(ADDRINT memory_written_address, UINT8 memory_written_length)
 {
   ADDRINT upper_bound_address = memory_written_address + memory_written_length;
   ADDRINT address = memory_written_address;
   
   for (; address < upper_bound_address; ++address) 
   {
-    checkpoint::total_memory_state[address] = *(reinterpret_cast<UINT8>(address));
+    total_memory_state[address] = *(reinterpret_cast<UINT8*>(address));
   }
   
   return;
@@ -100,7 +100,7 @@ void checkpoint::log_after_execution(ADDRINT memory_written_address, UINT8 memor
  * @param target_checkpoint the checkpoint in the past.
  * @return void
  */
-void checkpoint::move_backward(ptr_checkpoint& target_checkpoint)
+void move_backward(boost::shared_ptr<checkpoint>& target_checkpoint)
 {
   // restore the explored trace: because the instruction will be re-executed so the last instruction 
   // in the trace must be removed.
@@ -133,7 +133,7 @@ void checkpoint::move_backward(ptr_checkpoint& target_checkpoint)
  * @param target_checkpoint the checkpoint in the future.
  * @return void
  */
-void checkpoint::move_forward(ptr_checkpoint& target_checkpoint)
+void move_forward(boost::shared_ptr<checkpoint>& target_checkpoint)
 {
   // restore the explored trace: because the instruction will be re-executed so the last instruction 
   // in the trace must be removed.

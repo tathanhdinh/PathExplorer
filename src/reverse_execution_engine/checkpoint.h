@@ -27,15 +27,13 @@
 #include <boost/container/vector.hpp>
 #include <boost/shared_ptr.hpp>
 
-class checkpoint;
-typedef boost::shared_ptr<checkpoint> ptr_checkpoint;
+namespace reverse_execution_engine
+{
+
+boost::unordered_map<ADDRINT, UINT8> total_memory_state;
 
 class checkpoint
 {
-public:
-  static boost::unordered_map<ADDRINT, UINT8> total_memory_state;
-  static void log_after_execution(ADDRINT memory_written_address, UINT8 memory_written_length);
-
 public:
   ADDRINT                               address;
   CONTEXT                               cpu_context;
@@ -47,11 +45,12 @@ public:
 public:
   checkpoint(ADDRINT current_address, CONTEXT* current_context);
   
-  void log_before_execution(ADDRINT memory_written_address, UINT8 memory_written_length);
-  
-  static void move_backward(ptr_checkpoint& target_checkpoint);
-  
-  static void move_forward(ptr_checkpoint& target_checkpoint);
+  void log_before_execution(ADDRINT memory_written_address, UINT8 memory_written_length);  
 };
 
+void log_after_execution(ADDRINT memory_written_address, UINT8 memory_written_length);
+void move_backward(boost::shared_ptr<checkpoint>& target_checkpoint);
+void move_forward(boost::shared_ptr<checkpoint>& target_checkpoint);
+
+}
 #endif // CHECKPOINT_H
