@@ -1,1 +1,1 @@
-ADD_PINTOOL(reverse_execution_engine checkpoint.cpp)
+ADD_PINTOOL(reverse_execution_engine engine.cpp checkpoint.cpp)

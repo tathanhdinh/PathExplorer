@@ -1,4 +1,5 @@
 /*
+ * <one line to give the program's name and a brief idea of what it does.>
  * Copyright (C) 2013  Ta Thanh Dinh <thanhdinh.ta@inria.fr>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -17,36 +18,22 @@
  *
  */
 
-#ifndef CHECKPOINT_H
-#define CHECKPOINT_H
+#ifndef ENGINE_H
+#define ENGINE_H
 
-#include <pin.H>
-
-#include <boost/unordered_map.hpp>
-#include <boost/container/map.hpp>
-#include <boost/container/vector.hpp>
 #include <boost/shared_ptr.hpp>
+#include "checkpoint.h"
 
 namespace reverse_execution_engine
 {
 
-class checkpoint
+class engine
 {
 public:
-  ADDRINT                               address;
-  CONTEXT                               cpu_context;
-  
-  boost::unordered_map<ADDRINT, UINT8>  memory_log;
-  boost::unordered_map<ADDRINT, UINT8>  local_memory_state;
-  boost::container::vector<ADDRINT>     trace;
-  
-public:
-  checkpoint(ADDRINT current_address, CONTEXT* current_context);
-  
-  void log_before_execution(ADDRINT memory_written_address, UINT8 memory_written_length);  
+  static void move_backward(boost::shared_ptr<checkpoint>& target_checkpoint);
+  static void move_forward(boost::shared_ptr<checkpoint>& target_checkpoint);
 };
 
-// void log_after_execution(ADDRINT memory_written_address, UINT8 memory_written_length);
-
 }
-#endif // CHECKPOINT_H
+
+#endif // ENGINE_H
