@@ -63,14 +63,18 @@ void checkpoint::log_before_execution(ADDRINT memory_written_address, UINT8 memo
   
   for (address = memory_written_address; address < upper_bound_address; ++address) 
   {
+    // log the original value at this written address
     if (this->memory_log.find(address) == this->memory_log.end()) 
     {
-      // log the original value at this written address
       this->memory_log[address] = *(reinterpret_cast<UINT8*>(address));
     }
   
     // update the total memory state
-    global_memory_state[address] = *(reinterpret_cast<UINT8*>(address));
+    if (global_memory_state.find(address) == global_memory_state.end()) 
+    {
+      global_memory_state[address].first() = *(reinterpret_cast<UINT8*>(address));
+    }
+    global_memory_state[address].second() = *(reinterpret_cast<UINT8*>(address));
   }
   
   return;

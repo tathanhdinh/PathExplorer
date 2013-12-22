@@ -24,6 +24,10 @@ extern boost::container::vector<ADDRINT> explored_trace;
 
 using namespace reverse_execution_engine;
 
+extern boost::unordered_map<ADDRINT, 
+                            boost::compressed_pair<UINT8, UINT8>
+                           > global_memory_state;
+
 /**
  * @brief the control moves back to a previously logged checkpoint; this operation can always be 
  * invoked safely (in the program's space) if the checkpoint is logged fully (by invoking the log 
@@ -35,24 +39,30 @@ using namespace reverse_execution_engine;
  */
 void engine::move_backward(boost::shared_ptr<checkpoint>& target_checkpoint)
 {
-  // restore the explored trace: because the instruction will be re-executed so the last instruction 
+  // restore the explored trace: because the instruction will be re-executed, the last instruction 
   // in the trace must be removed.
   explored_trace = target_checkpoint->trace;
   explored_trace.pop_back();
   
   // restore the logged values of the written addresses
-  boost::unordered_map<ADDRINT, UINT8>::iterator memory_log_iter 
-                                                  = target_checkpoint->memory_log.begin();
-  for (; memory_log_iter != target_checkpoint->memory_log.end(); ++memory_log_iter) 
+  boost::unordered_map<ADDRINT, UINT8>::iterator mem_iter = target_checkpoint->memory_log.begin();
+  for (; mem_iter != target_checkpoint->memory_log.end(); ++mem_iter) 
   {
-    *(reinterpret_cast<UINT8*>(memory_log_iter->first)) = memory_log_iter->second;
+    *(reinterpret_cast<UINT8*>(mem_iter->first)) = mem_iter->second;
   }
-  
-  // clear the set of logged values
+  // then clear the set of logged values
   target_checkpoint->memory_log.clear();
   
-  // restore the cpu context
-  // note that the instruction (pointed by the EIP register in the cpu context) will be re-executed.
+  // restore the global memory state
+  boost::unordered_map<ADDRINT, 
+                       boost::compressed_pair<UINT8, UINT8>
+                       >::iterator global_mem_iter = global_memory_state.begin();
+  boost::unordered_map<ADDRINT, 
+                       boost::compressed_pair<UINT8, UINT8>
+                       >::iterator local_mem_iter = target_checkpoint->local_memory_state.begin();
+  
+  // restore the cpu context: the instruction (pointed by the IP register in the cpu context) will 
+  // be re-executed.
   PIN_ExecuteAt(&(target_checkpoint->cpu_context));
 
   return;
@@ -68,20 +78,20 @@ void engine::move_backward(boost::shared_ptr<checkpoint>& target_checkpoint)
  */
 void engine::move_forward(boost::shared_ptr<checkpoint>& target_checkpoint)
 {
-  // restore the explored trace: the instruction will be re-executed so the last instruction in the 
-  // trace must be removed.
+  // restore the explored trace: because the instruction will be re-executed, the last instruction 
+  // in the trace must be removed.
   explored_trace = target_checkpoint->trace;
   explored_trace.pop_back();
   
   // restore the total memory state
-  boost::unordered_map<ADDRINT, 
-                       boost::compressed_pair<UINT8, UINT8>
-                       >::iterator mem_iter = target_checkpoint->local_memory_state.begin();
-  for (; mem_iter != target_checkpoint->local_memory_state.end(); ++mem_iter)
-  {
-    *(reinterpret_cast<UINT8*>(mem_iter->first)) = mem_iter->second;
-  }
-  
+//   boost::unordered_map<ADDRINT, 
+//                        boost::compressed_pair<UINT8, UINT8>
+//                        >::iterator mem_iter = target_checkpoint->local_memory_state.begin();
+//   for (; mem_iter != target_checkpoint->local_memory_state.end(); ++mem_iter)
+//   {
+//     *(reinterpret_cast<UINT8*>(mem_iter->first)) = mem_iter->second;
+//   }
+//   
   // restore the cpu context
   PIN_ExecuteAt(&(target_checkpoint->cpu_context));
   
