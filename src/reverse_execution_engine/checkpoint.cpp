@@ -17,12 +17,13 @@
  *
  */
 
-#include <pin.H>
 #include "checkpoint.h"
+#include <pin.H>
 
 extern boost::container::vector<ADDRINT> explored_trace;
 
-using namespace reverse_execution_engine;
+namespace reverse_execution_engine
+{
 
 boost::unordered_map<ADDRINT, 
                      boost::compressed_pair<UINT8, UINT8>
@@ -79,3 +80,5 @@ void checkpoint::log_before_execution(ADDRINT memory_written_address, UINT8 memo
   
   return;
 }
+
+} // end of reverse_execution_engine namespace

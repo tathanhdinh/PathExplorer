@@ -21,23 +21,27 @@
 #define INSTRUCTION_H
 
 #include "instruction_operand.h"
-
 #include <pin.H>
-
+#include <string>
 #include <boost/unordered_set.hpp>
 
-#include <string>
+namespace dataflow_analysis 
+{
 
 class instruction
 {
 public:
   ADDRINT     address;
+  
   std::string dissasembled_name;
+  
   boost::unordered_set<instruction_operand, operand_hash> source_operands;
   boost::unordered_set<instruction_operand, operand_hash> target_operands;
   
 public:
   instruction(const INS& current_instruction);
 };
+
+} // end of dataflow_analysis namespace
 
 #endif // INSTRUCTION_H

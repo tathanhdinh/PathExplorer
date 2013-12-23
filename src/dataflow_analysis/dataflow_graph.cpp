@@ -18,17 +18,18 @@
  */
 
 #include "dataflow_graph.h"
-
 #include <boost/unordered_map.hpp>
 
-extern boost::unordered_map<ADDRINT, instruction> address_instruction_static_map;
-extern boost::unordered_map<UINT32, ADDRINT>      order_address_dynamic_map;
+namespace dataflow_analysis 
+{
+
+extern boost::unordered_map<ADDRINT, instruction> address_instruction_map;
+extern boost::unordered_map<UINT32, ADDRINT>      excution_order_address_map;
 
 /*================================================================================================*/
 
 void dataflow_graph::propagate_forward(ADDRINT instruction_address)
 {
-  
 }
 
-
+}

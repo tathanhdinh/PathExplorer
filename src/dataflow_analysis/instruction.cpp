@@ -19,6 +19,9 @@
 
 #include "instruction.h"
 
+namespace dataflow_analysis
+{
+
 instruction::instruction(const INS& current_instruction)
 {
   this->address           = INS_Address(current_instruction);
@@ -68,3 +71,5 @@ instruction::instruction(const INS& current_instruction)
     }
   }
 }
+
+} // end of dataflow_analysis namespace

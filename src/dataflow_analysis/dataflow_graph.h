@@ -20,12 +20,13 @@
 #ifndef DATAFLOW_GRAPH_H
 #define DATAFLOW_GRAPH_H
 
-#include <pin.H>
-
 #include "instruction.h"
 #include "instruction_operand.h"
-
+#include <pin.H>
 #include <boost/graph/adjacency_list.hpp>
+
+namespace dataflow_analysis 
+{
 
 typedef boost::adjacency_list<boost::listS, boost::vecS, boost::bidirectionalS, 
                               instruction_operand, instruction>  dependence_graph;
@@ -44,5 +45,7 @@ public:
   void propagate_forward(ADDRINT instruction_address);
   void construct_backward();
 };
+
+} // end of dataflow_analysis namespace
 
 #endif // DATAFLOW_GRAPH_H

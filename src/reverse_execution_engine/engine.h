@@ -20,8 +20,8 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
-#include <boost/shared_ptr.hpp>
 #include "checkpoint.h"
+#include <boost/shared_ptr.hpp>
 
 namespace reverse_execution_engine
 {
