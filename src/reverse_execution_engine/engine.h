@@ -33,6 +33,6 @@ public:
   static void move_forward(boost::shared_ptr<checkpoint>& future_checkpoint);
 };
 
-}
+} // end of reverse_execution_engine namespace
 
 #endif // ENGINE_H

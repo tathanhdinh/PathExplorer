@@ -22,7 +22,8 @@
 
 extern boost::container::vector<ADDRINT> explored_trace;
 
-using namespace reverse_execution_engine;
+namespace reverse_execution_engine
+{
 
 extern boost::unordered_map<ADDRINT, 
                             boost::compressed_pair<UINT8, UINT8>
@@ -58,25 +59,25 @@ void engine::move_backward(boost::shared_ptr<checkpoint>& past_checkpoint)
   // update the global memory state
   boost::unordered_map<ADDRINT, 
                        boost::compressed_pair<UINT8, UINT8>
-                       >::iterator current_mem_iter = current_memory_state.begin();
+                       >::iterator curr_mem_iter = current_memory_state.begin();
   boost::unordered_map<ADDRINT, 
                        boost::compressed_pair<UINT8, UINT8>
                        >::iterator past_mem_iter;
-  for (; current_mem_iter != current_memory_state.end(); ++current_mem_iter) 
+  for (; curr_mem_iter != current_memory_state.end(); ++curr_mem_iter) 
   {
     // verify if an element in the current state is also an element in the past state
-    past_mem_iter = past_checkpoint->memory_state.find(current_mem_iter->first);
+    past_mem_iter = past_checkpoint->memory_state.find(curr_mem_iter->first);
     if (past_mem_iter != past_checkpoint->memory_state.end()) 
     {
       // if it is then the memory value at its address needs to be restored by the last value in 
       // the past state
-      *(reinterpret_cast<UINT8*>(current_mem_iter->first)) = past_mem_iter->second.second();
+      *(reinterpret_cast<UINT8*>(curr_mem_iter->first)) = past_mem_iter->second.second();
     }
     else 
     {
       // if it is not then the memory value at its address needs to be restored to the original 
       // value in the past state
-      *(reinterpret_cast<UINT8*>(current_mem_iter->first)) = current_mem_iter->second.first();
+      *(reinterpret_cast<UINT8*>(curr_mem_iter->first)) = curr_mem_iter->second.first();
     }
   }
   current_memory_state = past_checkpoint->memory_state;
@@ -90,8 +91,8 @@ void engine::move_backward(boost::shared_ptr<checkpoint>& past_checkpoint)
 
 
 /**
- * @brief the control moves forward to a previously logged checkpoint: the global memory state is 
- * now a subset of the local memory state of the target checkpoint. Note that the instruction 
+ * @brief the control moves forward to a previously logged checkpoint: the current memory state is 
+ * now a subset of the memory state saved at the future checkpoint. Note that the instruction 
  * (determined by the IP in the checkpoint's cpu context) will be re-executed.
  * 
  * @param target_checkpoint the future checkpoint.
@@ -122,8 +123,8 @@ void engine::move_forward(boost::shared_ptr<checkpoint>& future_checkpoint)
     }
     else 
     {
-      // if it is not then the value at its address nees to be restored by the last value in the 
-      // current state
+      // if it is not then the value at its address needs to be restored by the last value in the 
+      // future state
       *(reinterpret_cast<UINT8*>(futur_mem_iter->first)) = futur_mem_iter->second.second();
     }
   }
@@ -133,3 +134,5 @@ void engine::move_forward(boost::shared_ptr<checkpoint>& future_checkpoint)
   
   return;
 }
+
+} // end of reverse_execution_engine namespace
