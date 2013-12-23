@@ -26,7 +26,7 @@ using namespace reverse_execution_engine;
 
 boost::unordered_map<ADDRINT, 
                      boost::compressed_pair<UINT8, UINT8>
-                     > global_memory_state;
+                     > current_memory_state;
 
 /**
  * @brief a checkpoint is created before the instruction (pointed by the current address) executes. 
@@ -42,7 +42,7 @@ checkpoint::checkpoint(ADDRINT current_address, CONTEXT* current_context)
   PIN_SaveContext(current_context, &(this->cpu_context));
   
   // save the current memory state
-  this->local_memory_state = global_memory_state;
+  this->memory_state = current_memory_state;
   
   this->trace = explored_trace;
 }
@@ -70,11 +70,11 @@ void checkpoint::log_before_execution(ADDRINT memory_written_address, UINT8 memo
     }
   
     // update the total memory state
-    if (global_memory_state.find(address) == global_memory_state.end()) 
+    if (current_memory_state.find(address) == current_memory_state.end()) 
     {
-      global_memory_state[address].first() = *(reinterpret_cast<UINT8*>(address));
+      current_memory_state[address].first() = *(reinterpret_cast<UINT8*>(address));
     }
-    global_memory_state[address].second() = *(reinterpret_cast<UINT8*>(address));
+    current_memory_state[address].second() = *(reinterpret_cast<UINT8*>(address));
   }
   
   return;

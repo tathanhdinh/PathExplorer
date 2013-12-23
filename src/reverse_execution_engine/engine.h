@@ -29,8 +29,8 @@ namespace reverse_execution_engine
 class engine
 {
 public:
-  static void move_backward(boost::shared_ptr<checkpoint>& target_checkpoint);
-  static void move_forward(boost::shared_ptr<checkpoint>& target_checkpoint);
+  static void move_backward(boost::shared_ptr<checkpoint>& past_checkpoint);
+  static void move_forward(boost::shared_ptr<checkpoint>& future_checkpoint);
 };
 
 }

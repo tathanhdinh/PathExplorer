@@ -39,7 +39,7 @@ public:
   boost::unordered_map<ADDRINT, UINT8>  memory_log;
   boost::unordered_map<ADDRINT, 
                        boost::compressed_pair<UINT8, UINT8>
-                       >                local_memory_state;
+                       >                memory_state;
   boost::container::vector<ADDRINT>     trace;
   
 public:
