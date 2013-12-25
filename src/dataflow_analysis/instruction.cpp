@@ -18,6 +18,7 @@
  */
 
 #include "instruction.h"
+#include <boost/concept_check.hpp>
 
 namespace dataflow_analysis
 {
@@ -32,6 +33,7 @@ instruction::instruction(const INS& current_instruction)
   uint8_t register_id;
   uint8_t register_number; 
   
+  // source operands as read registers
   register_number = INS_MaxNumRRegs(current_instruction);
   for (register_id = 0; register_id < register_number; ++register_id) 
   {
@@ -54,6 +56,7 @@ instruction::instruction(const INS& current_instruction)
     }
   }
   
+  // target operands as written registers
   register_number = INS_MaxNumWRegs(current_instruction);
   for (register_id = 0; register_id < register_number; ++register_id) 
   {
@@ -71,5 +74,36 @@ instruction::instruction(const INS& current_instruction)
     }
   }
 }
+
+
+/**
+ * @brief the read or written memories of an instruction cannot be determined statically, so they 
+ * need to be updated gradually in the running time.
+ * 
+ * @param access_address the beginning read/written address
+ * @param access_length the read/written length
+ * @param read_or_written read (false) or written (true)
+ * @return void
+ */
+void instruction::update_memory(ADDRINT access_address, UINT8 access_length, bool read_or_written)
+{
+  ADDRINT address;
+  ADDRINT upper_bound_address = access_address + access_length;
+  
+  for (address = access_address; address < upper_bound_address; ++address) 
+  {
+    if (read_or_written) // memory written
+    {
+      this->target_operands.insert(instruction_operand(address));
+    }
+    else // memory read
+    {
+      this->source_operands.insert(instruction_operand(address));
+    }
+  }
+  
+  return;
+}
+
 
 } // end of dataflow_analysis namespace

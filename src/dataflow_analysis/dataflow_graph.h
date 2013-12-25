@@ -24,6 +24,7 @@
 #include "instruction_operand.h"
 #include <pin.H>
 #include <boost/graph/adjacency_list.hpp>
+#include <boost/unordered_set.hpp>
 
 namespace dataflow_analysis 
 {
@@ -42,8 +43,11 @@ public:
   dependence_graph forward_dependence_graph;
   dependence_graph backward_dependence_graph;
   
+  boost::unordered_set<depgraph_vertex_desc> outer_interface;
+  
   void propagate_forward(ADDRINT instruction_address);
   void construct_backward();
+  void clear();
 };
 
 } // end of dataflow_analysis namespace

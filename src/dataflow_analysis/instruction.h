@@ -40,7 +40,9 @@ public:
   
 public:
   instruction(const INS& current_instruction);
+  void update_memory(ADDRINT access_address, UINT8 access_length, bool read_or_written);
 };
+
 
 } // end of dataflow_analysis namespace
 

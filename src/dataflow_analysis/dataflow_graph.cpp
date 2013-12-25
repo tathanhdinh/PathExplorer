@@ -19,17 +19,36 @@
 
 #include "dataflow_graph.h"
 #include <boost/unordered_map.hpp>
+#include <boost/shared_ptr.hpp>
 
 namespace dataflow_analysis 
 {
 
-extern boost::unordered_map<ADDRINT, instruction> address_instruction_map;
-extern boost::unordered_map<UINT32, ADDRINT>      excution_order_address_map;
+extern boost::unordered_map<ADDRINT, 
+                            boost::shared_ptr<instruction>
+                            >         address_instruction_map;
+extern boost::unordered_map<UINT32, 
+                            ADDRINT>  excution_order_address_map;
 
-/*================================================================================================*/
 
+/**
+ * @brief insert a new instruction into the forward independence graph
+ * 
+ * @param instruction_address ...
+ * @return void
+ */
 void dataflow_graph::propagate_forward(ADDRINT instruction_address)
 {
+  boost::unordered_set<depgraph_vertex_desc> source_vertices;
+  boost::unordered_set<depgraph_vertex_desc> target_vertices;
+  
+  boost::unordered_set<depgraph_vertex_desc>::iterator outer_interface_iter;
+  boost::unordered_set<depgraph_vertex_desc>::iterator source_vertices_iter;
+  boost::unordered_set<depgraph_vertex_desc>::iterator target_vertices_iter;
+  
+//   boost::shared_ptr<instruction> current_instruction = 
+  
+  return;
 }
 
 }
