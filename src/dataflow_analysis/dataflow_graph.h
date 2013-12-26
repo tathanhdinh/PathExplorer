@@ -23,25 +23,30 @@
 #include "instruction.h"
 #include "instruction_operand.h"
 #include <pin.H>
+#include <boost/shared_ptr.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/unordered_set.hpp>
+#include <boost/compressed_pair.hpp>
 
 namespace dataflow_analysis 
 {
 
+typedef boost::shared_ptr<>
+typedef boost::compressed_pair<ADDRINT, UINT32> depgraph_edge;
+
 typedef boost::adjacency_list<boost::listS, boost::vecS, boost::bidirectionalS, 
-                              instruction_operand, instruction>  dependence_graph;
+                              instruction_operand, instruction>  depgraph;
                               
-typedef boost::graph_traits<dependence_graph>::vertex_descriptor depgraph_vertex_desc;
-typedef boost::graph_traits<dependence_graph>::edge_descriptor   depgraph_edge_desc;
-typedef boost::graph_traits<dependence_graph>::vertex_iterator   depgraph_vertex_iter;
-typedef boost::graph_traits<dependence_graph>::edge_iterator     depgraph_edge_iter;
+typedef boost::graph_traits<depgraph>::vertex_descriptor depgraph_vertex_desc;
+typedef boost::graph_traits<depgraph>::edge_descriptor   depgraph_edge_desc;
+typedef boost::graph_traits<depgraph>::vertex_iterator   depgraph_vertex_iter;
+typedef boost::graph_traits<depgraph>::edge_iterator     depgraph_edge_iter;
 
 class dataflow_graph
 {
 public:
-  dependence_graph forward_dependence_graph;
-  dependence_graph backward_dependence_graph;
+  depgraph forward_dependence_graph;
+  depgraph backward_dependence_graph;
   
   boost::unordered_set<depgraph_vertex_desc> outer_interface;
   

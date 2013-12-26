@@ -33,40 +33,37 @@ extern boost::unordered_map<UINT32,
 
 /**
  * @brief insert a new instruction into the forward and backward dependence graphs: the read/written 
- * the read/written registers of the instruction can be determined statically (in the loading time) 
- * but the read/written memories can only be determined in running time.
+ * registers of the instruction can be determined statically (in the loading time) but the 
+ * read/written memories can only be determined in running time.
  * 
  * @param execution_order execution order of the inserted instruction
  * @return void
  */
 void dataflow_graph::propagate_forward(UINT32 execution_order)
 {
-  boost::unordered_set<depgraph_vertex_desc> source_vertices;
-  boost::unordered_set<depgraph_vertex_desc> target_vertices;
-  
   boost::unordered_set<depgraph_vertex_desc>::iterator outer_interface_iter;
-  boost::unordered_set<depgraph_vertex_desc>::iterator source_vertices_iter;
-  boost::unordered_set<depgraph_vertex_desc>::iterator target_vertices_iter;
   
 	ADDRINT ins_addr = execution_order_address_map[execution_order];
 	boost::shared_ptr<instruction> inserted_ins = address_instruction_map[ins_addr];
+
+	depgraph_vertex_desc newly_inserted_vertex;
+	boost::unordered_set<instruction_operand, operand_hash>::iterator operand_iter;
 	
-	boost::unordered_set<depgraph_edge_desc> affected_src_vertex;
-	
+	// construct the set of source vertex for the inserted instruction
+	boost::unordered_set<depgraph_vertex_desc> source_vertices;
 	// iterate in the list of the instruction's source operands
-	boost::unordered_set<instruction_operand, operand_hash>::iterator src_operand_iter;
-	for (src_operand_iter = inserted_ins->source_operands.begin(); 
-			 src_operand_iter != inserted_ins->source_operands.end(); ++src_operand_iter) 
+	for (operand_iter = inserted_ins->source_operands.begin(); 
+			 operand_iter != inserted_ins->source_operands.end(); ++operand_iter) 
 	{
 		// verify if the source operand is in the outer interface
 		for (outer_interface_iter = this->outer_interface.begin(); 
 				 outer_interface_iter != this->outer_interface.end(); ++outer_interface_iter) 
 		{
-			if (forward_dependence_graph[*outer_interface] == *src_operand_iter) 
+			// it is already in the outer interface
+			if (this->forward_dependence_graph[*outer_interface_iter] == *operand_iter) 
 			{
-				// the source operand is already in the outer interface, insert it directly into the list 
-				// affected source vertex.
-				affected_src_vertex.insert(*outer_interface);
+				// insert it directly into the list affected source vertex.
+				source_vertices.insert(*outer_interface_iter);
 				break;
 			}			
 		}
@@ -74,11 +71,67 @@ void dataflow_graph::propagate_forward(UINT32 execution_order)
 		// the source operand is not in the outer interface
 		if (outer_interface_iter == this->outer_interface.end()) 
 		{
-			//
+			// then insert it into the forward dependence graph,
+			newly_inserted_vertex = boost::add_vertex(*operand_iter, this->forward_dependence_graph);
+			// into the outer interface,
+			this->outer_interface.insert(newly_inserted_vertex);
+			// into the set of source vertex for the inserted instruction
+			source_vertices.insert(newly_inserted_vertex);
+			
+			// into the backward dependence graph
+			boost::add_vertex(*operand_iter, this->backward_dependence_graph);
+		}
+	}
+	
+	// construct the set of target vertex for the inserted instruction
+	boost::unordered_set<depgraph_vertex_desc> target_vertices;
+	// iterate in the list of the instruction's target operands
+	for (operand_iter = inserted_ins->target_operands.begin(); 
+			 operand_iter != inserted_ins->target_operands.end(); ++operand_iter) 
+	{
+		// insert the target operand into the forward dependence graph
+		newly_inserted_vertex = boost::add_vertex(*operand_iter, this->forward_dependence_graph);
+		// into the set of target vertex for the inserted instruction
+		target_vertices.insert(newly_inserted_vertex);
+		
+		// into the backward dependence graph
+		boost::add_vertex(*operand_iter, this->backward_dependence_graph);
+		
+		// verify if it is in the outer interface
+		for (outer_interface_iter = this->outer_interface.begin(); 
+				 outer_interface_iter !=  this->outer_interface.end(); ++outer_interface_iter) 
+		{
+			// it is already in the outer interface
+			if (this->forward_dependence_graph[*outer_interface_iter] == *operand_iter) 
+			{
+				// replace it in the interface
+				this->outer_interface.insert(newly_inserted_vertex);
+				this->outer_interface.erase(outer_interface_iter);
+				break;
+			}
+		}
+		
+		// the target operand is not in the outer interface
+		if (outer_interface_iter == this->outer_interface.end()) 
+		{
+			// insert it into the interface
+			this->outer_interface.insert(newly_inserted_vertex);
+		}
+	}
+	
+	// insert the edges between each pair of (source, target) vertices into the forward/backward 
+	// dependence graph
+	boost::unordered_set<depgraph_vertex_desc>::iterator source_iter;
+	boost::unordered_set<depgraph_vertex_desc>::iterator target_iter;
+	for (source_iter = source_vertices.begin(); source_iter != source_vertices.end(); ++source_iter) 
+	{
+		for (target_iter = target_vertices.begin(); target_iter != target_vertices.end(); ++target_iter) 
+		{
+			
 		}
 	}
 	
   return;
 }
 
-}
+} // end of dataflow_analysis namespace

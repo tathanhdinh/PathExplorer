@@ -32,9 +32,7 @@ class instruction
 {
 public:
   ADDRINT     address;
-  
   std::string dissasembled_name;
-  
   boost::unordered_set<instruction_operand, operand_hash> source_operands;
   boost::unordered_set<instruction_operand, operand_hash> target_operands;
   
