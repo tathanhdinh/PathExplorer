@@ -27,6 +27,9 @@
 #include <boost/functional/hash.hpp>
 #include <boost/variant.hpp>
 
+namespace dataflow_analysis 
+{
+
 class instruction_operand
 {
 public:
@@ -34,17 +37,19 @@ public:
   boost::variant<ADDRINT, REG, UINT32> value;
   
 public:
+	instruction_operand();
   instruction_operand(ADDRINT memory_operand);
   instruction_operand(REG register_operand);
   instruction_operand(UINT32 immediate_operand);
+	instruction_operand& operator=(const instruction_operand& other_operand);
 };
+
 
 inline bool operator==(const instruction_operand& operand_a, const instruction_operand& operand_b) 
 {
   return (operand_a.name == operand_b.name);
 }
 
-/*================================================================================================*/
 
 class operand_hash
 {
@@ -55,5 +60,7 @@ public:
     return string_ref_hash(operand.name);
   }
 };
+
+} // end of dataflow_analysis namespace
 
 #endif // INSTRUCTION_OPERAND_H

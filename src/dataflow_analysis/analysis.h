@@ -31,24 +31,27 @@
 namespace dataflow_analysis 
 {
 
-typedef boost::shared_ptr<>
-typedef boost::compressed_pair<ADDRINT, UINT32> depgraph_edge;
+typedef instruction_operand																				dataflow_vertex;
+typedef UINT32 																					 					dataflow_edge;
 
-typedef boost::adjacency_list<boost::listS, boost::vecS, boost::bidirectionalS, 
-                              instruction_operand, instruction>  depgraph;
+typedef boost::adjacency_list<boost::listS, 
+															boost::vecS, 
+															boost::bidirectionalS, 
+                              dataflow_vertex, 
+															dataflow_edge>  					 					dataflow_graph;
                               
-typedef boost::graph_traits<depgraph>::vertex_descriptor depgraph_vertex_desc;
-typedef boost::graph_traits<depgraph>::edge_descriptor   depgraph_edge_desc;
-typedef boost::graph_traits<depgraph>::vertex_iterator   depgraph_vertex_iter;
-typedef boost::graph_traits<depgraph>::edge_iterator     depgraph_edge_iter;
+typedef boost::graph_traits<dataflow_graph>::vertex_descriptor 		dataflow_vertex_desc;
+typedef boost::graph_traits<dataflow_graph>::edge_descriptor   		dataflow_edge_desc;
+typedef boost::graph_traits<dataflow_graph>::vertex_iterator   		dataflow_vertex_iter;
+typedef boost::graph_traits<dataflow_graph>::edge_iterator     		dataflow_edge_iter;
 
-class dataflow_graph
+class analysis
 {
 public:
-  depgraph forward_dependence_graph;
-  depgraph backward_dependence_graph;
+  dataflow_graph forward_dataflow;
+  dataflow_graph backward_dataflow;
   
-  boost::unordered_set<depgraph_vertex_desc> outer_interface;
+  boost::unordered_set<dataflow_vertex_desc> outer_interface;
   
   void propagate_forward(UINT32 execution_order);
   void construct_backward();
