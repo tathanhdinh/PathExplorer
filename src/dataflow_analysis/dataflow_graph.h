@@ -45,7 +45,7 @@ public:
   
   boost::unordered_set<depgraph_vertex_desc> outer_interface;
   
-  void propagate_forward(ADDRINT instruction_address);
+  void propagate_forward(UINT32 execution_order);
   void construct_backward();
   void clear();
 };
