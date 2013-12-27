@@ -18,7 +18,7 @@
  */
 
 #include "instruction_operand.h"
-#include "../utils/utils.h"
+#include "../utilities/utils.h"
 
 #include <boost/lexical_cast.hpp>
 
