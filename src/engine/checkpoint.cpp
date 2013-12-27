@@ -25,9 +25,13 @@ extern boost::container::vector<ADDRINT> explored_trace;
 namespace engine
 {
 
-boost::unordered_map<ADDRINT, 
-                     boost::compressed_pair<UINT8, UINT8>
-                     > current_memory_state;
+extern boost::unordered_map<UINT32, 
+                            ADDRINT
+                            >	execution_order_address_map;
+														
+extern boost::unordered_map<ADDRINT, 
+														boost::compressed_pair<UINT8, UINT8>
+														> current_memory_state;
 
 /**
  * @brief a checkpoint is created before the instruction (pointed by the current address) executes. 
@@ -35,9 +39,10 @@ boost::unordered_map<ADDRINT,
  * @param current_address the address pointed by the instruction pointer (IP).
  * @param current_context the cpu context (values of registers) when the IP is at this address.
  */
-checkpoint::checkpoint(ADDRINT current_address, CONTEXT* current_context)
+checkpoint::checkpoint(UINT32 execution_order, CONTEXT* current_context)
 {
-  this->address = current_address;
+	this->execution_order = execution_order;
+  this->address = execution_order_address_map[execution_order];
   
   // save the current cpu context
   PIN_SaveContext(current_context, &(this->cpu_context));
@@ -45,7 +50,7 @@ checkpoint::checkpoint(ADDRINT current_address, CONTEXT* current_context)
   // save the current memory state
   this->memory_state = current_memory_state;
   
-  this->trace = explored_trace;
+//   this->trace = explored_trace;
 }
 
 
@@ -81,4 +86,4 @@ void checkpoint::log_before_execution(ADDRINT memory_written_address, UINT8 memo
   return;
 }
 
-} // end of reverse_execution_engine namespace
+} // end of engine namespace

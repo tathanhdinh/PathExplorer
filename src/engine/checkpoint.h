@@ -21,7 +21,6 @@
 #define CHECKPOINT_H
 
 #include <pin.H>
-
 #include <boost/unordered_map.hpp>
 #include <boost/container/vector.hpp>
 #include <boost/shared_ptr.hpp>
@@ -35,15 +34,16 @@ class checkpoint
 public:
   ADDRINT                               address;
   CONTEXT                               cpu_context;
+	UINT32																execution_order;
   
   boost::unordered_map<ADDRINT, UINT8>  memory_log;
   boost::unordered_map<ADDRINT, 
                        boost::compressed_pair<UINT8, UINT8>
                        >                memory_state;
-  boost::container::vector<ADDRINT>     trace;
+//   boost::container::vector<ADDRINT>     trace;
   
 public:
-  checkpoint(ADDRINT current_address, CONTEXT* current_context);
+  checkpoint(UINT32 execution_order, CONTEXT* current_context);
   
   void log_before_execution(ADDRINT memory_written_address, UINT8 memory_written_length);  
 };
