@@ -18,7 +18,7 @@
  */
 
 #include "dataflow.h"
-#include "../utils/utils.h"
+#include "../utilities/utils.h"
 #include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/shared_ptr.hpp>
@@ -74,7 +74,7 @@ void dataflow::propagate(UINT32 execution_order)
 			// it is already in the outer interface
 			if (this->forward_dataflow[*outer_interface_iter] == *operand_iter) 
 			{
-				// insert it directly into the list affected source vertex.
+				// insert it directly into the set of source vertices.
 				source_vertices.insert(*outer_interface_iter);
 				break;
 			}			
@@ -85,8 +85,11 @@ void dataflow::propagate(UINT32 execution_order)
 		{
 			// then insert it into the forward dependence graph,
 			newly_inserted_vertex = boost::add_vertex(*operand_iter, this->forward_dataflow);
-			// into the outer interface,
-			this->outer_interface.insert(newly_inserted_vertex);
+			// into the outer interface if it is not an immediate
+			if ((*operand_iter).value.type() != typeid(UINT32)) 
+			{
+				this->outer_interface.insert(newly_inserted_vertex);
+			}
 			// into the set of source vertex for the inserted instruction
 			source_vertices.insert(newly_inserted_vertex);
 			
@@ -131,7 +134,7 @@ void dataflow::propagate(UINT32 execution_order)
 		}
 	}
 	
-	// some constructions
+	// constructions
 	boost::unordered_set<dataflow_vertex_desc>::iterator source_iter;
 	boost::unordered_set<dataflow_vertex_desc>::iterator target_iter;
 	ADDRINT source_address;

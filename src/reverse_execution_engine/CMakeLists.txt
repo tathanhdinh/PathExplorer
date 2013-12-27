@@ -1,3 +1,0 @@
-ADD_PINTOOL(reverse_execution_engine 
-  engine.cpp 
-  checkpoint.cpp)

@@ -1,4 +1,4 @@
-add_subdirectory(reverse_execution_engine)
-add_subdirectory(dataflow_analysis)
+add_subdirectory(engine)
+add_subdirectory(analysis)
 
-add_subdirectory(utils)
+add_subdirectory(utilities)
