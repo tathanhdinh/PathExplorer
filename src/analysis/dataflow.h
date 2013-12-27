@@ -50,7 +50,6 @@ class dataflow
 public:
   dataflow_graph forward_dataflow;
   dataflow_graph backward_dataflow;
-  
   boost::unordered_set<dataflow_vertex_desc> outer_interface;
   
   void propagate(UINT32 execution_order);
