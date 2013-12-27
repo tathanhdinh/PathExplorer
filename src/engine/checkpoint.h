@@ -32,7 +32,6 @@ namespace engine
 class checkpoint
 {
 public:
-  ADDRINT                               address;
   CONTEXT                               cpu_context;
 	UINT32																execution_order;
   
@@ -40,13 +39,11 @@ public:
   boost::unordered_map<ADDRINT, 
                        boost::compressed_pair<UINT8, UINT8>
                        >                memory_state;
-//   boost::container::vector<ADDRINT>     trace;
   
 public:
   checkpoint(UINT32 execution_order, CONTEXT* current_context);
-  
   void log_before_execution(ADDRINT memory_written_address, UINT8 memory_written_length);  
 };
 
-}
+} // end of engine namespace
 #endif // CHECKPOINT_H

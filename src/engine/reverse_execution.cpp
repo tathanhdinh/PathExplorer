@@ -40,11 +40,6 @@ extern boost::unordered_map<ADDRINT,
  */
 void reverse_execution::move_backward(boost::shared_ptr<checkpoint>& past_checkpoint)
 {
-  // update the explored trace: because the instruction will be re-executed, the last instruction 
-  // in the trace must be removed.
-//   explored_trace = past_checkpoint->trace;
-//   explored_trace.pop_back();
-  
   // update the logged values of the written addresses
   boost::unordered_map<ADDRINT, UINT8>::iterator mem_iter = past_checkpoint->memory_log.begin();
   for (; mem_iter != past_checkpoint->memory_log.end(); ++mem_iter) 
@@ -98,11 +93,6 @@ void reverse_execution::move_backward(boost::shared_ptr<checkpoint>& past_checkp
  */
 void reverse_execution::move_forward(boost::shared_ptr<checkpoint>& future_checkpoint)
 {
-  // update the explored trace: because the instruction will be re-executed, the last instruction 
-  // in the trace must be removed.
-//   explored_trace = future_checkpoint->trace;
-//   explored_trace.pop_back();
-  
   // update the memory state
   boost::unordered_map<ADDRINT, 
                        boost::compressed_pair<UINT8, UINT8>

@@ -20,8 +20,6 @@
 #include "checkpoint.h"
 #include <pin.H>
 
-extern boost::container::vector<ADDRINT> explored_trace;
-
 namespace engine
 {
 
@@ -41,16 +39,12 @@ extern boost::unordered_map<ADDRINT,
  */
 checkpoint::checkpoint(UINT32 execution_order, CONTEXT* current_context)
 {
+	// save the execution order
 	this->execution_order = execution_order;
-  this->address = execution_order_address_map[execution_order];
-  
-  // save the current cpu context
+  // and the current cpu context
   PIN_SaveContext(current_context, &(this->cpu_context));
-  
-  // save the current memory state
+  // and the current memory state
   this->memory_state = current_memory_state;
-  
-//   this->trace = explored_trace;
 }
 
 
