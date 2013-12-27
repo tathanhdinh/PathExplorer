@@ -53,8 +53,7 @@ public:
   
   boost::unordered_set<dataflow_vertex_desc> outer_interface;
   
-  void propagate_forward(UINT32 execution_order);
-  void construct_backward();
+  void propagate(UINT32 execution_order);
   void clear();
 };
 

@@ -33,14 +33,14 @@ extern boost::unordered_map<UINT32,
 
 
 /**
- * @brief insert a new instruction into the forward and backward dependence graphs: the read/written 
+ * @brief insert a new instruction into the forward and backward data-flow graphs: the read/written 
  * registers of the instruction can be determined statically (in the loading time) but the 
  * read/written memories can only be determined in running time.
  * 
  * @param execution_order execution order of the inserted instruction
  * @return void
  */
-void dataflow::propagate_forward(UINT32 execution_order)
+void dataflow::propagate(UINT32 execution_order)
 {
   boost::unordered_set<dataflow_vertex_desc>::iterator outer_interface_iter;
   
@@ -135,4 +135,4 @@ void dataflow::propagate_forward(UINT32 execution_order)
   return;
 }
 
-} // end of dataflow_analysis namespace
+} // end of analysis namespace
