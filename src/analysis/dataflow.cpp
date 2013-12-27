@@ -18,6 +18,7 @@
  */
 
 #include "dataflow.h"
+#include "../utils/utils.h"
 #include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/shared_ptr.hpp>
@@ -25,12 +26,22 @@
 namespace analysis 
 {
 
+using namespace utilities;
+
 extern boost::unordered_map<ADDRINT, 
                             boost::shared_ptr<instruction>
                             >         address_instruction_map;
+
 extern boost::unordered_map<UINT32, 
                             ADDRINT>  execution_order_address_map;
 
+extern boost::unordered_map<ADDRINT, 
+														boost::unordered_set<UINT32>
+														> 				memory_instructions_dependency_map;
+
+extern boost::unordered_map<UINT32, 
+														boost::unordered_set<ADDRINT>
+														>					instruction_memories_dependency_map;														
 
 /**
  * @brief insert a new instruction into the forward and backward data-flow graphs: the read/written 
@@ -120,13 +131,29 @@ void dataflow::propagate(UINT32 execution_order)
 		}
 	}
 	
-	// insert the edges between each pair of (source, target) vertices into data-flow graphs
+	// some constructions
 	boost::unordered_set<dataflow_vertex_desc>::iterator source_iter;
 	boost::unordered_set<dataflow_vertex_desc>::iterator target_iter;
+	ADDRINT source_address;
 	for (source_iter = source_vertices.begin(); source_iter != source_vertices.end(); ++source_iter) 
 	{
+		// insert the current instruction into the set of dependent instructions for a given 
+		// input-dependent address by first verify if an element in the source is a memory address
+		if (this->forward_dataflow[*source_iter].value.type() == typeid(ADDRINT))
+		{
+			// then verify if it is input-dependent
+			source_address = boost::get<ADDRINT>(this->forward_dataflow[*source_iter].value);
+			if ((utils::is_input_dependent(source_address)) && !target_vertices.empty()) 
+			{
+				// insert the current instruction into the set of dependent instructions
+				memory_instructions_dependency_map[source_address].insert(execution_order);
+				instruction_memories_dependency_map[execution_order].insert(source_address);
+			}
+		}
+		
 		for (target_iter = target_vertices.begin(); target_iter != target_vertices.end(); ++target_iter) 
 		{
+			// insert the hyper-edge between source and target vertices into data-flow graphs
 			boost::add_edge(*source_iter, *target_iter, execution_order, this->forward_dataflow);
 			boost::add_edge(*target_iter, *source_iter, execution_order, this->backward_dataflow);
 		}

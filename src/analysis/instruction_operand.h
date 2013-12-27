@@ -21,9 +21,7 @@
 #define INSTRUCTION_OPERAND_H
 
 #include <pin.H>
-
 #include <string>
-
 #include <boost/functional/hash.hpp>
 #include <boost/variant.hpp>
 

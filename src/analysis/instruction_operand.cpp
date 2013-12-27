@@ -24,7 +24,9 @@
 
 namespace analysis 
 {
-	
+
+using namespace utilities;
+
 /**
  * @brief default constructor.
  * 
