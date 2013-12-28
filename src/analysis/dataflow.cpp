@@ -136,7 +136,7 @@ construct_target_vertices(UINT32 execution_order, boost::shared_ptr<instruction>
 	boost::unordered_set<dataflow_vertex_desc>::iterator outer_interface_iter;
   boost::unordered_set<instruction_operand, operand_hash>::iterator operand_iter;
 	dataflow_vertex_desc newly_inserted_vertex;
-	ADDRINT memory_address;
+	ADDRINT mem_addr;
 	
 	// construct the set of target vertex for the inserted instruction
 	boost::unordered_set<dataflow_vertex_desc> target_vertices;
@@ -147,11 +147,11 @@ construct_target_vertices(UINT32 execution_order, boost::shared_ptr<instruction>
 		// verify if the target operand is a memory address
 		if (operand_iter->value.type() == typeid(ADDRINT)) 
 		{
-      memory_address = boost::get<ADDRINT>(operand_iter->value);
-      if (address_original_value_map.find(memory_address) == address_original_value_map.end()) 
+      mem_addr = boost::get<ADDRINT>(operand_iter->value);
+      if (address_original_value_map.find(mem_addr) == address_original_value_map.end()) 
       {
         // save the original value at this address if it does not exist yet
-        address_original_value_map[memory_address] = *(reinterpret_cast<UINT8*>(memory_address));
+        address_original_value_map[mem_addr] = *(reinterpret_cast<UINT8*>(mem_addr));
       }
 		}
 		

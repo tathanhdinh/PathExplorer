@@ -23,7 +23,6 @@
 namespace engine
 {
 
-typedef boost::compressed_pair<UINT8, UINT8> state_t;
 extern boost::unordered_map<ADDRINT, state_t> current_memory_state;
 
 /**
@@ -38,8 +37,9 @@ extern boost::unordered_map<ADDRINT, state_t> current_memory_state;
 void reverse_execution::move_backward(boost::shared_ptr<checkpoint>& past_checkpoint)
 {
   // update the logged values of the written addresses
-  boost::unordered_map<ADDRINT, UINT8>::iterator mem_iter = past_checkpoint->memory_change_log.begin();
-  for (; mem_iter != past_checkpoint->memory_change_log.end(); ++mem_iter) 
+  boost::unordered_map<ADDRINT, UINT8>::iterator mem_iter;
+  for (mem_iter = past_checkpoint->memory_change_log.begin(); 
+       mem_iter != past_checkpoint->memory_change_log.end(); ++mem_iter) 
   {
     *(reinterpret_cast<UINT8*>(mem_iter->first)) = mem_iter->second;
   }
