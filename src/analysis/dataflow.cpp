@@ -19,14 +19,18 @@
 
 #include "dataflow.h"
 #include "../utilities/utils.h"
+#include "../engine/checkpoint.h"
 #include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
+#include <boost/container/set.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/graph/breadth_first_search.hpp>
 
 namespace analysis 
 {
 
 using namespace utilities;
+using namespace engine;
 
 extern boost::unordered_map<ADDRINT, 
                             boost::shared_ptr<instruction>
@@ -41,8 +45,26 @@ extern boost::unordered_map<ADDRINT,
 
 extern boost::unordered_map<UINT32, 
 														boost::unordered_set<ADDRINT>
-														>					instruction_memories_dependency_map;	
+														>					instruction_memories_dependency_map;
+														
+extern boost::unordered_map<UINT32, 
+														boost::shared_ptr<checkpoint>
+														> 				execution_order_checkpoint_map;
 
+class dataflow_bfs_visitor : public boost::default_bfs_visitor 
+{
+public:
+// 	boost::unordered_map<dataflow_vertex_desc, dataflow_vertex_desc> previous_vertex_map;
+	boost::container::set<dataflow_edge_desc> examined_edges;
+
+	template <typename Edge, typename Graph>
+	void tree_edge(Edge e, const Graph& g) 
+	{
+// 		previous_vertex_map[boost::target(e, g)] = boost::source(e, g);
+		examined_edges.insert(e);
+		return;
+	}	
+};
 														
 /**
  * @brief in inserting a new instruction into the data-flow graph, its source operands are 
@@ -176,7 +198,7 @@ construct_target_vertices(UINT32 execution_order, boost::shared_ptr<instruction>
  * @param execution_order execution order of the inserted instruction
  * @return void
  */
-void dataflow::propagate(UINT32 execution_order)
+void dataflow::propagate_along_instruction(UINT32 execution_order)
 {
   boost::unordered_set<dataflow_vertex_desc>::iterator outer_interface_iter;
   
@@ -224,6 +246,61 @@ void dataflow::propagate(UINT32 execution_order)
 	}
 	
   return;
+}
+
+
+/**
+ * @brief extract maps between input-related memory addresses and instructions used them.
+ * 
+ * @return void
+ */
+void dataflow::extract_inputs_instructions_dependance_maps()
+{
+	dataflow_vertex_iter vertex_iter;
+	dataflow_vertex_iter vertex_last_iter;
+	
+	ADDRINT memory_address;
+	UINT32 instruction_order;
+	dataflow_bfs_visitor current_visitor;
+	boost::container::set<dataflow_edge_desc>::iterator dataflow_edge_iter;
+	
+	// iterate over vertices in the forward data-flow graph
+	boost::tie(vertex_iter, vertex_last_iter) = boost::vertices(this->forward_dataflow);
+	for (; vertex_iter != vertex_last_iter; ++vertex_iter) 
+	{
+		// verify if the operand corresponding to the vertex is a memory address
+		if (this->forward_dataflow[*vertex_iter].value.type() == typeid(ADDRINT)) 
+		{
+			memory_address = boost::get<ADDRINT>(this->forward_dataflow[*vertex_iter].value);
+			if (utils::is_input_dependent(memory_address)) 
+			{
+				// take BFS from this vertex to find out all dependent edge descriptors
+				current_visitor.examined_edges.clear();
+				boost::breadth_first_search(this->forward_dataflow, *vertex_iter, 
+																		boost::visitor(current_visitor));
+				// update the list of dependent instructions
+				for (dataflow_edge_iter = current_visitor.examined_edges.begin(); 
+						 dataflow_edge_iter != current_visitor.examined_edges.end(); ++dataflow_edge_iter) 
+				{
+					instruction_order = this->forward_dataflow[*dataflow_edge_iter];
+					memory_instructions_dependency_map[memory_address].insert(instruction_order);
+					instruction_memories_dependency_map[instruction_order].insert(memory_address);
+				}
+			}
+		}
+	}
+	
+	return;
+}
+
+/**
+ * @brief ...
+ * 
+ * @return void
+ */
+void dataflow::arrange_checkpoints()
+{
+
 }
 
 } // end of analysis namespace

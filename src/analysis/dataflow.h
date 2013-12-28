@@ -52,7 +52,9 @@ public:
   dataflow_graph backward_dataflow;
   boost::unordered_set<dataflow_vertex_desc> outer_interface;
   
-  void propagate(UINT32 execution_order);
+  void propagate_along_instruction(UINT32 execution_order);
+	void extract_inputs_instructions_dependance_maps();
+	void arrange_checkpoints();
   void clear();
 };
 
