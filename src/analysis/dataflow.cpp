@@ -220,23 +220,8 @@ void dataflow::propagate_along_instruction(UINT32 execution_order)
 	// construct the hyper-edge
 	boost::unordered_set<dataflow_vertex_desc>::iterator source_iter;
 	boost::unordered_set<dataflow_vertex_desc>::iterator target_iter;
-// 	ADDRINT source_address;
 	for (source_iter = source_vertices.begin(); source_iter != source_vertices.end(); ++source_iter) 
-	{
-// 		// insert the current instruction into the set of dependent instructions for a given 
-// 		// input-dependent address by first verify if an element in the source is a memory address
-// 		if (this->forward_dataflow[*source_iter].value.type() == typeid(ADDRINT))
-// 		{
-// 			// then verify if it is input-dependent
-// 			source_address = boost::get<ADDRINT>(this->forward_dataflow[*source_iter].value);
-// 			if ((utils::is_input_dependent(source_address)) && !target_vertices.empty()) 
-// 			{
-// 				// insert the current instruction into the set of dependent instructions
-// 				memory_instructions_dependency_map[source_address].insert(execution_order);
-// 				instruction_memories_dependency_map[execution_order].insert(source_address);
-// 			}
-// 		}
-		
+	{		
 		for (target_iter = target_vertices.begin(); target_iter != target_vertices.end(); ++target_iter) 
 		{
 			// insert the hyper-edge between source and target vertices into data-flow graphs
@@ -300,7 +285,7 @@ void dataflow::extract_inputs_instructions_dependance_maps()
  */
 void dataflow::arrange_checkpoints()
 {
-
+	return;
 }
 
 } // end of analysis namespace
