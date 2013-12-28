@@ -42,15 +42,15 @@ checkpoint::checkpoint(UINT32 execution_order, CONTEXT* current_context)
   PIN_SaveContext(current_context, &(this->cpu_context));
   
   // and the current memory state
-  boost::unordered_map<ADDRINT, UINT8>::iterator address_value_map_iter;
-  ADDRINT memory_address;
-  for (address_value_map_iter = program_dataflow->address_original_value_map.begin(); 
-       address_value_map_iter != program_dataflow->address_original_value_map.end(); 
-       ++address_value_map_iter) 
+  boost::unordered_map<ADDRINT, UINT8>::iterator addr_value_map_iter;
+  ADDRINT mem_addr;
+  for (addr_value_map_iter = program_dataflow->address_original_value_map.begin(); 
+       addr_value_map_iter != program_dataflow->address_original_value_map.end(); 
+       ++addr_value_map_iter) 
   {
-    memory_address = address_value_map_iter->first;
-    this->memory_state[memory_address].first() = address_value_map_iter->second;
-    this->memory_state[memory_address].second() = *(reinterpret_cast<UINT8*>(memory_address));
+    mem_addr = addr_value_map_iter->first;
+    this->memory_state[mem_addr].first() = addr_value_map_iter->second;
+    this->memory_state[mem_addr].second() = *(reinterpret_cast<UINT8*>(mem_addr));
   }
 }
 
@@ -65,23 +65,16 @@ checkpoint::checkpoint(UINT32 execution_order, CONTEXT* current_context)
  */
 void checkpoint::log_before_execution(ADDRINT memory_written_address, UINT8 memory_written_length)
 {
-	ADDRINT address;
+	ADDRINT mem_addr;
   ADDRINT upper_bound_address = memory_written_address + memory_written_length;
   
-  for (address = memory_written_address; address < upper_bound_address; ++address) 
+  for (mem_addr = memory_written_address; mem_addr < upper_bound_address; ++mem_addr) 
   {
     // log the original value at this written address
-    if (this->memory_change_log.find(address) == this->memory_change_log.end()) 
+    if (this->memory_change_log.find(mem_addr) == this->memory_change_log.end()) 
     {
-      this->memory_change_log[address] = *(reinterpret_cast<UINT8*>(address));
+      this->memory_change_log[mem_addr] = *(reinterpret_cast<UINT8*>(mem_addr));
     }
-  
-//     // update the total memory state
-//     if (current_memory_state.find(address) == current_memory_state.end()) 
-//     {
-//       current_memory_state[address].first() = *(reinterpret_cast<UINT8*>(address));
-//     }
-//     current_memory_state[address].second() = *(reinterpret_cast<UINT8*>(address));
   }
   
   return;

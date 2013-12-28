@@ -46,7 +46,7 @@ void reverse_execution::move_backward(boost::shared_ptr<checkpoint>& past_checkp
   // then clear the set of logged values
   past_checkpoint->memory_change_log.clear();
   
-  // update the global memory state
+  // new approach: update the global memory state
   boost::unordered_map<ADDRINT, 
                        boost::compressed_pair<UINT8, UINT8>
                        >::iterator curr_mem_iter = current_memory_state.begin();
@@ -91,27 +91,13 @@ void reverse_execution::move_backward(boost::shared_ptr<checkpoint>& past_checkp
 void reverse_execution::move_forward(boost::shared_ptr<checkpoint>& future_checkpoint)
 {
   // update the memory state
-  boost::unordered_map<ADDRINT, 
-                       boost::compressed_pair<UINT8, UINT8>
-                       >::iterator futur_mem_iter = future_checkpoint->memory_state.begin();
-  boost::unordered_map<ADDRINT, 
-                       boost::compressed_pair<UINT8, UINT8>
-                       >::iterator curr_mem_iter;
+  boost::unordered_map<ADDRINT, state_t>::iterator futur_mem_iter;
+  boost::unordered_map<ADDRINT, state_t>::iterator curr_mem_iter;
   boost::unordered_map<ADDRINT, UINT8>::iterator mem_iter;
-  for (; futur_mem_iter != future_checkpoint->memory_state.end(); ++futur_mem_iter) 
+  for (futur_mem_iter = future_checkpoint->memory_state.begin(); 
+       futur_mem_iter != future_checkpoint->memory_state.end(); ++futur_mem_iter) 
   {
-    // verify if an element in the future memory state is also an element in the current state
-    curr_mem_iter = current_memory_state.find(futur_mem_iter->first);
-    if (curr_mem_iter != current_memory_state.end()) 
-    {
-      // if it is then verify if it is modified
-    }
-    else 
-    {
-      // if it is not then the value at its address needs to be restored by the last value in the 
-      // future state
-      *(reinterpret_cast<UINT8*>(futur_mem_iter->first)) = futur_mem_iter->second.second();
-    }
+    *(reinterpret_cast<UINT8*>(futur_mem_iter->first)) = futur_mem_iter->second.second();
   }
     
   // restore the cpu context
