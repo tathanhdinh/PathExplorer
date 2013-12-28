@@ -164,26 +164,20 @@ construct_target_vertices(UINT32 execution_order, boost::shared_ptr<instruction>
 		// into the backward dependence graph
 		boost::add_vertex(*operand_iter, backward_dataflow);
 		
-		// verify if it is in the outer interface
+		// verify if the target operand is in the outer interface
 		for (outer_interface_iter = outer_interface.begin(); 
 				 outer_interface_iter !=  outer_interface.end(); ++outer_interface_iter) 
 		{
 			// it is already in the outer interface
 			if (forward_dataflow[*outer_interface_iter] == *operand_iter) 
 			{
-				// replace it in the interface
-				outer_interface.insert(newly_inserted_vertex);
+				// remove the old 
 				outer_interface.erase(outer_interface_iter);
 				break;
 			}
 		}
-		
-		// the target operand is not in the outer interface
-		if (outer_interface_iter == outer_interface.end()) 
-		{
-			// insert it into the interface
-			outer_interface.insert(newly_inserted_vertex);
-		}
+		// insert the new
+		outer_interface.insert(newly_inserted_vertex);
 	}
 	
 	return target_vertices;
