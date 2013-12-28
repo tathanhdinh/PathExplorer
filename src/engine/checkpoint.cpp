@@ -25,12 +25,12 @@ namespace engine
 
 using namespace analysis;
 
-extern boost::shared_ptr<dataflow> 																	execution_dataflow;
+extern boost::shared_ptr<dataflow> 																	program_dataflow;
 
 extern boost::unordered_map< UINT32, ADDRINT >											execution_order_address_map;
 														
-extern boost::unordered_map< ADDRINT, 
-														 boost::compressed_pair<UINT8, UINT8> > current_memory_state;
+// extern boost::unordered_map< ADDRINT, 
+// 														 boost::compressed_pair<UINT8, UINT8> > current_memory_state;
 
 /**
  * @brief a checkpoint is created before the instruction (pointed by the current address) executes. 
@@ -45,7 +45,12 @@ checkpoint::checkpoint(UINT32 execution_order, CONTEXT* current_context)
   // and the current cpu context
   PIN_SaveContext(current_context, &(this->cpu_context));
   // and the current memory state
-  this->memory_state = current_memory_state;
+	boost::unordered_set<ADDRINT>::iterator address_iter;
+	for (address_iter = program_dataflow->modified_memory_addresses.begin(); 
+			 address_iter != program_dataflow->modified_memory_addresses.end(); ++address_iter) 
+	{
+		this->memory_state[*address_iter].first() = *(reinterpret_cast<UINT8*>(*address_iter));
+	}
 }
 
 
@@ -70,12 +75,12 @@ void checkpoint::log_before_execution(ADDRINT memory_written_address, UINT8 memo
       this->memory_log[address] = *(reinterpret_cast<UINT8*>(address));
     }
   
-    // update the total memory state
-    if (current_memory_state.find(address) == current_memory_state.end()) 
-    {
-      current_memory_state[address].first() = *(reinterpret_cast<UINT8*>(address));
-    }
-    current_memory_state[address].second() = *(reinterpret_cast<UINT8*>(address));
+//     // update the total memory state
+//     if (current_memory_state.find(address) == current_memory_state.end()) 
+//     {
+//       current_memory_state[address].first() = *(reinterpret_cast<UINT8*>(address));
+//     }
+//     current_memory_state[address].second() = *(reinterpret_cast<UINT8*>(address));
   }
   
   return;
