@@ -27,6 +27,7 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/unordered_set.hpp>
 #include <boost/compressed_pair.hpp>
+#include <boost/unordered_map.hpp>
 
 namespace analysis 
 {
@@ -53,7 +54,7 @@ private:
   boost::unordered_set<dataflow_vertex_desc> 	outer_interface;
 	
 public:
-	boost::unordered_set<ADDRINT>								modified_memory_addresses;
+  boost::unordered_map<ADDRINT, UINT32>       address_original_value_map;
  
 public:
   void propagate_along_instruction(UINT32 execution_order);

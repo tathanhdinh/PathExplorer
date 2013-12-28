@@ -29,22 +29,15 @@
 namespace analysis 
 {
 
+typedef boost::shared_ptr<instruction> ptr_instruction_t;
+typedef boost::unordered_set<UINT32>   instructions_t;
+typedef boost::unordered_set<ADDRINT>  addresses_t;
+
 using namespace utilities;
-
-extern boost::unordered_map<ADDRINT, 
-                            boost::shared_ptr<instruction>
-                            >         address_instruction_map;
-
-extern boost::unordered_map<UINT32, 
-                            ADDRINT>  execution_order_address_map;
-
-extern boost::unordered_map<ADDRINT, 
-														boost::unordered_set<UINT32>
-														> 				memory_instructions_dependency_map;
-
-extern boost::unordered_map<UINT32, 
-														boost::unordered_set<ADDRINT>
-														>					instruction_memories_dependency_map;
+extern boost::unordered_map<ADDRINT, ptr_instruction_t> address_instruction_map;
+extern boost::unordered_map<UINT32, ADDRINT>            execution_order_address_map;
+extern boost::unordered_map<ADDRINT, instructions_t>    memory_instructions_dependency_map;
+extern boost::unordered_map<UINT32, addresses_t>				instruction_memories_dependency_map;
 
 class dataflow_bfs_visitor : public boost::default_bfs_visitor 
 {
@@ -137,13 +130,13 @@ construct_source_vertices(UINT32 execution_order,
 static inline boost::unordered_set<dataflow_vertex_desc> 
 construct_target_vertices(UINT32 execution_order, boost::shared_ptr<instruction> inserted_ins,
                           boost::unordered_set<dataflow_vertex_desc>& outer_interface, 
-													boost::unordered_set<ADDRINT>	modified_memory_addresses, 
+													boost::unordered_map<ADDRINT, UINT32>	address_original_value_map, 
 													dataflow_graph& forward_dataflow, dataflow_graph& backward_dataflow) 
 {
 	boost::unordered_set<dataflow_vertex_desc>::iterator outer_interface_iter;
-  
+  boost::unordered_set<instruction_operand, operand_hash>::iterator operand_iter;
 	dataflow_vertex_desc newly_inserted_vertex;
-	boost::unordered_set<instruction_operand, operand_hash>::iterator operand_iter;
+	ADDRINT memory_address;
 	
 	// construct the set of target vertex for the inserted instruction
 	boost::unordered_set<dataflow_vertex_desc> target_vertices;
@@ -154,7 +147,12 @@ construct_target_vertices(UINT32 execution_order, boost::shared_ptr<instruction>
 		// verify if the target operand is a memory address
 		if (operand_iter->value.type() == typeid(ADDRINT)) 
 		{
-			modified_memory_addresses.insert(boost::get<ADDRINT>(operand_iter->value));
+      memory_address = boost::get<ADDRINT>(operand_iter->value);
+      if (address_original_value_map.find(memory_address) == address_instruction_map.end()) 
+      {
+        // save the original value at this address if it does not exist yet
+        address_original_value_map[memory_address] = *(reinterpret_cast<UINT8*>(memory_address));
+      }
 		}
 		
 		// insert the target operand into the forward dependence graph
@@ -210,7 +208,7 @@ void dataflow::propagate_along_instruction(UINT32 execution_order)
 	boost::unordered_set<dataflow_vertex_desc> target_vertices;
 	target_vertices = construct_target_vertices(execution_order, inserted_ins, 
 																							this->outer_interface, 
-																							this->modified_memory_addresses,
+																							this->address_original_value_map,
 																							this->forward_dataflow, this->backward_dataflow);
 	
 	// construct the hyper-edge

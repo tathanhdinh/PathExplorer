@@ -28,17 +28,15 @@
 
 namespace engine
 {
-
+  
+typedef boost::compressed_pair<UINT8, UINT8> state_t;
 class checkpoint
 {
 public:
-  CONTEXT                               cpu_context;
-	UINT32																execution_order;
-  
-  boost::unordered_map<ADDRINT, UINT8>  memory_log;
-  boost::unordered_map<ADDRINT, 
-                       boost::compressed_pair<UINT8, UINT8>
-                       >                memory_state;
+  CONTEXT                                 cpu_context;
+	UINT32																  execution_order;
+  boost::unordered_map<ADDRINT, UINT8>    memory_change_log;
+  boost::unordered_map<ADDRINT, state_t>  memory_state;
   
 public:
   checkpoint(UINT32 execution_order, CONTEXT* current_context);

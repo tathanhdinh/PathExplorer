@@ -24,13 +24,8 @@ namespace engine
 {
 
 using namespace analysis;
-
-extern boost::shared_ptr<dataflow> 																	program_dataflow;
-
-extern boost::unordered_map< UINT32, ADDRINT >											execution_order_address_map;
-														
-// extern boost::unordered_map< ADDRINT, 
-// 														 boost::compressed_pair<UINT8, UINT8> > current_memory_state;
+extern boost::shared_ptr<dataflow> 						program_dataflow;
+extern boost::unordered_map<UINT32, ADDRINT>  execution_order_address_map;
 
 /**
  * @brief a checkpoint is created before the instruction (pointed by the current address) executes. 
@@ -40,10 +35,12 @@ extern boost::unordered_map< UINT32, ADDRINT >											execution_order_address
  */
 checkpoint::checkpoint(UINT32 execution_order, CONTEXT* current_context)
 {
-	// save the execution order
+	// save the execution order,
 	this->execution_order = execution_order;
-  // and the current cpu context
+  
+  // the current cpu context,
   PIN_SaveContext(current_context, &(this->cpu_context));
+  
   // and the current memory state
 	boost::unordered_set<ADDRINT>::iterator address_iter;
 	for (address_iter = program_dataflow->modified_memory_addresses.begin(); 
@@ -70,9 +67,9 @@ void checkpoint::log_before_execution(ADDRINT memory_written_address, UINT8 memo
   for (address = memory_written_address; address < upper_bound_address; ++address) 
   {
     // log the original value at this written address
-    if (this->memory_log.find(address) == this->memory_log.end()) 
+    if (this->memory_change_log.find(address) == this->memory_change_log.end()) 
     {
-      this->memory_log[address] = *(reinterpret_cast<UINT8*>(address));
+      this->memory_change_log[address] = *(reinterpret_cast<UINT8*>(address));
     }
   
 //     // update the total memory state

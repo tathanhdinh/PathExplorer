@@ -20,15 +20,12 @@
 #include <pin.H>
 #include "reverse_execution.h"
 
-extern boost::container::vector<ADDRINT> explored_trace;
-
 namespace engine
 {
 
-extern boost::unordered_map<ADDRINT, 
-                            boost::compressed_pair<UINT8, UINT8>
-                           > current_memory_state;
-                           
+typedef boost::compressed_pair<UINT8, UINT8> state_t;
+extern boost::unordered_map<ADDRINT, state_t> current_memory_state;
+
 /**
  * @brief the control moves back to a previously logged checkpoint; this operation can always be 
  * invoked safely (in the program's space) if the checkpoint is logged fully (by invoking the log 
@@ -41,13 +38,13 @@ extern boost::unordered_map<ADDRINT,
 void reverse_execution::move_backward(boost::shared_ptr<checkpoint>& past_checkpoint)
 {
   // update the logged values of the written addresses
-  boost::unordered_map<ADDRINT, UINT8>::iterator mem_iter = past_checkpoint->memory_log.begin();
-  for (; mem_iter != past_checkpoint->memory_log.end(); ++mem_iter) 
+  boost::unordered_map<ADDRINT, UINT8>::iterator mem_iter = past_checkpoint->memory_change_log.begin();
+  for (; mem_iter != past_checkpoint->memory_change_log.end(); ++mem_iter) 
   {
     *(reinterpret_cast<UINT8*>(mem_iter->first)) = mem_iter->second;
   }
   // then clear the set of logged values
-  past_checkpoint->memory_log.clear();
+  past_checkpoint->memory_change_log.clear();
   
   // update the global memory state
   boost::unordered_map<ADDRINT, 
