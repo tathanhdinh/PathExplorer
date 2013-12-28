@@ -74,7 +74,7 @@ public:
  */														
 static inline boost::unordered_set<dataflow_vertex_desc> 
 construct_source_vertices(UINT32 execution_order, 
-													boost::shared_ptr<instruction> inserted_ins,
+                          boost::shared_ptr<instruction> inserted_ins,
 													boost::unordered_set<dataflow_vertex_desc>& outer_interface, 
 													dataflow_graph& forward_dataflow, dataflow_graph& backward_dataflow) 
 {
@@ -136,7 +136,7 @@ construct_source_vertices(UINT32 execution_order,
  */	
 static inline boost::unordered_set<dataflow_vertex_desc> 
 construct_target_vertices(UINT32 execution_order, boost::shared_ptr<instruction> inserted_ins,
-													boost::unordered_set<dataflow_vertex_desc>& outer_interface, 
+                          boost::unordered_set<dataflow_vertex_desc>& outer_interface, 
 													boost::unordered_set<ADDRINT>	modified_memory_addresses, 
 													dataflow_graph& forward_dataflow, dataflow_graph& backward_dataflow) 
 {

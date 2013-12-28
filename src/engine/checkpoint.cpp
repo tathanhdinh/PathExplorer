@@ -64,8 +64,8 @@ checkpoint::checkpoint(UINT32 execution_order, CONTEXT* current_context)
  */
 void checkpoint::log_before_execution(ADDRINT memory_written_address, UINT8 memory_written_length)
 {
+	ADDRINT address;
   ADDRINT upper_bound_address = memory_written_address + memory_written_length;
-  ADDRINT address;
   
   for (address = memory_written_address; address < upper_bound_address; ++address) 
   {
