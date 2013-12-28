@@ -30,7 +30,6 @@ namespace analysis
 {
 
 using namespace utilities;
-using namespace engine;
 
 extern boost::unordered_map<ADDRINT, 
                             boost::shared_ptr<instruction>
@@ -46,21 +45,15 @@ extern boost::unordered_map<ADDRINT,
 extern boost::unordered_map<UINT32, 
 														boost::unordered_set<ADDRINT>
 														>					instruction_memories_dependency_map;
-														
-extern boost::unordered_map<UINT32, 
-														boost::shared_ptr<checkpoint>
-														> 				execution_order_checkpoint_map;
 
 class dataflow_bfs_visitor : public boost::default_bfs_visitor 
 {
 public:
-// 	boost::unordered_map<dataflow_vertex_desc, dataflow_vertex_desc> previous_vertex_map;
 	boost::container::set<dataflow_edge_desc> examined_edges;
 
 	template <typename Edge, typename Graph>
 	void tree_edge(Edge e, const Graph& g) 
 	{
-// 		previous_vertex_map[boost::target(e, g)] = boost::source(e, g);
 		examined_edges.insert(e);
 		return;
 	}	
@@ -143,6 +136,7 @@ construct_source_vertices(UINT32 execution_order,
 static inline boost::unordered_set<dataflow_vertex_desc> 
 construct_target_vertices(UINT32 execution_order, boost::shared_ptr<instruction> inserted_ins,
 													boost::unordered_set<dataflow_vertex_desc>& outer_interface, 
+													boost::unordered_set<ADDRINT>	modified_memory_addresses, 
 													dataflow_graph& forward_dataflow, dataflow_graph& backward_dataflow) 
 {
 	boost::unordered_set<dataflow_vertex_desc>::iterator outer_interface_iter;
@@ -156,6 +150,12 @@ construct_target_vertices(UINT32 execution_order, boost::shared_ptr<instruction>
 	for (operand_iter = inserted_ins->target_operands.begin(); 
 			 operand_iter != inserted_ins->target_operands.end(); ++operand_iter) 
 	{
+		// verify if the target operand is a memory address
+		if (operand_iter->value.type() == typeid(ADDRINT)) 
+		{
+			modified_memory_addresses.insert(boost::get<ADDRINT>(operand_iter->value));
+		}
+		
 		// insert the target operand into the forward dependence graph
 		newly_inserted_vertex = boost::add_vertex(*operand_iter, forward_dataflow);
 		// into the set of target vertex for the inserted instruction
@@ -209,6 +209,7 @@ void dataflow::propagate_along_instruction(UINT32 execution_order)
 	boost::unordered_set<dataflow_vertex_desc> target_vertices;
 	target_vertices = construct_target_vertices(execution_order, inserted_ins, 
 																							this->outer_interface, 
+																							this->modified_memory_addresses,
 																							this->forward_dataflow, this->backward_dataflow);
 	
 	// construct the hyper-edge

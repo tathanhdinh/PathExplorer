@@ -47,11 +47,15 @@ typedef boost::graph_traits<dataflow_graph>::edge_iterator     		dataflow_edge_i
 
 class dataflow
 {
+private:
+  dataflow_graph 															forward_dataflow;
+  dataflow_graph 															backward_dataflow;
+  boost::unordered_set<dataflow_vertex_desc> 	outer_interface;
+	
 public:
-  dataflow_graph forward_dataflow;
-  dataflow_graph backward_dataflow;
-  boost::unordered_set<dataflow_vertex_desc> outer_interface;
-  
+	boost::unordered_set<ADDRINT>								modified_memory_addresses;
+ 
+public:
   void propagate_along_instruction(UINT32 execution_order);
 	void extract_inputs_instructions_dependance_maps();
 	void arrange_checkpoints();

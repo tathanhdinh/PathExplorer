@@ -18,18 +18,19 @@
  */
 
 #include "checkpoint.h"
-#include <pin.H>
+#include "../analysis/dataflow.h"
 
 namespace engine
 {
 
-extern boost::unordered_map<UINT32, 
-                            ADDRINT
-                            >	execution_order_address_map;
+using namespace analysis;
+
+extern boost::shared_ptr<dataflow> 																	execution_dataflow;
+
+extern boost::unordered_map< UINT32, ADDRINT >											execution_order_address_map;
 														
-extern boost::unordered_map<ADDRINT, 
-														boost::compressed_pair<UINT8, UINT8>
-														> current_memory_state;
+extern boost::unordered_map< ADDRINT, 
+														 boost::compressed_pair<UINT8, UINT8> > current_memory_state;
 
 /**
  * @brief a checkpoint is created before the instruction (pointed by the current address) executes. 
