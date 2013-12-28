@@ -54,7 +54,7 @@ private:
   boost::unordered_set<dataflow_vertex_desc> 	outer_interface;
 	
 public:
-  boost::unordered_map<ADDRINT, UINT32>       address_original_value_map;
+  boost::unordered_map<ADDRINT, UINT8>       address_original_value_map;
  
 public:
   void propagate_along_instruction(UINT32 execution_order);

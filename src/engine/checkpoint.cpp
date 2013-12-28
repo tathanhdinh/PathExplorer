@@ -42,12 +42,16 @@ checkpoint::checkpoint(UINT32 execution_order, CONTEXT* current_context)
   PIN_SaveContext(current_context, &(this->cpu_context));
   
   // and the current memory state
-	boost::unordered_set<ADDRINT>::iterator address_iter;
-	for (address_iter = program_dataflow->modified_memory_addresses.begin(); 
-			 address_iter != program_dataflow->modified_memory_addresses.end(); ++address_iter) 
-	{
-		this->memory_state[*address_iter].first() = *(reinterpret_cast<UINT8*>(*address_iter));
-	}
+  boost::unordered_map<ADDRINT, UINT8>::iterator address_value_map_iter;
+  ADDRINT memory_address;
+  for (address_value_map_iter = program_dataflow->address_original_value_map.begin(); 
+       address_value_map_iter != program_dataflow->address_original_value_map.end(); 
+       ++address_value_map_iter) 
+  {
+    memory_address = address_value_map_iter->first;
+    this->memory_state[memory_address].first() = address_value_map_iter->second;
+    this->memory_state[memory_address].second() = *(reinterpret_cast<UINT8*>(memory_address));
+  }
 }
 
 
