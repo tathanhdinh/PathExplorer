@@ -75,8 +75,8 @@ public:
 static inline boost::unordered_set<dataflow_vertex_desc> 
 construct_source_vertices(UINT32 execution_order, 
                           boost::shared_ptr<instruction> inserted_ins,
-													boost::unordered_set<dataflow_vertex_desc>& outer_interface, 
-													dataflow_graph& forward_dataflow, dataflow_graph& backward_dataflow) 
+                          boost::unordered_set<dataflow_vertex_desc>& outer_interface, 
+                          dataflow_graph& forward_dataflow, dataflow_graph& backward_dataflow) 
 {
 	boost::unordered_set<dataflow_vertex_desc>::iterator outer_interface_iter;
 	
