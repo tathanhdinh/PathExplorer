@@ -18,7 +18,6 @@
  */
 
 #include "instruction.h"
-#include <boost/concept_check.hpp>
 
 namespace analysis
 {
@@ -28,17 +27,18 @@ instruction::instruction(const INS& current_instruction)
   this->address           = INS_Address(current_instruction);
   this->dissasembled_name = INS_Disassemble(current_instruction);
   
-  // determine the name of the library and the name of function consisting the instruction
+  // determine if the instruction is a syscall
+  this->is_syscall = INS_IsSyscall(current_instruction);
+  
+  // get the name of the library and the name of function consisting the instruction
+  this->contained_library = "";
   IMG ins_img = IMG_FindByAddress(this->address);
-  if (IMG_Valid(ins_img)) 
-  {
-    this->contained_library = IMG_Name(ins_img);
-  }
-  else 
-  {
-    this->contained_library = "";
-  }
+  if (IMG_Valid(ins_img)) this->contained_library = IMG_Name(ins_img);
   this->contained_function = RTN_FindNameByAddress(this->address);
+  
+  // determine if the instruction is mapped from the kernel space
+  this->is_vdso = false;
+  if (this->contained_function.empty()) this->is_vdso = true;
   
   // the source and target registers of an instruction can be determined statically
   REG current_register;

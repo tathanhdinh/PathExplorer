@@ -31,14 +31,34 @@ extern UINT32 current_execution_order;
  * executing this instruction) executing more instruction, and prepare to analyze executed trace. 
  * Note that the callback functions are invoked in running time.
  * 
- * @param instruction_address ...
+ * @param instruction_address address of the instrumented instruction.
  * @return void
  */
 void trace_analyzer::syscall_instruction_callback(ADDRINT instruction_address)
 {
-  BOOST_LOG_TRIVIAL(trace) 
-    << boost::format("meet a system call after %d executed instruction.") % current_execution_order;
+  BOOST_LOG_TRIVIAL(warning) 
+    << boost::format("meet a system call after %d executed instruction.") 
+        % current_execution_order;
   return;
 }
+
+
+/**
+ * @brief a vdso instruction is mapped from the kernel space so its accessed information may not in 
+ * the user space, stop (without executing this instruction) executing more instruction, and prepare 
+ * to analyze executed trace.
+ * 
+ * @param instruction_address address of the instrumented instruction.
+ * @return void
+ */
+
+void trace_analyzer::vdso_instruction_callback(ADDRINT instruction_address)
+{
+  BOOST_LOG_TRIVIAL(warning) 
+    << boost::format("meet a vdso instruction after %d executed instruction.") 
+        % current_execution_order;
+  return;
+}
+
 
 } // end of instrumentation namespace

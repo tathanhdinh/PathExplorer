@@ -36,6 +36,9 @@ public:
   std::string contained_library;
   std::string contained_function;
   
+  bool        is_syscall;
+  bool        is_vdso;
+  
   boost::unordered_set<instruction_operand, operand_hash> source_operands;
   boost::unordered_set<instruction_operand, operand_hash> target_operands;
   

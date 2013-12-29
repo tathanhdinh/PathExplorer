@@ -20,12 +20,18 @@
 
 #include "dbi.h"
 #include "trace_analyzer.h"
+#include "../analysis/instruction.h"
+#include <boost/unordered_map.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/format.hpp>
 
 namespace instrumentation 
 {
 
+using namespace analysis;
+typedef boost::shared_ptr<instruction> ptr_instruction_t;
+extern boost::unordered_map<ADDRINT, ptr_instruction_t> address_instruction_map;
+  
 extern ADDRINT received_message_address;
 extern INT32   received_message_length;
 
@@ -51,7 +57,7 @@ void dbi::change_running_state(running_state new_state)
 
 
 /**
- * @brief the function will be called immediately before the execution of a system call.
+ * @brief the function is placed to be called immediately before the execution of a system call.
  * 
  * @param thread_id ID of the thread calling the system call
  * @param context cpu context
@@ -78,7 +84,7 @@ void dbi::instrument_syscall_enter(THREADID thread_id, CONTEXT* context,
 
 
 /**
- * @brief the function will be called immediately after the execution of a system call.
+ * @brief the function is placed to be called immediately after the execution of a system call.
  * 
  * @param thread_id ID of the thread calling the system call
  * @param context cpu context
@@ -112,17 +118,23 @@ void dbi::instrument_syscall_exit(THREADID thread_id, CONTEXT* context,
  * @param data unused
  * @return void
  */
-static void trace_analyzing_state_handler(INS instruction, VOID* data)
+static void trace_analyzing_state_handler(INS& curr_ins, ADDRINT curr_ins_addr)
 {
-  if (INS_IsSyscall(instruction)) 
+  ptr_instruction_t curr_ptr_ins = address_instruction_map[curr_ins_addr];
+  if (curr_ptr_ins->is_syscall)
   {
-    INS_InsertPredicatedCall(instruction, IPOINT_BEFORE, 
+    INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
                              (AFUNPTR)trace_analyzer::syscall_instruction_callback, IARG_INST_PTR, 
                              IARG_END);
   }
   else 
   {
-    //
+    if (curr_ptr_ins->is_vdso) 
+    {
+      INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
+                               (AFUNPTR)trace_analyzer::vdso_instruction_callback, IARG_INST_PTR, 
+                               IARG_END);
+    }
   }
   return;
 }
@@ -135,21 +147,27 @@ static void trace_analyzing_state_handler(INS instruction, VOID* data)
  * @param data unused
  * @return void
  */
-static void trace_resolving_state_handler(INS instruction, VOID* data)
+static void trace_resolving_state_handler(INS& curr_ins, ADDRINT curr_ins_addr)
 {
   return;
 }
 
 
 /**
- * @brief the function will be called immediately before the execution of an instruction.
+ * @brief the function is placed to be called before the execution of an instruction. Note that the 
+ * placement is realized in "loading time", i.e. before the execution of instructions.
  * 
  * @param instruction instrumented instruction
  * @param data not used
  * @return void
  */
-void dbi::instrument_instruction_before(INS instruction, VOID* data)
+void dbi::instrument_instruction_before(INS curr_ins, VOID* data)
 {
+  // log the current analyzed instruction
+  ADDRINT curr_ins_addr = INS_Address(curr_ins);
+  address_instruction_map[curr_ins_addr].reset(new instruction(curr_ins));
+  
+  // place handlers
   switch (current_running_state)
   {
     case message_receiving_state:
@@ -157,16 +175,17 @@ void dbi::instrument_instruction_before(INS instruction, VOID* data)
       break;
       
     case trace_analyzing_state:
-      trace_analyzing_state_handler(instruction, data);
+      trace_analyzing_state_handler(curr_ins, curr_ins_addr);
       break;
       
     case trace_resolving_state:
-      trace_resolving_state_handler(instruction, data);
+      trace_resolving_state_handler(curr_ins, curr_ins_addr);
       break;
       
     default:
       BOOST_LOG_TRIVIAL(fatal) 
-        << boost::format("instrumentation falls into a unknown running state %d") % current_running_state;
+        << boost::format("instrumentation is currently falls into a unknown running state %d") 
+            % current_running_state;
       PIN_ExitApplication(current_running_state);
       break;
   }
