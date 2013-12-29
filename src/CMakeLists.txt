@@ -1,4 +1,4 @@
 add_subdirectory(engine)
 add_subdirectory(analysis)
 add_subdirectory(utilities)
-add_subdirectory(dbi)
+add_subdirectory(instrumentation)

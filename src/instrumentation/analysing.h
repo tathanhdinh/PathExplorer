@@ -21,8 +21,13 @@
 #ifndef ANALYSING_H
 #define ANALYSING_H
 
+namespace dbi 
+{
+  
 class analysing
 {
 };
+
+}
 
 #endif // ANALYSING_H
