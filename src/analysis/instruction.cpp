@@ -28,6 +28,18 @@ instruction::instruction(const INS& current_instruction)
   this->address           = INS_Address(current_instruction);
   this->dissasembled_name = INS_Disassemble(current_instruction);
   
+  // determine the name of the library and the name of function consisting the instruction
+  IMG ins_img = IMG_FindByAddress(this->address);
+  if (IMG_Valid(ins_img)) 
+  {
+    this->contained_library = IMG_Name(ins_img);
+  }
+  else 
+  {
+    this->contained_library = "";
+  }
+  this->contained_function = RTN_FindNameByAddress(this->address);
+  
   // the source and target registers of an instruction can be determined statically
   REG current_register;
   uint8_t register_id;
@@ -46,7 +58,7 @@ instruction::instruction(const INS& current_instruction)
       if (INS_IsRet(current_instruction) && (current_register == REG_STACK_PTR))
       {
         // when the instruction is ret, the esp (and rsp) register will be used 
-        // implicitly to point out the address of popped value; to elimite the 
+        // implicitly to point out the address of popped value; to eliminate the 
         // excessive dependence, this register is not considered.
       }
       else 
