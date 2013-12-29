@@ -26,7 +26,7 @@
 namespace engine
 {
 
-class reverse_execution
+class fast_execution
 {
 public:
   static void move_backward(boost::shared_ptr<checkpoint>& past_checkpoint);

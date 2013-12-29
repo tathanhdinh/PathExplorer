@@ -100,6 +100,32 @@ void dbi::instrument_syscall_exit(THREADID thread_id, CONTEXT* context,
 
 
 /**
+ * @brief handle an instruction in the trace-analyzing state.
+ * 
+ * @param instruction handled instruction
+ * @param data unused
+ * @return void
+ */
+static void trace_analyzing_state_handler(INS instruction, VOID* data)
+{
+  return;
+}
+
+
+/**
+ * @brief handle an instruction in the trace resolving state.
+ * 
+ * @param instruction handled instruction
+ * @param data unused
+ * @return void
+ */
+static void trace_resolving_state_handler(INS instruction, VOID* data)
+{
+  return;
+}
+
+
+/**
  * @brief the function will be called immediately before the execution of an instruction.
  * 
  * @param instruction instrumented instruction
@@ -111,12 +137,15 @@ void dbi::instrument_instruction_before(INS instruction, VOID* data)
   switch (current_running_state)
   {
     case message_receiving_state:
+      // currently do nothing
       break;
       
     case trace_analyzing_state:
+      trace_analyzing_state_handler(instruction, data);
       break;
       
     case trace_resolving_state:
+      trace_resolving_state_handler(instruction, data);
       break;
       
     default:

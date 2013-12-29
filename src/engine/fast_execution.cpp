@@ -18,7 +18,7 @@
  */
 
 #include <pin.H>
-#include "reverse_execution.h"
+#include "fast_execution.h"
 
 namespace engine
 {
@@ -34,7 +34,7 @@ extern boost::unordered_map<ADDRINT, state_t> current_memory_state;
  * @param target_checkpoint the checkpoint in the past.
  * @return void
  */
-void reverse_execution::move_backward(boost::shared_ptr<checkpoint>& past_checkpoint)
+void fast_execution::move_backward(boost::shared_ptr<checkpoint>& past_checkpoint)
 {
   // update the logged values of the written addresses
   boost::unordered_map<ADDRINT, UINT8>::iterator mem_iter;
@@ -88,7 +88,7 @@ void reverse_execution::move_backward(boost::shared_ptr<checkpoint>& past_checkp
  * @param target_checkpoint the future checkpoint.
  * @return void
  */
-void reverse_execution::move_forward(boost::shared_ptr<checkpoint>& future_checkpoint)
+void fast_execution::move_forward(boost::shared_ptr<checkpoint>& future_checkpoint)
 {
   // update the memory state
   boost::unordered_map<ADDRINT, state_t>::iterator futur_mem_iter;

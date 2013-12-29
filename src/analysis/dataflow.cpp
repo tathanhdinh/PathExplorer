@@ -29,16 +29,22 @@
 namespace analysis 
 {
 
-typedef boost::shared_ptr<instruction> ptr_instruction_t;
-typedef boost::unordered_set<UINT32>   instructions_t;
-typedef boost::unordered_set<ADDRINT>  addresses_t;
-
 using namespace utilities;
+
+typedef boost::shared_ptr<instruction> ptr_instruction_t;
+typedef boost::unordered_set<UINT32>   orders_t;            // executions order of instructions
+typedef boost::unordered_set<ADDRINT>  addresses_t;         // memory addresses
+
 extern boost::unordered_map<ADDRINT, ptr_instruction_t> address_instruction_map;
 extern boost::unordered_map<UINT32, ADDRINT>            execution_order_address_map;
-extern boost::unordered_map<ADDRINT, instructions_t>    memory_instructions_dependency_map;
-extern boost::unordered_map<UINT32, addresses_t>				instruction_memories_dependency_map;
+extern boost::unordered_map<ADDRINT, orders_t>          memory_orders_dependency_map;
+extern boost::unordered_map<UINT32, addresses_t>				order_memories_dependency_map;
 
+
+/**
+ * @brief BFS visitor to discover all dependent edges from a vertex.
+ * 
+ */
 class dataflow_bfs_visitor : public boost::default_bfs_visitor 
 {
 public:
@@ -262,8 +268,8 @@ void dataflow::extract_inputs_instructions_dependance_maps()
 						 dataflow_edge_iter != current_visitor.examined_edges.end(); ++dataflow_edge_iter) 
 				{
 					instruction_order = this->forward_dataflow[*dataflow_edge_iter];
-					memory_instructions_dependency_map[memory_address].insert(instruction_order);
-					instruction_memories_dependency_map[instruction_order].insert(memory_address);
+					memory_orders_dependency_map[memory_address].insert(instruction_order);
+					order_memories_dependency_map[instruction_order].insert(memory_address);
 				}
 			}
 		}
