@@ -18,16 +18,24 @@
  *
  */
 
-#ifndef ANALYSING_H
-#define ANALYSING_H
+#ifndef TRACE_ANALYZER_H
+#define TRACE_ANALYZER_H
 
-namespace dbi 
+#include <pin.H>
+
+namespace instrumentation 
 {
-  
-class analysing
+
+class trace_analyzer
 {
+public:
+  static void instrument_instruction_before(INS instruction, VOID* data);
+  static void instrument_syscall_enter(THREADID thread_id, CONTEXT *context, 
+                                       SYSCALL_STANDARD syscall_std, VOID *data);
+  static void instrument_syscall_exit(THREADID thread_it, CONTEXT *context, 
+                                      SYSCALL_STANDARD syscall_std, VOID *data);
 };
 
-}
+} // end of instrumentation namespace
 
-#endif // ANALYSING_H
+#endif // TRACE_ANALYZER_H

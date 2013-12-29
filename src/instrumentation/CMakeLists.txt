@@ -1,2 +1,2 @@
-ADD_PINTOOL(dbi  
-  analysing.cpp)
+ADD_PINTOOL(instrumentation 
+  trace_analyzer.cpp)
