@@ -19,6 +19,9 @@
  */
 
 #include "dbi.h"
+#include "trace_analyzer.h"
+#include <boost/log/trivial.hpp>
+#include <boost/format.hpp>
 
 namespace instrumentation 
 {
@@ -88,6 +91,7 @@ void dbi::instrument_syscall_exit(THREADID thread_id, CONTEXT* context,
 {
   if (!required_message_received) 
   {
+    // this PIN function is effective only when it is called after the execution of the syscall
     received_message_length = PIN_GetSyscallReturn(context, syscall_std);
     if (received_message_length <= 0) 
     {
@@ -100,7 +104,9 @@ void dbi::instrument_syscall_exit(THREADID thread_id, CONTEXT* context,
 
 
 /**
- * @brief handle an instruction in the trace-analyzing state.
+ * @brief statically analyze the instrumented program to put different callbacks for each type of 
+ * instruction. Note that the handler will be called in "loading time", i.e. when the instructions
+ * are not executed yet.
  * 
  * @param instruction handled instruction
  * @param data unused
@@ -108,6 +114,16 @@ void dbi::instrument_syscall_exit(THREADID thread_id, CONTEXT* context,
  */
 static void trace_analyzing_state_handler(INS instruction, VOID* data)
 {
+  if (INS_IsSyscall(instruction)) 
+  {
+    INS_InsertPredicatedCall(instruction, IPOINT_BEFORE, 
+                             (AFUNPTR)trace_analyzer::syscall_instruction_callback, IARG_INST_PTR, 
+                             IARG_END);
+  }
+  else 
+  {
+    //
+  }
   return;
 }
 
@@ -149,6 +165,9 @@ void dbi::instrument_instruction_before(INS instruction, VOID* data)
       break;
       
     default:
+      BOOST_LOG_TRIVIAL(fatal) 
+        << boost::format("instrumentation falls into a unknown running state %d") % current_running_state;
+      PIN_ExitApplication(current_running_state);
       break;
   }
   

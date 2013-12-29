@@ -18,8 +18,27 @@
  */
 
 #include "trace_analyzer.h"
+#include <boost/log/trivial.hpp>
+#include <boost/format.hpp>
 
 namespace instrumentation 
 {
+
+extern UINT32 current_execution_order;
+  
+/**
+ * @brief when a system call instruction is met in the trace-analyzing state, stop (without 
+ * executing this instruction) executing more instruction, and prepare to analyze executed trace. 
+ * Note that the callback functions are invoked in running time.
+ * 
+ * @param instruction_address ...
+ * @return void
+ */
+void trace_analyzer::syscall_instruction_callback(ADDRINT instruction_address)
+{
+  BOOST_LOG_TRIVIAL(trace) 
+    << boost::format("meet a system call after %d executed instruction.") % current_execution_order;
+  return;
+}
 
 } // end of instrumentation namespace

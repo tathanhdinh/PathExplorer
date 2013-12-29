@@ -29,7 +29,7 @@ namespace instrumentation
 class trace_analyzer
 {
 public:
-  
+  static void syscall_instruction_callback(ADDRINT instruction_address);
 };
 
 } // end of instrumentation namespace
