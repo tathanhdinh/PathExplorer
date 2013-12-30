@@ -19,6 +19,7 @@
 
 #include "trace_analyzer.h"
 #include "../analysis/instruction.h"
+#include "../analysis/conditional_branch.h"
 #include "../engine/checkpoint.h"
 #include "../analysis/dataflow.h"
 #include <algorithm>
@@ -88,7 +89,17 @@ void trace_analyzer::generic_normal_instruction_callback(ADDRINT instruction_add
     // log the instruction
     current_execution_order++;
     ptr_instruction_t curr_ins = address_instruction_map[instruction_address];
-    execution_order_instruction_map[current_execution_order].reset(new instruction(*curr_ins));
+    if (curr_ins->is_conditional_branch) 
+    {
+      // using copy constructor (faster) instead of instructor from a PIN instruction
+      execution_order_instruction_map[current_execution_order].reset(new conditional_branch(*curr_ins));
+    }
+    else 
+    {
+      // using copy constructor (faster) instead of instructor from a PIN instruction
+      execution_order_instruction_map[current_execution_order].reset(new instruction(*curr_ins));
+    }
+    
   }
   else 
   {
@@ -98,9 +109,26 @@ void trace_analyzer::generic_normal_instruction_callback(ADDRINT instruction_add
 
 
 /**
- * @brief callback for a memory read instruction, beside the address/size of memory, the 
- * cpu context is passed because a checkpoint need to be stored when the instruction read some
- * input-related addresses.
+ * @brief callback for a conditional branch. Note that the parameter instruction address is actually 
+ * not necessary because of using the running-time information "current execution order".
+ * 
+ * @param instruction_address address of the instrumented conditional branch
+ * @param is_branch_taken the branch will be taken or not
+ * @return void
+ */
+void trace_analyzer::conditional_branch_callback(ADDRINT instruction_address, bool is_branch_taken)
+{
+  conditional_branch* curr_ptr_branch = static_cast<conditional_branch*>(
+    execution_order_instruction_map[current_execution_order].get());
+  curr_ptr_branch->is_taken = is_branch_taken;
+  return;
+}
+
+
+/**
+ * @brief callback for a memory read instruction, beside the address/size of memory, the cpu context 
+ * is passed because a checkpoint need to be stored when the instruction read someinput-related 
+ * addresses.
  * 
  * @param instruction_address address of the instrumented instruction
  * @param memory_read_address beginning of the read address
@@ -161,7 +189,5 @@ void trace_analyzer::dataflow_propagation_along_instruction_callback(ADDRINT ins
   dataflow::propagate_along_instruction(current_execution_order);
   return;
 }
-
-
 
 } // end of instrumentation namespace

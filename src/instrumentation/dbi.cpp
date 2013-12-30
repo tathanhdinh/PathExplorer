@@ -111,7 +111,7 @@ void dbi::instrument_syscall_exit(THREADID thread_id, CONTEXT* context,
 /**
  * @brief statically analyze the instrumented program to put different callbacks for each type of 
  * instruction. Note that the handler will be called in "loading time", i.e. when the instructions
- * are not executed yet.
+ * are not executed yet. The complexity of the trace analyzing is O(trace length).
  * 
  * @param instruction handled instruction
  * @param data unused
@@ -136,11 +136,13 @@ static void trace_analyzing_state_handler(const INS& curr_ins, ADDRINT curr_ins_
     }
     else 
     {
-      // update running time information for instructions. Note that the first 3 condition below 
-      // are mutually exclusive so they can be used separately
+      // update running time information for instructions
+      // the first 3 condition below are mutually exclusive so they can be used separately
       if (curr_ptr_ins->is_conditional_branch) 
       {
-        //
+        INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
+                                 (AFUNPTR)trace_analyzer::conditional_branch_callback, 
+                                 IARG_INST_PTR, IARG_BRANCH_TAKEN, IARG_END);
       }
       
       if (curr_ptr_ins->is_memory_read) 

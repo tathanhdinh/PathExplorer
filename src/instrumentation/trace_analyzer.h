@@ -32,6 +32,7 @@ public:
   static void syscall_instruction_callback(ADDRINT instruction_address);
   static void vdso_instruction_callback(ADDRINT instruction_address);
   static void generic_normal_instruction_callback(ADDRINT instruction_address);
+  static void conditional_branch_callback(ADDRINT instruction_address, bool is_branch_taken);
   static void memory_read_instruction_callback(ADDRINT instruction_address, 
                                                ADDRINT memory_read_address, 
                                                UINT32 memory_read_size);
