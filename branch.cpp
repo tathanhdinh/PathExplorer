@@ -119,7 +119,7 @@ branch& branch::operator=(const branch& other)
   this->is_bypassed       = other.is_bypassed;
   this->is_explored       = other.is_explored;
 
-    return *this;
+  return *this;
 }
 
 /*====================================================================================================================*/

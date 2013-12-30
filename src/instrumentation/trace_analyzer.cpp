@@ -20,6 +20,7 @@
 #include "trace_analyzer.h"
 #include "../analysis/instruction.h"
 #include "../engine/checkpoint.h"
+#include "../analysis/dataflow.h"
 #include <algorithm>
 #include <boost/log/trivial.hpp>
 #include <boost/format.hpp>
@@ -145,6 +146,22 @@ void trace_analyzer::memory_write_instruction_callback(ADDRINT instruction_addre
   curr_ins->update_memory(memory_written_address, memory_written_size, MEMORY_WRITE);
   return;
 }
+
+
+/**
+ * @brief callback for propagating dynamic information along the execution of an instruction. Note 
+ * that the parameter instruction address is actually not necessary because of using the 
+ * running-time information "current execution order".
+ * 
+ * @param instruction_address address of the instrumented instruction
+ * @return void
+ */
+void trace_analyzer::dataflow_propagation_along_instruction_callback(ADDRINT instruction_address)
+{
+  dataflow::propagate_along_instruction(current_execution_order);
+  return;
+}
+
 
 
 } // end of instrumentation namespace

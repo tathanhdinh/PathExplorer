@@ -38,6 +38,7 @@ public:
   static void memory_write_instruction_callback(ADDRINT instruction_address, 
                                                 ADDRINT memory_written_address, 
                                                 UINT32 memory_written_size);
+  static void dataflow_propagation_along_instruction_callback(ADDRINT instruction_address);
 };
 
 } // end of instrumentation namespace

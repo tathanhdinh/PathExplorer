@@ -24,6 +24,7 @@
 #include <pin.H>
 #include <string>
 #include <boost/unordered_set.hpp>
+#include <boost/shared_ptr.hpp>
 
 namespace analysis 
 {

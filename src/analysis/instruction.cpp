@@ -26,7 +26,7 @@ namespace analysis
  * @brief constructor for a construction object, many static information about instruction will be 
  * pre-determined in this function.
  * 
- * @param current_instruction ...
+ * @param current_instruction instruction object passed from PIN
  */
 instruction::instruction(const INS& current_instruction)
 {

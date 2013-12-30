@@ -41,7 +41,7 @@ public:
                                        SYSCALL_STANDARD syscall_std, VOID *data);
   static void instrument_syscall_exit(THREADID thread_id, CONTEXT *context, 
                                       SYSCALL_STANDARD syscall_std, VOID *data);
-  static void instrument_instruction_before(INS instruction, VOID* data);
+  static void instrument_instruction_before(const INS& instruction, VOID* data);
 };
 
 }

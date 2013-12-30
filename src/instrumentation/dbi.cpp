@@ -21,6 +21,7 @@
 #include "dbi.h"
 #include "trace_analyzer.h"
 #include "../analysis/instruction.h"
+#include "../analysis/conditional_branch.h"
 #include <boost/unordered_map.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/format.hpp>
@@ -117,7 +118,7 @@ void dbi::instrument_syscall_exit(THREADID thread_id, CONTEXT* context,
  * @param data unused
  * @return void
  */
-static void trace_analyzing_state_handler(INS& curr_ins, ADDRINT curr_ins_addr)
+static void trace_analyzing_state_handler(const INS& curr_ins, ADDRINT curr_ins_addr)
 {
   ptr_instruction_t curr_ptr_ins = address_instruction_map[curr_ins_addr];
   if (curr_ptr_ins->is_syscall)
@@ -136,7 +137,8 @@ static void trace_analyzing_state_handler(INS& curr_ins, ADDRINT curr_ins_addr)
     }
     else 
     {
-      // the first 3 condition below are mutually exclusive so they can be used separately
+      // update running time information for instructions. Note that the first 3 condition below 
+      // are mutually exclusive so they can be used separately
       if (curr_ptr_ins->is_conditional_branch) 
       {
         //
@@ -146,8 +148,7 @@ static void trace_analyzing_state_handler(INS& curr_ins, ADDRINT curr_ins_addr)
       {
         INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
                                  (AFUNPTR)trace_analyzer::memory_read_instruction_callback, 
-                                 IARG_INST_PTR, IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE, 
-                                 IARG_CONTEXT, IARG_END);
+                                 IARG_INST_PTR, IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE, IARG_END);
       }
       
       if (curr_ptr_ins->is_memory_write) 
@@ -156,6 +157,12 @@ static void trace_analyzing_state_handler(INS& curr_ins, ADDRINT curr_ins_addr)
                                  (AFUNPTR)trace_analyzer::memory_write_instruction_callback, 
                                  IARG_INST_PTR, IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE, IARG_END);
       }
+      
+      // propagate the running time information along the execution
+      INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
+                               (AFUNPTR)trace_analyzer::dataflow_propagation_along_instruction_callback, 
+                               IARG_INST_PTR, IARG_END);
+      
     }
   }
   return;
@@ -169,7 +176,7 @@ static void trace_analyzing_state_handler(INS& curr_ins, ADDRINT curr_ins_addr)
  * @param data unused
  * @return void
  */
-static void trace_resolving_state_handler(INS& curr_ins, ADDRINT curr_ins_addr)
+static void trace_resolving_state_handler(const INS& curr_ins, ADDRINT curr_ins_addr)
 {
   return;
 }
@@ -183,11 +190,23 @@ static void trace_resolving_state_handler(INS& curr_ins, ADDRINT curr_ins_addr)
  * @param data not used
  * @return void
  */
-void dbi::instrument_instruction_before(INS curr_ins, VOID* data)
+void dbi::instrument_instruction_before(const INS& current_instruction, VOID* data)
 {
-  // log the current analyzed instruction
-  ADDRINT curr_ins_addr = INS_Address(curr_ins);
-  address_instruction_map[curr_ins_addr].reset(new instruction(curr_ins));
+  // create an instruction from the current analyzed PIN instruction
+  ADDRINT current_address = INS_Address(current_instruction);
+  ptr_instruction_t curr_ptr_ins(new instruction(current_instruction));
+  
+  // if it is a conditional branch 
+  if (curr_ptr_ins->is_conditional_branch) 
+  {
+    // then copy it as a conditional branch
+    address_instruction_map[current_address].reset(new conditional_branch(*curr_ptr_ins));
+  }
+  else 
+  {
+    // else copy it as a normal instruction
+    address_instruction_map[current_address] = curr_ptr_ins;
+  }
   
   // place handlers
   switch (current_running_state)
@@ -197,11 +216,11 @@ void dbi::instrument_instruction_before(INS curr_ins, VOID* data)
       break;
       
     case trace_analyzing_state:
-      trace_analyzing_state_handler(curr_ins, curr_ins_addr);
+      trace_analyzing_state_handler(current_instruction, current_address);
       break;
       
     case trace_resolving_state:
-      trace_resolving_state_handler(curr_ins, curr_ins_addr);
+      trace_resolving_state_handler(current_instruction, current_address);
       break;
       
     default:
