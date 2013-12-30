@@ -19,6 +19,8 @@
 
 #include "trace_analyzer.h"
 #include "../analysis/instruction.h"
+#include "../engine/checkpoint.h"
+#include <algorithm>
 #include <boost/log/trivial.hpp>
 #include <boost/format.hpp>
 #include <boost/unordered_map.hpp>
@@ -27,12 +29,15 @@ namespace instrumentation
 {
 
 using namespace analysis;
+using namespace engine;
   
+extern ADDRINT received_message_address;
+extern INT32 received_message_length;
 extern UINT32 current_execution_order;
 extern UINT32 execution_trace_max_length;
-// extern boost::unordered_map<UINT32, ADDRINT> execution_order_address_map;
 extern boost::unordered_map<UINT32, ptr_instruction_t> execution_order_instruction_map;
 extern boost::unordered_map<ADDRINT, ptr_instruction_t> address_instruction_map;
+extern boost::unordered_map<UINT32, ptr_checkpoint_t> execution_order_checkpoint_map;
   
 /**
  * @brief when a system call instruction is met in the trace-analyzing state, stop (without 
@@ -96,10 +101,10 @@ void trace_analyzer::generic_normal_instruction_callback(ADDRINT instruction_add
  * cpu context is passed because a checkpoint need to be stored when the instruction read some
  * input-related addresses.
  * 
- * @param instruction_address ...
- * @param memory_read_address ...
- * @param memory_read_size ...
- * @param cpu_context ...
+ * @param instruction_address address of instrumented instruction
+ * @param memory_read_address beginning of the read address
+ * @param memory_read_size size of the read address
+ * @param cpu_context cpu context
  * @return void
  */
 void trace_analyzer::memory_read_instruction_callback(ADDRINT instruction_address, 
@@ -111,7 +116,14 @@ void trace_analyzer::memory_read_instruction_callback(ADDRINT instruction_addres
   ptr_instruction_t curr_ins = execution_order_instruction_map[current_execution_order];
   curr_ins->update_memory(memory_read_address, memory_read_size, MEMORY_READ);
   
-  // verify if the 
+//   // if the read memory address range has an intersection with the input buffer
+//   if (std::max(memory_read_address, received_message_address) < 
+//       std::min(memory_read_address + memory_read_size, 
+//                received_message_address + received_message_length))
+//   {
+//     // namely the instruction read some byte of the input, now take a checkpoint
+//     execution_order_checkpoint_map[current_execution_order].reset(new checkpoint(current_execution_order, cpu_context));
+//   }
   return;
 }
 

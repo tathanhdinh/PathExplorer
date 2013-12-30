@@ -35,6 +35,9 @@ public:
   static void memory_read_instruction_callback(ADDRINT instruction_address, 
                                                ADDRINT memory_read_address, 
                                                UINT32 memory_read_size, CONTEXT* cpu_context);
+  static void memory_write_instruction_callback(ADDRINT instruction_address, 
+                                                ADDRINT memory_written_address, 
+                                                UINT32 memory_written_size);
 };
 
 } // end of instrumentation namespace

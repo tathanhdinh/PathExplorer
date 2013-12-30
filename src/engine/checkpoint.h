@@ -43,5 +43,7 @@ public:
   void log_before_execution(ADDRINT memory_written_address, UINT8 memory_written_length);  
 };
 
+typedef boost::shared_ptr<checkpoint> ptr_checkpoint_t;
+
 } // end of engine namespace
 #endif // CHECKPOINT_H

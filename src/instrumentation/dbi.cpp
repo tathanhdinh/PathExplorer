@@ -144,7 +144,10 @@ static void trace_analyzing_state_handler(INS& curr_ins, ADDRINT curr_ins_addr)
       
       if (curr_ptr_ins->is_memory_read) 
       {
-        //
+        INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
+                                 (AFUNPTR)trace_analyzer::memory_read_instruction_callback, 
+                                 IARG_INST_PTR, IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE, 
+                                 IARG_CONTEXT, IARG_END);
       }
       
       if (curr_ptr_ins->is_memory_write) 
