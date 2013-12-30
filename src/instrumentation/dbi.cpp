@@ -29,7 +29,6 @@ namespace instrumentation
 {
 
 using namespace analysis;
-typedef boost::shared_ptr<instruction> ptr_instruction_t;
 extern boost::unordered_map<ADDRINT, ptr_instruction_t> address_instruction_map;
   
 extern ADDRINT received_message_address;

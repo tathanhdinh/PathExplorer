@@ -31,7 +31,6 @@ namespace analysis
 
 using namespace utilities;
 
-typedef boost::shared_ptr<instruction> ptr_instruction_t;
 typedef boost::unordered_set<UINT32>   orders_t;            // executions order of instructions
 typedef boost::unordered_set<ADDRINT>  addresses_t;         // memory addresses
 

@@ -18,6 +18,7 @@
  */
 
 #include "trace_analyzer.h"
+#include "../analysis/instruction.h"
 #include <boost/log/trivial.hpp>
 #include <boost/format.hpp>
 #include <boost/unordered_map.hpp>
@@ -25,9 +26,13 @@
 namespace instrumentation 
 {
 
+using namespace analysis;
+  
 extern UINT32 current_execution_order;
 extern UINT32 execution_trace_max_length;
-extern boost::unordered_map<UINT32, ADDRINT> execution_order_address_map;
+// extern boost::unordered_map<UINT32, ADDRINT> execution_order_address_map;
+extern boost::unordered_map<UINT32, ptr_instruction_t> execution_order_instruction_map;
+extern boost::unordered_map<ADDRINT, ptr_instruction_t> address_instruction_map;
   
 /**
  * @brief when a system call instruction is met in the trace-analyzing state, stop (without 
@@ -64,25 +69,52 @@ void trace_analyzer::vdso_instruction_callback(ADDRINT instruction_address)
 
 
 /**
- * @brief as it named, this is the most general callback applied for a normal instruction (i.e. 
+ * @brief as it named, this is the generic callback applied for a normal instruction (i.e. 
  * neither a system call nor a vdso).
  * 
  * @param instruction_address address of the instrumented instruction
  * @return void
  */
-void trace_analyzer::general_normal_instruction_callback(ADDRINT instruction_address)
+void trace_analyzer::generic_normal_instruction_callback(ADDRINT instruction_address)
 {
   if (current_execution_order < execution_trace_max_length) 
   {
     // log the instruction
     current_execution_order++;
-    execution_order_address_map[current_execution_order] = instruction_address;    
+    ptr_instruction_t curr_ins = address_instruction_map[instruction_address];
+    execution_order_instruction_map[current_execution_order].reset(new instruction(*curr_ins));
   }
   else 
   {
-    
+    // stop the trace-analyzing state
   }
 }
+
+
+/**
+ * @brief callback for a memory read instruction, beside the address/size of memory, the 
+ * cpu context is passed because a checkpoint need to be stored when the instruction read some
+ * input-related addresses.
+ * 
+ * @param instruction_address ...
+ * @param memory_read_address ...
+ * @param memory_read_size ...
+ * @param cpu_context ...
+ * @return void
+ */
+void trace_analyzer::memory_read_instruction_callback(ADDRINT instruction_address, 
+                                                      ADDRINT memory_read_address, 
+                                                      UINT32 memory_read_size, 
+                                                      CONTEXT* cpu_context)
+{
+  // determine dynamic information: read memory addresses
+  ptr_instruction_t curr_ins = execution_order_instruction_map[current_execution_order];
+  curr_ins->update_memory(memory_read_address, memory_read_size, MEMORY_READ);
+  
+  // verify if the 
+  return;
+}
+
 
 
 } // end of instrumentation namespace

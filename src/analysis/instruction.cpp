@@ -103,6 +103,29 @@ instruction::instruction(const INS& current_instruction)
 
 
 /**
+ * @brief copy constructor for an instruction object: since the taken analysis is trace-based so an 
+ * instruction (at a given address) has multiple instances, all of them have the same static 
+ * information (obtained in the above constructor) but have different dynamic information (e.g. 
+ * accessed memory addresses)
+ * 
+ * @param other_instruction other instruction to copy.
+ */
+instruction::instruction(const instruction& other_instruction)
+{
+  // copy all static information
+  this->address = other_instruction.address;
+  this->dissasembled_name = other_instruction.dissasembled_name;
+  this->contained_library = other_instruction.contained_library;
+  this->contained_function = other_instruction.contained_function;
+  this->is_syscall = other_instruction.is_syscall;
+  this->is_vdso = other_instruction.is_vdso;
+  this->is_memory_read = other_instruction.is_memory_read;
+  this->is_memory_write = other_instruction.is_memory_write;
+  this->is_conditional_branch = other_instruction.is_conditional_branch;
+}
+
+
+/**
  * @brief the read or written memories of an instruction cannot be determined statically, so they 
  * need to be updated gradually in the running time.
  * 
@@ -111,21 +134,30 @@ instruction::instruction(const INS& current_instruction)
  * @param read_or_written read (false) or written (true)
  * @return void
  */
-void instruction::update_memory(ADDRINT access_address, UINT8 access_length, bool read_or_written)
+void instruction::update_memory(ADDRINT access_address, UINT8 access_length, 
+                                memory_access_t access_type)
 {
   ADDRINT address;
   ADDRINT upper_bound_address = access_address + access_length;
-  
-  for (address = access_address; address < upper_bound_address; ++address) 
+
+  switch (access_type) 
   {
-    if (read_or_written) // memory written
-    {
-      this->target_operands.insert(instruction_operand(address));
-    }
-    else // memory read
-    {
-      this->source_operands.insert(instruction_operand(address));
-    }
+    case MEMORY_READ:
+      for (address = access_address; address < upper_bound_address; ++address) 
+      {
+        this->source_operands.insert(instruction_operand(address));
+      }
+      break;
+      
+    case MEMORY_WRITE:
+      for (address = access_address; address < upper_bound_address; ++address) 
+      {
+        this->target_operands.insert(instruction_operand(address));
+      }
+      break;
+      
+    default:
+      break;
   }
   
   return;

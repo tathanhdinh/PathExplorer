@@ -27,6 +27,12 @@
 
 namespace analysis 
 {
+  
+typedef enum 
+{
+  MEMORY_READ = 0,
+  MEMORY_WRITE = 1
+} memory_access_t;
 
 class instruction
 {
@@ -47,9 +53,11 @@ public:
   
 public:
   instruction(const INS& current_instruction);
-  void update_memory(ADDRINT access_address, UINT8 access_length, bool read_or_written);
+  instruction(const instruction& other_instruction);
+  void update_memory(ADDRINT access_address, UINT8 access_length, memory_access_t access_type);
 };
 
+typedef boost::shared_ptr<instruction> ptr_instruction_t;
 
 } // end of dataflow_analysis namespace
 
