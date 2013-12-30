@@ -21,7 +21,13 @@
 
 namespace analysis
 {
-
+  
+/**
+ * @brief constructor for a construction object, many static information about instruction will be 
+ * pre-determined in this function.
+ * 
+ * @param current_instruction ...
+ */
 instruction::instruction(const INS& current_instruction)
 {
   this->address           = INS_Address(current_instruction);
@@ -40,6 +46,13 @@ instruction::instruction(const INS& current_instruction)
   this->is_vdso = false;
   if (this->contained_function.empty()) this->is_vdso = true;
   
+  // determine if the instruction read/write from/into memory
+  this->is_memory_read = INS_IsMemoryRead(current_instruction);
+  this->is_memory_write = INS_IsMemoryWrite(current_instruction);
+  
+  // determine if the instruction is a conditional branch
+  this->is_conditional_branch = (INS_Category(current_instruction) == XED_CATEGORY_COND_BR);
+  
   // the source and target registers of an instruction can be determined statically
   REG current_register;
   uint8_t register_id;
@@ -57,7 +70,7 @@ instruction::instruction(const INS& current_instruction)
     {
       if (INS_IsRet(current_instruction) && (current_register == REG_STACK_PTR))
       {
-        // when the instruction is ret, the esp (and rsp) register will be used 
+        // do nothing: when the instruction is ret, the esp (and rsp) register will be used 
         // implicitly to point out the address of popped value; to eliminate the 
         // excessive dependence, this register is not considered.
       }
@@ -77,7 +90,7 @@ instruction::instruction(const INS& current_instruction)
     {
       if (INS_IsRet(current_instruction) && (current_register == REG_STACK_PTR))
       {
-        // the explication above
+        // do nothing: see the explication above
       }
       else 
       {
@@ -85,6 +98,7 @@ instruction::instruction(const INS& current_instruction)
       }
     }
   }
+  
 }
 
 

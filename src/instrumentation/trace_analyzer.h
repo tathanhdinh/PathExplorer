@@ -31,6 +31,7 @@ class trace_analyzer
 public:
   static void syscall_instruction_callback(ADDRINT instruction_address);
   static void vdso_instruction_callback(ADDRINT instruction_address);
+  static void general_normal_instruction_callback(ADDRINT instruction_address);
 };
 
 } // end of instrumentation namespace

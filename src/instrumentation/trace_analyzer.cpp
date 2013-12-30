@@ -20,11 +20,14 @@
 #include "trace_analyzer.h"
 #include <boost/log/trivial.hpp>
 #include <boost/format.hpp>
+#include <boost/unordered_map.hpp>
 
 namespace instrumentation 
 {
 
 extern UINT32 current_execution_order;
+extern UINT32 execution_trace_max_length;
+extern boost::unordered_map<UINT32, ADDRINT> execution_order_address_map;
   
 /**
  * @brief when a system call instruction is met in the trace-analyzing state, stop (without 
@@ -48,16 +51,37 @@ void trace_analyzer::syscall_instruction_callback(ADDRINT instruction_address)
  * the user space, stop (without executing this instruction) executing more instruction, and prepare 
  * to analyze executed trace.
  * 
- * @param instruction_address address of the instrumented instruction.
+ * @param instruction_address address of the instrumented instruction
  * @return void
  */
-
 void trace_analyzer::vdso_instruction_callback(ADDRINT instruction_address)
 {
   BOOST_LOG_TRIVIAL(warning) 
     << boost::format("meet a vdso instruction after %d executed instruction.") 
         % current_execution_order;
   return;
+}
+
+
+/**
+ * @brief as it named, this is the most general callback applied for a normal instruction (i.e. 
+ * neither a system call nor a vdso).
+ * 
+ * @param instruction_address address of the instrumented instruction
+ * @return void
+ */
+void trace_analyzer::general_normal_instruction_callback(ADDRINT instruction_address)
+{
+  if (current_execution_order < execution_trace_max_length) 
+  {
+    // log the instruction
+    current_execution_order++;
+    execution_order_address_map[current_execution_order] = instruction_address;    
+  }
+  else 
+  {
+    
+  }
 }
 
 

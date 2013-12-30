@@ -135,6 +135,24 @@ static void trace_analyzing_state_handler(INS& curr_ins, ADDRINT curr_ins_addr)
                                (AFUNPTR)trace_analyzer::vdso_instruction_callback, IARG_INST_PTR, 
                                IARG_END);
     }
+    else 
+    {
+      // the first 3 condition below are mutually exclusive so they can be used separately
+      if (curr_ptr_ins->is_conditional_branch) 
+      {
+        //
+      }
+      
+      if (curr_ptr_ins->is_memory_read) 
+      {
+        //
+      }
+      
+      if (curr_ptr_ins->is_memory_write) 
+      {
+        //
+      }
+    }
   }
   return;
 }

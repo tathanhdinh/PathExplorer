@@ -38,6 +38,9 @@ public:
   
   bool        is_syscall;
   bool        is_vdso;
+  bool        is_memory_read;
+  bool        is_memory_write;
+  bool        is_conditional_branch;
   
   boost::unordered_set<instruction_operand, operand_hash> source_operands;
   boost::unordered_set<instruction_operand, operand_hash> target_operands;
