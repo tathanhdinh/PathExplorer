@@ -26,6 +26,7 @@ namespace engine
 using namespace analysis;
 extern boost::shared_ptr<dataflow> 						program_dataflow;
 extern boost::unordered_map<UINT32, ADDRINT>  execution_order_address_map;
+extern boost::unordered_map<ADDRINT, UINT8>   original_value_at_address;
 
 /**
  * @brief a checkpoint is created before the instruction (pointed by the current address) executes. 
@@ -44,9 +45,8 @@ checkpoint::checkpoint(UINT32 execution_order, CONTEXT* current_context)
   // and the current memory state
   boost::unordered_map<ADDRINT, UINT8>::iterator addr_value_map_iter;
   ADDRINT mem_addr;
-  for (addr_value_map_iter = program_dataflow->address_original_value_map.begin(); 
-       addr_value_map_iter != program_dataflow->address_original_value_map.end(); 
-       ++addr_value_map_iter) 
+  for (addr_value_map_iter = original_value_at_address.begin(); 
+       addr_value_map_iter != original_value_at_address.end(); ++addr_value_map_iter) 
   {
     mem_addr = addr_value_map_iter->first;
     this->memory_state[mem_addr].first() = addr_value_map_iter->second;

@@ -101,7 +101,7 @@ void trace_analyzer::generic_normal_instruction_callback(ADDRINT instruction_add
  * cpu context is passed because a checkpoint need to be stored when the instruction read some
  * input-related addresses.
  * 
- * @param instruction_address address of instrumented instruction
+ * @param instruction_address address of the instrumented instruction
  * @param memory_read_address beginning of the read address
  * @param memory_read_size size of the read address
  * @param cpu_context cpu context
@@ -109,24 +109,42 @@ void trace_analyzer::generic_normal_instruction_callback(ADDRINT instruction_add
  */
 void trace_analyzer::memory_read_instruction_callback(ADDRINT instruction_address, 
                                                       ADDRINT memory_read_address, 
-                                                      UINT32 memory_read_size, 
-                                                      CONTEXT* cpu_context)
+                                                      UINT32 memory_read_size)
 {
   // determine dynamic information: read memory addresses
   ptr_instruction_t curr_ins = execution_order_instruction_map[current_execution_order];
   curr_ins->update_memory(memory_read_address, memory_read_size, MEMORY_READ);
   
-//   // if the read memory address range has an intersection with the input buffer
+  // if the read memory address range has an intersection with the input buffer,
 //   if (std::max(memory_read_address, received_message_address) < 
 //       std::min(memory_read_address + memory_read_size, 
 //                received_message_address + received_message_length))
 //   {
-//     // namely the instruction read some byte of the input, now take a checkpoint
-//     execution_order_checkpoint_map[current_execution_order].reset(new checkpoint(current_execution_order, cpu_context));
+//     // namely the instruction read some byte of the input, then take a checkpoint
+//     execution_order_checkpoint_map[current_execution_order].reset(new checkpoint(current_execution_order, 
+//                                                                                  cpu_context));
 //   }
   return;
 }
 
+
+/**
+ * @brief callback for a memory write instruction.
+ * 
+ * @param instruction_address address of the instrumented instruction
+ * @param memory_written_address beginning of the written address
+ * @param memory_written_size size of the written address
+ * @return void
+ */
+void trace_analyzer::memory_write_instruction_callback(ADDRINT instruction_address, 
+                                                       ADDRINT memory_written_address, 
+                                                       UINT32 memory_written_size)
+{
+  // determine dynamic information: written memory addresses
+  ptr_instruction_t curr_ins = execution_order_instruction_map[current_execution_order];
+  curr_ins->update_memory(memory_written_address, memory_written_size, MEMORY_WRITE);
+  return;
+}
 
 
 } // end of instrumentation namespace

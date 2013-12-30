@@ -37,9 +37,27 @@ typedef boost::unordered_set<ADDRINT>  addresses_t;         // memory addresses
 extern boost::unordered_map<ADDRINT, ptr_instruction_t> address_instruction_map;
 extern boost::unordered_map<UINT32, ADDRINT>            execution_order_address_map;
 extern boost::unordered_map<ADDRINT, orders_t>          memory_orders_dependency_map;
-extern boost::unordered_map<UINT32, addresses_t>				order_memories_dependency_map;
+extern boost::unordered_map<UINT32, addresses_t>        order_memories_dependency_map;
+extern boost::unordered_map<ADDRINT, UINT8>             original_value_at_address;
 
+typedef instruction_operand                                       dataflow_vertex;
+typedef UINT32                                                    dataflow_edge;
 
+typedef boost::adjacency_list<boost::listS, 
+                              boost::vecS, 
+                              boost::bidirectionalS, 
+                              dataflow_vertex, 
+                              dataflow_edge>                      dataflow_graph;
+                              
+typedef boost::graph_traits<dataflow_graph>::vertex_descriptor    dataflow_vertex_desc;
+typedef boost::graph_traits<dataflow_graph>::edge_descriptor      dataflow_edge_desc;
+typedef boost::graph_traits<dataflow_graph>::vertex_iterator      dataflow_vertex_iter;
+typedef boost::graph_traits<dataflow_graph>::edge_iterator        dataflow_edge_iter;
+
+static dataflow_graph                              forward_dataflow;
+static dataflow_graph                              backward_dataflow;
+static boost::unordered_set<dataflow_vertex_desc>  outer_interface;
+  
 /**
  * @brief BFS visitor to discover all dependent edges from a vertex.
  * 
@@ -135,7 +153,6 @@ construct_source_vertices(UINT32 execution_order,
 static inline boost::unordered_set<dataflow_vertex_desc> 
 construct_target_vertices(UINT32 execution_order, boost::shared_ptr<instruction> inserted_ins,
                           boost::unordered_set<dataflow_vertex_desc>& outer_interface, 
-													boost::unordered_map<ADDRINT, UINT8>	address_original_value_map, 
 													dataflow_graph& forward_dataflow, dataflow_graph& backward_dataflow) 
 {
 	boost::unordered_set<dataflow_vertex_desc>::iterator outer_interface_iter;
@@ -153,10 +170,10 @@ construct_target_vertices(UINT32 execution_order, boost::shared_ptr<instruction>
 		if (operand_iter->value.type() == typeid(ADDRINT)) 
 		{
       mem_addr = boost::get<ADDRINT>(operand_iter->value);
-      if (address_original_value_map.find(mem_addr) == address_original_value_map.end()) 
+      if (original_value_at_address.find(mem_addr) == original_value_at_address.end()) 
       {
         // save the original value at this address if it does not exist yet
-        address_original_value_map[mem_addr] = *(reinterpret_cast<UINT8*>(mem_addr));
+        original_value_at_address[mem_addr] = *(reinterpret_cast<UINT8*>(mem_addr));
       }
 		}
 		
@@ -206,15 +223,14 @@ void dataflow::propagate_along_instruction(UINT32 execution_order)
 	// construct the set of source vertex for the inserted instruction
 	boost::unordered_set<dataflow_vertex_desc> source_vertices;
 	source_vertices = construct_source_vertices(execution_order, inserted_ins, 
-																							this->outer_interface, 
-																							this->forward_dataflow, this->backward_dataflow);
+																							outer_interface, 
+																							forward_dataflow, backward_dataflow);
 	
 	// construct the set of target vertex for the inserted instruction
 	boost::unordered_set<dataflow_vertex_desc> target_vertices;
 	target_vertices = construct_target_vertices(execution_order, inserted_ins, 
-																							this->outer_interface, 
-																							this->address_original_value_map,
-																							this->forward_dataflow, this->backward_dataflow);
+																							outer_interface, 
+																							forward_dataflow, backward_dataflow);
 	
 	// construct the hyper-edge
 	boost::unordered_set<dataflow_vertex_desc>::iterator source_iter;
@@ -224,8 +240,8 @@ void dataflow::propagate_along_instruction(UINT32 execution_order)
 		for (target_iter = target_vertices.begin(); target_iter != target_vertices.end(); ++target_iter) 
 		{
 			// insert the hyper-edge between source and target vertices into data-flow graphs
-			boost::add_edge(*source_iter, *target_iter, execution_order, this->forward_dataflow);
-			boost::add_edge(*target_iter, *source_iter, execution_order, this->backward_dataflow);
+			boost::add_edge(*source_iter, *target_iter, execution_order, forward_dataflow);
+			boost::add_edge(*target_iter, *source_iter, execution_order, backward_dataflow);
 		}
 	}
 	
@@ -249,24 +265,24 @@ void dataflow::extract_inputs_instructions_dependance_maps()
 	boost::container::set<dataflow_edge_desc>::iterator dataflow_edge_iter;
 	
 	// iterate over vertices in the forward data-flow graph
-	boost::tie(vertex_iter, vertex_last_iter) = boost::vertices(this->forward_dataflow);
+	boost::tie(vertex_iter, vertex_last_iter) = boost::vertices(forward_dataflow);
 	for (; vertex_iter != vertex_last_iter; ++vertex_iter) 
 	{
 		// verify if the operand corresponding to the vertex is a memory address
-		if (this->forward_dataflow[*vertex_iter].value.type() == typeid(ADDRINT)) 
+		if (forward_dataflow[*vertex_iter].value.type() == typeid(ADDRINT)) 
 		{
-			memory_address = boost::get<ADDRINT>(this->forward_dataflow[*vertex_iter].value);
+			memory_address = boost::get<ADDRINT>(forward_dataflow[*vertex_iter].value);
 			if (utils::is_input_dependent(memory_address)) 
 			{
 				// take BFS from this vertex to find out all dependent edge descriptors
 				current_visitor.examined_edges.clear();
-				boost::breadth_first_search(this->forward_dataflow, *vertex_iter, 
-																		boost::visitor(current_visitor));
+				boost::breadth_first_search(forward_dataflow, *vertex_iter, 
+                                    boost::visitor(current_visitor));
 				// update the list of dependent instructions
 				for (dataflow_edge_iter = current_visitor.examined_edges.begin(); 
 						 dataflow_edge_iter != current_visitor.examined_edges.end(); ++dataflow_edge_iter) 
 				{
-					instruction_order = this->forward_dataflow[*dataflow_edge_iter];
+					instruction_order = forward_dataflow[*dataflow_edge_iter];
 					memory_orders_dependency_map[memory_address].insert(instruction_order);
 					order_memories_dependency_map[instruction_order].insert(memory_address);
 				}

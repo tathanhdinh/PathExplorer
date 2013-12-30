@@ -34,7 +34,7 @@ public:
   static void generic_normal_instruction_callback(ADDRINT instruction_address);
   static void memory_read_instruction_callback(ADDRINT instruction_address, 
                                                ADDRINT memory_read_address, 
-                                               UINT32 memory_read_size, CONTEXT* cpu_context);
+                                               UINT32 memory_read_size);
   static void memory_write_instruction_callback(ADDRINT instruction_address, 
                                                 ADDRINT memory_written_address, 
                                                 UINT32 memory_written_size);

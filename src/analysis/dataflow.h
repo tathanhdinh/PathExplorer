@@ -32,35 +32,13 @@
 namespace analysis 
 {
 
-typedef instruction_operand																				dataflow_vertex;
-typedef UINT32 																					 					dataflow_edge;
-
-typedef boost::adjacency_list<boost::listS, 
-															boost::vecS, 
-															boost::bidirectionalS, 
-                              dataflow_vertex, 
-															dataflow_edge>  					 					dataflow_graph;
-                              
-typedef boost::graph_traits<dataflow_graph>::vertex_descriptor 		dataflow_vertex_desc;
-typedef boost::graph_traits<dataflow_graph>::edge_descriptor   		dataflow_edge_desc;
-typedef boost::graph_traits<dataflow_graph>::vertex_iterator   		dataflow_vertex_iter;
-typedef boost::graph_traits<dataflow_graph>::edge_iterator     		dataflow_edge_iter;
-
 class dataflow
 {
-private:
-  dataflow_graph 															forward_dataflow;
-  dataflow_graph 															backward_dataflow;
-  boost::unordered_set<dataflow_vertex_desc> 	outer_interface;
-	
 public:
-  boost::unordered_map<ADDRINT, UINT8>       address_original_value_map;
- 
-public:
-  void propagate_along_instruction(UINT32 execution_order);
-	void extract_inputs_instructions_dependance_maps();
-	void arrange_checkpoints();
-  void clear();
+  static void propagate_along_instruction(UINT32 execution_order);
+	static void extract_inputs_instructions_dependance_maps();
+	static void arrange_checkpoints();
+  static void clear();
 };
 
 } // end of dataflow_analysis namespace

@@ -152,7 +152,9 @@ static void trace_analyzing_state_handler(INS& curr_ins, ADDRINT curr_ins_addr)
       
       if (curr_ptr_ins->is_memory_write) 
       {
-        //
+        INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
+                                 (AFUNPTR)trace_analyzer::memory_write_instruction_callback, 
+                                 IARG_INST_PTR, IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE, IARG_END);
       }
     }
   }
