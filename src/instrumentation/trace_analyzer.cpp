@@ -44,14 +44,14 @@ extern boost::unordered_map<UINT32, ptr_checkpoint_t> execution_order_checkpoint
 
 /**
  * @brief called in the trace-analyzing state in the following cases:
- *   1. the analyzed instruction is a system call.
- *   2. the analyzed instruction is mapped from the kernel space.
- *   3. the number of analyzed instructions has exceeded its bound value.
+ *   1. the analyzed instruction is a system call
+ *   2. the analyzed instruction is mapped from the kernel space
+ *   3. the number of analyzed instructions has exceeded its bound value
  * to switch to the trace-resolving state.
  * 
  * @return void
  */
-static void switch_to_resolve_analyzed_trace()
+static void switch_to_trace_resolving_state()
 {
   dataflow::extract_inputs_instructions_dependance_maps();
   PIN_RemoveInstrumentation();
@@ -73,7 +73,7 @@ void trace_analyzer::syscall_instruction_callback(ADDRINT instruction_address)
         % current_execution_order;
         
   // stop the trace-analyzing state and go into the trace-resolving state
-  switch_to_resolve_analyzed_trace();
+  switch_to_trace_resolving_state();
   return;
 }
 
@@ -93,7 +93,7 @@ void trace_analyzer::vdso_instruction_callback(ADDRINT instruction_address)
         % current_execution_order;
    
   // stop the trace-analyzing state and go into the trace-resolving state
-  switch_to_resolve_analyzed_trace();
+  switch_to_trace_resolving_state();
   return;
 }
 
@@ -127,7 +127,7 @@ void trace_analyzer::generic_normal_instruction_callback(ADDRINT instruction_add
   else 
   {
     // stop the trace-analyzing state and go into the trace-resolving state
-    switch_to_resolve_analyzed_trace();
+    switch_to_trace_resolving_state();
   }
 }
 
@@ -203,9 +203,9 @@ void trace_analyzer::memory_write_instruction_callback(ADDRINT instruction_addre
 
 /**
  * @brief callback for propagating dynamic information along the execution of an instruction, the 
- * parameter instruction address is actually not necessary because of using the running-time 
+ * parameter "instruction address" is actually not necessary because of using the running-time 
  * information "current execution order". Note that the callback has an important side-effect: it 
- * modifies the map "original_value_at_address" which will be used in storing checkpoints.
+ * modifies the map "original value at address" which will be used in storing checkpoints.
  * 
  * @param instruction_address address of the instrumented instruction
  * @return void
