@@ -142,7 +142,9 @@ construct_source_vertices(UINT32 execution_order,
 
 /**
  * @brief in inserting a new instruction into the data-flow graph, its target operands are 
- * considered as target vertices of a hyper-edge. Note that the outer-interface will be updated.
+ * considered as target vertices of a hyper-edge, the outer-interface will be updated. Note that 
+ * the function has an important side-effect: it modifies the map "original_value_at_address" which 
+ * will be used in storing checkpoints.
  * 
  * @param execution_order execution order of the insert instruction
  * @param outer_interface current outer-interface of the forward data-flow graph

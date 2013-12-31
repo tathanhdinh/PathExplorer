@@ -35,11 +35,12 @@ public:
   static void conditional_branch_callback(ADDRINT instruction_address, bool is_branch_taken);
   static void memory_read_instruction_callback(ADDRINT instruction_address, 
                                                ADDRINT memory_read_address, 
-                                               UINT32 memory_read_size);
+                                               UINT32 memory_read_size, CONTEXT* cpu_context);
   static void memory_write_instruction_callback(ADDRINT instruction_address, 
                                                 ADDRINT memory_written_address, 
                                                 UINT32 memory_written_size);
-  static void dataflow_propagation_along_instruction_callback(ADDRINT instruction_address);
+  static void dataflow_propagating_callback(ADDRINT instruction_address);
+  static void checkpoint_storing_callback(CONTEXT* cpu_context);
 };
 
 } // end of instrumentation namespace
