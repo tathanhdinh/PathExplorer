@@ -23,4 +23,51 @@
 namespace instrumentation 
 {
   
+extern UINT32 current_execution_order;
+  
+/**
+ * @brief generic callback applied for all instructions, principally it is very similar to the 
+ * "generic normal instruction" callback in the trace-analyzer class. But in the trace-resolving 
+ * state, it does not have to handle the system call and vdso instructions (all of them do not 
+ * exist in this state), moreover it does not have to log the executed instructions; so its 
+ * semantics is much more simple.
+ * 
+ * @param instruction_address address of the instrumented instruction
+ * @return void
+ */
+void trace_resolver::generic_instruction_callback(ADDRINT instruction_address)
+{
+  current_execution_order++;
+  return;
+}
+
+
+/**
+ * @brief callback for a conditional branch.
+ * 
+ * @param instruction_address address of the instrumented branch
+ * @param is_branch_taken the branch will be taken or not
+ * @return void
+ */
+void trace_resolver::conditional_branch_callback(ADDRINT instruction_address, bool is_branch_taken)
+{
+  return;
+}
+
+
+/**
+ * @brief callback for an indirect branch or call, it exists only in the trace-resolving state 
+ * because the re-execution trace must be kept to not go to a different target (than one in the 
+ * execution trace logged in the trace-analyzing state).
+ * 
+ * @param instruction_address address of the instrumented instruction
+ * @return void
+ */
+void trace_resolver::indirect_branch_or_call_callback(ADDRINT instruction_address, 
+                                                      ADDRINT target_address)
+{
+  return;
+}
+
+  
 } // end of instrumentation namespace

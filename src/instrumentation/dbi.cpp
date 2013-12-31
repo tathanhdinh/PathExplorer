@@ -19,6 +19,7 @@
 
 #include "dbi.h"
 #include "trace_analyzer.h"
+#include "trace_resolver.h"
 #include "../analysis/instruction.h"
 #include "../analysis/conditional_branch.h"
 #include <boost/unordered_map.hpp>
@@ -180,6 +181,28 @@ static void trace_analyzing_state_handler(const INS& curr_ins, ADDRINT curr_ins_
  */
 static void trace_resolving_state_handler(const INS& curr_ins, ADDRINT curr_ins_addr)
 {
+  // insert generic callback
+  INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
+                           (AFUNPTR)trace_resolver::generic_instruction_callback, IARG_INST_PTR, 
+                           IARG_END);
+  
+  // insert callbacks for conditional branch and indirect one, note that the following conditions 
+  // are mutually exclusive
+  ptr_instruction_t curr_ptr_ins = address_instruction_map[curr_ins_addr];
+  if (curr_ptr_ins->is_conditional_branch)
+  {
+    INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
+                             (AFUNPTR)trace_resolver::conditional_branch_callback, IARG_INST_PTR, 
+                             IARG_BRANCH_TAKEN, IARG_END);
+  }
+  
+  if (curr_ptr_ins->is_indirect_branch_or_call) 
+  {
+    INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
+                             (AFUNPTR)trace_resolver::indirect_branch_or_call_callback, 
+                             IARG_INST_PTR, IARG_BRANCH_TARGET_ADDR, IARG_END);
+  }
+  
   return;
 }
 

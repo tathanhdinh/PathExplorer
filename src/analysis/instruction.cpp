@@ -55,6 +55,11 @@ instruction::instruction(const INS& current_instruction)
   // determine if the instruction is a conditional branch
   this->is_conditional_branch = (INS_Category(current_instruction) == XED_CATEGORY_COND_BR);
   
+  // determine if the instruction is an indirect branch or call, note that an instruction in 
+  // x86(-64) architecture cannot be a conditional and an indirect one at once, namely 
+  // "is conditional branch" and "is indirect branch or call" are mutually exclusive
+  this->is_indirect_branch_or_call = INS_IsIndirectBranchOrCall(current_instruction);
+  
   // the source and target registers of an instruction can be determined statically
   REG current_register;
   uint8_t register_id;

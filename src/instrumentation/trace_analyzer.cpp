@@ -50,10 +50,10 @@ extern boost::unordered_map<UINT32, ptr_checkpoint_t> execution_order_checkpoint
  * 
  * @return bool
  */
-static bool have_branch_to_resolve()
-{
-  return true;
-}
+// static bool have_branch_to_resolve()
+// {
+//   return true;
+// }
 
 /**
  * @brief called in the trace-analyzing state in the following cases:
@@ -124,7 +124,9 @@ void trace_analyzer::generic_normal_instruction_callback(ADDRINT instruction_add
     if (curr_ins->is_conditional_branch) 
     {
       // using copy constructor (faster) instead of instructor from a PIN instruction
-      execution_order_instruction_map[current_execution_order].reset(new conditional_branch(*curr_ins));
+      conditional_branch* curr_branch = new conditional_branch(*curr_ins);
+      execution_order_instruction_map[current_execution_order].reset(curr_branch);
+      execution_order_branch_map[current_execution_order].reset(curr_branch);
     }
     else 
     {
@@ -142,8 +144,8 @@ void trace_analyzer::generic_normal_instruction_callback(ADDRINT instruction_add
 
 
 /**
- * @brief callback for a conditional branch. Note that the parameter instruction address is actually 
- * not necessary because of using the running-time information "current execution order".
+ * @brief callback for a conditional branch, note that the parameter instruction address is 
+ * actually not necessary because of using the running-time information "current execution order".
  * 
  * @param instruction_address address of the instrumented conditional branch
  * @param is_branch_taken the branch will be taken or not

@@ -21,11 +21,17 @@
 #ifndef TRACE_RESOLVER_H
 #define TRACE_RESOLVER_H
 
+#include <pin.H>
+
 namespace instrumentation 
 {
 
 class trace_resolver
 {
+public:
+  static void generic_instruction_callback(ADDRINT instruction_address);
+  static void conditional_branch_callback(ADDRINT instruction_address, bool is_branch_taken);
+  static void indirect_branch_or_call_callback(ADDRINT instruction_address);
 };
 
 } // end of instrumentation namespace
