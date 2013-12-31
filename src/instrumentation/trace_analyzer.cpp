@@ -22,6 +22,7 @@
 #include "../analysis/conditional_branch.h"
 #include "../engine/checkpoint.h"
 #include "../analysis/dataflow.h"
+#include "../instrumentation/dbi.h"
 #include <algorithm>
 #include <boost/log/trivial.hpp>
 #include <boost/format.hpp>
@@ -32,15 +33,27 @@ namespace instrumentation
 
 using namespace analysis;
 using namespace engine;
+using namespace instrumentation;
   
 extern ADDRINT received_message_address;
 extern INT32 received_message_length;
 extern UINT32 current_execution_order;
 extern UINT32 execution_trace_max_length;
 extern boost::unordered_map<UINT32, ptr_instruction_t> execution_order_instruction_map;
+extern boost::unordered_map<UINT32, ptr_conditional_branch_t> execution_order_branch_map;
 extern boost::unordered_map<ADDRINT, ptr_instruction_t> address_instruction_map;
 extern boost::unordered_map<UINT32, ptr_checkpoint_t> execution_order_checkpoint_map;
 
+
+/**
+ * @brief verify if the current analyzed trace has some branches needed to resolve.
+ * 
+ * @return bool
+ */
+static bool have_branch_to_resolve()
+{
+  return true;
+}
 
 /**
  * @brief called in the trace-analyzing state in the following cases:
@@ -54,9 +67,11 @@ extern boost::unordered_map<UINT32, ptr_checkpoint_t> execution_order_checkpoint
 static void switch_to_trace_resolving_state()
 {
   dataflow::extract_inputs_instructions_dependance_maps();
+  dbi::change_running_state(trace_resolving_state);
   PIN_RemoveInstrumentation();
   return;
 }
+  
   
 /**
  * @brief when a system call instruction is met in the trace-analyzing state, stop (without 
@@ -71,9 +86,6 @@ void trace_analyzer::syscall_instruction_callback(ADDRINT instruction_address)
   BOOST_LOG_TRIVIAL(warning) 
     << boost::format("meet a system call after %d executed instruction.") 
         % current_execution_order;
-        
-  // stop the trace-analyzing state and go into the trace-resolving state
-  switch_to_trace_resolving_state();
   return;
 }
 
@@ -91,9 +103,6 @@ void trace_analyzer::vdso_instruction_callback(ADDRINT instruction_address)
   BOOST_LOG_TRIVIAL(warning) 
     << boost::format("meet a vdso instruction after %d executed instruction.") 
         % current_execution_order;
-   
-  // stop the trace-analyzing state and go into the trace-resolving state
-  switch_to_trace_resolving_state();
   return;
 }
 

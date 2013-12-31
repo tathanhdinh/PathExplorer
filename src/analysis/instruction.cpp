@@ -42,7 +42,9 @@ instruction::instruction(const INS& current_instruction)
   if (IMG_Valid(ins_img)) this->contained_library = IMG_Name(ins_img);
   this->contained_function = RTN_FindNameByAddress(this->address);
   
-  // determine if the instruction is mapped from the kernel space
+  // determine if the instruction is mapped from the kernel space (thanks to Igor Skochinsky on the 
+  // reverseengineering.stackexchange.com who has explained it and my colleague Fabrice Sabatier 
+  // who has shown me how to handle it)
   this->is_vdso = false;
   if (this->contained_function.empty()) this->is_vdso = true;
   
