@@ -40,6 +40,23 @@ extern UINT32 execution_trace_max_length;
 extern boost::unordered_map<UINT32, ptr_instruction_t> execution_order_instruction_map;
 extern boost::unordered_map<ADDRINT, ptr_instruction_t> address_instruction_map;
 extern boost::unordered_map<UINT32, ptr_checkpoint_t> execution_order_checkpoint_map;
+
+
+/**
+ * @brief called in the trace-analyzing state in the following cases:
+ *   1. the analyzed instruction is a system call.
+ *   2. the analyzed instruction is mapped from the kernel space.
+ *   3. the number of analyzed instructions has exceeded its bound value.
+ * to switch to the trace-resolving state.
+ * 
+ * @return void
+ */
+static void switch_to_resolve_analyzed_trace()
+{
+  dataflow::extract_inputs_instructions_dependance_maps();
+  PIN_RemoveInstrumentation();
+  return;
+}
   
 /**
  * @brief when a system call instruction is met in the trace-analyzing state, stop (without 
@@ -54,6 +71,9 @@ void trace_analyzer::syscall_instruction_callback(ADDRINT instruction_address)
   BOOST_LOG_TRIVIAL(warning) 
     << boost::format("meet a system call after %d executed instruction.") 
         % current_execution_order;
+        
+  // stop the trace-analyzing state and go into the trace-resolving state
+  switch_to_resolve_analyzed_trace();
   return;
 }
 
@@ -71,6 +91,9 @@ void trace_analyzer::vdso_instruction_callback(ADDRINT instruction_address)
   BOOST_LOG_TRIVIAL(warning) 
     << boost::format("meet a vdso instruction after %d executed instruction.") 
         % current_execution_order;
+   
+  // stop the trace-analyzing state and go into the trace-resolving state
+  switch_to_resolve_analyzed_trace();
   return;
 }
 
@@ -104,6 +127,7 @@ void trace_analyzer::generic_normal_instruction_callback(ADDRINT instruction_add
   else 
   {
     // stop the trace-analyzing state and go into the trace-resolving state
+    switch_to_resolve_analyzed_trace();
   }
 }
 
