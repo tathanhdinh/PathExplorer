@@ -103,7 +103,7 @@ void trace_analyzer::generic_normal_instruction_callback(ADDRINT instruction_add
   }
   else 
   {
-    // stop the trace-analyzing state
+    // stop the trace-analyzing state and go into the trace-resolving state
   }
 }
 

@@ -227,7 +227,7 @@ void dbi::instrument_instruction_before(const INS& current_instruction, VOID* da
       
     default:
       BOOST_LOG_TRIVIAL(fatal) 
-        << boost::format("instrumentation is currently falls into a unknown running state %d") 
+        << boost::format("instrumentation falls into a unknown running state %d") 
             % current_running_state;
       PIN_ExitApplication(current_running_state);
       break;
