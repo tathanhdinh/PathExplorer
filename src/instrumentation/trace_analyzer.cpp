@@ -66,7 +66,7 @@ extern boost::unordered_map<UINT32, ptr_checkpoint_t> execution_order_checkpoint
  */
 static void switch_to_trace_resolving_state()
 {
-  dataflow::extract_inputs_instructions_dependance_maps();
+//   dataflow::extract_inputs_instructions_dependance_maps();
   dbi::change_running_state(trace_resolving_state);
   PIN_RemoveInstrumentation();
   return;
