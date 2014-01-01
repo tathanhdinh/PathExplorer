@@ -40,11 +40,10 @@ extern boost::unordered_map<ADDRINT, orders_t>          memory_orders_dependency
 extern boost::unordered_map<UINT32, addresses_t>        order_memories_dependency_map;
 extern boost::unordered_map<ADDRINT, UINT8>             original_value_at_address;
 
-typedef instruction_operand                                       dataflow_vertex;
-typedef UINT32                                                    dataflow_edge;
+typedef instruction_operand dataflow_vertex;
+typedef UINT32              dataflow_edge;
 
-typedef boost::adjacency_list<boost::listS, 
-                              boost::vecS, 
+typedef boost::adjacency_list<boost::listS, boost::vecS, 
                               boost::bidirectionalS, 
                               dataflow_vertex, 
                               dataflow_edge>                      dataflow_graph;
@@ -256,7 +255,7 @@ void dataflow::propagate_along_instruction(UINT32 execution_order)
  * 
  * @return void
  */
-void dataflow::extract_inputs_instructions_dependance_maps()
+static void dataflow::extract_inputs_instructions_dependance_maps()
 {
 	dataflow_vertex_iter vertex_iter;
 	dataflow_vertex_iter vertex_last_iter;
@@ -295,14 +294,16 @@ void dataflow::extract_inputs_instructions_dependance_maps()
 	return;
 }
 
+
 /**
- * @brief ...
+ * @brief the following information will be extracted from the executed instructions
+ *  1. 
  * 
  * @return void
  */
-void dataflow::arrange_checkpoints()
+void dataflow::analyze_executed_instructions()
 {
-	return;
+  return;
 }
 
 } // end of analysis namespace

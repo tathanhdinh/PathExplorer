@@ -178,7 +178,9 @@ static void trace_analyzing_state_handler(const INS& curr_ins, ADDRINT curr_ins_
 
 
 /**
- * @brief handle an instruction in the trace resolving state.
+ * @brief handle an instruction in the trace resolving state, in this state the vdso and system 
+ * call instructions will never be met because in the trace analyzing state, the execution has been 
+ * stopped before meeting a such kind of instructions.
  * 
  * @param instruction handled instruction
  * @param data unused

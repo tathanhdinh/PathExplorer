@@ -36,8 +36,9 @@ class dataflow
 {
 public:
   static void propagate_along_instruction(UINT32 execution_order);
-	static void extract_inputs_instructions_dependance_maps();
-	static void arrange_checkpoints();
+  static void analyze_executed_instructions();
+// 	static void extract_inputs_instructions_dependance_maps();
+// 	static void arrange_checkpoints();
   static void clear();
 };
 
