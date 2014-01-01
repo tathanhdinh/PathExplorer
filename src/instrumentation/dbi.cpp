@@ -137,8 +137,13 @@ static void trace_analyzing_state_handler(const INS& curr_ins, ADDRINT curr_ins_
     }
     else 
     {
-      // update running time information for instructions
-      // the first 3 condition below are mutually exclusive so they can be used separately
+      // insert generic callback for normal instruction
+      INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
+                               (AFUNPTR)trace_analyzer::generic_normal_instruction_callback, 
+                               IARG_INST_PTR, IARG_END);
+  
+      // update running time information for normal instructions, note that the first 3 callbacks 
+      // below are mutually exclusive so they can be used separately
       if (curr_ptr_ins->is_conditional_branch) 
       {
         INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
@@ -199,7 +204,7 @@ static void trace_resolving_state_handler(const INS& curr_ins, ADDRINT curr_ins_
   if (curr_ptr_ins->is_indirect_branch_or_call) 
   {
     INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
-                             (AFUNPTR)trace_resolver::indirect_branch_or_call_callback, 
+                             (AFUNPTR)trace_resolver::indirect_branchorcall_callback, 
                              IARG_INST_PTR, IARG_BRANCH_TARGET_ADDR, IARG_END);
   }
   

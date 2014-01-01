@@ -84,7 +84,7 @@ static void switch_to_trace_resolving_state()
 void trace_analyzer::syscall_instruction_callback(ADDRINT instruction_address)
 {
   BOOST_LOG_TRIVIAL(warning) 
-    << boost::format("meet a system call after %d executed instruction.") 
+    << boost::format("meet a system call after %d instructions executed.") 
         % current_execution_order;
   return;
 }
@@ -101,7 +101,7 @@ void trace_analyzer::syscall_instruction_callback(ADDRINT instruction_address)
 void trace_analyzer::vdso_instruction_callback(ADDRINT instruction_address)
 {
   BOOST_LOG_TRIVIAL(warning) 
-    << boost::format("meet a vdso instruction after %d executed instruction.") 
+    << boost::format("meet a vdso instruction after %d instructions executed.") 
         % current_execution_order;
   return;
 }

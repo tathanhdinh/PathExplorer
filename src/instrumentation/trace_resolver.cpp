@@ -63,8 +63,8 @@ void trace_resolver::conditional_branch_callback(ADDRINT instruction_address, bo
  * @param instruction_address address of the instrumented instruction
  * @return void
  */
-void trace_resolver::indirect_branch_or_call_callback(ADDRINT instruction_address, 
-                                                      ADDRINT target_address)
+void trace_resolver::indirect_branchorcall_callback(ADDRINT instruction_address, 
+                                                    ADDRINT target_address)
 {
   return;
 }

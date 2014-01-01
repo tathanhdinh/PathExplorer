@@ -31,7 +31,7 @@ class trace_resolver
 public:
   static void generic_instruction_callback(ADDRINT instruction_address);
   static void conditional_branch_callback(ADDRINT instruction_address, bool is_branch_taken);
-  static void indirect_branch_or_call_callback(ADDRINT instruction_address);
+  static void indirect_branchorcall_callback(ADDRINT instruction_address, ADDRINT target_address);
 };
 
 } // end of instrumentation namespace
