@@ -36,7 +36,7 @@ typedef boost::unordered_set<ADDRINT>  addresses_t;         // memory addresses
 
 extern boost::unordered_map<ADDRINT, ptr_instruction_t> instruction_at;
 extern boost::unordered_map<UINT32, ADDRINT>            address_of_instruction_executed_at;
-extern boost::unordered_map<UINT32, ptr_instruction_t>  execution_order_instruction_map;
+extern boost::unordered_map<UINT32, ptr_instruction_t>  instruction_executed_at;
 extern boost::unordered_map<ADDRINT, orders_t>          memory_orders_dependency_map;
 extern boost::unordered_map<UINT32, addresses_t>        order_memories_dependency_map;
 extern boost::unordered_map<ADDRINT, UINT8>             original_value_at_address;
