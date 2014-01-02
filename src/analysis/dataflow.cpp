@@ -290,7 +290,10 @@ static void extract_inputs_instructions_dependance_maps()
 
 /**
  * @brief the following information will be extracted from the executed instructions
- *  1. 
+ *  1. for each memory address: the list of instruction execution orders that propagate information 
+ *     of this address,
+ *  2. for each instruction execution order: the list of memory addresses whose information 
+ *     propagate to this order,
  * 
  * @return void
  */
