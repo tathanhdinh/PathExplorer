@@ -23,11 +23,13 @@
 
 using namespace analysis;
 
+boost::unordered_map<ADDRINT, ptr_instruction_t> address_instruction_map;
 boost::unordered_map<UINT32, ptr_instruction_t> execution_order_instruction_map;
 boost::unordered_map<UINT32, ADDRINT> address_of_instruction_executed_at;
 boost::unordered_map<ADDRINT, UINT8>  original_value_at_address;
 
 int main(int argc, char* argv[])
 {
+  
   return 0;
 }
