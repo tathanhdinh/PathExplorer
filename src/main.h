@@ -35,8 +35,8 @@ extern UINT32 current_execution_order;
 extern UINT32 execution_trace_max_length;
 
 extern boost::unordered_map<ADDRINT, ptr_instruction_t> instruction_at;
-extern boost::unordered_map<UINT32, ptr_instruction_t> instruction_executed_at;
-extern boost::unordered_map<UINT32, ADDRINT> address_of_instruction_executed_at;
+extern boost::unordered_map<UINT32, ptr_instruction_t> instruction_at_exeorder;
+extern boost::unordered_map<UINT32, ADDRINT> address_of_instruction_at_exeorder;
 extern boost::unordered_map<ADDRINT, UINT8> original_value_at_address;
 
 #endif // MAIN_H

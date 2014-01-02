@@ -29,12 +29,12 @@ namespace analysis
 
 using namespace utilities;
 
-typedef boost::unordered_set<UINT32>   orders_t;            // executions order of instructions
+typedef boost::unordered_set<UINT32>   exeorders_t;            // executions order of instructions
 typedef boost::unordered_set<ADDRINT>  addresses_t;         // memory addresses
 
-extern boost::unordered_map<ADDRINT, orders_t>          memory_orders_dependency_map;
-extern boost::unordered_map<UINT32, addresses_t>        order_memories_dependency_map;
-extern boost::unordered_map<ADDRINT, UINT8>             original_value_at_address;
+static boost::unordered_map<ADDRINT, exeorders_t> exeorders_afffected_by_memory_at;
+static boost::unordered_map<UINT32, addresses_t>  memories_affecting_exeorder_at;
+extern boost::unordered_map<ADDRINT, UINT8>       original_value_of_memory_at;
 
 typedef instruction_operand dataflow_vertex;
 typedef UINT32              dataflow_edge;
@@ -167,10 +167,10 @@ construct_target_vertices(UINT32 execution_order, boost::shared_ptr<instruction>
 		if (operand_iter->value.type() == typeid(ADDRINT)) 
 		{
       mem_addr = boost::get<ADDRINT>(operand_iter->value);
-      if (original_value_at_address.find(mem_addr) == original_value_at_address.end()) 
+      if (original_value_of_memory_at.find(mem_addr) == original_value_of_memory_at.end()) 
       {
         // save the original value at this address if it does not exist yet
-        original_value_at_address[mem_addr] = *(reinterpret_cast<UINT8*>(mem_addr));
+        original_value_of_memory_at[mem_addr] = *(reinterpret_cast<UINT8*>(mem_addr));
       }
 		}
 		
@@ -213,7 +213,7 @@ construct_target_vertices(UINT32 execution_order, boost::shared_ptr<instruction>
 void dataflow::propagate_along_instruction(UINT32 execution_order)
 {
   boost::unordered_set<dataflow_vertex_desc>::iterator outer_interface_iter;  
-  ptr_instruction_t inserted_ins =  instruction_executed_at[execution_order];
+  ptr_instruction_t inserted_ins =  instruction_at_exeorder[execution_order];
 	
 	// construct the set of source vertex for the inserted instruction
 	boost::unordered_set<dataflow_vertex_desc> source_vertices;
@@ -255,8 +255,8 @@ static void extract_inputs_instructions_dependance_maps()
 	dataflow_vertex_iter vertex_last_iter;
 	
 	ADDRINT memory_address;
-	UINT32 instruction_order;
-	dataflow_bfs_visitor current_visitor;
+	UINT32 ins_order;
+	dataflow_bfs_visitor curr_visitor;
 	boost::container::set<dataflow_edge_desc>::iterator dataflow_edge_iter;
 	
 	// iterate over vertices in the forward data-flow graph
@@ -267,19 +267,18 @@ static void extract_inputs_instructions_dependance_maps()
 		if (forward_dataflow[*vertex_iter].value.type() == typeid(ADDRINT)) 
 		{
 			memory_address = boost::get<ADDRINT>(forward_dataflow[*vertex_iter].value);
-			if (utils::is_input_dependent(memory_address)) 
+			if (utils::is_input_buffer(memory_address)) 
 			{
 				// take BFS from this vertex to find out all dependent edge descriptors
-				current_visitor.examined_edges.clear();
-				boost::breadth_first_search(forward_dataflow, *vertex_iter, 
-                                    boost::visitor(current_visitor));
+				curr_visitor.examined_edges.clear();
+				boost::breadth_first_search(forward_dataflow, *vertex_iter, boost::visitor(curr_visitor));
 				// update the list of dependent instructions
-				for (dataflow_edge_iter = current_visitor.examined_edges.begin(); 
-						 dataflow_edge_iter != current_visitor.examined_edges.end(); ++dataflow_edge_iter) 
+				for (dataflow_edge_iter = curr_visitor.examined_edges.begin(); 
+						 dataflow_edge_iter != curr_visitor.examined_edges.end(); ++dataflow_edge_iter) 
 				{
-					instruction_order = forward_dataflow[*dataflow_edge_iter];
-					memory_orders_dependency_map[memory_address].insert(instruction_order);
-					order_memories_dependency_map[instruction_order].insert(memory_address);
+					ins_order = forward_dataflow[*dataflow_edge_iter];
+					exeorders_afffected_by_memory_at[memory_address].insert(ins_order);
+					memories_affecting_exeorder_at[ins_order].insert(memory_address);
 				}
 			}
 		}

@@ -19,6 +19,7 @@
  */
 
 #include "utils.h"
+#include "../main.h"
 
 namespace utilities 
 {
@@ -50,14 +51,15 @@ std::string utils::remove_leading_zeros(std::string input)
 
 
 /**
- * @brief determine if the memory address is dependent on the input.
+ * @brief determine if a memory address is located in the input message buffer.
  * 
- * @param memory_address memory address
+ * @param memory_address examined memory address
  * @return bool
  */
-bool utils::is_input_dependent(ADDRINT memory_address)
+bool utils::is_input_buffer(ADDRINT memory_address)
 {
-	return true;
+  return ((received_message_address <= memory_address) && 
+          (memory_address < received_message_address + received_message_length));
 }
 
 } // end of utilities namespace

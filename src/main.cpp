@@ -29,8 +29,8 @@ UINT32 current_execution_order;
 UINT32 execution_trace_max_length;
 
 boost::unordered_map<ADDRINT, ptr_instruction_t> instruction_at;
-boost::unordered_map<UINT32, ptr_instruction_t> instruction_executed_at;
-boost::unordered_map<UINT32, ADDRINT> address_of_instruction_executed_at;
+boost::unordered_map<UINT32, ptr_instruction_t> instruction_at_exeorder;
+boost::unordered_map<UINT32, ADDRINT> address_of_instruction_at_exeorder;
 boost::unordered_map<ADDRINT, UINT8> original_value_at_address;
 
 
@@ -43,14 +43,14 @@ boost::unordered_map<ADDRINT, UINT8> original_value_at_address;
 VOID start_exploring(VOID* data)
 {
   instruction_at.clear();
-  instruction_executed_at.clear();
-  address_of_instruction_executed_at.clear();
+  instruction_at_exeorder.clear();
+  address_of_instruction_at_exeorder.clear();
   return;
 }
 
 
 /**
- * @brief callback to finalize some operations (e.g. write log files, etc).
+ * @brief callback to finalize some operations (e.g. save logs, etc).
  * 
  * @param code unused 
  * @param data ...
@@ -58,7 +58,7 @@ VOID start_exploring(VOID* data)
  */
 VOID stop_exploring(INT32 code, VOID* data)
 {
-  
+  return;
 }
 
 
