@@ -141,7 +141,7 @@ instruction::instruction(const instruction& other_instruction)
  * @param read_or_written read (false) or written (true)
  * @return void
  */
-void instruction::update_memory(ADDRINT access_address, UINT8 access_length, 
+void instruction::update_memory_access_info(ADDRINT access_address, UINT8 access_length, 
                                 memory_access_t access_type)
 {
   ADDRINT address;

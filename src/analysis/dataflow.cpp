@@ -29,11 +29,9 @@ namespace analysis
 
 using namespace utilities;
 
-typedef boost::unordered_set<UINT32>   exeorders_t;            // executions order of instructions
-typedef boost::unordered_set<ADDRINT>  addresses_t;         // memory addresses
-
 static boost::unordered_map<ADDRINT, exeorders_t> exeorders_afffected_by_memory_at;
 static boost::unordered_map<UINT32, addresses_t>  memories_affecting_exeorder_at;
+
 extern boost::unordered_map<ADDRINT, UINT8>       original_value_of_memory_at;
 
 typedef instruction_operand dataflow_vertex;
@@ -246,15 +244,16 @@ void dataflow::propagate_along_instruction(UINT32 execution_order)
 
 /**
  * @brief the following information will be extracted from the data-flow
- *  1. for each memory address: the list of instruction execution orders that propagate information 
- *     of this address,
- *  2. for each instruction execution order: the list of memory addresses whose information 
- *     propagate to this order.
+ *  1. for each memory address: a set of instruction execution orders that propagate information 
+ *     of this address, the results are stored in the map exeorders_afffected_by_memory_at,
+ *  2. for each instruction execution order: a set of memory addresses whose information 
+ *     propagate to this order, the results are stored in the map memories_affecting_exeorder_at.
  * 
  * @return void
  */
 static void determine_inputs_instructions_dependance()
 {
+  
 	dataflow_vertex_iter vertex_iter;
 	dataflow_vertex_iter vertex_last_iter;
 	
@@ -293,6 +292,25 @@ static void determine_inputs_instructions_dependance()
 
 
 /**
+ * @brief the following information will be calculated from the two maps above
+ *  1. for each conditional branch: the set of checkpoints so that if the program re-executes from 
+ *     any of its elements with some modification on the input buffer, then the new execution may 
+ *     lead to a new decision of the branch.
+ * 
+ * @return void
+ */
+static void determine_branches_checkpoints_dependance()
+{
+  boost::unordered_map<UINT32, ptr_conditional_branch_t>::iterator branch_iter;
+  for (branch_iter = branch_at_exeorder.begin(); branch_iter != branch_at_exeorder.end(); 
+       ++branch_iter)
+  {
+    //
+  }
+  return;
+}
+
+/**
  * @brief the following information will be extracted from the executed instructions
  *  1. for each memory address: the list of instruction execution orders that propagate information 
  *     of this address,
@@ -304,6 +322,7 @@ static void determine_inputs_instructions_dependance()
 void dataflow::analyze_executed_instructions()
 {
   determine_inputs_instructions_dependance();
+  determine_branches_checkpoints_dependance();
   return;
 }
 

@@ -166,7 +166,7 @@ void trace_analyzer::memory_read_instruction_callback(ADDRINT instruction_addres
 {
   // update dynamic information: read memory addresses
   ptr_instruction_t curr_ins = instruction_at_exeorder[current_execution_order];
-  curr_ins->update_memory(memory_read_address, memory_read_size, MEMORY_READ);
+  curr_ins->update_memory_access_info(memory_read_address, memory_read_size, MEMORY_READ);
   
   // if the read memory address range has an intersection with the input buffer,
   if (std::max(memory_read_address, received_message_address) < 
@@ -196,7 +196,7 @@ void trace_analyzer::memory_write_instruction_callback(ADDRINT instruction_addre
 {
   // update dynamic information: written memory addresses
   ptr_instruction_t curr_ins = instruction_at_exeorder[current_execution_order];
-  curr_ins->update_memory(memory_written_address, memory_written_size, MEMORY_WRITE);
+  curr_ins->update_memory_access_info(memory_written_address, memory_written_size, MEMORY_WRITE);
   return;
 }
 

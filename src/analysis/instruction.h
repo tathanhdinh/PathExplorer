@@ -56,7 +56,8 @@ public:
 public:
   instruction(const INS& current_instruction);
   instruction(const instruction& other_instruction);
-  void update_memory(ADDRINT access_address, UINT8 access_length, memory_access_t access_type);
+  void update_memory_access_info(ADDRINT access_address, UINT8 access_length, 
+                                 memory_access_t access_type);
 };
 
 typedef boost::shared_ptr<instruction> ptr_instruction_t;

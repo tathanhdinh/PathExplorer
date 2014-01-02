@@ -30,8 +30,9 @@ UINT32 execution_trace_max_length;
 boost::unordered_map<ADDRINT, ptr_instruction_t> instruction_at_address;
 boost::unordered_map<UINT32, ptr_instruction_t> instruction_at_exeorder;
 boost::unordered_map<UINT32, ptr_conditional_branch_t> branch_at_exeorder;
-boost::unordered_map<UINT32, ADDRINT> address_of_instruction_at_exeorder;
 boost::unordered_map<UINT32, ptr_checkpoint_t> checkpoint_at_exeorder;
+boost::unordered_map<UINT32, exeorders_t> chkorders_affecting_branch_at_exeorder;
+
 boost::unordered_map<ADDRINT, UINT8> original_value_at_address;
 
 
@@ -46,7 +47,6 @@ VOID start_exploring(VOID* data)
   instruction_at_address.clear();
   instruction_at_exeorder.clear();
   branch_at_exeorder.clear();
-  address_of_instruction_at_exeorder.clear();
   return;
 }
 
