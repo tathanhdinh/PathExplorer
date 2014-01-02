@@ -213,17 +213,17 @@ construct_target_vertices(UINT32 execution_order, boost::shared_ptr<instruction>
 void dataflow::propagate_along_instruction(UINT32 execution_order)
 {
   boost::unordered_set<dataflow_vertex_desc>::iterator outer_interface_iter;  
-  ptr_instruction_t inserted_ins =  instruction_at_exeorder[execution_order];
+  ptr_instruction_t executed_ins =  instruction_at_exeorder[execution_order];
 	
 	// construct the set of source vertex for the inserted instruction
 	boost::unordered_set<dataflow_vertex_desc> source_vertices;
-	source_vertices = construct_source_vertices(execution_order, inserted_ins, 
+	source_vertices = construct_source_vertices(execution_order, executed_ins, 
 																							outer_interface, 
 																							forward_dataflow, backward_dataflow);
 	
 	// construct the set of target vertex for the inserted instruction
 	boost::unordered_set<dataflow_vertex_desc> target_vertices;
-	target_vertices = construct_target_vertices(execution_order, inserted_ins, 
+	target_vertices = construct_target_vertices(execution_order, executed_ins, 
 																							outer_interface, 
 																							forward_dataflow, backward_dataflow);
 	
@@ -245,11 +245,15 @@ void dataflow::propagate_along_instruction(UINT32 execution_order)
 
 
 /**
- * @brief extract maps between input-related memory addresses and instructions used them.
+ * @brief the following information will be extracted from the data-flow
+ *  1. for each memory address: the list of instruction execution orders that propagate information 
+ *     of this address,
+ *  2. for each instruction execution order: the list of memory addresses whose information 
+ *     propagate to this order.
  * 
  * @return void
  */
-static void extract_inputs_instructions_dependance_maps()
+static void determine_inputs_instructions_dependance()
 {
 	dataflow_vertex_iter vertex_iter;
 	dataflow_vertex_iter vertex_last_iter;
@@ -277,8 +281,8 @@ static void extract_inputs_instructions_dependance_maps()
 						 dataflow_edge_iter != curr_visitor.examined_edges.end(); ++dataflow_edge_iter) 
 				{
 					ins_order = forward_dataflow[*dataflow_edge_iter];
-					exeorders_afffected_by_memory_at[memory_address].insert(ins_order);
-					memories_affecting_exeorder_at[ins_order].insert(memory_address);
+					exeorders_afffected_by_memory_at[memory_address].insert(ins_order); // see 1
+					memories_affecting_exeorder_at[ins_order].insert(memory_address);   // see 2
 				}
 			}
 		}
@@ -299,7 +303,7 @@ static void extract_inputs_instructions_dependance_maps()
  */
 void dataflow::analyze_executed_instructions()
 {
-  extract_inputs_instructions_dependance_maps();
+  determine_inputs_instructions_dependance();
   return;
 }
 

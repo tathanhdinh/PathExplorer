@@ -26,17 +26,21 @@
 #include <boost/unordered_set.hpp>
 #include "analysis/instruction.h"
 #include "analysis/conditional_branch.h"
+#include "engine/checkpoint.h"
 
 using namespace analysis;
+using namespace engine;
 
 extern ADDRINT received_message_address;
 extern INT32 received_message_length;
 extern UINT32 current_execution_order;
 extern UINT32 execution_trace_max_length;
 
-extern boost::unordered_map<ADDRINT, ptr_instruction_t> instruction_at;
+extern boost::unordered_map<ADDRINT, ptr_instruction_t> instruction_at_address;
 extern boost::unordered_map<UINT32, ptr_instruction_t> instruction_at_exeorder;
+extern boost::unordered_map<UINT32, ptr_conditional_branch_t> branch_at_exeorder;
 extern boost::unordered_map<UINT32, ADDRINT> address_of_instruction_at_exeorder;
+extern boost::unordered_map<UINT32, ptr_checkpoint_t> checkpoint_at_exeorder;
 extern boost::unordered_map<ADDRINT, UINT8> original_value_at_address;
 
 #endif // MAIN_H
