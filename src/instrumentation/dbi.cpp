@@ -18,6 +18,7 @@
  */
 
 #include "dbi.h"
+#include "../main.h"
 #include "trace_analyzer.h"
 #include "trace_resolver.h"
 #include "../analysis/instruction.h"
@@ -30,10 +31,6 @@ namespace instrumentation
 {
 
 using namespace analysis;
-extern boost::unordered_map<ADDRINT, ptr_instruction_t> address_instruction_map;
-  
-extern ADDRINT received_message_address;
-extern INT32   received_message_length;
 
 static running_state current_running_state; 
 
@@ -120,7 +117,7 @@ void dbi::instrument_syscall_exit(THREADID thread_id, CONTEXT* context,
  */
 static void trace_analyzing_state_handler(const INS& curr_ins, ADDRINT curr_ins_addr)
 {
-  ptr_instruction_t curr_ptr_ins = address_instruction_map[curr_ins_addr];
+  ptr_instruction_t curr_ptr_ins = instruction_at[curr_ins_addr];
   if (curr_ptr_ins->is_syscall)
   {
     INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
@@ -195,7 +192,7 @@ static void trace_resolving_state_handler(const INS& curr_ins, ADDRINT curr_ins_
   
   // insert callbacks for conditional branch and indirect one, note that the following conditions 
   // are mutually exclusive
-  ptr_instruction_t curr_ptr_ins = address_instruction_map[curr_ins_addr];
+  ptr_instruction_t curr_ptr_ins = instruction_at[curr_ins_addr];
   if (curr_ptr_ins->is_conditional_branch)
   {
     INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
@@ -232,12 +229,12 @@ void dbi::instrument_instruction_before(const INS& current_instruction, VOID* da
   if (curr_ptr_ins->is_conditional_branch) 
   {
     // then copy it as a conditional branch
-    address_instruction_map[current_address].reset(new conditional_branch(*curr_ptr_ins));
+    instruction_at[current_address].reset(new conditional_branch(*curr_ptr_ins));
   }
   else 
   {
     // else copy it as a normal instruction
-    address_instruction_map[current_address] = curr_ptr_ins;
+    instruction_at[current_address] = curr_ptr_ins;
   }
   
   // place handlers

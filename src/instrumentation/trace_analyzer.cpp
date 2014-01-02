@@ -41,7 +41,7 @@ extern UINT32 current_execution_order;
 extern UINT32 execution_trace_max_length;
 extern boost::unordered_map<UINT32, ptr_instruction_t> execution_order_instruction_map;
 extern boost::unordered_map<UINT32, ptr_conditional_branch_t> execution_order_branch_map;
-extern boost::unordered_map<ADDRINT, ptr_instruction_t> address_instruction_map;
+extern boost::unordered_map<ADDRINT, ptr_instruction_t> instruction_at;
 extern boost::unordered_map<UINT32, ptr_checkpoint_t> execution_order_checkpoint_map;
 
 
@@ -120,7 +120,7 @@ void trace_analyzer::generic_normal_instruction_callback(ADDRINT instruction_add
   {
     // log the instruction
     current_execution_order++;
-    ptr_instruction_t curr_ins = address_instruction_map[instruction_address];
+    ptr_instruction_t curr_ins = instruction_at[instruction_address];
     if (curr_ins->is_conditional_branch) 
     {
       // using copy constructor (faster) instead of instructor from a PIN instruction

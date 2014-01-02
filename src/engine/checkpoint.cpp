@@ -24,9 +24,7 @@ namespace engine
 {
 
 using namespace analysis;
-extern boost::shared_ptr<dataflow> 						program_dataflow;
-extern boost::unordered_map<UINT32, ADDRINT>  execution_order_address_map;
-extern boost::unordered_map<ADDRINT, UINT8>   original_value_at_address;
+extern boost::unordered_map<ADDRINT, UINT8> original_value_at_address;
 
 /**
  * @brief a checkpoint is created before the instruction (pointed by the current address) executes. 

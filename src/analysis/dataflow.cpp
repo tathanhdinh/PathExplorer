@@ -18,12 +18,10 @@
  */
 
 #include "dataflow.h"
+#include "../main.h"
 #include "../utilities/utils.h"
 #include "../engine/checkpoint.h"
-#include <boost/unordered_set.hpp>
-#include <boost/unordered_map.hpp>
 #include <boost/container/set.hpp>
-#include <boost/shared_ptr.hpp>
 #include <boost/graph/breadth_first_search.hpp>
 
 namespace analysis 
@@ -34,9 +32,6 @@ using namespace utilities;
 typedef boost::unordered_set<UINT32>   orders_t;            // executions order of instructions
 typedef boost::unordered_set<ADDRINT>  addresses_t;         // memory addresses
 
-extern boost::unordered_map<ADDRINT, ptr_instruction_t> instruction_at;
-extern boost::unordered_map<UINT32, ADDRINT>            address_of_instruction_executed_at;
-extern boost::unordered_map<UINT32, ptr_instruction_t>  instruction_executed_at;
 extern boost::unordered_map<ADDRINT, orders_t>          memory_orders_dependency_map;
 extern boost::unordered_map<UINT32, addresses_t>        order_memories_dependency_map;
 extern boost::unordered_map<ADDRINT, UINT8>             original_value_at_address;
@@ -217,11 +212,8 @@ construct_target_vertices(UINT32 execution_order, boost::shared_ptr<instruction>
  */
 void dataflow::propagate_along_instruction(UINT32 execution_order)
 {
-  boost::unordered_set<dataflow_vertex_desc>::iterator outer_interface_iter;
-  
-// 	ADDRINT ins_addr = address_of_instruction_executed_at[execution_order];
-// 	boost::shared_ptr<instruction> inserted_ins = instruction_at[ins_addr];
-  ptr_instruction_t inserted_ins =  execution_order_instruction_map[execution_order];
+  boost::unordered_set<dataflow_vertex_desc>::iterator outer_interface_iter;  
+  ptr_instruction_t inserted_ins =  instruction_executed_at[execution_order];
 	
 	// construct the set of source vertex for the inserted instruction
 	boost::unordered_set<dataflow_vertex_desc> source_vertices;

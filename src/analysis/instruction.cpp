@@ -33,7 +33,7 @@ instruction::instruction(const INS& current_instruction)
   this->address           = INS_Address(current_instruction);
   this->dissasembled_name = INS_Disassemble(current_instruction);
   
-  // determine if the instruction is a syscall
+  // determine if the instruction is a system call
   this->is_syscall = INS_IsSyscall(current_instruction);
   
   // get the name of the library and the name of function consisting the instruction

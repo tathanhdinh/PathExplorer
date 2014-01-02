@@ -22,6 +22,8 @@
 #define MAIN_H
 
 #include <pin.H>
+#include <boost/unordered_map.hpp>
+#include <boost/unordered_set.hpp>
 #include "analysis/instruction.h"
 #include "analysis/conditional_branch.h"
 
