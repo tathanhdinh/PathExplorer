@@ -32,12 +32,11 @@ namespace instrumentation
 
 using namespace analysis;
 
-static running_state current_running_state; 
-
 #define SYSCALL_SENDTO            44
 #define SYSCALL_RECVFROM          45
 #define MESSAGE_ADDRESS_ARGUMENT  1
 
+static running_state current_running_state; 
 static bool required_message_received = false; 
 
 /**
@@ -219,7 +218,7 @@ static void trace_resolving_state_handler(const INS& curr_ins, ADDRINT curr_ins_
  * @param data not used
  * @return void
  */
-void dbi::instrument_instruction_before(const INS& current_instruction, VOID* data)
+void dbi::instrument_instruction_before(INS current_instruction, VOID* data)
 {
   // create an instruction from the current analyzed PIN instruction
   ADDRINT current_address = INS_Address(current_instruction);

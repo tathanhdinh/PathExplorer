@@ -19,6 +19,9 @@
  */
 
 #include "main.h"
+#include "instrumentation/dbi.h"
+
+using namespace instrumentation;
 
 ADDRINT received_message_address;
 INT32 received_message_length;
@@ -31,7 +34,48 @@ boost::unordered_map<UINT32, ADDRINT> address_of_instruction_executed_at;
 boost::unordered_map<ADDRINT, UINT8> original_value_at_address;
 
 
+/**
+ * @brief callback to initialize trace exploration.
+ * 
+ * @param data unused parameters because all initialized data are global variables
+ * @return VOID
+ */
+VOID start_exploring(VOID* data)
+{
+  instruction_at.clear();
+  instruction_executed_at.clear();
+  address_of_instruction_executed_at.clear();
+  return;
+}
+
+
+/**
+ * @brief callback to finalize some operations (e.g. write log files, etc).
+ * 
+ * @param code unused 
+ * @param data ...
+ * @return VOID
+ */
+VOID stop_exploring(INT32 code, VOID* data)
+{
+  
+}
+
+
 int main(int argc, char* argv[])
 {
+  // initialize PIN
+  PIN_InitSymbols();
+  PIN_Init(argc, argv);
+  
+  // setup instrumentation functions
+  PIN_AddApplicationStartFunction(start_exploring, 0);
+  INS_AddInstrumentFunction(dbi::instrument_instruction_before, 0);
+  PIN_AddSyscallEntryFunction(dbi::instrument_syscall_enter, 0);
+  PIN_AddSyscallExitFunction(dbi::instrument_syscall_exit, 0);
+  PIN_AddFiniFunction(stop_exploring, 0);
+  
+  // pass control to PIN
+  PIN_StartProgram();
   return 0;
 }
