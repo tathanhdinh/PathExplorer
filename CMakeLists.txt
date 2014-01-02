@@ -5,26 +5,7 @@ project(PathExplorer)
 include(FindPin.cmake)
 include(UsePin.cmake)
 
-# add_subdirectory(src)
-
 set(PINTOOL_LINK_LIBS boost_log pthread)
-
-# ADD_PINTOOL(path_explorer   
-#   branch.cpp 
-#   variable.cpp
-#   path_explorer.cpp
-#   instruction.cpp 
-#   checkpoint.cpp 
-#   resolving_functions.cc 
-#   logging_functions.cc 
-#   tainting_functions.cc 
-#   analysis_functions.cc 
-#   instrumentation_functions.cc 
-#   stuffs.cc)
-  
-# add_executable(path_explorer.so instruction.cpp path_explorer.cpp)
-
-# install(TARGETS pintaint RUNTIME DESTINATION bin)
 
 ADD_PINTOOL(PathExplorer2
   src/analysis/instruction_operand.cpp
