@@ -7,7 +7,7 @@ include(UsePin.cmake)
 
 set(PINTOOL_LINK_LIBS boost_log pthread)
 
-ADD_PINTOOL(PathExplorer2
+ADD_PINTOOL(PathExplorer2 src/main.cpp
   src/analysis/instruction_operand.cpp
   src/analysis/instruction.cpp
   src/analysis/conditional_branch.cpp
