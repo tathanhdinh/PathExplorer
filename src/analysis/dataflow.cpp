@@ -303,14 +303,16 @@ static void determine_branches_checkpoints_dependance()
 {
   boost::unordered_map<UINT32, ptr_conditional_branch_t>::iterator ptr_branch_iter;
   boost::unordered_map<UINT32, ptr_checkpoint_t>::iterator ptr_checkpoint_iter;
+  boost::unordered_set<instruction_operand, operand_hash>::iterator ins_operand_iter;
   boost::unordered_set<ADDRINT> affecting_mem_addrs;
   ptr_instruction_t ptr_ins;
   UINT32 branch_exeorder;
   UINT32 checkpoint_exeorder;
+  ADDRINT accessing_mem_addrs;
   
   // for each conditional branch
-  for (ptr_branch_iter = branch_at_exeorder.begin(); 
-       ptr_branch_iter != branch_at_exeorder.end(); ++ptr_branch_iter)
+  for (ptr_branch_iter = branch_at_exeorder.begin(); ptr_branch_iter != branch_at_exeorder.end(); 
+       ++ptr_branch_iter)
   {
     // get its execution order
     branch_exeorder = ptr_branch_iter->first;
@@ -324,11 +326,24 @@ static void determine_branches_checkpoints_dependance()
       checkpoint_exeorder = ptr_checkpoint_iter->first;
       if (checkpoint_exeorder < branch_exeorder) 
       {
-        // verify if the instruction at this checkpoint access to some addresses 
+        // verify if the instruction at this checkpoint access to some addresses in the input buffer
         ptr_ins = instruction_at_exeorder[checkpoint_exeorder];
+        for (ins_operand_iter = ptr_ins->source_operands.begin(); 
+             ins_operand_iter != ptr_ins->source_operands.end(); ++ins_operand_iter) 
+        {
+          accessing_mem_addrs = boost::get<ADDRINT>(ins_operand_iter->value);
+          if (utils::is_input_buffer(accessing_mem_addrs)) 
+          {
+            //  then add the checkpoint into the list
+            chkorders_affecting_branch_at_exeorder[branch_exeorder].insert(checkpoint_exeorder);
+            // moreover add the accessed memory to the checkpoint
+            ptr_checkpoint_iter->second->memory_addresses_to_modify.insert(accessing_mem_addrs);
+          }
+        }
       }
     }
   }
+  
   return;
 }
 

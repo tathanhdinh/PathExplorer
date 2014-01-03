@@ -42,7 +42,6 @@ extern UINT32 execution_trace_max_length;
 extern boost::unordered_map<ADDRINT, ptr_instruction_t> instruction_at_address;
 extern boost::unordered_map<UINT32, ptr_instruction_t> instruction_at_exeorder;
 extern boost::unordered_map<UINT32, ptr_conditional_branch_t> branch_at_exeorder;
-// extern boost::unordered_map<UINT32, ADDRINT> address_of_instruction_at_exeorder;
 extern boost::unordered_map<UINT32, ptr_checkpoint_t> checkpoint_at_exeorder;
 extern boost::unordered_map<UINT32, exeorders_t> chkorders_affecting_branch_at_exeorder;
 

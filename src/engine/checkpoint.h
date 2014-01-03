@@ -22,6 +22,7 @@
 
 #include <pin.H>
 #include <boost/unordered_map.hpp>
+#include <boost/unordered_set.hpp>
 #include <boost/container/vector.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/compressed_pair.hpp>
@@ -37,6 +38,7 @@ public:
 	UINT32																  execution_order;
   boost::unordered_map<ADDRINT, UINT8>    memory_change_log;
   boost::unordered_map<ADDRINT, state_t>  memory_state;
+  boost::unordered_set<ADDRINT>           memory_addresses_to_modify;
   
 public:
   checkpoint(UINT32 execution_order, CONTEXT* current_context);
