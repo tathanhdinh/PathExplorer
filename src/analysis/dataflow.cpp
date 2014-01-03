@@ -279,6 +279,7 @@ static void determine_inputs_instructions_dependance()
 				for (dataflow_edge_iter = curr_visitor.examined_edges.begin(); 
 						 dataflow_edge_iter != curr_visitor.examined_edges.end(); ++dataflow_edge_iter) 
 				{
+          // dependence extraction
 					ins_order = forward_dataflow[*dataflow_edge_iter];
 					exeorders_afffected_by_memory_at[memory_address].insert(ins_order); // see 1
 					memories_affecting_exeorder_at[ins_order].insert(memory_address);   // see 2
@@ -292,20 +293,41 @@ static void determine_inputs_instructions_dependance()
 
 
 /**
- * @brief the following information will be calculated from the two maps above
- *  1. for each conditional branch: the set of checkpoints so that if the program re-executes from 
- *     any of its elements with some modification on the input buffer, then the new execution may 
- *     lead to a new decision of the branch.
+ * @brief for each conditional branch the function determine the set of checkpoints so that if the 
+ * program re-executes from any of its elements with some modification on the input buffer, then 
+ * the new execution may lead to a new decision of the branch.
  * 
  * @return void
  */
 static void determine_branches_checkpoints_dependance()
 {
-  boost::unordered_map<UINT32, ptr_conditional_branch_t>::iterator branch_iter;
-  for (branch_iter = branch_at_exeorder.begin(); branch_iter != branch_at_exeorder.end(); 
-       ++branch_iter)
+  boost::unordered_map<UINT32, ptr_conditional_branch_t>::iterator ptr_branch_iter;
+  boost::unordered_map<UINT32, ptr_checkpoint_t>::iterator ptr_checkpoint_iter;
+  boost::unordered_set<ADDRINT> affecting_mem_addrs;
+  ptr_instruction_t ptr_ins;
+  UINT32 branch_exeorder;
+  UINT32 checkpoint_exeorder;
+  
+  // for each conditional branch
+  for (ptr_branch_iter = branch_at_exeorder.begin(); 
+       ptr_branch_iter != branch_at_exeorder.end(); ++ptr_branch_iter)
   {
-    //
+    // get its execution order
+    branch_exeorder = ptr_branch_iter->first;
+    // and the set of memory addresses affecting its decision
+    affecting_mem_addrs = memories_affecting_exeorder_at[branch_exeorder];
+    // then iterate over checkpoints 
+    for (ptr_checkpoint_iter = checkpoint_at_exeorder.begin(); 
+         ptr_checkpoint_iter != checkpoint_at_exeorder.end(); ++ptr_checkpoint_iter) 
+    {
+      // consider the checkpoint taken before the execution of the conditional branch
+      checkpoint_exeorder = ptr_checkpoint_iter->first;
+      if (checkpoint_exeorder < branch_exeorder) 
+      {
+        // verify if the instruction at this checkpoint access to some addresses 
+        ptr_ins = instruction_at_exeorder[checkpoint_exeorder];
+      }
+    }
   }
   return;
 }
