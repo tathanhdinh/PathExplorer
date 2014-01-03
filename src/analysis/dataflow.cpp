@@ -148,7 +148,7 @@ construct_source_vertices(UINT32 execution_order,
 static inline boost::unordered_set<dataflow_vertex_desc> 
 construct_target_vertices(UINT32 execution_order, boost::shared_ptr<instruction> inserted_ins,
                           boost::unordered_set<dataflow_vertex_desc>& outer_interface, 
-													dataflow_graph& forward_dataflow, dataflow_graph& backward_dataflow) 
+                          dataflow_graph& forward_dataflow, dataflow_graph& backward_dataflow) 
 {
 	boost::unordered_set<dataflow_vertex_desc>::iterator outer_interface_iter;
   boost::unordered_set<instruction_operand, operand_hash>::iterator operand_iter;
@@ -293,10 +293,13 @@ static void determine_inputs_instructions_dependance()
 
 
 /**
- * @brief for each conditional branch the function determine the set of checkpoints so that if the 
- * program re-executes from any of its elements with some modification on the input buffer, then 
- * the new execution may lead to a new decision of the branch.
- * 
+ * @brief the following information will be extracted from the two dependence maps above
+ *  1. for each conditional branch: a set of checkpoints so that if the program re-executes from 
+ *     any of its elements with some modification on the input buffer, then the new execution may 
+ *     lead to a new decision of the branch.
+ *  2. for each checkpoint: a set of addresses so that if the program re-executes from the 
+ *     checkpoint with some modification on the memory at these addresses, then the new execution 
+ *     may lead to a new decision of its dependent branches.
  * @return void
  */
 static void determine_branches_checkpoints_dependance()
@@ -306,9 +309,10 @@ static void determine_branches_checkpoints_dependance()
   boost::unordered_set<instruction_operand, operand_hash>::iterator ins_operand_iter;
   boost::unordered_set<ADDRINT> affecting_mem_addrs;
   ptr_instruction_t ptr_ins;
+  ptr_checkpoint_t  ptr_chkpnt;
   UINT32 branch_exeorder;
   UINT32 checkpoint_exeorder;
-  ADDRINT accessing_mem_addrs;
+  ADDRINT accessing_mem_addr;
   
   // for each conditional branch
   for (ptr_branch_iter = branch_at_exeorder.begin(); ptr_branch_iter != branch_at_exeorder.end(); 
@@ -331,13 +335,14 @@ static void determine_branches_checkpoints_dependance()
         for (ins_operand_iter = ptr_ins->source_operands.begin(); 
              ins_operand_iter != ptr_ins->source_operands.end(); ++ins_operand_iter) 
         {
-          accessing_mem_addrs = boost::get<ADDRINT>(ins_operand_iter->value);
-          if (utils::is_input_buffer(accessing_mem_addrs)) 
+          accessing_mem_addr = boost::get<ADDRINT>(ins_operand_iter->value);
+          if (utils::is_input_buffer(accessing_mem_addr)) 
           {
             //  then add the checkpoint into the list
             chkorders_affecting_branch_at_exeorder[branch_exeorder].insert(checkpoint_exeorder);
-            // moreover add the accessed memory to the checkpoint
-            ptr_checkpoint_iter->second->memory_addresses_to_modify.insert(accessing_mem_addrs);
+            // and add the accessed memory to the checkpoint
+            ptr_chkpnt = ptr_checkpoint_iter->second;
+            ptr_chkpnt->memory_addresses_to_modify.insert(accessing_mem_addr);
           }
         }
       }
