@@ -417,13 +417,11 @@ static void determine_jumping_points()
         exeorder_base = ++exeorder_idx;
       }
       // longest sequence detection
-      jumping_pos_iter = 
-        boost::max_element(consecutive_inputindep_ins, 
-                           boost::bind(&boost::unordered_map<UINT32, UINT32>::value_type::second, _1) < 
-                           boost::bind(&boost::unordered_map<UINT32, UINT32>::value_type::second, _2));
+      jumping_pos_iter = boost::max_element(consecutive_inputindep_ins, 
+        boost::bind(&boost::unordered_map<UINT32, UINT32>::value_type::second, _1) < 
+        boost::bind(&boost::unordered_map<UINT32, UINT32>::value_type::second, _2));
       
-      // verify in this sequence has its upper-bound is the execution order of the instruction just
-      // before the second checkpoint
+      // verify if this sequence has its upper-bound + 1 is the the second checkpoint's order
       if (jumping_pos_iter->first + jumping_pos_iter->second == next_exeorder) 
       {
         curr_ptr_chkpnt->jumping_point = jumping_pos_iter->first;
@@ -442,11 +440,7 @@ static void determine_jumping_points()
 }
 
 /**
- * @brief the following information will be extracted from the executed instructions
- *  1. for each memory address: the list of instruction execution orders that propagate information 
- *     of this address,
- *  2. for each instruction execution order: the list of memory addresses whose information 
- *     propagate to this order,
+ * @brief analyze the information extracted from the execution of the program with a given input.
  * 
  * @return void
  */
