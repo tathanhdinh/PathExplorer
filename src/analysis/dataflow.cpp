@@ -21,6 +21,8 @@
 #include "../main.h"
 #include "../utilities/utils.h"
 #include "../engine/checkpoint.h"
+#include <boost/range/algorithm.hpp>
+#include <boost/bind.hpp>
 #include <boost/container/set.hpp>
 #include <boost/graph/breadth_first_search.hpp>
 
@@ -354,8 +356,8 @@ static void determine_branches_checkpoints_dependance()
 
 
 /**
- * @brief the following information will be extracted from the two dependence maps and the 
- * checkpoint list above:
+ * @brief the following information will be extracted from the two dependence maps (and the 
+ * checkpoint list) above:
  *  1. for each checkpoint: an execution order so that the execution of the program from the 
  *     checkpoint until this order can jump to the next checkpoint without executing instructions 
  *     between.
@@ -367,9 +369,9 @@ static void determine_jumping_points()
   boost::unordered_map<UINT32, addresses_t> input_memaddrs_affecting_exeorder_at;
   boost::unordered_map<UINT32, addresses_t>::iterator map_iter;
   boost::unordered_map<UINT32, ptr_checkpoint_t>::iterator curr_chkpnt_iter, next_chkpnt_iter;
+  boost::unordered_map<UINT32, UINT32> consecutive_inputindep_ins;
   ptr_checkpoint_t curr_ptr_chkpnt, next_ptr_chkpnt;
-  UINT32 curr_exeorder;
-  UINT32 next_exeorder;
+  UINT32 curr_exeorder, next_exeorder, exeorder_base, exeorder_idx;
   addresses_t curr_affecting_addrs;
   addresses_t::iterator curr_addr_iter;
   
@@ -389,20 +391,35 @@ static void determine_jumping_points()
     }
   }
   
-  // iterate over the checkpoint list
   if (checkpoint_at_exeorder.size() >= 2) 
   {
-    // consider each pair of consecutive checkpoints
+    // iterate over the checkpoint list
     curr_chkpnt_iter = checkpoint_at_exeorder.begin(); 
     next_chkpnt_iter = curr_chkpnt_iter; ++next_chkpnt_iter;
     while (next_chkpnt_iter != checkpoint_at_exeorder.end()) 
     {
+      // consider each pair of consecutive checkpoints
       curr_exeorder = curr_chkpnt_iter->first; curr_ptr_chkpnt = curr_chkpnt_iter->second;
       next_exeorder = next_chkpnt_iter->first; next_ptr_chkpnt = next_chkpnt_iter->second;
       
+      exeorder_base = curr_exeorder + 1;
+      while (exeorder_base < next_exeorder) 
+      {
+        consecutive_inputindep_ins[exeorder_base] = 0;
+        exeorder_idx = exeorder_base;
+        while (input_memaddrs_affecting_exeorder_at[exeorder_idx].empty()) 
+        {
+          consecutive_inputindep_ins[exeorder_base]++; ++exeorder_idx;
+        }
+        exeorder_base = ++exeorder_idx;
+      }
+      boost::max_element(consecutive_inputindep_ins,
+                         boost::bind(&boost::unordered_map<UINT32, UINT32>::value_type::second, _1) < 
+                         boost::bind(&boost::unordered_map<UINT32, UINT32>::value_type::second, _2));
+      
+      
       curr_chkpnt_iter = next_chkpnt_iter; ++next_chkpnt_iter;
     }
-    
     
   }
   
