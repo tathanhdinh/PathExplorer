@@ -56,7 +56,7 @@ std::string utils::remove_leading_zeros(std::string input)
  * @param memory_address examined memory address
  * @return bool
  */
-bool utils::is_input_buffer(ADDRINT memory_address)
+bool utils::is_in_input_buffer(ADDRINT memory_address)
 {
   return ((received_message_address <= memory_address) && 
           (memory_address < received_message_address + received_message_length));

@@ -270,7 +270,7 @@ static void determine_inputs_instructions_dependance()
 		if (forward_dataflow[*vertex_iter].value.type() == typeid(ADDRINT)) 
 		{
 			memory_address = boost::get<ADDRINT>(forward_dataflow[*vertex_iter].value);
-			if (utils::is_input_buffer(memory_address)) 
+			if (utils::is_in_input_buffer(memory_address)) 
 			{
 				// take BFS from this vertex to find out all dependent edge descriptors
 				curr_visitor.examined_edges.clear();
@@ -336,7 +336,7 @@ static void determine_branches_checkpoints_dependance()
              ins_operand_iter != ptr_ins->source_operands.end(); ++ins_operand_iter) 
         {
           accessing_mem_addr = boost::get<ADDRINT>(ins_operand_iter->value);
-          if (utils::is_input_buffer(accessing_mem_addr)) 
+          if (utils::is_in_input_buffer(accessing_mem_addr)) 
           {
             //  then add the checkpoint into the list
             chkorders_affecting_branch_at_exeorder[branch_exeorder].insert(checkpoint_exeorder);
@@ -366,7 +366,10 @@ static void determine_jumping_points()
 {
   boost::unordered_map<UINT32, addresses_t> input_memaddrs_affecting_exeorder_at;
   boost::unordered_map<UINT32, addresses_t>::iterator map_iter;
+  boost::unordered_map<UINT32, ptr_checkpoint_t>::iterator curr_chkpnt_iter;
+  ptr_checkpoint_t curr_ptr_chkpnt, next_ptr_chkpnt;
   UINT32 curr_exeorder;
+  UINT32 next_exeorder;
   addresses_t curr_affecting_addrs;
   addresses_t::iterator curr_addr_iter;
   
@@ -379,9 +382,29 @@ static void determine_jumping_points()
     for (curr_addr_iter = curr_affecting_addrs.begin(); 
          curr_addr_iter != curr_affecting_addrs.end(); ++curr_addr_iter) 
     {
-      //
+      if (utils::is_in_input_buffer(*curr_addr_iter)) 
+      {
+        input_memaddrs_affecting_exeorder_at[curr_exeorder].insert(*curr_addr_iter);
+      }
     }
   }
+  
+  // iterate over the checkpoint list
+  if (checkpoint_at_exeorder.size() >= 2) 
+  {
+    for (curr_chkpnt_iter = checkpoint_at_exeorder.begin(); 
+         curr_chkpnt_iter != checkpoint_at_exeorder.end();) 
+    {
+      // consider each two consecutive checkpoints
+      curr_exeorder = curr_chkpnt_iter->first; curr_ptr_chkpnt = curr_chkpnt_iter->second;
+      curr_chkpnt_iter++;
+      next_exeorder = curr_chkpnt_iter->first; next_ptr_chkpnt = curr_chkpnt_iter->second;
+      
+      // 
+    }
+    
+  }
+  
   return;
 }
 
