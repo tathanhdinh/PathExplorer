@@ -29,8 +29,8 @@ namespace analysis
 
 using namespace utilities;
 
-static boost::unordered_map<ADDRINT, exeorders_t> exeorders_afffected_by_memory_at;
-static boost::unordered_map<UINT32, addresses_t>  memories_affecting_exeorder_at;
+static boost::unordered_map<ADDRINT, exeorders_t> exeorders_afffected_by_memaddr_at;
+static boost::unordered_map<UINT32, addresses_t>  memaddrs_affecting_exeorder_at;
 
 extern boost::unordered_map<ADDRINT, UINT8>       original_value_of_memory_at;
 
@@ -243,7 +243,7 @@ void dataflow::propagate_along_instruction(UINT32 execution_order)
 
 
 /**
- * @brief the following information will be extracted from the data-flow
+ * @brief the following information will be extracted from the data-flow:
  *  1. for each memory address: a set of instruction execution orders that propagate information 
  *     of this address, the results are stored in the map exeorders_afffected_by_memory_at,
  *  2. for each instruction execution order: a set of memory addresses whose information 
@@ -281,8 +281,8 @@ static void determine_inputs_instructions_dependance()
 				{
           // dependence extraction
 					ins_order = forward_dataflow[*dataflow_edge_iter];
-					exeorders_afffected_by_memory_at[memory_address].insert(ins_order); // see 1
-					memories_affecting_exeorder_at[ins_order].insert(memory_address);   // see 2
+					exeorders_afffected_by_memaddr_at[memory_address].insert(ins_order); // see 1
+					memaddrs_affecting_exeorder_at[ins_order].insert(memory_address);   // see 2
 				}
 			}
 		}
@@ -293,7 +293,7 @@ static void determine_inputs_instructions_dependance()
 
 
 /**
- * @brief the following information will be extracted from the two dependence maps above
+ * @brief the following information will be extracted from the two dependence maps above:
  *  1. for each conditional branch: a set of checkpoints so that if the program re-executes from 
  *     any of its elements with some modification on the input buffer, then the new execution may 
  *     lead to a new decision of the branch.
@@ -321,7 +321,7 @@ static void determine_branches_checkpoints_dependance()
     // get its execution order
     branch_exeorder = ptr_branch_iter->first;
     // and the set of memory addresses affecting its decision
-    affecting_mem_addrs = memories_affecting_exeorder_at[branch_exeorder];
+    affecting_mem_addrs = memaddrs_affecting_exeorder_at[branch_exeorder];
     // then iterate over checkpoints 
     for (ptr_checkpoint_iter = checkpoint_at_exeorder.begin(); 
          ptr_checkpoint_iter != checkpoint_at_exeorder.end(); ++ptr_checkpoint_iter) 
@@ -352,6 +352,39 @@ static void determine_branches_checkpoints_dependance()
   return;
 }
 
+
+/**
+ * @brief the following information will be extracted from the two dependence maps and the 
+ * checkpoint list above:
+ *  1. for each checkpoint: an execution order so that the execution of the program from the 
+ *     checkpoint until this order can jump to the next checkpoint without executing instructions 
+ *     between.
+ * 
+ * @return void
+ */
+static void determine_jumping_points()
+{
+  boost::unordered_map<UINT32, addresses_t> input_memaddrs_affecting_exeorder_at;
+  boost::unordered_map<UINT32, addresses_t>::iterator map_iter;
+  UINT32 curr_exeorder;
+  addresses_t curr_affecting_addrs;
+  addresses_t::iterator curr_addr_iter;
+  
+  // construct a map showing the input buffer addresses affecting a given instruction execution
+  for (map_iter = memaddrs_affecting_exeorder_at.begin(); 
+       map_iter != memaddrs_affecting_exeorder_at.end(); ++map_iter) 
+  {
+    curr_exeorder = map_iter->first;
+    curr_affecting_addrs = map_iter->second;
+    for (curr_addr_iter = curr_affecting_addrs.begin(); 
+         curr_addr_iter != curr_affecting_addrs.end(); ++curr_addr_iter) 
+    {
+      //
+    }
+  }
+  return;
+}
+
 /**
  * @brief the following information will be extracted from the executed instructions
  *  1. for each memory address: the list of instruction execution orders that propagate information 
@@ -365,6 +398,8 @@ void dataflow::analyze_executed_instructions()
 {
   determine_inputs_instructions_dependance();
   determine_branches_checkpoints_dependance();
+  determine_jumping_points();
+  
   return;
 }
 

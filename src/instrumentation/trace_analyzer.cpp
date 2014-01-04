@@ -174,8 +174,7 @@ void trace_analyzer::memory_read_instruction_callback(ADDRINT instruction_addres
                received_message_address + received_message_length))
   {
     // namely the instruction read some byte of the input, then take a checkpoint
-    checkpoint_at_exeorder[current_execution_order].reset(
-      new checkpoint(current_execution_order, cpu_context));
+    checkpoint_at_exeorder[current_execution_order].reset(new checkpoint(cpu_context));
   }
   
   return;

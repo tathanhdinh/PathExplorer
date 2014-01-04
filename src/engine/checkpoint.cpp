@@ -32,11 +32,8 @@ extern boost::unordered_map<ADDRINT, UINT8> original_value_at_address;
  * @param current_address the address pointed by the instruction pointer (IP).
  * @param current_context the cpu context (values of registers) when the IP is at this address.
  */
-checkpoint::checkpoint(UINT32 execution_order, CONTEXT* current_context)
+checkpoint::checkpoint(CONTEXT* current_context)
 {
-	// save the execution order,
-	this->execution_order = execution_order;
-  
   // the current cpu context,
   PIN_SaveContext(current_context, &(this->cpu_context));
   

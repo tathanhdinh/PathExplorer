@@ -35,13 +35,13 @@ class checkpoint
 {
 public:
   CONTEXT                                 cpu_context;
-	UINT32																  execution_order;
+  UINT32                                  jumping_point;
   boost::unordered_map<ADDRINT, UINT8>    memory_change_log;
   boost::unordered_map<ADDRINT, state_t>  memory_state;
   boost::unordered_set<ADDRINT>           memory_addresses_to_modify;
   
 public:
-  checkpoint(UINT32 execution_order, CONTEXT* current_context);
+  checkpoint(CONTEXT* current_context);
   void log_before_execution(ADDRINT memory_written_address, UINT8 memory_written_length);  
 };
 
