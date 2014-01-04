@@ -366,7 +366,7 @@ static void determine_jumping_points()
 {
   boost::unordered_map<UINT32, addresses_t> input_memaddrs_affecting_exeorder_at;
   boost::unordered_map<UINT32, addresses_t>::iterator map_iter;
-  boost::unordered_map<UINT32, ptr_checkpoint_t>::iterator curr_chkpnt_iter;
+  boost::unordered_map<UINT32, ptr_checkpoint_t>::iterator curr_chkpnt_iter, next_chkpnt_iter;
   ptr_checkpoint_t curr_ptr_chkpnt, next_ptr_chkpnt;
   UINT32 curr_exeorder;
   UINT32 next_exeorder;
@@ -392,16 +392,17 @@ static void determine_jumping_points()
   // iterate over the checkpoint list
   if (checkpoint_at_exeorder.size() >= 2) 
   {
-    for (curr_chkpnt_iter = checkpoint_at_exeorder.begin(); 
-         curr_chkpnt_iter != checkpoint_at_exeorder.end();) 
+    // consider each pair of consecutive checkpoints
+    curr_chkpnt_iter = checkpoint_at_exeorder.begin(); 
+    next_chkpnt_iter = curr_chkpnt_iter; ++next_chkpnt_iter;
+    while (next_chkpnt_iter != checkpoint_at_exeorder.end()) 
     {
-      // consider each two consecutive checkpoints
       curr_exeorder = curr_chkpnt_iter->first; curr_ptr_chkpnt = curr_chkpnt_iter->second;
-      curr_chkpnt_iter++;
-      next_exeorder = curr_chkpnt_iter->first; next_ptr_chkpnt = curr_chkpnt_iter->second;
+      next_exeorder = next_chkpnt_iter->first; next_ptr_chkpnt = next_chkpnt_iter->second;
       
-      // 
+      curr_chkpnt_iter = next_chkpnt_iter; ++next_chkpnt_iter;
     }
+    
     
   }
   
