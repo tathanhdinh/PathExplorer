@@ -370,6 +370,7 @@ static void determine_jumping_points()
   boost::unordered_map<UINT32, addresses_t>::iterator map_iter;
   boost::unordered_map<UINT32, ptr_checkpoint_t>::iterator curr_chkpnt_iter, next_chkpnt_iter;
   boost::unordered_map<UINT32, UINT32> consecutive_inputindep_ins;
+  boost::unordered_map<UINT32, UINT32>::iterator jumping_pos_iter;
   ptr_checkpoint_t curr_ptr_chkpnt, next_ptr_chkpnt;
   UINT32 curr_exeorder, next_exeorder, exeorder_base, exeorder_idx;
   addresses_t curr_affecting_addrs;
@@ -402,21 +403,35 @@ static void determine_jumping_points()
       curr_exeorder = curr_chkpnt_iter->first; curr_ptr_chkpnt = curr_chkpnt_iter->second;
       next_exeorder = next_chkpnt_iter->first; next_ptr_chkpnt = next_chkpnt_iter->second;
       
+      // detect the longest sequence of consecutive instructions which are input independent
       exeorder_base = curr_exeorder + 1;
       while (exeorder_base < next_exeorder) 
       {
         consecutive_inputindep_ins[exeorder_base] = 0;
         exeorder_idx = exeorder_base;
+        // verify if the instruction is input independent
         while (input_memaddrs_affecting_exeorder_at[exeorder_idx].empty()) 
         {
           consecutive_inputindep_ins[exeorder_base]++; ++exeorder_idx;
         }
         exeorder_base = ++exeorder_idx;
       }
-      boost::max_element(consecutive_inputindep_ins,
-                         boost::bind(&boost::unordered_map<UINT32, UINT32>::value_type::second, _1) < 
-                         boost::bind(&boost::unordered_map<UINT32, UINT32>::value_type::second, _2));
+      // longest sequence detection
+      jumping_pos_iter = 
+        boost::max_element(consecutive_inputindep_ins, 
+                           boost::bind(&boost::unordered_map<UINT32, UINT32>::value_type::second, _1) < 
+                           boost::bind(&boost::unordered_map<UINT32, UINT32>::value_type::second, _2));
       
+      // verify in this sequence has its upper-bound is the execution order of the instruction just
+      // before the second checkpoint
+      if (jumping_pos_iter->first + jumping_pos_iter->second == next_exeorder) 
+      {
+        curr_ptr_chkpnt->jumping_point = jumping_pos_iter->first;
+      }
+      else 
+      {
+        curr_ptr_chkpnt->jumping_point = next_exeorder;
+      }
       
       curr_chkpnt_iter = next_chkpnt_iter; ++next_chkpnt_iter;
     }
