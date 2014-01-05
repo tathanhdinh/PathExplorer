@@ -28,12 +28,15 @@ namespace analysis
 using namespace utilities;
 
 /**
- * @brief default constructor.
+ * @brief note that the data-flow graph (whose vertices are instruction operands) does not work 
+ * without this default constructor. The default constructor creates a "terminal" instruction 
+ * operand, one way to think of it is the terminal object in a category whose objects are 
+ * instruction operands and morphisms are instructions. 
  * 
  */
 instruction_operand::instruction_operand()
 {
-	this->name = "";
+	this->name = "terminal";
 }
 
 /**

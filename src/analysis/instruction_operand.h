@@ -42,7 +42,6 @@ public:
 	instruction_operand& operator=(const instruction_operand& other_operand);
 };
 
-
 inline bool operator==(const instruction_operand& operand_a, const instruction_operand& operand_b) 
 {
   return (operand_a.name == operand_b.name);
