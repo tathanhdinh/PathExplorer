@@ -19,8 +19,9 @@
 
 #include "instruction_operand.h"
 #include "../utilities/utils.h"
-
 #include <boost/lexical_cast.hpp>
+#include <boost/integer_traits.hpp>
+// #include <boost/cstdint.hpp>
 
 namespace analysis 
 {
@@ -37,6 +38,7 @@ using namespace utilities;
 instruction_operand::instruction_operand()
 {
 	this->name = "terminal";
+  this->alive_until_exeorder = boost::integer_traits<UINT32>::const_max;
 }
 
 /**

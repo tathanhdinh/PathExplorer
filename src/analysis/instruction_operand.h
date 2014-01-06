@@ -36,8 +36,9 @@ namespace analysis
 class instruction_operand
 {
 public:
-  std::string name;
-  boost::variant<ADDRINT, REG, UINT32> value;
+  std::string                           name;
+  boost::variant<ADDRINT, REG, UINT32>  value;
+  UINT32                                alive_until_exeorder;
   
 public:
 	instruction_operand();
