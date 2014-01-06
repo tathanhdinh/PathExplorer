@@ -22,12 +22,17 @@
 
 #include <pin.H>
 #include <string>
+#include <boost/shared_ptr.hpp>
 #include <boost/functional/hash.hpp>
 #include <boost/variant.hpp>
 
 namespace analysis 
 {
 
+/**
+ * @brief class representing instruction operands
+ * 
+ */
 class instruction_operand
 {
 public:
@@ -47,7 +52,13 @@ inline bool operator==(const instruction_operand& operand_a, const instruction_o
   return (operand_a.name == operand_b.name);
 }
 
+typedef boost::shared_ptr<instruction_operand> ptr_insoperand_t;
 
+
+/**
+ * @brief a hash distinguishing instruction operands
+ * 
+ */
 class operand_hash
 {
 public:

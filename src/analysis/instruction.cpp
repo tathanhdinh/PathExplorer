@@ -61,21 +61,22 @@ instruction::instruction(const INS& current_instruction)
   this->is_indirect_branch_or_call = INS_IsIndirectBranchOrCall(current_instruction);
   
   // the source and target registers of an instruction can be determined statically
-  REG current_register;
-  uint8_t register_id;
-  uint8_t register_number; 
+  REG curr_register;
+  uint8_t register_id, register_number;
+//   uint8_t register_number; 
+  ptr_insoperand_t curr_ptr_operand;
   
   // source operands as read registers
   register_number = INS_MaxNumRRegs(current_instruction);
   for (register_id = 0; register_id < register_number; ++register_id) 
   {
-    current_register = INS_RegR(current_instruction, register_id);
+    curr_register = INS_RegR(current_instruction, register_id);
     
     // the source pointer is not considered when it is the instruction pointer, 
     // namely the control tainting is not counted.
-    if (current_register != REG_INST_PTR) 
+    if (curr_register != REG_INST_PTR) 
     {
-      if (INS_IsRet(current_instruction) && (current_register == REG_STACK_PTR))
+      if (INS_IsRet(current_instruction) && (curr_register == REG_STACK_PTR))
       {
         // do nothing: when the instruction is ret, the esp (and rsp) register will be used 
         // implicitly to point out the address of popped value; to eliminate the 
@@ -83,7 +84,8 @@ instruction::instruction(const INS& current_instruction)
       }
       else 
       {
-        this->source_operands.insert(instruction_operand(current_register));
+        curr_ptr_operand.reset(new instruction_operand(curr_register));
+        this->source_operands.insert(curr_ptr_operand);
       }
     }
   }
@@ -92,16 +94,17 @@ instruction::instruction(const INS& current_instruction)
   register_number = INS_MaxNumWRegs(current_instruction);
   for (register_id = 0; register_id < register_number; ++register_id) 
   {
-    current_register = INS_RegW(current_instruction, register_id);
-    if (current_register != REG_INST_PTR) 
+    curr_register = INS_RegW(current_instruction, register_id);
+    if (curr_register != REG_INST_PTR) 
     {
-      if (INS_IsRet(current_instruction) && (current_register == REG_STACK_PTR))
+      if (INS_IsRet(current_instruction) && (curr_register == REG_STACK_PTR))
       {
         // do nothing: see the explication above
       }
       else 
       {
-        this->target_operands.insert(instruction_operand(current_register));
+        curr_ptr_operand.reset(new instruction_operand(curr_register));
+        this->target_operands.insert(curr_ptr_operand);
       }
     }
   }
@@ -146,20 +149,23 @@ void instruction::update_memory_access_info(ADDRINT access_address, UINT8 access
 {
   ADDRINT address;
   ADDRINT upper_bound_address = access_address + access_length;
+  ptr_insoperand_t curr_ptr_operand;
 
   switch (access_type) 
   {
     case MEMORY_READ:
       for (address = access_address; address < upper_bound_address; ++address) 
       {
-        this->source_operands.insert(instruction_operand(address));
+        curr_ptr_operand.reset(new instruction_operand(address));
+        this->source_operands.insert(curr_ptr_operand);
       }
       break;
       
     case MEMORY_WRITE:
       for (address = access_address; address < upper_bound_address; ++address) 
       {
-        this->target_operands.insert(instruction_operand(address));
+        curr_ptr_operand.reset(new instruction_operand(address));
+        this->target_operands.insert(curr_ptr_operand);
       }
       break;
       

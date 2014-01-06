@@ -50,8 +50,10 @@ public:
   bool        is_conditional_branch;
   bool        is_indirect_branch_or_call;
   
-  boost::unordered_set<instruction_operand, operand_hash> source_operands;
-  boost::unordered_set<instruction_operand, operand_hash> target_operands;
+  boost::unordered_set<ptr_insoperand_t> source_operands;
+  boost::unordered_set<ptr_insoperand_t> target_operands;
+//   boost::unordered_set<instruction_operand, operand_hash> source_operands;
+//   boost::unordered_set<instruction_operand, operand_hash> target_operands;
   
 public:
   instruction(const INS& current_instruction);

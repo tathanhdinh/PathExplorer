@@ -36,7 +36,8 @@ static boost::unordered_map<UINT32, addresses_t>  memaddrs_affecting_exeorder_at
 
 extern boost::unordered_map<ADDRINT, UINT8>       original_value_of_memory_at;
 
-typedef instruction_operand dataflow_vertex;
+// typedef instruction_operand dataflow_vertex;
+typedef ptr_insoperand_t    dataflow_vertex;
 typedef UINT32              dataflow_edge;
 
 typedef boost::adjacency_list<boost::listS, boost::vecS, 
@@ -92,7 +93,8 @@ construct_source_vertices(UINT32 execution_order,
 	boost::unordered_set<dataflow_vertex_desc>::iterator outer_interface_iter;
 	
 	dataflow_vertex_desc newly_inserted_vertex;
-	boost::unordered_set<instruction_operand, operand_hash>::iterator operand_iter;
+// 	boost::unordered_set<instruction_operand, operand_hash>::iterator operand_iter;
+  boost::unordered_set<ptr_insoperand_t>::iterator operand_iter;
 	
 	// construct the set of source vertex for the inserted instruction
 	boost::unordered_set<dataflow_vertex_desc> source_vertices;
@@ -119,7 +121,7 @@ construct_source_vertices(UINT32 execution_order,
 			// then insert it into the forward dependence graph,
 			newly_inserted_vertex = boost::add_vertex(*operand_iter, forward_dataflow);
 			// into the outer interface if it is not an immediate
-			if ((*operand_iter).value.type() != typeid(UINT32)) 
+			if ((*operand_iter)->value.type() != typeid(UINT32)) 
 			{
 				outer_interface.insert(newly_inserted_vertex);
 			}
@@ -153,7 +155,8 @@ construct_target_vertices(UINT32 execution_order, boost::shared_ptr<instruction>
                           dataflow_graph& forward_dataflow, dataflow_graph& backward_dataflow) 
 {
 	boost::unordered_set<dataflow_vertex_desc>::iterator outer_interface_iter;
-  boost::unordered_set<instruction_operand, operand_hash>::iterator operand_iter;
+//   boost::unordered_set<instruction_operand, operand_hash>::iterator operand_iter;
+  boost::unordered_set<ptr_insoperand_t>::iterator operand_iter;
 	dataflow_vertex_desc newly_inserted_vertex;
 	ADDRINT mem_addr;
 	
@@ -164,9 +167,9 @@ construct_target_vertices(UINT32 execution_order, boost::shared_ptr<instruction>
 			 operand_iter != inserted_ins->target_operands.end(); ++operand_iter) 
 	{
 		// verify if the target operand is a memory address
-		if (operand_iter->value.type() == typeid(ADDRINT)) 
+		if ((*operand_iter)->value.type() == typeid(ADDRINT)) 
 		{
-      mem_addr = boost::get<ADDRINT>(operand_iter->value);
+      mem_addr = boost::get<ADDRINT>((*operand_iter)->value);
       if (original_value_of_memory_at.find(mem_addr) == original_value_of_memory_at.end()) 
       {
         // save the original value at this address if it does not exist yet
@@ -269,9 +272,9 @@ static void determine_inputs_instructions_dependance()
 	for (; vertex_iter != vertex_last_iter; ++vertex_iter) 
 	{
 		// verify if the operand corresponding to the vertex is a memory address
-		if (forward_dataflow[*vertex_iter].value.type() == typeid(ADDRINT)) 
+		if (forward_dataflow[*vertex_iter]->value.type() == typeid(ADDRINT)) 
 		{
-			memory_address = boost::get<ADDRINT>(forward_dataflow[*vertex_iter].value);
+			memory_address = boost::get<ADDRINT>(forward_dataflow[*vertex_iter]->value);
 			if (utils::is_in_input_buffer(memory_address)) 
 			{
 				// take BFS from this vertex to find out all dependent edge descriptors
@@ -308,7 +311,8 @@ static void determine_branches_checkpoints_dependance()
 {
   boost::unordered_map<UINT32, ptr_conditional_branch_t>::iterator ptr_branch_iter;
   boost::unordered_map<UINT32, ptr_checkpoint_t>::iterator ptr_checkpoint_iter;
-  boost::unordered_set<instruction_operand, operand_hash>::iterator ins_operand_iter;
+//   boost::unordered_set<instruction_operand, operand_hash>::iterator ins_operand_iter;
+  boost::unordered_set<ptr_insoperand_t>::iterator ins_operand_iter;
   boost::unordered_set<ADDRINT> affecting_mem_addrs;
   ptr_instruction_t ptr_ins;
   ptr_checkpoint_t  ptr_chkpnt;
@@ -337,7 +341,7 @@ static void determine_branches_checkpoints_dependance()
         for (ins_operand_iter = ptr_ins->source_operands.begin(); 
              ins_operand_iter != ptr_ins->source_operands.end(); ++ins_operand_iter) 
         {
-          accessing_mem_addr = boost::get<ADDRINT>(ins_operand_iter->value);
+          accessing_mem_addr = boost::get<ADDRINT>((*ins_operand_iter)->value);
           if (utils::is_in_input_buffer(accessing_mem_addr)) 
           {
             //  then add the checkpoint into the list
