@@ -44,8 +44,9 @@ void fast_execution::move_backward(ptr_checkpoint_t& past_checkpoint)
   // then clear the set of logged values
   past_checkpoint->memory_change_log.clear();
   
-  // NEW APPROACH: the global memory state is restored to the state at the checkpoint (before the 
-  // instruction of the checkpoint executes)
+  // NEW APPROACH:
+  // the global memory state is restored to the state at the checkpoint (before the execution of
+  // the checkpoint's instruction)
   boost::unordered_map<ADDRINT, state_t>::iterator curr_mem_iter, past_mem_iter;
   for (curr_mem_iter = current_memory_state.begin(); curr_mem_iter != current_memory_state.end(); 
        ++curr_mem_iter) 
@@ -80,7 +81,7 @@ void fast_execution::move_backward(ptr_checkpoint_t& past_checkpoint)
  * now a subset of the memory state saved at the future checkpoint. Note that the instruction 
  * (determined by the IP in the checkpoint's cpu context) will be re-executed.
  * 
- * @param target_checkpoint the future checkpoint.
+ * @param target_checkpoint the future checkpoint
  * @return void
  */
 void fast_execution::move_forward(ptr_checkpoint_t& future_checkpoint)
