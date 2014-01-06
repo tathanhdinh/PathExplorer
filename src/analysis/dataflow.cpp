@@ -90,7 +90,6 @@ static inline dataflow_vertex_descs construct_source_vertices(ptr_instruction_t 
 {
   dataflow_vertex_descs::iterator outerface_iter;
 	dataflow_vertex_desc new_vertex;
-//  boost::unordered_set<ptr_insoperand_t> operands_to_erase;
   boost::unordered_set<ptr_insoperand_t> operands_to_add;
   boost::unordered_set<ptr_insoperand_t>::iterator ptr_operand_iter;
 	
@@ -110,9 +109,11 @@ static inline dataflow_vertex_descs construct_source_vertices(ptr_instruction_t 
 				// insert it directly into the set of source vertices.
 				source_vertices.insert(*outerface_iter);
 
-        // this duplicated operand (in the set of source operands) will be replaced by one in the
+        // this common operand (in the set of source operands) will be replaced by one in the
         // outer-interface: it is removed first (and added latter)
         inserted_ins->source_operands.erase(ptr_operand_iter);
+        
+        // store this common operand to add later
         operands_to_add.insert(forward_dataflow[*outerface_iter]);
 				break;
 			}			
@@ -136,7 +137,7 @@ static inline dataflow_vertex_descs construct_source_vertices(ptr_instruction_t 
 		}
 	}
 
-  // modify the set of source operands of the inserted instruction
+  // add (i.e. replace) the common operands 
   inserted_ins->source_operands.insert(operands_to_add.begin(), operands_to_add.end());
 	
 	return source_vertices;
@@ -155,9 +156,10 @@ static inline dataflow_vertex_descs construct_source_vertices(ptr_instruction_t 
  * @param backward_dataflow backward data-flow graph
  * @return target vertices of the hyper-edge
  */	
-static inline dataflow_vertex_descs construct_target_vertices(ptr_instruction_t inserted_ins)
+static inline dataflow_vertex_descs construct_target_vertices(ptr_instruction_t inserted_ins, 
+                                                              UINT32 execution_order)
 {
-	boost::unordered_set<dataflow_vertex_desc>::iterator outer_interface_iter;
+  boost::unordered_set<dataflow_vertex_desc>::iterator outerface_iter;
   boost::unordered_set<ptr_insoperand_t>::iterator ptr_operand_iter;
 	dataflow_vertex_desc newly_inserted_vertex;
 	ADDRINT mem_addr;
@@ -188,18 +190,19 @@ static inline dataflow_vertex_descs construct_target_vertices(ptr_instruction_t 
 		boost::add_vertex(*ptr_operand_iter, backward_dataflow);
 		
 		// verify if the target operand is in the outer interface
-		for (outer_interface_iter = outer_interface.begin(); 
-				 outer_interface_iter !=  outer_interface.end(); ++outer_interface_iter) 
+    for (outerface_iter = outer_interface.begin(); outerface_iter !=  outer_interface.end();
+         ++outerface_iter)
 		{
 			// it is already in the outer interface
-			if (forward_dataflow[*outer_interface_iter] == *ptr_operand_iter) 
+      if (forward_dataflow[*outerface_iter]->name == (*ptr_operand_iter)->name)
 			{
-				// remove the old 
-				outer_interface.erase(outer_interface_iter);
+				// the instance in the outer-interface is removed
+        forward_dataflow[*outerface_iter]->duration = execution_order;
+        outer_interface.erase(outerface_iter);
 				break;
 			}
 		}
-		// insert the new
+		// the instance in the instruction's target operands is added
 		outer_interface.insert(newly_inserted_vertex);
 	}
 	
@@ -217,7 +220,6 @@ static inline dataflow_vertex_descs construct_target_vertices(ptr_instruction_t 
  */
 void dataflow::propagate_along_instruction(UINT32 execution_order)
 {
-//  boost::unordered_set<dataflow_vertex_desc>::iterator outer_interface_iter;
   ptr_instruction_t executed_ins =  instruction_at_exeorder[execution_order];
 	
 	// construct the set of source vertex for the inserted instruction
@@ -226,7 +228,7 @@ void dataflow::propagate_along_instruction(UINT32 execution_order)
 	
 	// construct the set of target vertex for the inserted instruction
 	boost::unordered_set<dataflow_vertex_desc> target_vertices;
-  target_vertices = construct_target_vertices(executed_ins);
+  target_vertices = construct_target_vertices(executed_ins, execution_order);
 	
 	// construct the hyper-edge
 	boost::unordered_set<dataflow_vertex_desc>::iterator source_iter;
