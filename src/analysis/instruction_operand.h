@@ -30,7 +30,7 @@ namespace analysis
 {
 
 /**
- * @brief class representing instruction operands
+ * @brief class representing instruction operands.
  * 
  */
 class instruction_operand
@@ -38,7 +38,7 @@ class instruction_operand
 public:
   std::string                           name;
   boost::variant<ADDRINT, REG, UINT32>  value;
-  UINT32                                alive_until_exeorder;
+  UINT32                                duration;
   
 public:
 	instruction_operand();

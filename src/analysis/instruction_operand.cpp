@@ -38,7 +38,7 @@ using namespace utilities;
 instruction_operand::instruction_operand()
 {
 	this->name = "terminal";
-  this->alive_until_exeorder = boost::integer_traits<UINT32>::const_max;
+  this->duration = boost::integer_traits<UINT32>::const_max;
 }
 
 /**
