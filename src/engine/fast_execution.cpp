@@ -17,13 +17,11 @@
  *
  */
 
-#include <pin.H>
 #include "fast_execution.h"
+#include "../main.h"
 
 namespace engine
 {
-
-extern boost::unordered_map<ADDRINT, state_t> current_memory_state;
 
 /**
  * @brief the control moves back to a previously logged checkpoint; this operation can always be 

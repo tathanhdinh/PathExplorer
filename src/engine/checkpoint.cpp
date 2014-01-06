@@ -29,8 +29,8 @@ using namespace analysis;
 /**
  * @brief a checkpoint is created before the instruction (pointed by the current address) executes. 
  * 
- * @param current_address the address pointed by the instruction pointer (IP).
- * @param current_context the cpu context (values of registers) when the IP is at this address.
+ * @param current_address the address pointed by the instruction pointer (abbr. IP)
+ * @param current_context the cpu context (values of registers) when the IP is at this address
  */
 checkpoint::checkpoint(CONTEXT* current_context)
 {
@@ -38,13 +38,12 @@ checkpoint::checkpoint(CONTEXT* current_context)
   PIN_SaveContext(current_context, &(this->cpu_context));
   
   // and the current memory state
-  boost::unordered_map<ADDRINT, UINT8>::iterator memvalue_iter;
+  boost::unordered_map<ADDRINT, UINT8>::iterator value_iter;
   ADDRINT mem_addr;
-  for (memvalue_iter = original_memvalue_at.begin(); memvalue_iter != original_memvalue_at.end();
-       ++memvalue_iter)
+  for (value_iter = original_state_at.begin(); value_iter != original_state_at.end(); ++value_iter)
   {
-    mem_addr = memvalue_iter->first;
-    this->memory_state[mem_addr].first() = memvalue_iter->second;
+    mem_addr = value_iter->first;
+    this->memory_state[mem_addr].first() = value_iter->second;
     this->memory_state[mem_addr].second() = *(reinterpret_cast<UINT8*>(mem_addr));
   }
 }
@@ -52,10 +51,11 @@ checkpoint::checkpoint(CONTEXT* current_context)
 
 /**
  * @brief the checkpoint stores the original values at memory addresses before the executed 
- * instruction overwrites these values.
+ * instruction overwrites these values. Note that with the new move_backward approach, this logging
+ * may not be neccessary anymore (and then the performance of resolving-state is much improved).
  * 
- * @param memory_written_address the beginning address that will be written.
- * @param memory_written_length the length of written addresses.
+ * @param memory_written_address the beginning address that will be written
+ * @param memory_written_length the length of written addresses
  * @return void
  */
 void checkpoint::log_before_execution(ADDRINT memory_written_address, UINT8 memory_written_length)

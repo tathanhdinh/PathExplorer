@@ -171,10 +171,12 @@ static inline dataflow_vertex_descs construct_target_vertices(ptr_instruction_t 
 		if ((*ptr_operand_iter)->value.type() == typeid(ADDRINT)) 
 		{
       mem_addr = boost::get<ADDRINT>((*ptr_operand_iter)->value);
-      if (original_memvalue_at.find(mem_addr) == original_memvalue_at.end()) 
+      // if the address does not exist in the original_memvalue yet, namely it is accessed at the
+      // first time
+      if (original_state_at.find(mem_addr) == original_state_at.end())
       {
-        // save the original value at this address if it does not exist yet
-        original_memvalue_at[mem_addr] = *(reinterpret_cast<UINT8*>(mem_addr));
+        // then save its original value (before it will be modified)
+        original_state_at[mem_addr] = *(reinterpret_cast<UINT8*>(mem_addr));
       }
 		}
 		
@@ -193,8 +195,9 @@ static inline dataflow_vertex_descs construct_target_vertices(ptr_instruction_t 
 			// it is already in the outer interface
       if (forward_dataflow[*outerface_iter]->name == (*ptr_operand_iter)->name)
 			{
-				// the instance in the outer-interface is removed
+        // set the life-span of this instruction operand
         forward_dataflow[*outerface_iter]->duration = execution_order;
+        // the instance in the outer-interface is removed
         outer_interface.erase(outerface_iter);
 				break;
 			}

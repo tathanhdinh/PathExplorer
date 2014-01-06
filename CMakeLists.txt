@@ -16,4 +16,5 @@ ADD_PINTOOL(PathExplorer2 src/main.cpp
   src/engine/fast_execution.cpp
   src/instrumentation/trace_analyzer.cpp
   src/instrumentation/trace_resolver.cpp
+  src/instrumentation/dbi.cpp
   src/utilities/utils.cpp)
