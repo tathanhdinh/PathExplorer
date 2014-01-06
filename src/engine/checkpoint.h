@@ -31,6 +31,7 @@ namespace engine
 {
   
 typedef boost::compressed_pair<UINT8, UINT8> state_t;
+
 class checkpoint
 {
 public:

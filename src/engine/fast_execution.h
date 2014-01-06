@@ -21,7 +21,6 @@
 #define ENGINE_H
 
 #include "checkpoint.h"
-#include <boost/shared_ptr.hpp>
 
 namespace engine
 {
@@ -29,10 +28,10 @@ namespace engine
 class fast_execution
 {
 public:
-  static void move_backward(boost::shared_ptr<checkpoint>& past_checkpoint);
-  static void move_forward(boost::shared_ptr<checkpoint>& future_checkpoint);
+  static void move_backward(ptr_checkpoint_t& past_checkpoint);
+  static void move_forward(ptr_checkpoint_t& future_checkpoint);
 };
 
-} // end of reverse_execution_engine namespace
+} // end of engine namespace
 
 #endif // ENGINE_H

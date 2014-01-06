@@ -31,9 +31,6 @@ namespace analysis
 
 using namespace utilities;
 
-extern boost::unordered_map<ADDRINT, UINT8>       original_value_of_memory_at;
-
-// typedef instruction_operand dataflow_vertex;
 typedef ptr_insoperand_t    dataflow_vertex;
 typedef UINT32              dataflow_edge;
 
@@ -174,10 +171,10 @@ static inline dataflow_vertex_descs construct_target_vertices(ptr_instruction_t 
 		if ((*ptr_operand_iter)->value.type() == typeid(ADDRINT)) 
 		{
       mem_addr = boost::get<ADDRINT>((*ptr_operand_iter)->value);
-      if (original_value_of_memory_at.find(mem_addr) == original_value_of_memory_at.end()) 
+      if (original_memvalue_at.find(mem_addr) == original_memvalue_at.end()) 
       {
         // save the original value at this address if it does not exist yet
-        original_value_of_memory_at[mem_addr] = *(reinterpret_cast<UINT8*>(mem_addr));
+        original_memvalue_at[mem_addr] = *(reinterpret_cast<UINT8*>(mem_addr));
       }
 		}
 		

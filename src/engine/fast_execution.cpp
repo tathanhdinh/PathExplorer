@@ -34,7 +34,7 @@ extern boost::unordered_map<ADDRINT, state_t> current_memory_state;
  * @param target_checkpoint the checkpoint in the past.
  * @return void
  */
-void fast_execution::move_backward(boost::shared_ptr<checkpoint>& past_checkpoint)
+void fast_execution::move_backward(ptr_checkpoint_t& past_checkpoint)
 {
   // update the logged values of the written addresses
   boost::unordered_map<ADDRINT, UINT8>::iterator mem_iter;
@@ -46,14 +46,11 @@ void fast_execution::move_backward(boost::shared_ptr<checkpoint>& past_checkpoin
   // then clear the set of logged values
   past_checkpoint->memory_change_log.clear();
   
-  // new approach: update the global memory state
-  boost::unordered_map<ADDRINT, 
-                       boost::compressed_pair<UINT8, UINT8>
-                       >::iterator curr_mem_iter = current_memory_state.begin();
-  boost::unordered_map<ADDRINT, 
-                       boost::compressed_pair<UINT8, UINT8>
-                       >::iterator past_mem_iter;
-  for (; curr_mem_iter != current_memory_state.end(); ++curr_mem_iter) 
+  // NEW APPROACH: the global memory state is restored to the state at the checkpoint (before the 
+  // instruction of the checkpoint executes)
+  boost::unordered_map<ADDRINT, state_t>::iterator curr_mem_iter, past_mem_iter;
+  for (curr_mem_iter = current_memory_state.begin(); curr_mem_iter != current_memory_state.end(); 
+       ++curr_mem_iter) 
   {
     // verify if an element in the current state is also an element in the past state
     past_mem_iter = past_checkpoint->memory_state.find(curr_mem_iter->first);
@@ -88,7 +85,7 @@ void fast_execution::move_backward(boost::shared_ptr<checkpoint>& past_checkpoin
  * @param target_checkpoint the future checkpoint.
  * @return void
  */
-void fast_execution::move_forward(boost::shared_ptr<checkpoint>& future_checkpoint)
+void fast_execution::move_forward(ptr_checkpoint_t& future_checkpoint)
 {
   // update the memory state
   boost::unordered_map<ADDRINT, state_t>::iterator futur_mem_iter;
@@ -106,4 +103,4 @@ void fast_execution::move_forward(boost::shared_ptr<checkpoint>& future_checkpoi
   return;
 }
 
-} // end of reverse_execution_engine namespace
+} // end of engine namespace

@@ -19,12 +19,12 @@
 
 #include "checkpoint.h"
 #include "../analysis/dataflow.h"
+#include "../main.h"
 
 namespace engine
 {
 
 using namespace analysis;
-extern boost::unordered_map<ADDRINT, UINT8> original_value_at_address;
 
 /**
  * @brief a checkpoint is created before the instruction (pointed by the current address) executes. 
@@ -38,13 +38,13 @@ checkpoint::checkpoint(CONTEXT* current_context)
   PIN_SaveContext(current_context, &(this->cpu_context));
   
   // and the current memory state
-  boost::unordered_map<ADDRINT, UINT8>::iterator addr_value_map_iter;
+  boost::unordered_map<ADDRINT, UINT8>::iterator memvalue_iter;
   ADDRINT mem_addr;
-  for (addr_value_map_iter = original_value_at_address.begin(); 
-       addr_value_map_iter != original_value_at_address.end(); ++addr_value_map_iter) 
+  for (memvalue_iter = original_memvalue_at.begin(); memvalue_iter != original_memvalue_at.end();
+       ++memvalue_iter)
   {
-    mem_addr = addr_value_map_iter->first;
-    this->memory_state[mem_addr].first() = addr_value_map_iter->second;
+    mem_addr = memvalue_iter->first;
+    this->memory_state[mem_addr].first() = memvalue_iter->second;
     this->memory_state[mem_addr].second() = *(reinterpret_cast<UINT8*>(mem_addr));
   }
 }

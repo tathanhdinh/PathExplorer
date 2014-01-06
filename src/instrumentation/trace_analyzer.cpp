@@ -140,7 +140,7 @@ void trace_analyzer::generic_normal_instruction_callback(ADDRINT instruction_add
  * @param is_branch_taken the branch will be taken or not
  * @return void
  */
-void trace_analyzer::conditional_branch_callback(ADDRINT instruction_address, bool is_branch_taken)
+void trace_analyzer::conditional_branch_instruction_callback(ADDRINT instruction_address, bool is_branch_taken)
 {
   static_cast<conditional_branch*>(
     instruction_at_exeorder[current_execution_order].get())->is_taken = is_branch_taken;
@@ -209,7 +209,7 @@ void trace_analyzer::memory_write_instruction_callback(ADDRINT instruction_addre
  * @param instruction_address address of the instrumented instruction
  * @return void
  */
-void trace_analyzer::dataflow_propagating_callback(ADDRINT instruction_address)
+void trace_analyzer::dataflow_propagation_callback(ADDRINT instruction_address)
 {
   dataflow::propagate_along_instruction(current_execution_order);
   return;

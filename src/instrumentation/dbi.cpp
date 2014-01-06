@@ -143,7 +143,7 @@ static void trace_analyzing_state_handler(const INS& curr_ins, ADDRINT curr_ins_
       if (curr_ptr_ins->is_conditional_branch) 
       {
         INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
-                                 (AFUNPTR)trace_analyzer::conditional_branch_callback, 
+                                 (AFUNPTR)trace_analyzer::conditional_branch_instruction_callback, 
                                  IARG_INST_PTR, IARG_BRANCH_TAKEN, IARG_END);
       }
       
@@ -164,7 +164,7 @@ static void trace_analyzing_state_handler(const INS& curr_ins, ADDRINT curr_ins_
       
       // propagate the running time information along the execution
       INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
-                               (AFUNPTR)trace_analyzer::dataflow_propagating_callback, 
+                               (AFUNPTR)trace_analyzer::dataflow_propagation_callback, 
                                IARG_INST_PTR, IARG_END);
       
     }
