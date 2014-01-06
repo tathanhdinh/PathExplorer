@@ -86,11 +86,12 @@ public:
  * @param backward_dataflow backward data-flow graph
  * @return source vertices of the hyper-edge
  */
-static inline boost::unordered_set<dataflow_vertex_desc> 
-construct_source_vertices(UINT32 execution_order, ptr_instruction_t inserted_ins)
+static inline dataflow_vertex_descs construct_source_vertices(ptr_instruction_t inserted_ins)
 {
-	boost::unordered_set<dataflow_vertex_desc>::iterator outerface_iter;
-	dataflow_vertex_desc newly_inserted_vertex;
+  dataflow_vertex_descs::iterator outerface_iter;
+	dataflow_vertex_desc new_vertex;
+//  boost::unordered_set<ptr_insoperand_t> operands_to_erase;
+  boost::unordered_set<ptr_insoperand_t> operands_to_add;
   boost::unordered_set<ptr_insoperand_t>::iterator ptr_operand_iter;
 	
 	// construct the set of source vertex for the inserted instruction
@@ -100,14 +101,19 @@ construct_source_vertices(UINT32 execution_order, ptr_instruction_t inserted_ins
 			 ptr_operand_iter != inserted_ins->source_operands.end(); ++ptr_operand_iter) 
 	{
 		// verify if the source operand is in the outer interface
-		for (outerface_iter = outer_interface.begin(); 
-				 outerface_iter != outer_interface.end(); ++outerface_iter) 
+		for (outerface_iter = outer_interface.begin(); outerface_iter != outer_interface.end(); 
+         ++outerface_iter) 
 		{
 			// it is already in the outer interface
-			if (forward_dataflow[*outerface_iter] == *ptr_operand_iter) 
+      if (forward_dataflow[*outerface_iter]->name == (*ptr_operand_iter)->name)
 			{
 				// insert it directly into the set of source vertices.
 				source_vertices.insert(*outerface_iter);
+
+        // this duplicated operand (in the set of source operands) will be replaced by one in the
+        // outer-interface: it is removed first (and added latter)
+        inserted_ins->source_operands.erase(ptr_operand_iter);
+        operands_to_add.insert(forward_dataflow[*outerface_iter]);
 				break;
 			}			
 		}
@@ -116,19 +122,22 @@ construct_source_vertices(UINT32 execution_order, ptr_instruction_t inserted_ins
 		if (outerface_iter == outer_interface.end()) 
 		{
 			// then insert it into the forward dependence graph,
-			newly_inserted_vertex = boost::add_vertex(*ptr_operand_iter, forward_dataflow);
+			new_vertex = boost::add_vertex(*ptr_operand_iter, forward_dataflow);
 			// into the outer interface if it is not an immediate
 			if ((*ptr_operand_iter)->value.type() != typeid(UINT32)) 
 			{
-				outer_interface.insert(newly_inserted_vertex);
+				outer_interface.insert(new_vertex);
 			}
 			// into the set of source vertex for the inserted instruction
-			source_vertices.insert(newly_inserted_vertex);
+			source_vertices.insert(new_vertex);
 			
 			// into the backward dependence graph
 			boost::add_vertex(*ptr_operand_iter, backward_dataflow);
 		}
 	}
+
+  // modify the set of source operands of the inserted instruction
+  inserted_ins->source_operands.insert(operands_to_add.begin(), operands_to_add.end());
 	
 	return source_vertices;
 }
@@ -146,8 +155,7 @@ construct_source_vertices(UINT32 execution_order, ptr_instruction_t inserted_ins
  * @param backward_dataflow backward data-flow graph
  * @return target vertices of the hyper-edge
  */	
-static inline boost::unordered_set<dataflow_vertex_desc> 
-construct_target_vertices(UINT32 execution_order, ptr_instruction_t inserted_ins)
+static inline dataflow_vertex_descs construct_target_vertices(ptr_instruction_t inserted_ins)
 {
 	boost::unordered_set<dataflow_vertex_desc>::iterator outer_interface_iter;
   boost::unordered_set<ptr_insoperand_t>::iterator ptr_operand_iter;
@@ -209,16 +217,16 @@ construct_target_vertices(UINT32 execution_order, ptr_instruction_t inserted_ins
  */
 void dataflow::propagate_along_instruction(UINT32 execution_order)
 {
-  boost::unordered_set<dataflow_vertex_desc>::iterator outer_interface_iter;  
+//  boost::unordered_set<dataflow_vertex_desc>::iterator outer_interface_iter;
   ptr_instruction_t executed_ins =  instruction_at_exeorder[execution_order];
 	
 	// construct the set of source vertex for the inserted instruction
 	boost::unordered_set<dataflow_vertex_desc> source_vertices;
-	source_vertices = construct_source_vertices(execution_order, executed_ins);
+  source_vertices = construct_source_vertices(executed_ins);
 	
 	// construct the set of target vertex for the inserted instruction
 	boost::unordered_set<dataflow_vertex_desc> target_vertices;
-	target_vertices = construct_target_vertices(execution_order, executed_ins); 
+  target_vertices = construct_target_vertices(executed_ins);
 	
 	// construct the hyper-edge
 	boost::unordered_set<dataflow_vertex_desc>::iterator source_iter;
@@ -276,7 +284,7 @@ static void determine_inputs_instructions_dependance()
           // dependence extraction
 					ins_order = forward_dataflow[*dataflow_edge_iter];
 					exeorders_afffected_by_memaddr_at[memory_address].insert(ins_order); // see 1
-					memaddrs_affecting_exeorder_at[ins_order].insert(memory_address);   // see 2
+          memaddrs_affecting_exeorder_at[ins_order].insert(memory_address);    // see 2
 				}
 			}
 		}

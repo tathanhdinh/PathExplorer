@@ -48,10 +48,10 @@ public:
 	instruction_operand& operator=(const instruction_operand& other_operand);
 };
 
-inline bool operator==(const instruction_operand& operand_a, const instruction_operand& operand_b) 
-{
-  return (operand_a.name == operand_b.name);
-}
+// inline bool operator==(const instruction_operand& operand_a, const instruction_operand& operand_b) 
+// {
+//   return (operand_a.name == operand_b.name);
+// }
 
 typedef boost::shared_ptr<instruction_operand> ptr_insoperand_t;
 
@@ -60,15 +60,15 @@ typedef boost::shared_ptr<instruction_operand> ptr_insoperand_t;
  * @brief a hash distinguishing instruction operands
  * 
  */
-class operand_hash
-{
-public:
-  std::size_t operator()(const instruction_operand& operand) const
-  {
-    boost::hash<std::string> string_ref_hash;
-    return string_ref_hash(operand.name);
-  }
-};
+// class operand_hash
+// {
+// public:
+//   std::size_t operator()(const instruction_operand& operand) const
+//   {
+//     boost::hash<std::string> string_ref_hash;
+//     return string_ref_hash(operand.name);
+//   }
+// };
 
 } // end of dataflow_analysis namespace
 
