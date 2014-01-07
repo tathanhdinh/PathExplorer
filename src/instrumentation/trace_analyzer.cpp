@@ -110,17 +110,17 @@ void trace_analyzer::normal_instruction_callback(ADDRINT instruction_address)
   {
     // log the instruction
     current_execution_order++;
+    // first get its static information
     ptr_instruction_t curr_ins = instruction_at_address[instruction_address];
+    // then duplicate it using copy constructor instead of constructing from a PIN instruction 
     if (curr_ins->is_conditional_branch) 
     {
-      // using copy constructor (faster) instead of instructor from a PIN instruction
       conditional_branch* curr_branch = new conditional_branch(*curr_ins);
       instruction_at_exeorder[current_execution_order].reset(curr_branch);
       branch_at_exeorder[current_execution_order].reset(curr_branch);
     }
     else 
     {
-      // using copy constructor (faster) instead of instructor from a PIN instruction
       instruction_at_exeorder[current_execution_order].reset(new instruction(*curr_ins));
     }
     
