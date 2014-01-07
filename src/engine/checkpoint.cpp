@@ -48,19 +48,9 @@ checkpoint::checkpoint(CONTEXT* current_context)
     {
       // store the current memory at this address
       mem_addr = boost::get<ADDRINT>((*operand_iter)->value);
-      this->memory_state[mem_addr] = *(reinterpret_cast<UINT8*>(mem_addr));
+      this->memory_state_at[mem_addr] = *(reinterpret_cast<UINT8*>(mem_addr));
     }
   }
-  
-//   // and the current memory state
-//   boost::unordered_map<ADDRINT, UINT8>::iterator value_iter;
-//   ADDRINT mem_addr;
-//   for (value_iter = original_state_at.begin(); value_iter != original_state_at.end(); ++value_iter)
-//   {
-//     mem_addr = value_iter->first;
-//     this->memory_state[mem_addr].first() = value_iter->second;
-//     this->memory_state[mem_addr].second() = *(reinterpret_cast<UINT8*>(mem_addr));
-//   }
 }
 
 

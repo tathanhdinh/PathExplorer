@@ -164,17 +164,7 @@ void trace_analyzer::mread_instruction_callback(ADDRINT memory_read_address,
 {
   // update dynamic information: read memory addresses
   ptr_instruction_t curr_ins = instruction_at_exeorder[current_execution_order];
-  curr_ins->update_memory_access_info(memory_read_address, memory_read_size, MEMORY_READ);
-  
-//   // if the read memory address range has an intersection with the input buffer,
-//   if (std::max(memory_read_address, received_message_address) < 
-//       std::min(memory_read_address + memory_read_size, 
-//                received_message_address + received_message_length))
-//   {
-//     // namely the instruction read some byte of the input, then take a checkpoint
-//     checkpoint_at_exeorder[current_execution_order].reset(new checkpoint(cpu_context));
-//   }
-  
+  curr_ins->update_memory_access_info(memory_read_address, memory_read_size, MEMORY_READ);  
   return;
 }
 
@@ -240,6 +230,5 @@ void trace_analyzer::checkpoint_storing_callback(CONTEXT* cpu_context)
   
   return;
 }
-
 
 } // end of instrumentation namespace

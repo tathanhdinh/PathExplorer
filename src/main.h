@@ -47,7 +47,6 @@ extern boost::unordered_map<UINT32, ptr_checkpoint_t> checkpoint_at_exeorder;
 extern boost::unordered_map<UINT32, exeorders_t> chkorders_affecting_branch_at_exeorder;
 extern boost::unordered_map<ADDRINT, UINT8> original_memstate_at;
 extern boost::unordered_map<ADDRINT, UINT8> current_memstate_at;
-extern boost::unordered_map<ADDRINT, state_t> current_memory_state;
 extern boost::unordered_map<UINT32, ptr_insoperands_t> outerface_at_exeorder;
 
 

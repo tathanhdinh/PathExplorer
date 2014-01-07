@@ -60,10 +60,10 @@ void fast_execution::move_backward(UINT32 checkpoint_exeorder)
     {
       mem_addr = boost::get<ADDRINT>((*insoperand_iter)->value);
       // and this address has been accessed at the target checkpoint
-      if (past_chkpnt->memory_state.find(mem_addr) != past_chkpnt->memory_state.end()) 
+      if (past_chkpnt->memory_state_at.find(mem_addr) != past_chkpnt->memory_state_at.end()) 
       {
         // then restore it by the value stored in the checkpoint
-        *(reinterpret_cast<UINT8*>(mem_addr)) = past_chkpnt->memory_state[mem_addr];
+        *(reinterpret_cast<UINT8*>(mem_addr)) = past_chkpnt->memory_state_at[mem_addr];
       }
       else 
       {
@@ -74,7 +74,7 @@ void fast_execution::move_backward(UINT32 checkpoint_exeorder)
   }
   
   // restore the current memory state
-  current_memstate_at = past_chkpnt->memory_state;
+  current_memstate_at = past_chkpnt->memory_state_at;
   
   //restore the cpu context
   PIN_ExecuteAt(&(past_chkpnt->cpu_context));
@@ -87,8 +87,8 @@ void fast_execution::move_backward(UINT32 checkpoint_exeorder)
  * @brief the control moves forward to a previously logged checkpoint: this operation is NOT ALWAYS 
  * SAFE, it should be called only from jumping point of the current checkpoint to move to the next 
  * checkpoint. The current memory state is now a subset of the memory state saved at the future 
- * checkpoint. Note that the instruction (determined by the IP in the checkpoint's cpu context) 
- * will be re-executed.
+ * checkpoint. Note that the instruction (determined by the instruction pointer in the checkpoint's 
+ * cpu context) will be re-executed.
  * 
  * @param target_checkpoint the future checkpoint
  * @return void
@@ -118,7 +118,7 @@ void fast_execution::move_forward(UINT32 checkpoint_exeorder)
       else 
       {
         // otherwise the memory state at the checkpoint will be kept
-        *(reinterpret_cast<UINT8*>(mem_addr)) = futur_chkpnt->memory_state[mem_addr];
+        *(reinterpret_cast<UINT8*>(mem_addr)) = futur_chkpnt->memory_state_at[mem_addr];
       }
     }
   }
