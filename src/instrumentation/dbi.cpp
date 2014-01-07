@@ -203,14 +203,14 @@ static void trace_resolving_state_handler(const INS& curr_ins, ADDRINT curr_ins_
   if (curr_ptr_ins->is_conditional_branch)
   {
     INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
-                             (AFUNPTR)trace_resolver::conditional_branch_callback, IARG_INST_PTR, 
+                             (AFUNPTR)trace_resolver::cbranch_instruction_callback, IARG_INST_PTR, 
                              IARG_BRANCH_TAKEN, IARG_END);
   }
   
   if (curr_ptr_ins->is_indirect_branch_or_call) 
   {
     INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
-                             (AFUNPTR)trace_resolver::indirect_branchorcall_callback, 
+                             (AFUNPTR)trace_resolver::indirectBrOrCall_instruction_callback, 
                              IARG_INST_PTR, IARG_BRANCH_TARGET_ADDR, IARG_END);
   }
   

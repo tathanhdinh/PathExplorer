@@ -49,7 +49,7 @@ void trace_resolver::generic_instruction_callback(ADDRINT instruction_address)
  * @param is_branch_taken the branch will be taken or not
  * @return void
  */
-void trace_resolver::conditional_branch_callback(ADDRINT instruction_address, bool is_branch_taken)
+void trace_resolver::cbranch_instruction_callback(ADDRINT instruction_address, bool is_branch_taken)
 {
   return;
 }
@@ -63,7 +63,7 @@ void trace_resolver::conditional_branch_callback(ADDRINT instruction_address, bo
  * @param instruction_address address of the instrumented instruction
  * @return void
  */
-void trace_resolver::indirect_branchorcall_callback(ADDRINT instruction_address, 
+void trace_resolver::indirectBrOrCall_instruction_callback(ADDRINT instruction_address, 
                                                     ADDRINT target_address)
 {
   return;

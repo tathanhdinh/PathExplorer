@@ -20,6 +20,7 @@
 
 #include "utils.h"
 #include "../main.h"
+#include <sstream>
 
 namespace utilities 
 {
@@ -48,6 +49,21 @@ std::string utils::remove_leading_zeros(std::string input)
 
   return output;
 }
+
+
+/**
+ * @brief convert an ADDRINT to a hexadecimal string
+ * 
+ * @param input ...
+ * @return std::string
+ */
+std::string utils::addrint2hexstring(ADDRINT input)
+{
+  std::stringstream num_stream;
+  num_stream << "0x" << std::hex << input;
+  return num_stream.str();
+}
+
 
 
 /**

@@ -30,6 +30,7 @@ class utils
 {
 public:
   static std::string remove_leading_zeros(std::string input);
+  static std::string addrint2hexstring(ADDRINT input);
 	static bool is_in_input_buffer(ADDRINT memory_address);
 };
 

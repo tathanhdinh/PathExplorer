@@ -74,8 +74,8 @@ static void switch_to_trace_resolving_state()
 void trace_analyzer::syscall_instruction_callback(ADDRINT instruction_address)
 {
   BOOST_LOG_TRIVIAL(warning) 
-    << boost::format("meet a system call after %d instructions executed.") 
-        % current_execution_order;
+    << boost::format("meet a system call at %s after %d instructions executed.") 
+        % utils::addrint2hexstring(instruction_address) % current_execution_order;
   return;
 }
 
@@ -91,8 +91,8 @@ void trace_analyzer::syscall_instruction_callback(ADDRINT instruction_address)
 void trace_analyzer::vdso_instruction_callback(ADDRINT instruction_address)
 {
   BOOST_LOG_TRIVIAL(warning) 
-    << boost::format("meet a vdso instruction after %d instructions executed.") 
-        % current_execution_order;
+    << boost::format("meet a vdso instruction at %s after %d instructions executed.") 
+        % utils::addrint2hexstring(instruction_address) % current_execution_order;
   return;
 }
 
@@ -142,6 +142,7 @@ void trace_analyzer::normal_instruction_callback(ADDRINT instruction_address)
  */
 void trace_analyzer::cbranch_instruction_callback(bool is_branch_taken)
 {
+  // update dynamic information: the branch is taken or not
   static_cast<conditional_branch*>(
     instruction_at_exeorder[current_execution_order].get())->is_taken = is_branch_taken;
   return;
