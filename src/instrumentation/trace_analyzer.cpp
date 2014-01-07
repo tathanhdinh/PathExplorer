@@ -22,6 +22,7 @@
 #include "../engine/checkpoint.h"
 #include "../analysis/dataflow.h"
 #include "../instrumentation/dbi.h"
+#include "../utilities/utils.h"
 #include <algorithm>
 #include <boost/log/trivial.hpp>
 #include <boost/format.hpp>
@@ -32,7 +33,7 @@ namespace instrumentation
 
 using namespace analysis;
 using namespace engine;
-using namespace instrumentation;
+using namespace utilities;
 
 /**
  * @brief verify if the current analyzed trace has some branches needed to resolve.
@@ -103,7 +104,7 @@ void trace_analyzer::vdso_instruction_callback(ADDRINT instruction_address)
  * @param instruction_address address of the instrumented instruction
  * @return void
  */
-void trace_analyzer::generic_normal_instruction_callback(ADDRINT instruction_address)
+void trace_analyzer::normal_instruction_callback(ADDRINT instruction_address)
 {
   if (current_execution_order < execution_trace_max_length) 
   {
@@ -133,14 +134,13 @@ void trace_analyzer::generic_normal_instruction_callback(ADDRINT instruction_add
 
 
 /**
- * @brief callback for a conditional branch, note that the parameter instruction address is 
- * actually not necessary because of using the running-time information "current execution order".
+ * @brief callback for a conditional branch.
  * 
  * @param instruction_address address of the instrumented conditional branch
  * @param is_branch_taken the branch will be taken or not
  * @return void
  */
-void trace_analyzer::conditional_branch_instruction_callback(ADDRINT instruction_address, bool is_branch_taken)
+void trace_analyzer::cbranch_instruction_callback(bool is_branch_taken)
 {
   static_cast<conditional_branch*>(
     instruction_at_exeorder[current_execution_order].get())->is_taken = is_branch_taken;
@@ -159,23 +159,21 @@ void trace_analyzer::conditional_branch_instruction_callback(ADDRINT instruction
  * @param cpu_context cpu context
  * @return void
  */
-void trace_analyzer::memory_read_instruction_callback(ADDRINT instruction_address, 
-                                                      ADDRINT memory_read_address, 
-                                                      UINT32 memory_read_size, 
-                                                      CONTEXT* cpu_context)
+void trace_analyzer::mread_instruction_callback(ADDRINT memory_read_address,
+                                                UINT32 memory_read_size)
 {
   // update dynamic information: read memory addresses
   ptr_instruction_t curr_ins = instruction_at_exeorder[current_execution_order];
   curr_ins->update_memory_access_info(memory_read_address, memory_read_size, MEMORY_READ);
   
-  // if the read memory address range has an intersection with the input buffer,
-  if (std::max(memory_read_address, received_message_address) < 
-      std::min(memory_read_address + memory_read_size, 
-               received_message_address + received_message_length))
-  {
-    // namely the instruction read some byte of the input, then take a checkpoint
-    checkpoint_at_exeorder[current_execution_order].reset(new checkpoint(cpu_context));
-  }
+//   // if the read memory address range has an intersection with the input buffer,
+//   if (std::max(memory_read_address, received_message_address) < 
+//       std::min(memory_read_address + memory_read_size, 
+//                received_message_address + received_message_length))
+//   {
+//     // namely the instruction read some byte of the input, then take a checkpoint
+//     checkpoint_at_exeorder[current_execution_order].reset(new checkpoint(cpu_context));
+//   }
   
   return;
 }
@@ -189,9 +187,8 @@ void trace_analyzer::memory_read_instruction_callback(ADDRINT instruction_addres
  * @param memory_written_size size of the written address
  * @return void
  */
-void trace_analyzer::memory_write_instruction_callback(ADDRINT instruction_address, 
-                                                       ADDRINT memory_written_address, 
-                                                       UINT32 memory_written_size)
+void trace_analyzer::mwrite_instruction_callback(ADDRINT memory_written_address,
+                                                 UINT32 memory_written_size)
 {
   // update dynamic information: written memory addresses
   ptr_instruction_t curr_ins = instruction_at_exeorder[current_execution_order];
@@ -209,10 +206,40 @@ void trace_analyzer::memory_write_instruction_callback(ADDRINT instruction_addre
  * @param instruction_address address of the instrumented instruction
  * @return void
  */
-void trace_analyzer::dataflow_propagation_callback(ADDRINT instruction_address)
+void trace_analyzer::dataflow_propagation_callback()
 {
   dataflow::propagate_along_instruction(current_execution_order);
   return;
 }
+
+
+/**
+ * @brief callback for storing checkpoint.
+ * 
+ * @param cpu_context cpu registers along with their values
+ * @return void
+ */
+void trace_analyzer::checkpoint_storing_callback(CONTEXT* cpu_context)
+{
+  ptr_instruction_t curr_ins = instruction_at_exeorder[current_execution_order];
+  boost::unordered_set<ptr_insoperand_t>::iterator operand_iter;
+
+  // iterate over the set of the current instruction's source operands
+  for (operand_iter = curr_ins->source_operands.begin();
+       operand_iter != curr_ins->source_operands.end(); ++operand_iter)
+  {
+    // verify if the operand is a memory address and this address is in the input buffer
+    if (((*operand_iter)->value.type() == typeid(ADDRINT)) && 
+        utils::is_in_input_buffer(boost::get<ADDRINT>((*operand_iter)->value)))
+    {
+      // then capture a checkpoint
+      checkpoint_at_exeorder[current_execution_order].reset(new checkpoint(cpu_context));
+      break;
+    }
+  }
+  
+  return;
+}
+
 
 } // end of instrumentation namespace

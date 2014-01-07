@@ -133,9 +133,9 @@ static void trace_analyzing_state_handler(const INS& curr_ins, ADDRINT curr_ins_
     }
     else 
     {
-      // insert generic callback for normal instruction
+      // generic callback for normal instruction
       INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
-                               (AFUNPTR)trace_analyzer::generic_normal_instruction_callback, 
+                               (AFUNPTR)trace_analyzer::normal_instruction_callback,
                                IARG_INST_PTR, IARG_END);
   
       // update running time information for normal instructions, note that the first 3 callbacks 
@@ -143,30 +143,35 @@ static void trace_analyzing_state_handler(const INS& curr_ins, ADDRINT curr_ins_
       if (curr_ptr_ins->is_conditional_branch) 
       {
         INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
-                                 (AFUNPTR)trace_analyzer::conditional_branch_instruction_callback, 
-                                 IARG_INST_PTR, IARG_BRANCH_TAKEN, IARG_END);
+                                 (AFUNPTR)trace_analyzer::cbranch_instruction_callback,
+                                 IARG_BRANCH_TAKEN, IARG_END);
       }
       
       if (curr_ptr_ins->is_memory_read) 
       {
         INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
-                                 (AFUNPTR)trace_analyzer::memory_read_instruction_callback, 
-                                 IARG_INST_PTR, IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE, 
-                                 IARG_CONTEXT, IARG_END);
+                                 (AFUNPTR)trace_analyzer::mread_instruction_callback,
+                                 IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE, IARG_END);
       }
       
       if (curr_ptr_ins->is_memory_write) 
       {
         INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
-                                 (AFUNPTR)trace_analyzer::memory_write_instruction_callback, 
-                                 IARG_INST_PTR, IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE, IARG_END);
+                                 (AFUNPTR)trace_analyzer::mwrite_instruction_callback,
+                                 IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE, IARG_END);
       }
       
       // propagate the running time information along the execution
       INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
-                               (AFUNPTR)trace_analyzer::dataflow_propagation_callback, 
-                               IARG_INST_PTR, IARG_END);
+                               (AFUNPTR)trace_analyzer::dataflow_propagation_callback, IARG_END);
       
+      
+      if (curr_ptr_ins->is_memory_read) 
+      {
+        INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
+                                 (AFUNPTR)trace_analyzer::checkpoint_storing_callback, 
+                                 IARG_CONTEXT, IARG_END);
+      }
     }
   }
   return;
