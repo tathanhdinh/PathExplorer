@@ -29,31 +29,33 @@ namespace engine
  * function just before the execution of a memory written instruction). Note that the instruction 
  * (pointed by the IP in the checkpoint's cpu context) will be re-executed.
  * 
- * @param target_checkpoint the checkpoint in the past.
+ * @param checkpoint_exeorder the execution order of the target past checkpoint.
  * @return void
  */
-void fast_execution::move_backward(ptr_checkpoint_t& past_checkpoint)
+void fast_execution::move_backward(UINT32 checkpoint_exeorder)
 {
-  // update the logged values of the written addresses
+  ptr_checkpoint_t past_chkpnt = checkpoint_at_exeorder[checkpoint_exeorder];
   boost::unordered_map<ADDRINT, UINT8>::iterator mem_iter;
-  for (mem_iter = past_checkpoint->memory_change_log.begin(); 
-       mem_iter != past_checkpoint->memory_change_log.end(); ++mem_iter) 
+  
+  // update the logged values of the written addresses
+  for (mem_iter = past_chkpnt->memory_change_log.begin(); 
+       mem_iter != past_chkpnt->memory_change_log.end(); ++mem_iter) 
   {
     *(reinterpret_cast<UINT8*>(mem_iter->first)) = mem_iter->second;
   }
   // then clear the set of logged values
-  past_checkpoint->memory_change_log.clear();
+  past_chkpnt->memory_change_log.clear();
   
-  // NEW APPROACH:
-  // the global memory state is restored to the state at the checkpoint (before the execution of
-  // the checkpoint's instruction)
+  // NEW APPROACH
+  // the global memory state will be restored to the state at the past checkpoint (before the 
+  // execution of the checkpoint's instruction)
   boost::unordered_map<ADDRINT, state_t>::iterator curr_mem_iter, past_mem_iter;
   for (curr_mem_iter = current_memory_state.begin(); curr_mem_iter != current_memory_state.end(); 
        ++curr_mem_iter) 
   {
     // verify if an element in the current state is also an element in the past state
-    past_mem_iter = past_checkpoint->memory_state.find(curr_mem_iter->first);
-    if (past_mem_iter != past_checkpoint->memory_state.end()) 
+    past_mem_iter = past_chkpnt->memory_state.find(curr_mem_iter->first);
+    if (past_mem_iter != past_chkpnt->memory_state.end()) 
     {
       // if it is then the memory value at its address needs to be restored by the last value in 
       // the past state
@@ -66,35 +68,45 @@ void fast_execution::move_backward(ptr_checkpoint_t& past_checkpoint)
       *(reinterpret_cast<UINT8*>(curr_mem_iter->first)) = curr_mem_iter->second.first();
     }
   }
-  current_memory_state = past_checkpoint->memory_state;
+  current_memory_state = past_chkpnt->memory_state;
   
   // update the cpu context: the instruction (pointed by the IP register in the cpu context) will 
   // be re-executed.
-  PIN_ExecuteAt(&(past_checkpoint->cpu_context));
+  PIN_ExecuteAt(&(past_chkpnt->cpu_context));
 
   return;
 }
 
 
 /**
- * @brief the control moves forward to a previously logged checkpoint: the current memory state is 
- * now a subset of the memory state saved at the future checkpoint. Note that the instruction 
- * (determined by the IP in the checkpoint's cpu context) will be re-executed.
+ * @brief the control moves forward to a previously logged checkpoint: this operation is NOT ALWAYS 
+ * SAFE, it should be called only from jumping point of the current checkpoint to move to the next 
+ * checkpoint. The current memory state is now a subset of the memory state saved at the future 
+ * checkpoint. Note that the instruction (determined by the IP in the checkpoint's cpu context) 
+ * will be re-executed.
  * 
  * @param target_checkpoint the future checkpoint
  * @return void
  */
-void fast_execution::move_forward(ptr_checkpoint_t& future_checkpoint)
+void fast_execution::move_forward(UINT32 checkpoint_exeorder)
 {
-  // update the memory state
-  boost::unordered_map<ADDRINT, state_t>::iterator futur_mem_iter;
-  boost::unordered_map<ADDRINT, state_t>::iterator curr_mem_iter;
-  boost::unordered_map<ADDRINT, UINT8>::iterator mem_iter;
-  for (futur_mem_iter = future_checkpoint->memory_state.begin(); 
-       futur_mem_iter != future_checkpoint->memory_state.end(); ++futur_mem_iter) 
-  {
-    *(reinterpret_cast<UINT8*>(futur_mem_iter->first)) = futur_mem_iter->second.second();
-  }
+  ptr_checkpoint_t future_checkpoint = checkpoint_at_exeorder[checkpoint_exeorder];
+  
+  // the global memory state will be updated to reflect coherently the state at the future 
+  // checkpoint. 
+  
+  
+  
+//   // update the memory state
+//   boost::unordered_map<ADDRINT, state_t>::iterator futur_mem_iter;
+//   boost::unordered_map<ADDRINT, state_t>::iterator curr_mem_iter;
+//   boost::unordered_map<ADDRINT, UINT8>::iterator mem_iter;
+//   
+//   for (futur_mem_iter = future_checkpoint->memory_state.begin(); 
+//        futur_mem_iter != future_checkpoint->memory_state.end(); ++futur_mem_iter) 
+//   {
+//     *(reinterpret_cast<UINT8*>(futur_mem_iter->first)) = futur_mem_iter->second.second();
+//   }
     
   // restore the cpu context
   PIN_ExecuteAt(&(future_checkpoint->cpu_context));

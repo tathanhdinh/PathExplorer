@@ -28,8 +28,8 @@ namespace engine
 class fast_execution
 {
 public:
-  static void move_backward(ptr_checkpoint_t& past_checkpoint);
-  static void move_forward(ptr_checkpoint_t& future_checkpoint);
+  static void move_backward(UINT32 checkpoint_exeorder);
+  static void move_forward(UINT32 checkpoint_exeorder);
 };
 
 } // end of engine namespace

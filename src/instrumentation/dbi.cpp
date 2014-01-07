@@ -147,6 +147,7 @@ static void trace_analyzing_state_handler(const INS& curr_ins, ADDRINT curr_ins_
                                  IARG_BRANCH_TAKEN, IARG_END);
       }
       
+      // update the instruction's memory source operands
       if (curr_ptr_ins->is_memory_read) 
       {
         INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
@@ -154,6 +155,7 @@ static void trace_analyzing_state_handler(const INS& curr_ins, ADDRINT curr_ins_
                                  IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE, IARG_END);
       }
       
+      // update the instruction's memory target operands
       if (curr_ptr_ins->is_memory_write) 
       {
         INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
@@ -161,11 +163,12 @@ static void trace_analyzing_state_handler(const INS& curr_ins, ADDRINT curr_ins_
                                  IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE, IARG_END);
       }
       
-      // propagate the running time information along the execution
+      // propagate the running time information along the instruction's execution
       INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
                                (AFUNPTR)trace_analyzer::dataflow_propagation_callback, IARG_END);
       
       
+      // capture a callback whenever the instruction read some bytes of the input
       if (curr_ptr_ins->is_memory_read) 
       {
         INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
