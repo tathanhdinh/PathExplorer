@@ -34,18 +34,37 @@ using namespace analysis;
  */
 checkpoint::checkpoint(CONTEXT* current_context)
 {
-  // the current cpu context,
+  // store the current cpu context,
   PIN_SaveContext(current_context, &(this->cpu_context));
+
+  // the current alive operands,
+  this->alive_operands = dataflow::current_outerface();
   
   // and the current memory state
-  boost::unordered_map<ADDRINT, UINT8>::iterator value_iter;
+  boost::unordered_set<ptr_insoperand_t>::iterator operand_iter;
   ADDRINT mem_addr;
-  for (value_iter = original_state_at.begin(); value_iter != original_state_at.end(); ++value_iter)
+  
+  for (operand_iter = this->alive_operands.begin(); operand_iter != this->alive_operands.end(); 
+       ++operand_iter) 
   {
-    mem_addr = value_iter->first;
-    this->memory_state[mem_addr].first() = value_iter->second;
-    this->memory_state[mem_addr].second() = *(reinterpret_cast<UINT8*>(mem_addr));
+    // verify if the operand is a memory address
+    if ((*operand_iter)->value.type() == typeid(ADDRINT)) 
+    {
+      // store the current memory value at this address
+      mem_addr = boost::get<ADDRINT>((*operand_iter)->value);
+      this->memory_state[mem_addr] = *(reinterpret_cast<UINT8*>(mem_addr));
+    }
   }
+  
+//   // and the current memory state
+//   boost::unordered_map<ADDRINT, UINT8>::iterator value_iter;
+//   ADDRINT mem_addr;
+//   for (value_iter = original_state_at.begin(); value_iter != original_state_at.end(); ++value_iter)
+//   {
+//     mem_addr = value_iter->first;
+//     this->memory_state[mem_addr].first() = value_iter->second;
+//     this->memory_state[mem_addr].second() = *(reinterpret_cast<UINT8*>(mem_addr));
+//   }
 }
 
 

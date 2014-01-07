@@ -90,12 +90,19 @@ void fast_execution::move_backward(UINT32 checkpoint_exeorder)
  */
 void fast_execution::move_forward(UINT32 checkpoint_exeorder)
 {
-  ptr_checkpoint_t future_checkpoint = checkpoint_at_exeorder[checkpoint_exeorder];
-  boost::unordered_map<ADDRINT, state_t>::iterator futur_mem_iter;
+  ptr_checkpoint_t futur_chkpnt = checkpoint_at_exeorder[checkpoint_exeorder];
   
-  // the global memory state will be updated to reflect coherently the state at the future 
-  // checkpoint. 
+  // the global memory state will be updated to reflect the state at the future checkpoint
+  boost::unordered_set<ptr_insoperand_t>::iterator insoperand_iter;
   
+  for (insoperand_iter = futur_chkpnt->alive_operands.begin(); 
+       insoperand_iter != futur_chkpnt->alive_operands.end(); ++insoperand_iter) 
+  {
+    if ((*insoperand_iter)->value.type() == typeid(ADDRINT)) 
+    {
+      if ()
+    }
+  }
   
   
 //   // update the memory state
@@ -110,7 +117,7 @@ void fast_execution::move_forward(UINT32 checkpoint_exeorder)
 //   }
     
   // restore the cpu context
-  PIN_ExecuteAt(&(future_checkpoint->cpu_context));
+  PIN_ExecuteAt(&(futur_chkpnt->cpu_context));
   
   return;
 }

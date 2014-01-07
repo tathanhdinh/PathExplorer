@@ -21,15 +21,17 @@
 #define CHECKPOINT_H
 
 #include <pin.H>
+#include "../analysis/dataflow.h"
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
-#include <boost/container/vector.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/compressed_pair.hpp>
 
 namespace engine
 {
-  
+
+using namespace analysis;  
+
 typedef boost::compressed_pair<UINT8, UINT8> state_t;
 
 class checkpoint
@@ -37,8 +39,11 @@ class checkpoint
 public:
   CONTEXT                                 cpu_context;
   UINT32                                  jumping_point;
+  boost::unordered_map<ADDRINT, UINT8>    memory_state;
+  boost::unordered_set<ptr_insoperand_t>  alive_operands;
+  
   boost::unordered_map<ADDRINT, UINT8>    memory_change_log;
-  boost::unordered_map<ADDRINT, state_t>  memory_state;
+//   boost::unordered_map<ADDRINT, state_t>  memory_state;
   boost::unordered_set<ADDRINT>           memory_addresses_to_modify;
   
 public:
