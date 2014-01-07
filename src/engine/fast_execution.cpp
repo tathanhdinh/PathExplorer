@@ -100,7 +100,7 @@ void fast_execution::move_forward(UINT32 checkpoint_exeorder)
   {
     if ((*insoperand_iter)->value.type() == typeid(ADDRINT)) 
     {
-      if ()
+//       if ()
     }
   }
   

@@ -34,7 +34,7 @@ boost::unordered_map<UINT32, ptr_checkpoint_t> checkpoint_at_exeorder;
 boost::unordered_map<UINT32, exeorders_t> chkorders_affecting_branch_at_exeorder;
 boost::unordered_map<ADDRINT, UINT8> original_state_at;
 boost::unordered_map<ADDRINT, state_t> current_memory_state;
-
+boost::unordered_map<UINT32, ptr_insoperands_t> outerface_at_exeorder;
 
 /**
  * @brief callback to initialize trace exploration.

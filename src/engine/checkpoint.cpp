@@ -27,30 +27,26 @@ namespace engine
 using namespace analysis;
 
 /**
- * @brief a checkpoint is created before the instruction (pointed by the current address) executes. 
+ * @brief a checkpoint is created before the execution of the current examined instruction. 
  * 
- * @param current_address the address pointed by the instruction pointer (abbr. IP)
- * @param current_context the cpu context (values of registers) when the IP is at this address
+ * @param current_context the cpu context (values of registers) at the current execution order
  */
 checkpoint::checkpoint(CONTEXT* current_context)
 {
   // store the current cpu context,
   PIN_SaveContext(current_context, &(this->cpu_context));
-
-  // the current alive operands,
-  this->alive_operands = dataflow::current_outerface();
   
   // and the current memory state
   boost::unordered_set<ptr_insoperand_t>::iterator operand_iter;
   ADDRINT mem_addr;
   
-  for (operand_iter = this->alive_operands.begin(); operand_iter != this->alive_operands.end(); 
-       ++operand_iter) 
+  for (operand_iter = outerface_at_exeorder[current_execution_order].begin(); 
+       operand_iter != outerface_at_exeorder[current_execution_order].end(); ++operand_iter) 
   {
     // verify if the operand is a memory address
     if ((*operand_iter)->value.type() == typeid(ADDRINT)) 
     {
-      // store the current memory value at this address
+      // store the current memory at this address
       mem_addr = boost::get<ADDRINT>((*operand_iter)->value);
       this->memory_state[mem_addr] = *(reinterpret_cast<UINT8*>(mem_addr));
     }

@@ -24,6 +24,7 @@
 #include <boost/range/algorithm.hpp>
 #include <boost/bind.hpp>
 #include <boost/container/set.hpp>
+#include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/breadth_first_search.hpp>
 
 namespace analysis 
@@ -211,6 +212,26 @@ static inline dataflow_vertex_descs construct_target_vertices(ptr_instruction_t 
 
 
 /**
+ * @brief construct the outer-face (i.e. the list of alive operands) 
+ * 
+ * @return void
+ */
+static inline void construct_outerface()
+{
+  boost::unordered_set<ptr_insoperand_t> alive_operands;
+  dataflow_vertex_descs::iterator alive_vertex_iter;
+  
+  for (alive_vertex_iter = outer_interface.begin(); alive_vertex_iter != outer_interface.end(); 
+       ++alive_vertex_iter) 
+  {
+    outerface_at_exeorder[current_execution_order].insert(forward_dataflow[*alive_vertex_iter]);
+  }
+  
+  return;
+}
+
+
+/**
  * @brief insert a new instruction into the forward and backward data-flow graphs: the read/written 
  * registers of the instruction can be determined statically (in the loading time) but the 
  * read/written memories can only be determined in running time.
@@ -242,6 +263,9 @@ void dataflow::propagate_along_instruction(UINT32 execution_order)
 			boost::add_edge(*target_iter, *source_iter, execution_order, backward_dataflow);
 		}
 	}
+	
+	// construct the outerface (i.e. the list of alive operands) 
+	construct_outerface();
 	
   return;
 }
@@ -454,26 +478,5 @@ void dataflow::analyze_executed_instructions()
   
   return;
 }
-
-
-/**
- * @brief return current instruction operands being now (namely alive) in the outer-interface.
- * 
- * @return boost::unordered_set<ptr_insoperand_t>
- */
-boost::unordered_set<ptr_insoperand_t> dataflow::current_outerface()
-{
-  boost::unordered_set<ptr_insoperand_t> alive_operands;
-  dataflow_vertex_descs::iterator alive_vertex_iter;
-  
-  for (alive_vertex_iter = outer_interface.begin(); alive_vertex_iter != outer_interface.end(); 
-       ++alive_vertex_iter) 
-  {
-    alive_operands.insert(forward_dataflow[*alive_vertex_iter]);
-  }
-  
-  return alive_operands;
-}
-
 
 } // end of analysis namespace

@@ -31,8 +31,9 @@
 using namespace analysis;
 using namespace engine;
 
-typedef boost::unordered_set<UINT32>   exeorders_t;
-typedef boost::unordered_set<ADDRINT>  addresses_t;
+typedef boost::unordered_set<UINT32> exeorders_t;
+typedef boost::unordered_set<ADDRINT> addresses_t;
+typedef boost::unordered_set<ptr_insoperand_t> ptr_insoperands_t;
 
 extern ADDRINT received_message_address;
 extern INT32 received_message_length;
@@ -46,6 +47,7 @@ extern boost::unordered_map<UINT32, ptr_checkpoint_t> checkpoint_at_exeorder;
 extern boost::unordered_map<UINT32, exeorders_t> chkorders_affecting_branch_at_exeorder;
 extern boost::unordered_map<ADDRINT, UINT8> original_state_at;
 extern boost::unordered_map<ADDRINT, state_t> current_memory_state;
+extern boost::unordered_map<UINT32, ptr_insoperands_t> outerface_at_exeorder;
 
 
 #endif // MAIN_H

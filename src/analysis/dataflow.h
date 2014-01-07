@@ -23,11 +23,7 @@
 #include "instruction.h"
 #include "instruction_operand.h"
 #include <pin.H>
-#include <boost/shared_ptr.hpp>
-#include <boost/graph/adjacency_list.hpp>
 #include <boost/unordered_set.hpp>
-#include <boost/compressed_pair.hpp>
-#include <boost/unordered_map.hpp>
 
 namespace analysis 
 {
@@ -37,7 +33,6 @@ class dataflow
 public:
   static void propagate_along_instruction(UINT32 execution_order);
   static void analyze_executed_instructions();
-  static boost::unordered_set<ptr_insoperand_t> current_outerface();
   static void clear();
 };
 
