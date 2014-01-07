@@ -174,10 +174,10 @@ static inline dataflow_vertex_descs construct_target_vertices(ptr_instruction_t 
       mem_addr = boost::get<ADDRINT>((*ptr_operand_iter)->value);
       // if the address does not exist in the original_memvalue yet, namely it is accessed at the
       // first time
-      if (original_state_at.find(mem_addr) == original_state_at.end())
+      if (original_memstate_at.find(mem_addr) == original_memstate_at.end())
       {
         // then save its original value (before it will be modified)
-        original_state_at[mem_addr] = *(reinterpret_cast<UINT8*>(mem_addr));
+        original_memstate_at[mem_addr] = *(reinterpret_cast<UINT8*>(mem_addr));
       }
 		}
 		
@@ -264,7 +264,7 @@ void dataflow::propagate_along_instruction(UINT32 execution_order)
 		}
 	}
 	
-	// construct the outerface (i.e. the list of alive operands) 
+	// construct the outer-face (i.e. the list of alive operands) 
 	construct_outerface();
 	
   return;

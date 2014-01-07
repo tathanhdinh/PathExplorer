@@ -94,28 +94,30 @@ void fast_execution::move_forward(UINT32 checkpoint_exeorder)
   
   // the global memory state will be updated to reflect the state at the future checkpoint
   boost::unordered_set<ptr_insoperand_t>::iterator insoperand_iter;
-  
-  for (insoperand_iter = futur_chkpnt->alive_operands.begin(); 
-       insoperand_iter != futur_chkpnt->alive_operands.end(); ++insoperand_iter) 
+  ADDRINT mem_addr;
+  // iterate over the list of alive operands at the target checkpoint
+  for (insoperand_iter = outerface_at_exeorder[checkpoint_exeorder].begin(); 
+       insoperand_iter != outerface_at_exeorder[checkpoint_exeorder].end(); ++insoperand_iter) 
   {
+    // if the operand is a memory address
     if ((*insoperand_iter)->value.type() == typeid(ADDRINT)) 
     {
-//       if ()
+      mem_addr = boost::get<ADDRINT>((*insoperand_iter)->value);
+      // and it is also alive at the current execution
+      if (outerface_at_exeorder[current_execution_order].find(*insoperand_iter) != 
+          outerface_at_exeorder[current_execution_order].end()) 
+      {
+        // the memory state at the checkpoint will be updated by the current value
+        *(reinterpret_cast<UINT8*>(mem_addr)) = current_memstate_at[mem_addr];
+      }
+      else 
+      {
+        // the memory state at the checkpoint will be kept
+        *(reinterpret_cast<UINT8*>(mem_addr)) = futur_chkpnt->memory_state[mem_addr];
+      }
     }
   }
-  
-  
-//   // update the memory state
-//   boost::unordered_map<ADDRINT, state_t>::iterator futur_mem_iter;
-//   boost::unordered_map<ADDRINT, state_t>::iterator curr_mem_iter;
-//   boost::unordered_map<ADDRINT, UINT8>::iterator mem_iter;
-//   
-//   for (futur_mem_iter = future_checkpoint->memory_state.begin(); 
-//        futur_mem_iter != future_checkpoint->memory_state.end(); ++futur_mem_iter) 
-//   {
-//     *(reinterpret_cast<UINT8*>(futur_mem_iter->first)) = futur_mem_iter->second.second();
-//   }
-    
+
   // restore the cpu context
   PIN_ExecuteAt(&(futur_chkpnt->cpu_context));
   
