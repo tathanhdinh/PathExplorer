@@ -35,6 +35,8 @@ namespace engine
 void fast_execution::move_backward(UINT32 checkpoint_exeorder)
 {
   ptr_checkpoint_t past_chkpnt = checkpoint_at_exeorder[checkpoint_exeorder];
+  
+  // PREVIOUS APPROACH: always safe but with high overhead
   boost::unordered_map<ADDRINT, UINT8>::iterator mem_iter;
   
   // update the logged values of the written addresses
@@ -46,7 +48,55 @@ void fast_execution::move_backward(UINT32 checkpoint_exeorder)
   // then clear the set of logged values
   past_chkpnt->memory_change_log.clear();
   
-  // NEW APPROACH
+  // NEW APPROACH: not always safe but with low overhead
+  // the global memory state will be restored to reflect the state at the past checkpoint
+  boost::unordered_set<ptr_insoperands_t>::iterator insoperand_iter;
+  ADDRINT mem_addr;
+  for (insoperand_iter = outerface_at_exeorder[current_execution_order].begin(); 
+       insoperand_iter != outerface_at_exeorder[current_execution_order].end(); ++insoperand_iter) 
+  {
+    // if the operand is a memory address
+    if ((*insoperand_iter)->value.type() == typeid(ADDRINT)) 
+    {
+      mem_addr = boost::get<ADDRINT>((*insoperand_iter)->value);
+      // and this address has been accessed at the target checkpoint
+      if (past_chkpnt->memory_state.find(mem_addr) != past_chkpnt->memory_state.end()) 
+      {
+        // then restore it by the value stored in the checkpoint
+        *(reinterpret_cast<UINT8*>(mem_addr)) = past_chkpnt->memory_state[mem_addr];
+      }
+      else 
+      {
+        // otherwise restore it by the original value
+        *(reinterpret_cast<UINT8*>(mem_addr)) = original_memstate_at[mem_addr];
+      }
+    }
+  }
+  
+  // restore the current memory state
+  current_memstate_at = past_chkpnt->memory_state;
+  
+  for (insoperand_iter = outerface_at_exeorder[current_execution_order].begin();
+       insoperand_iter != outerface_at_exeorder[current_execution_order].end(); ++insoperand_iter)
+  {
+    // if the operand is a memory address
+    if ((*insoperand_iter)->value.type() == typeid(ADDRINT)) 
+    {
+      mem_addr = boost::get<ADDRINT>((*insoperand_iter)->value);
+      // and it is alive at the outer-face of the target checkpoint
+      if (outerface_at_exeorder[checkpoint_exeorder].find(*insoperand_iter) != 
+          outerface_at_exeorder[checkpoint_exeorder].end()) 
+      {
+        // then restore it by the value stored in the checkpoint memory state
+        *(reinterpret_cast<UINT8>(mem_addr)) = past_chkpnt->memory_state[mem_addr];
+      }
+      else 
+      {
+        // otherwise that means the 
+      }
+    }
+  }
+
   // the global memory state will be restored to the state at the past checkpoint (before the 
   // execution of the checkpoint's instruction)
   boost::unordered_map<ADDRINT, state_t>::iterator curr_mem_iter, past_mem_iter;
@@ -107,12 +157,12 @@ void fast_execution::move_forward(UINT32 checkpoint_exeorder)
       if (outerface_at_exeorder[current_execution_order].find(*insoperand_iter) != 
           outerface_at_exeorder[current_execution_order].end()) 
       {
-        // the memory state at the checkpoint will be updated by the current value
+        // then the memory state at the checkpoint will be updated by the current value
         *(reinterpret_cast<UINT8*>(mem_addr)) = current_memstate_at[mem_addr];
       }
       else 
       {
-        // the memory state at the checkpoint will be kept
+        // otherwise the memory state at the checkpoint will be kept
         *(reinterpret_cast<UINT8*>(mem_addr)) = futur_chkpnt->memory_state[mem_addr];
       }
     }
