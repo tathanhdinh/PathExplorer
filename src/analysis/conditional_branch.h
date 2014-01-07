@@ -39,7 +39,7 @@ public:
 //   bool operator==(const conditional_branch& other);
 };
 
-typedef boost::shared_ptr<conditional_branch> ptr_conditional_branch_t;
+typedef boost::shared_ptr<conditional_branch> ptr_cbranch_t;
 
 } // end of analysis namespace
 

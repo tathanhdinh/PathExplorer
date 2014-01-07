@@ -37,6 +37,7 @@ class dataflow
 public:
   static void propagate_along_instruction(UINT32 execution_order);
   static void analyze_executed_instructions();
+  static boost::unordered_set<ptr_insoperand_t> current_outerface();
   static void clear();
 };
 

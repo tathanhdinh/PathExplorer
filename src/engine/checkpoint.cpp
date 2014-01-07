@@ -52,7 +52,7 @@ checkpoint::checkpoint(CONTEXT* current_context)
 /**
  * @brief the checkpoint stores the original values at memory addresses before the executed 
  * instruction overwrites these values. Note that with the new move_backward approach, this logging
- * may not be neccessary anymore (and then the performance of resolving-state is much improved).
+ * may not be necessary anymore (and then the performance of resolving-state is much improved).
  * 
  * @param memory_written_address the beginning address that will be written
  * @param memory_written_length the length of written addresses

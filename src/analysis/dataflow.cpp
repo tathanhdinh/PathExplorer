@@ -308,7 +308,7 @@ static void determine_inputs_instructions_dependance()
  */
 static void determine_branches_checkpoints_dependance()
 {
-  boost::unordered_map<UINT32, ptr_conditional_branch_t>::iterator ptr_branch_iter;
+  boost::unordered_map<UINT32, ptr_cbranch_t>::iterator ptr_branch_iter;
   boost::unordered_map<UINT32, ptr_checkpoint_t>::iterator ptr_checkpoint_iter;
   boost::unordered_set<ptr_insoperand_t>::iterator ptr_operand_iter;
   boost::unordered_set<ADDRINT> affecting_mem_addrs;
@@ -454,5 +454,26 @@ void dataflow::analyze_executed_instructions()
   
   return;
 }
+
+
+/**
+ * @brief return current instruction operands being now (namely alive) in the outer-interface.
+ * 
+ * @return boost::unordered_set<ptr_insoperand_t>
+ */
+boost::unordered_set<ptr_insoperand_t> dataflow::current_outerface()
+{
+  boost::unordered_set<ptr_insoperand_t> alive_operands;
+  dataflow_vertex_descs::iterator alive_vertex_iter;
+  
+  for (alive_vertex_iter = outer_interface.begin(); alive_vertex_iter != outer_interface.end(); 
+       ++alive_vertex_iter) 
+  {
+    alive_operands.insert(forward_dataflow[*alive_vertex_iter]);
+  }
+  
+  return alive_operands;
+}
+
 
 } // end of analysis namespace

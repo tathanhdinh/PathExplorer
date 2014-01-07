@@ -91,6 +91,7 @@ void fast_execution::move_backward(UINT32 checkpoint_exeorder)
 void fast_execution::move_forward(UINT32 checkpoint_exeorder)
 {
   ptr_checkpoint_t future_checkpoint = checkpoint_at_exeorder[checkpoint_exeorder];
+  boost::unordered_map<ADDRINT, state_t>::iterator futur_mem_iter;
   
   // the global memory state will be updated to reflect coherently the state at the future 
   // checkpoint. 
