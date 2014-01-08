@@ -39,7 +39,7 @@ using namespace utilities;
  * 
  * @return bool
  */
-// static bool have_branch_to_resolve()
+// static bool have_branches_to_resolve()
 // {
 //   return true;
 // }
@@ -112,9 +112,9 @@ void trace_analyzer::normal_instruction_callback(ADDRINT instruction_address)
     // first get its static information
     ptr_instruction_t curr_ins = instruction_at_address[instruction_address];
     // then duplicate it using copy constructor instead of constructing from a PIN instruction 
-    if (curr_ins->is_conditional_branch) 
+    if (curr_ins->is_cbranch) 
     {
-      conditional_branch* curr_branch = new conditional_branch(*curr_ins);
+      cbranch* curr_branch = new cbranch(*curr_ins);
       instruction_at_execorder[current_execution_order].reset(curr_branch);
       branch_at_exeorder[current_execution_order].reset(curr_branch);
     }
@@ -142,7 +142,7 @@ void trace_analyzer::normal_instruction_callback(ADDRINT instruction_address)
 void trace_analyzer::cbranch_instruction_callback(bool is_branch_taken)
 {
   // update dynamic information: the branch is taken or not
-  static_cast<conditional_branch*>(
+  static_cast<cbranch*>(
     instruction_at_execorder[current_execution_order].get())->is_taken = is_branch_taken;
   return;
 }

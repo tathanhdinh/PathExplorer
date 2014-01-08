@@ -49,16 +49,16 @@ instruction::instruction(const INS& current_instruction)
   if (this->contained_function.empty()) this->is_vdso = true;
   
   // determine if the instruction read/write from/into memory
-  this->is_memory_read = INS_IsMemoryRead(current_instruction);
-  this->is_memory_write = INS_IsMemoryWrite(current_instruction);
+  this->is_memread = INS_IsMemoryRead(current_instruction);
+  this->is_memwrite = INS_IsMemoryWrite(current_instruction);
   
   // determine if the instruction is a conditional branch
-  this->is_conditional_branch = (INS_Category(current_instruction) == XED_CATEGORY_COND_BR);
+  this->is_cbranch = (INS_Category(current_instruction) == XED_CATEGORY_COND_BR);
   
   // determine if the instruction is an indirect branch or call, note that an instruction in 
   // x86(-64) architecture cannot be a conditional and an indirect one at once, namely 
   // "is conditional branch" and "is indirect branch or call" are mutually exclusive
-  this->is_indirect_branch_or_call = INS_IsIndirectBranchOrCall(current_instruction);
+  this->is_indirectBrOrCall = INS_IsIndirectBranchOrCall(current_instruction);
   
   // the source and target registers of an instruction can be determined statically
   REG curr_register;
@@ -84,7 +84,7 @@ instruction::instruction(const INS& current_instruction)
       }
       else 
       {
-        curr_ptr_operand.reset(new instruction_operand(curr_register));
+        curr_ptr_operand.reset(new operand(curr_register));
         this->source_operands.insert(curr_ptr_operand);
       }
     }
@@ -103,7 +103,7 @@ instruction::instruction(const INS& current_instruction)
       }
       else 
       {
-        curr_ptr_operand.reset(new instruction_operand(curr_register));
+        curr_ptr_operand.reset(new operand(curr_register));
         this->target_operands.insert(curr_ptr_operand);
       }
     }
@@ -129,9 +129,9 @@ instruction::instruction(const instruction& other_instruction)
   this->contained_function = other_instruction.contained_function;
   this->is_syscall = other_instruction.is_syscall;
   this->is_vdso = other_instruction.is_vdso;
-  this->is_memory_read = other_instruction.is_memory_read;
-  this->is_memory_write = other_instruction.is_memory_write;
-  this->is_conditional_branch = other_instruction.is_conditional_branch;
+  this->is_memread = other_instruction.is_memread;
+  this->is_memwrite = other_instruction.is_memwrite;
+  this->is_cbranch = other_instruction.is_cbranch;
 }
 
 
@@ -156,7 +156,7 @@ void instruction::update_memory_access_info(ADDRINT access_address, UINT8 access
     case MEMORY_READ:
       for (address = access_address; address < upper_bound_address; ++address) 
       {
-        curr_ptr_operand.reset(new instruction_operand(address));
+        curr_ptr_operand.reset(new operand(address));
         this->source_operands.insert(curr_ptr_operand);
       }
       break;
@@ -164,7 +164,7 @@ void instruction::update_memory_access_info(ADDRINT access_address, UINT8 access
     case MEMORY_WRITE:
       for (address = access_address; address < upper_bound_address; ++address) 
       {
-        curr_ptr_operand.reset(new instruction_operand(address));
+        curr_ptr_operand.reset(new operand(address));
         this->target_operands.insert(curr_ptr_operand);
       }
       break;

@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef INSTRUCTION_OPERAND_H
-#define INSTRUCTION_OPERAND_H
+#ifndef OPERAND_H
+#define OPERAND_H
 
 #include <pin.H>
 #include <string>
@@ -33,7 +33,7 @@ namespace analysis
  * @brief class representing instruction operands.
  * 
  */
-class instruction_operand
+class operand
 {
 public:
   std::string                           name;
@@ -41,11 +41,11 @@ public:
   UINT32                                duration;
   
 public:
-	instruction_operand();
-  instruction_operand(ADDRINT memory_operand);
-  instruction_operand(REG register_operand);
-  instruction_operand(UINT32 immediate_operand);
-	instruction_operand& operator=(const instruction_operand& other_operand);
+	operand();
+  operand(ADDRINT memory_operand);
+  operand(REG register_operand);
+  operand(UINT32 immediate_operand);
+	operand& operator=(const operand& other_operand);
 };
 
 // inline bool operator==(const instruction_operand& operand_a, const instruction_operand& operand_b) 
@@ -53,7 +53,7 @@ public:
 //   return (operand_a.name == operand_b.name);
 // }
 
-typedef boost::shared_ptr<instruction_operand> ptr_insoperand_t;
+typedef boost::shared_ptr<operand> ptr_insoperand_t;
 
 
 /**

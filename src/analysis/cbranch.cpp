@@ -17,7 +17,7 @@
  *
  */
 
-#include "conditional_branch.h"
+#include "cbranch.h"
 
 namespace analysis 
 {
@@ -27,8 +27,7 @@ namespace analysis
  * 
  * @param current_instruction instruction object passed from PIN
  */
-conditional_branch::conditional_branch(const INS& current_instruction) 
-  : instruction(current_instruction)
+cbranch::cbranch(const INS& current_instruction) : instruction(current_instruction)
 {
   this->is_resolved = false; this->is_bypassed = false;
 }
@@ -40,8 +39,7 @@ conditional_branch::conditional_branch(const INS& current_instruction)
  * 
  * @param other_instruction instruction object passed from PIN
  */
-conditional_branch::conditional_branch(const instruction& other_instruction) 
-  : instruction(other_instruction)
+cbranch::cbranch(const instruction& other_instruction) : instruction(other_instruction)
 {
   this->is_resolved = false; this->is_bypassed = false;
 }

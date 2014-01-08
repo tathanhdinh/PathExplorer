@@ -66,7 +66,7 @@ void trace_resolver::generic_instruction_callback(ADDRINT instruction_address)
   else 
   {
     BOOST_LOG_TRIVIAL(fatal) 
-      << boost::format("meet a wrong instruction at %s after %d instruction executed.") 
+      << boost::format("in trace resolving state: meet a wrong instruction at %s after %d instruction executed.") 
           % utils::addrint2hexstring(instruction_address) % current_execution_order;
     PIN_ExitApplication(current_resolving_state);
   }
@@ -83,6 +83,21 @@ void trace_resolver::generic_instruction_callback(ADDRINT instruction_address)
  */
 void trace_resolver::cbranch_instruction_callback(bool is_branch_taken)
 {
+  // verify if the current examined instruction is branch
+  if (instruction_at_execorder[current_execution_order]->is_cbranch) 
+  {
+    if (!branch_at_exeorder[current_execution_order]->is_resolved 
+        && !branch_at_exeorder[current_execution_order]->is_bypassed) 
+    {
+      //
+    }
+  }
+  else 
+  {
+    BOOST_LOG_TRIVIAL(fatal) 
+      << boost::format("in trace resolving state: meet a wrong branch at execution order %d") 
+          % current_execution_order;
+  }
   return;
 }
 

@@ -20,7 +20,7 @@
 #ifndef INSTRUCTION_H
 #define INSTRUCTION_H
 
-#include "instruction_operand.h"
+#include "operand.h"
 #include <pin.H>
 #include <string>
 #include <boost/unordered_set.hpp>
@@ -45,10 +45,10 @@ public:
   
   bool        is_syscall;
   bool        is_vdso;
-  bool        is_memory_read;
-  bool        is_memory_write;
-  bool        is_conditional_branch;
-  bool        is_indirect_branch_or_call;
+  bool        is_memread;
+  bool        is_memwrite;
+  bool        is_cbranch;
+  bool        is_indirectBrOrCall;
   
   boost::unordered_set<ptr_insoperand_t> source_operands;
   boost::unordered_set<ptr_insoperand_t> target_operands;

@@ -49,7 +49,7 @@ boost::unordered_map<UINT32, ptr_insoperands_t> outerface_at_exeorder;
 VOID start_exploring(VOID* data)
 {
   instruction_at_address.clear();
-  instruction_at_exeorder.clear();
+  instruction_at_execorder.clear();
   branch_at_exeorder.clear();
   return;
 }

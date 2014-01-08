@@ -22,7 +22,7 @@
 #include "trace_analyzer.h"
 #include "trace_resolver.h"
 #include "../analysis/instruction.h"
-#include "../analysis/conditional_branch.h"
+#include "../analysis/cbranch.h"
 #include <boost/unordered_map.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/format.hpp>
@@ -162,7 +162,7 @@ static void trace_analyzing_state_handler(const INS& curr_ins, ADDRINT curr_ins_
   
       // update running time information for normal instructions, note that the first 3 callbacks 
       // below are mutually exclusive so they can be used separately
-      if (curr_ptr_ins->is_conditional_branch) 
+      if (curr_ptr_ins->is_cbranch) 
       {
         INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
                                  (AFUNPTR)trace_analyzer::cbranch_instruction_callback,
@@ -170,7 +170,7 @@ static void trace_analyzing_state_handler(const INS& curr_ins, ADDRINT curr_ins_
       }
       
       // update the instruction's memory source operands
-      if (curr_ptr_ins->is_memory_read) 
+      if (curr_ptr_ins->is_memread) 
       {
         INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
                                  (AFUNPTR)trace_analyzer::mread_instruction_callback,
@@ -178,7 +178,7 @@ static void trace_analyzing_state_handler(const INS& curr_ins, ADDRINT curr_ins_
       }
       
       // update the instruction's memory target operands
-      if (curr_ptr_ins->is_memory_write) 
+      if (curr_ptr_ins->is_memwrite) 
       {
         INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
                                  (AFUNPTR)trace_analyzer::mwrite_instruction_callback,
@@ -191,7 +191,7 @@ static void trace_analyzing_state_handler(const INS& curr_ins, ADDRINT curr_ins_
       
       
       // capture a callback whenever the instruction read some bytes of the input
-      if (curr_ptr_ins->is_memory_read) 
+      if (curr_ptr_ins->is_memread) 
       {
         INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
                                  (AFUNPTR)trace_analyzer::checkpoint_storing_callback, 
@@ -222,14 +222,14 @@ static void trace_resolving_state_handler(const INS& curr_ins, ADDRINT curr_ins_
   // insert callbacks for conditional branch and indirect one, note that the following conditions 
   // are mutually exclusive
   ptr_instruction_t curr_ptr_ins = instruction_at_address[curr_ins_addr];
-  if (curr_ptr_ins->is_conditional_branch)
+  if (curr_ptr_ins->is_cbranch)
   {
     INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
                              (AFUNPTR)trace_resolver::cbranch_instruction_callback, IARG_INST_PTR, 
                              IARG_BRANCH_TAKEN, IARG_END);
   }
   
-  if (curr_ptr_ins->is_indirect_branch_or_call) 
+  if (curr_ptr_ins->is_indirectBrOrCall) 
   {
     INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
                              (AFUNPTR)trace_resolver::indirectBrOrCall_instruction_callback, 
@@ -255,10 +255,10 @@ void dbi::instrument_instruction_before(INS current_instruction, VOID* data)
   ptr_instruction_t curr_ptr_ins(new instruction(current_instruction));
   
   // if it is a conditional branch 
-  if (curr_ptr_ins->is_conditional_branch) 
+  if (curr_ptr_ins->is_cbranch) 
   {
     // then copy it as a conditional branch
-    instruction_at_address[current_address].reset(new conditional_branch(*curr_ptr_ins));
+    instruction_at_address[current_address].reset(new cbranch(*curr_ptr_ins));
   }
   else 
   {

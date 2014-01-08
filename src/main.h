@@ -25,7 +25,7 @@
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
 #include "analysis/instruction.h"
-#include "analysis/conditional_branch.h"
+#include "analysis/cbranch.h"
 #include "engine/checkpoint.h"
 
 using namespace analysis;

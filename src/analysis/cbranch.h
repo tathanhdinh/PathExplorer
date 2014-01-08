@@ -17,15 +17,15 @@
  *
  */
 
-#ifndef CONDITIONAL_BRANCH_H
-#define CONDITIONAL_BRANCH_H
+#ifndef CBRANCH_H
+#define CBRANCH_H
 
 #include "instruction.h"
 
 namespace analysis 
 {
 
-class conditional_branch : public instruction
+class cbranch : public instruction
 {
 public:
   bool is_taken;
@@ -33,15 +33,15 @@ public:
   bool is_bypassed;
 
 public:
-  conditional_branch(const INS& current_instruction);
-  conditional_branch(const instruction& other_instruction);
+  cbranch(const INS& current_instruction);
+  cbranch(const instruction& other_instruction);
 //   conditional_branch(const conditional_branch& other);
 //   conditional_branch& operator=(const conditional_branch& other);
 //   bool operator==(const conditional_branch& other);
 };
 
-typedef boost::shared_ptr<conditional_branch> ptr_cbranch_t;
+typedef boost::shared_ptr<cbranch> ptr_cbranch_t;
 
 } // end of analysis namespace
 
-#endif // CONDITIONAL_BRANCH_H
+#endif // CBRANCH_H

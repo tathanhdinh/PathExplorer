@@ -21,7 +21,7 @@
 #define DATAFLOW_GRAPH_H
 
 #include "instruction.h"
-#include "instruction_operand.h"
+#include "operand.h"
 #include <pin.H>
 #include <boost/unordered_set.hpp>
 
