@@ -40,6 +40,7 @@ static resolving_state current_resolving_state;
 void trace_resolver::set_resolving_state(resolving_state new_resolving_state)
 {
   current_resolving_state = new_resolving_state;
+  return;
 }
 
 
@@ -95,7 +96,7 @@ void trace_resolver::cbranch_instruction_callback(bool is_branch_taken)
 void trace_resolver::indirectBrOrCall_instruction_callback(ADDRINT target_address)
 {
   // in x86-64 architecture, an indirect branch (or call) instruction is always unconditional so 
-  // the target address is always the next executed instruction, let's verify that
+  // the target address must be the next executed instruction, let's verify that
   if (instruction_at_exeorder[current_execution_order + 1]->address != target_address) 
   {
     switch (current_resolving_state)
@@ -107,10 +108,10 @@ void trace_resolver::indirectBrOrCall_instruction_callback(ADDRINT target_addres
         break;
         
       default:
-      BOOST_LOG_TRIVIAL(fatal)
-        << boost::format("trace resolver falls into a unknown running state %d")
-            % current_resolving_state;
-      PIN_ExitApplication(current_resolving_state);
+        BOOST_LOG_TRIVIAL(fatal)
+          << boost::format("trace resolver falls into a unknown running state %d")
+              % current_resolving_state;
+        PIN_ExitApplication(current_resolving_state);
         break;
     }
   }

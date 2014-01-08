@@ -21,10 +21,28 @@
 #include "utils.h"
 #include "../main.h"
 #include <sstream>
+#include <ctime>
+#include <boost/random.hpp>
 
 namespace utilities 
 {
-	
+
+// initialize a random generator and a uniform distribution
+boost::random::taus88 random_generator(static_cast<unsigned int>(std::time(0)));
+boost::random::uniform_int_distribution<UINT8> uint8_uniform;
+
+
+/**
+ * @brief generate a random number of type UINT8
+ * 
+ * @return UINT8
+ */
+UINT8 utils::random_uint8()
+{
+  return uint8_uniform(random_generator);
+}
+
+
 /**
  * @brief reformat the string showing some memory address.
  * 
