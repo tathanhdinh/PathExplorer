@@ -19,9 +19,12 @@
 
 #include "fast_execution.h"
 #include "../main.h"
+#include "../utilities/utils.h"
 
 namespace engine
 {
+
+using namespace utilities;
 
 /**
  * @brief the control moves back to a previously logged checkpoint; this operation can always be 
@@ -90,7 +93,7 @@ void fast_execution::move_backward(UINT32 checkpoint_exeorder)
  * checkpoint. Note that the instruction (determined by the instruction pointer in the checkpoint's 
  * cpu context) will be re-executed.
  * 
- * @param target_checkpoint the future checkpoint
+ * @param checkpoint_exeorder the future checkpoint's execution order
  * @return void
  */
 void fast_execution::move_forward(UINT32 checkpoint_exeorder)
@@ -126,6 +129,102 @@ void fast_execution::move_forward(UINT32 checkpoint_exeorder)
   // restore the cpu context
   PIN_ExecuteAt(&(futur_chkpnt->cpu_context));
   
+  return;
+}
+
+
+/**
+ * @brief modify randomly memory values (at the input buffer) which read at the checkpoint.
+ * 
+ * @param checkpoint_exeorder the checkpoint's execution order
+ * @return void
+ */
+inline static void modify_input_at_checkpoint(UINT32 checkpoint_exeorder) 
+{
+  ptr_checkpoint_t curr_chkpnt = checkpoint_at_exeorder[checkpoint_exeorder];
+  boost::unordered_set<ADDRINT>::iterator mem_addr_iter;
+  for (mem_addr_iter = curr_chkpnt->memory_addresses_to_modify.begin(); 
+       mem_addr_iter != curr_chkpnt->memory_addresses_to_modify.end(); ++mem_addr_iter) 
+  {
+    *(reinterpret_cast<UINT8*>(*mem_addr_iter)) = utils::random_uint8();
+  }
+
+  return;
+}
+
+
+/**
+ * @brief restore original memory values (at the input buffer) which read at the checkpoint.
+ * 
+ * @param checkpoint_exeorder the checkpoint's execution order
+ * @return void
+ */
+inline static void restore_input_at_checkpoint(UINT32 checkpoint_exeorder) 
+{
+  ptr_checkpoint_t curr_chkpnt = checkpoint_at_exeorder[checkpoint_exeorder];
+  boost::unordered_set<ADDRINT>::iterator mem_addr_iter;
+  for (mem_addr_iter = curr_chkpnt->memory_addresses_to_modify.begin(); 
+       mem_addr_iter != curr_chkpnt->memory_addresses_to_modify.end(); ++mem_addr_iter) 
+  {
+    *(reinterpret_cast<UINT8*>(*mem_addr_iter)) = original_msg_at[*mem_addr_iter];
+  }
+  
+  return;
+}
+
+
+/**
+ * @brief back to a checkpoint and modify randomly its read values (in the input buffer).
+ * 
+ * @param checkpoint_exeorder the target checkpoint's execution order
+ * @return void
+ */
+void fast_execution::move_backward_and_modify_input(UINT32 checkpoint_exeorder)
+{
+  modify_input_at_checkpoint(checkpoint_exeorder);
+  move_backward(checkpoint_exeorder);
+  return;
+}
+
+
+/**
+ * @brief back to a checkpoint and restore its read value (in the input buffer).
+ * 
+ * @param checkpoint_exeorder the target checkpoint's execution order
+ * @return void
+ */
+void fast_execution::move_backward_and_restore_input(UINT32 checkpoint_exeorder)
+{
+  restore_input_at_checkpoint(checkpoint_exeorder);
+  move_backward(checkpoint_exeorder);
+  return;
+}
+
+
+/**
+ * @brief forward to a checkpoint and modify randomly its read values (in the input buffer).
+ * 
+ * @param checkpoint_exeorder the target checkpoint's execution order
+ * @return void
+ */
+void fast_execution::move_forward_and_modify_input(UINT32 checkpoint_exeorder)
+{
+  modify_input_at_checkpoint(checkpoint_exeorder);
+  move_forward(checkpoint_exeorder);
+  return;
+}
+
+
+/**
+ * @brief forward to a checkpoint and restore its read values (in the input buffer).
+ * 
+ * @param checkpoint_exeorder the target checkpoint's execution order
+ * @return void
+ */
+void fast_execution::move_forward_and_restore_input(UINT32 checkpoint_exeorder)
+{
+  restore_input_at_checkpoint(checkpoint_exeorder);
+  move_forward(checkpoint_exeorder);
   return;
 }
 

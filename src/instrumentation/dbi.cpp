@@ -80,6 +80,24 @@ void dbi::instrument_syscall_enter(THREADID thread_id, CONTEXT* context,
 
 
 /**
+ * @brief get a copy of the original received message.
+ * 
+ * @return void
+ */
+static void copy_original_message()
+{
+  UINT32 idx;
+  for (idx = 0; idx < received_message_length; ++idx) 
+  {
+    original_msg_at[idx + received_message_address] = 
+      *(reinterpret_cast<UINT8*>(idx + received_message_address));
+  }
+  
+  return;
+}
+
+
+/**
  * @brief the function is placed to be called immediately after the execution of a system call.
  * 
  * @param thread_id ID of the thread calling the system call
@@ -99,6 +117,10 @@ void dbi::instrument_syscall_exit(THREADID thread_id, CONTEXT* context,
     {
       required_message_received = false;
       current_instrumentation_state = trace_analyzing_state;
+    }
+    else 
+    {
+      copy_original_message();
     }
   }
   return;

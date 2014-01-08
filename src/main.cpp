@@ -32,7 +32,9 @@ boost::unordered_map<UINT32, ptr_instruction_t> instruction_at_exeorder;
 boost::unordered_map<UINT32, ptr_cbranch_t> branch_at_exeorder;
 boost::unordered_map<UINT32, ptr_checkpoint_t> checkpoint_at_exeorder;
 boost::unordered_map<UINT32, exeorders_t> chkorders_affecting_branch_at_exeorder;
+boost::unordered_map<ADDRINT, UINT8> original_msg_at;
 boost::unordered_map<ADDRINT, UINT8> original_memstate_at;
+boost::unordered_map<ADDRINT, UINT8> current_memstate_at;
 boost::unordered_map<UINT32, ptr_insoperands_t> outerface_at_exeorder;
 
 /**
