@@ -19,6 +19,7 @@
  */
 
 #include "trace_resolver.h"
+#include "../utilities/utils.h"
 #include "../main.h"
 #include <boost/log/trivial.hpp>
 #include <boost/format.hpp>
@@ -26,14 +27,22 @@
 namespace instrumentation 
 {
   
-typedef enum 
-{
-  original_execution = 0, // execution with the original input
-  modified_execution = 1  // execution with some modified input
-} execution_state;
+using namespace utilities;  
 
-static execution_state current_execution_state;
-    
+static resolving_state current_resolving_state;
+
+/**
+ * @brief set a new resolving state.
+ * 
+ * @param new_resolving_state 
+ * @return void
+ */
+void trace_resolver::set_resolving_state(resolving_state new_resolving_state)
+{
+  current_resolving_state = new_resolving_state;
+}
+
+
 /**
  * @brief generic callback applied for all instructions, principally it is very similar to the 
  * "generic normal instruction" callback in the trace-analyzer class. But in the trace-resolving 
@@ -46,7 +55,18 @@ static execution_state current_execution_state;
  */
 void trace_resolver::generic_instruction_callback(ADDRINT instruction_address)
 {
+  // for debugging only (can be safely removed in releasing)
+  if (instruction_at_exeorder[current_execution_order]->address != instruction_address)
+  {
+    BOOST_LOG_TRIVIAL(fatal) 
+      << boost::format("meet a wrong instruction at %s after %d instruction executed.") 
+          % utils::addrint2hexstring(instruction_address) % current_execution_order;
+    PIN_ExitApplication(current_resolving_state);
+  }
+  
+  // real code
   current_execution_order++;
+  
   return;
 }
 
@@ -78,16 +98,19 @@ void trace_resolver::indirectBrOrCall_instruction_callback(ADDRINT target_addres
   // the target address is always the next executed instruction, let's verify that
   if (instruction_at_exeorder[current_execution_order + 1]->address != target_address) 
   {
-    switch (current_execution_state) 
+    switch (current_resolving_state)
     {
-      case original_execution:
+      case execution_with_orig_input:
         break;
         
-      case modified_execution:
+      case execution_with_modif_input:
         break;
         
       default:
-        
+      BOOST_LOG_TRIVIAL(fatal)
+        << boost::format("trace resolver falls into a unknown running state %d")
+            % current_resolving_state;
+      PIN_ExitApplication(current_resolving_state);
         break;
     }
   }

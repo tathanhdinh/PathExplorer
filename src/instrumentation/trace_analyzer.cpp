@@ -56,7 +56,7 @@ using namespace utilities;
 static void switch_to_trace_resolving_state()
 {
 //   dataflow::extract_inputs_instructions_dependance_maps();
-  dbi::change_running_state(trace_resolving_state);
+  dbi::set_instrumentation_state(trace_resolving_state);
   PIN_RemoveInstrumentation();
   return;
 }

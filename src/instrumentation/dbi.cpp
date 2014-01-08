@@ -36,7 +36,7 @@ using namespace analysis;
 #define SYSCALL_RECVFROM          45
 #define MESSAGE_ADDRESS_ARGUMENT  1
 
-static running_state current_running_state; 
+static instrumentation_state current_instrumentation_state;
 static bool required_message_received = false; 
 
 /**
@@ -45,9 +45,9 @@ static bool required_message_received = false;
  * @param new_state state to change
  * @return void
  */
-void dbi::change_running_state(running_state new_state)
+void dbi::set_instrumentation_state(instrumentation_state new_state)
 {
-  current_running_state = new_state;
+  current_instrumentation_state = new_state;
   return;
 }
 
@@ -98,7 +98,7 @@ void dbi::instrument_syscall_exit(THREADID thread_id, CONTEXT* context,
     if (received_message_length <= 0) 
     {
       required_message_received = false;
-      current_running_state = trace_analyzing_state;
+      current_instrumentation_state = trace_analyzing_state;
     }
   }
   return;
@@ -245,7 +245,7 @@ void dbi::instrument_instruction_before(INS current_instruction, VOID* data)
   }
   
   // place handlers
-  switch (current_running_state)
+  switch (current_instrumentation_state)
   {
     case message_receiving_state:
       // currently do nothing
@@ -262,8 +262,8 @@ void dbi::instrument_instruction_before(INS current_instruction, VOID* data)
     default:
       BOOST_LOG_TRIVIAL(fatal) 
         << boost::format("instrumentation falls into a unknown running state %d") 
-            % current_running_state;
-      PIN_ExitApplication(current_running_state);
+            % current_instrumentation_state;
+      PIN_ExitApplication(current_instrumentation_state);
       break;
   }
   

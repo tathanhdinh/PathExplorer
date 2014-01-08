@@ -31,12 +31,12 @@ typedef enum
   message_receiving_state = 0,
   trace_analyzing_state   = 1,
   trace_resolving_state   = 2
-} running_state;
+} instrumentation_state;
 
 class dbi
 {
 public:
-  static void change_running_state(running_state new_state);
+  static void set_instrumentation_state(instrumentation_state new_state);
   static void instrument_syscall_enter(THREADID thread_id, CONTEXT *context, 
                                        SYSCALL_STANDARD syscall_std, VOID *data);
   static void instrument_syscall_exit(THREADID thread_id, CONTEXT *context, 
