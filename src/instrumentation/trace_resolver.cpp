@@ -58,7 +58,7 @@ void trace_resolver::set_resolving_state(resolving_state new_resolving_state)
  */
 void trace_resolver::generic_instruction_callback(ADDRINT instruction_address)
 {
-  if (instruction_at_exeorder[current_execution_order]->address == instruction_address)
+  if (instruction_at_execorder[current_execution_order]->address == instruction_address)
   {
     // better performance because of branch prediction ?!!
     current_execution_order++;
@@ -99,7 +99,7 @@ void trace_resolver::indirectBrOrCall_instruction_callback(ADDRINT target_addres
 {
   // in x86-64 architecture, an indirect branch (or call) instruction is always unconditional so 
   // the target address must be the next executed instruction, let's verify that
-  if (instruction_at_exeorder[current_execution_order + 1]->address != target_address) 
+  if (instruction_at_execorder[current_execution_order + 1]->address != target_address) 
   {
     switch (current_resolving_state)
     {
@@ -111,7 +111,7 @@ void trace_resolver::indirectBrOrCall_instruction_callback(ADDRINT target_addres
         break;
         
       case execution_with_modif_input:
-        fast_execution::move_backward_and_modify_input(active_checkpoint_exeorder);
+        fast_execution::move_backward_and_modify_input(focal_checkpoint_exeorder);
         break;
         
       default:

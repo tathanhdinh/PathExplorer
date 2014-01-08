@@ -241,7 +241,7 @@ static inline void construct_outerface()
  */
 void dataflow::propagate_along_instruction(UINT32 execution_order)
 {
-  ptr_instruction_t executed_ins =  instruction_at_exeorder[execution_order];
+  ptr_instruction_t executed_ins =  instruction_at_execorder[execution_order];
 	
 	// construct the set of source vertex for the inserted instruction
 	boost::unordered_set<dataflow_vertex_desc> source_vertices;
@@ -359,7 +359,7 @@ static void determine_branches_checkpoints_dependance()
       if (checkpoint_exeorder < branch_exeorder) 
       {
         // verify if the instruction at this checkpoint access to some addresses in the input buffer
-        ptr_ins = instruction_at_exeorder[checkpoint_exeorder];
+        ptr_ins = instruction_at_execorder[checkpoint_exeorder];
         for (ptr_operand_iter = ptr_ins->source_operands.begin(); 
              ptr_operand_iter != ptr_ins->source_operands.end(); ++ptr_operand_iter) 
         {

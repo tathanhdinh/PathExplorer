@@ -30,6 +30,7 @@ namespace analysis
 conditional_branch::conditional_branch(const INS& current_instruction) 
   : instruction(current_instruction)
 {
+  this->is_resolved = false; this->is_bypassed = false;
 }
 
 
@@ -42,6 +43,7 @@ conditional_branch::conditional_branch(const INS& current_instruction)
 conditional_branch::conditional_branch(const instruction& other_instruction) 
   : instruction(other_instruction)
 {
+  this->is_resolved = false; this->is_bypassed = false;
 }
 
 } // end of analysis namespace

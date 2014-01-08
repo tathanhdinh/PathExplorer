@@ -29,6 +29,8 @@ class conditional_branch : public instruction
 {
 public:
   bool is_taken;
+  bool is_resolved;
+  bool is_bypassed;
 
 public:
   conditional_branch(const INS& current_instruction);
