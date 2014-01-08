@@ -19,12 +19,21 @@
  */
 
 #include "trace_resolver.h"
+#include "../main.h"
+#include <boost/log/trivial.hpp>
+#include <boost/format.hpp>
 
 namespace instrumentation 
 {
   
-extern UINT32 current_execution_order;
-  
+typedef enum 
+{
+  original_execution = 0, // execution with the original input
+  modified_execution = 1  // execution with some modified input
+} execution_state;
+
+static execution_state current_execution_state;
+    
 /**
  * @brief generic callback applied for all instructions, principally it is very similar to the 
  * "generic normal instruction" callback in the trace-analyzer class. But in the trace-resolving 
@@ -65,6 +74,24 @@ void trace_resolver::cbranch_instruction_callback(bool is_branch_taken)
  */
 void trace_resolver::indirectBrOrCall_instruction_callback(ADDRINT target_address)
 {
+  // in x86-64 architecture, an indirect branch (or call) instruction is always unconditional so 
+  // the target address is always the next executed instruction, let's verify that
+  if (instruction_at_exeorder[current_execution_order + 1]->address != target_address) 
+  {
+    switch (current_execution_state) 
+    {
+      case original_execution:
+        break;
+        
+      case modified_execution:
+        break;
+        
+      default:
+        
+        break;
+    }
+  }
+  
   return;
 }
 

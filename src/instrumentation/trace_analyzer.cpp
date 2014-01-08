@@ -23,7 +23,6 @@
 #include "../analysis/dataflow.h"
 #include "../instrumentation/dbi.h"
 #include "../utilities/utils.h"
-#include <algorithm>
 #include <boost/log/trivial.hpp>
 #include <boost/format.hpp>
 #include <boost/unordered_map.hpp>
