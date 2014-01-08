@@ -40,6 +40,8 @@ extern INT32 received_message_length;
 extern UINT32 current_execution_order;
 extern UINT32 execution_trace_max_length;
 
+extern UINT32 active_checkpoint_exeorder;
+
 extern boost::unordered_map<ADDRINT, ptr_instruction_t> instruction_at_address;
 extern boost::unordered_map<UINT32, ptr_instruction_t> instruction_at_exeorder;
 extern boost::unordered_map<UINT32, ptr_cbranch_t> branch_at_exeorder;

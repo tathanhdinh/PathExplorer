@@ -27,6 +27,8 @@ INT32 received_message_length;
 UINT32 current_execution_order;
 UINT32 execution_trace_max_length;
 
+UINT32 active_checkpoint_exeorder;
+
 boost::unordered_map<ADDRINT, ptr_instruction_t> instruction_at_address;
 boost::unordered_map<UINT32, ptr_instruction_t> instruction_at_exeorder;
 boost::unordered_map<UINT32, ptr_cbranch_t> branch_at_exeorder;

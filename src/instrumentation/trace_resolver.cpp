@@ -20,6 +20,7 @@
 
 #include "trace_resolver.h"
 #include "../utilities/utils.h"
+#include "../engine/fast_execution.h"
 #include "../main.h"
 #include <boost/log/trivial.hpp>
 #include <boost/format.hpp>
@@ -28,6 +29,7 @@ namespace instrumentation
 {
   
 using namespace utilities;  
+using namespace engine;
 
 static resolving_state current_resolving_state;
 
@@ -56,17 +58,18 @@ void trace_resolver::set_resolving_state(resolving_state new_resolving_state)
  */
 void trace_resolver::generic_instruction_callback(ADDRINT instruction_address)
 {
-  // for debugging only (can be safely removed in releasing)
-  if (instruction_at_exeorder[current_execution_order]->address != instruction_address)
+  if (instruction_at_exeorder[current_execution_order]->address == instruction_address)
+  {
+    // better performance because of branch prediction ?!!
+    current_execution_order++;
+  }
+  else 
   {
     BOOST_LOG_TRIVIAL(fatal) 
       << boost::format("meet a wrong instruction at %s after %d instruction executed.") 
           % utils::addrint2hexstring(instruction_address) % current_execution_order;
     PIN_ExitApplication(current_resolving_state);
   }
-  
-  // real code
-  current_execution_order++;
   
   return;
 }
@@ -75,7 +78,6 @@ void trace_resolver::generic_instruction_callback(ADDRINT instruction_address)
 /**
  * @brief callback for a conditional branch.
  * 
- * @param instruction_address address of the instrumented branch
  * @param is_branch_taken the branch will be taken or not
  * @return void
  */
@@ -102,9 +104,14 @@ void trace_resolver::indirectBrOrCall_instruction_callback(ADDRINT target_addres
     switch (current_resolving_state)
     {
       case execution_with_orig_input:
+        BOOST_LOG_TRIVIAL(fatal) 
+          << boost::format("indirect branch at %d will take new target in executing with the original input.")
+              % current_execution_order;
+        PIN_ExitApplication(current_resolving_state);
         break;
         
       case execution_with_modif_input:
+        fast_execution::move_backward_and_modify_input(active_checkpoint_exeorder);
         break;
         
       default:
