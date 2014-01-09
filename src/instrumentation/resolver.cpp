@@ -31,7 +31,7 @@ namespace instrumentation
 using namespace utilities;  
 using namespace engine;
 
-static UINT32 focal_checkpoint_execorder;
+static UINT32 focused_checkpoint_execorder;
 static UINT32 focused_cbranch_execorder;
 static UINT32 local_reexec_number = 0;
 static resolving_state current_resolving_state = execution_with_orig_input;
@@ -80,13 +80,13 @@ void resolver::generic_instruction_callback(ADDRINT instruction_address)
 
 /**
  * @brief Callback applied for a conditional branch. 
- * The semantics of this function is very sophisticated because each examined branch can fall into 
+ * The semantics of this function is quite sophisticated because each examined branch can fall into 
  * one of 36 different states combined from 4 components:
  *  1. resolving (resolved, bypassed, neither resolved nor bypassed):                    3 values
- *  2. re-execution number in comparison with the max value N (< N-1, = N-1, > N-1).     3 values
- *  3. new branch taken (yes, no).                                                       2 values
- *  4. examined branch is the focused one (yes, no).                                     2 values
- * so total is                                                                          36 states
+ *  2. re-execution number in comparison with the max value N (< N-1, = N-1, > N-1):     3 values
+ *  3. examined branch is the focused one (yes, no):                                     2 values
+ *  4. new branch taken (yes, no):                                                       2 values 
+ * so the total is 3 x 3 x 2 x 2 = 36 states.
  * @param is_branch_taken the branch will be taken or not
  * @return void
  */
@@ -149,7 +149,7 @@ void resolver::indirectBrOrCall_instruction_callback(ADDRINT target_address)
         break;
         
       case execution_with_modif_input:
-        fast_execution::move_backward_and_modify_input(focal_checkpoint_execorder);
+        fast_execution::move_backward_and_modify_input(focused_checkpoint_execorder);
         break;
         
       default:

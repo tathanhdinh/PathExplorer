@@ -7,7 +7,8 @@ if [ "${origin:0:1}" != "/" ]; then
     origin=$PWD/$origin
 fi
 origin=`dirname "$origin"`
-origin="/home/monads/Public/pin-2.13-62141-gcc.4.4.7-linux"
+# origin="/home/monads/Public/pin-2.13-62141-gcc.4.4.7-linux"
+origin="/home/monads/Public/pin-2.13-62732-gcc.4.4.7-linux"
 
 # Libraries are found relative to origin
 lib_base="$origin"
