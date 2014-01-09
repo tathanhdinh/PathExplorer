@@ -89,7 +89,7 @@ static void copy_original_message()
   UINT32 idx;
   for (idx = 0; idx < received_message_length; ++idx) 
   {
-    original_msg_at[idx + received_message_address] = 
+    original_msgstate_at_address[idx + received_message_address] = 
       *(reinterpret_cast<UINT8*>(idx + received_message_address));
   }
   

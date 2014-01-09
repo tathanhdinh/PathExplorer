@@ -223,7 +223,7 @@ void analyzer::checkpoint_storing_callback(CONTEXT* cpu_context)
         utils::is_in_input_buffer(boost::get<ADDRINT>((*operand_iter)->value)))
     {
       // then capture a checkpoint
-      checkpoint_at_exeorder[current_execorder].reset(new checkpoint(cpu_context));
+      checkpoint_at_execorder[current_execorder].reset(new checkpoint(cpu_context));
       break;
     }
   }

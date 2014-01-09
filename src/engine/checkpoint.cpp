@@ -40,8 +40,8 @@ checkpoint::checkpoint(CONTEXT* current_context)
   boost::unordered_set<ptr_insoperand_t>::iterator operand_iter;
   ADDRINT mem_addr;
   
-  for (operand_iter = outerface_at_exeorder[current_execorder].begin(); 
-       operand_iter != outerface_at_exeorder[current_execorder].end(); ++operand_iter) 
+  for (operand_iter = outerface_at_execorder[current_execorder].begin(); 
+       operand_iter != outerface_at_execorder[current_execorder].end(); ++operand_iter) 
   {
     // verify if the operand is a memory address
     if ((*operand_iter)->value.type() == typeid(ADDRINT)) 

@@ -39,19 +39,18 @@ extern ADDRINT received_message_address;
 extern INT32 received_message_length;
 extern UINT32 current_execorder;
 extern UINT32 exectrace_max_length;
-extern UINT32 focal_checkpoint_execorder;
 extern UINT32 total_reexec_times;
 extern UINT32 max_local_reexec_number;
 
 extern boost::unordered_map<ADDRINT, ptr_instruction_t> instruction_at_address;
 extern boost::unordered_map<UINT32, ptr_instruction_t> instruction_at_execorder;
 extern boost::unordered_map<UINT32, ptr_cbranch_t> cbranch_at_execorder;
-extern boost::unordered_map<UINT32, ptr_checkpoint_t> checkpoint_at_exeorder;
-extern boost::unordered_map<UINT32, exeorders_t> chkorders_affecting_branch_at_exeorder;
-extern boost::unordered_map<ADDRINT, UINT8> original_msg_at;
-extern boost::unordered_map<ADDRINT, UINT8> original_memstate_at;
-extern boost::unordered_map<ADDRINT, UINT8> current_memstate_at;
-extern boost::unordered_map<UINT32, ptr_insoperands_t> outerface_at_exeorder;
+extern boost::unordered_map<UINT32, ptr_checkpoint_t> checkpoint_at_execorder;
+extern boost::unordered_map<UINT32, exeorders_t> chkorders_affecting_branch_of_execorder;
+extern boost::unordered_map<UINT32, ptr_insoperands_t> outerface_at_execorder;
+extern boost::unordered_map<ADDRINT, UINT8> original_msgstate_at_address;
+extern boost::unordered_map<ADDRINT, UINT8> original_memstate_at_address;
+extern boost::unordered_map<ADDRINT, UINT8> current_memstate_at_address;
 
 
 #endif // MAIN_H

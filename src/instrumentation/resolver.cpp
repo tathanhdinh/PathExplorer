@@ -31,8 +31,10 @@ namespace instrumentation
 using namespace utilities;  
 using namespace engine;
 
-static resolving_state current_resolving_state = execution_with_orig_input;
+static UINT32 focal_checkpoint_execorder;
+static UINT32 focused_cbranch_execorder;
 static UINT32 local_reexec_number = 0;
+static resolving_state current_resolving_state = execution_with_orig_input;
 
 /**
  * @brief set a new resolving state.
@@ -48,11 +50,11 @@ void resolver::set_resolving_state(resolving_state new_resolving_state)
 
 
 /**
- * @brief generic callback applied for all instructions, principally it is very similar to the 
- * "generic normal instruction" callback in the trace-analyzer class. But in the trace-resolving 
- * state, it does not have to handle the system call and vdso instructions (all of them do not 
- * exist in this state), moreover it does not have to log the executed instructions; so its 
- * semantics is much more simple.
+ * @brief Generic callback applied for all instructions. 
+ * Principally it is very similar to the "generic normal instruction" callback in the trace-analyzer 
+ * class. But in the trace-resolving state, it does not have to handle the system call and vdso 
+ * instructions (all of them do not exist in this state), moreover it does not have to log the 
+ * executed instructions; so its semantics is much more simple.
  * 
  * @param instruction_address address of the instrumented instruction
  * @return void
@@ -77,8 +79,14 @@ void resolver::generic_instruction_callback(ADDRINT instruction_address)
 
 
 /**
- * @brief callback for a conditional branch.
- * 
+ * @brief Callback applied for a conditional branch. 
+ * The semantics of this function is very sophisticated because each examined branch can fall into 
+ * one of 36 different states combined from 4 components:
+ *  1. resolving (resolved, bypassed, neither resolved nor bypassed):                    3 values
+ *  2. re-execution number in comparison with the max value N (< N-1, = N-1, > N-1).     3 values
+ *  3. new branch taken (yes, no).                                                       2 values
+ *  4. examined branch is the focused one (yes, no).                                     2 values
+ * so total is                                                                          36 states
  * @param is_branch_taken the branch will be taken or not
  * @return void
  */
@@ -87,6 +95,11 @@ void resolver::cbranch_instruction_callback(bool is_branch_taken)
   // verify if the current examined instruction is branch
   if (instruction_at_execorder[current_execorder]->is_cbranch) 
   {
+    if (cbranch_at_execorder[current_execorder]->is_resolved) 
+    {
+      //
+    }
+    
     // yes, then verify if the branch is needed to resolve
     if (!cbranch_at_execorder[current_execorder]->is_resolved && 
         !cbranch_at_execorder[current_execorder]->is_bypassed) 
@@ -113,9 +126,9 @@ void resolver::cbranch_instruction_callback(bool is_branch_taken)
 
 
 /**
- * @brief callback for an indirect branch or call, it exists only in the trace-resolving state 
- * because the re-execution trace must be kept to not go to a different target (than one in the 
- * execution trace logged in the trace-analyzing state).
+ * @brief Callback applied for an indirect branch or call. 
+ * It exists only in the trace-resolving state because the re-execution trace must be kept to not 
+ * go to a different target (than one in the execution trace logged in the trace-analyzing state).
  * 
  * @param instruction_address address of the instrumented instruction
  * @return void

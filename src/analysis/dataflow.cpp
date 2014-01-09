@@ -174,10 +174,10 @@ static inline dataflow_vertex_descs construct_target_vertices(ptr_instruction_t 
       mem_addr = boost::get<ADDRINT>((*ptr_operand_iter)->value);
       // if the address does not exist in the original_memvalue yet, namely it is accessed at the
       // first time
-      if (original_memstate_at.find(mem_addr) == original_memstate_at.end())
+      if (original_memstate_at_address.find(mem_addr) == original_memstate_at_address.end())
       {
         // then save its original value (before it will be modified)
-        original_memstate_at[mem_addr] = *(reinterpret_cast<UINT8*>(mem_addr));
+        original_memstate_at_address[mem_addr] = *(reinterpret_cast<UINT8*>(mem_addr));
       }
 		}
 		
@@ -224,7 +224,7 @@ static inline void construct_outerface()
   for (alive_vertex_iter = outer_interface.begin(); alive_vertex_iter != outer_interface.end(); 
        ++alive_vertex_iter) 
   {
-    outerface_at_exeorder[current_execorder].insert(forward_dataflow[*alive_vertex_iter]);
+    outerface_at_execorder[current_execorder].insert(forward_dataflow[*alive_vertex_iter]);
   }
   
   return;
@@ -351,8 +351,8 @@ static void determine_branches_checkpoints_dependance()
     // and the set of memory addresses affecting its decision
     affecting_mem_addrs = memaddrs_affecting_exeorder_at[branch_exeorder];
     // then iterate over checkpoints 
-    for (ptr_checkpoint_iter = checkpoint_at_exeorder.begin(); 
-         ptr_checkpoint_iter != checkpoint_at_exeorder.end(); ++ptr_checkpoint_iter) 
+    for (ptr_checkpoint_iter = checkpoint_at_execorder.begin(); 
+         ptr_checkpoint_iter != checkpoint_at_execorder.end(); ++ptr_checkpoint_iter) 
     {
       // consider the checkpoint taken before the execution of the conditional branch
       checkpoint_exeorder = ptr_checkpoint_iter->first;
@@ -367,7 +367,7 @@ static void determine_branches_checkpoints_dependance()
           if (utils::is_in_input_buffer(accessing_mem_addr)) 
           {
             //  then add the checkpoint into the list
-            chkorders_affecting_branch_at_exeorder[branch_exeorder].insert(checkpoint_exeorder);
+            chkorders_affecting_branch_of_execorder[branch_exeorder].insert(checkpoint_exeorder);
             // and add the accessed memory to the checkpoint
             ptr_chkpnt = ptr_checkpoint_iter->second;
             ptr_chkpnt->memory_addresses_to_modify.insert(accessing_mem_addr);
@@ -418,12 +418,12 @@ static void determine_jumping_points()
     }
   }
   
-  if (checkpoint_at_exeorder.size() >= 2) 
+  if (checkpoint_at_execorder.size() >= 2) 
   {
     // iterate over the checkpoint list
-    curr_chkpnt_iter = checkpoint_at_exeorder.begin(); 
+    curr_chkpnt_iter = checkpoint_at_execorder.begin(); 
     next_chkpnt_iter = curr_chkpnt_iter; ++next_chkpnt_iter;
-    while (next_chkpnt_iter != checkpoint_at_exeorder.end()) 
+    while (next_chkpnt_iter != checkpoint_at_execorder.end()) 
     {
       // consider each pair of consecutive checkpoints
       curr_exeorder = curr_chkpnt_iter->first; curr_ptr_chkpnt = curr_chkpnt_iter->second;
