@@ -18,15 +18,15 @@
  *
  */
 
-#ifndef TRACE_ANALYZER_H
-#define TRACE_ANALYZER_H
+#ifndef ANALYZER_H
+#define ANALYZER_H
 
 #include <pin.H>
 
 namespace instrumentation 
 {
 
-class trace_analyzer
+class analyzer
 {
 public:
   static void syscall_instruction_callback  (ADDRINT instruction_address);

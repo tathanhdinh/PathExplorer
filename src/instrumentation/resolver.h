@@ -18,8 +18,8 @@
  *
  */
 
-#ifndef TRACE_RESOLVER_H
-#define TRACE_RESOLVER_H
+#ifndef RESOLVER_H
+#define RESOLVER_H
 
 #include <pin.H>
 
@@ -32,7 +32,7 @@ typedef enum
   execution_with_modif_input = 1  // execution with some modified input
 } resolving_state;
 
-class trace_resolver
+class resolver
 {
 public:
   static void set_resolving_state(resolving_state new_resolving_state);
@@ -43,4 +43,4 @@ public:
 
 } // end of instrumentation namespace
 
-#endif // TRACE_RESOLVER_H
+#endif // RESOLVER_H

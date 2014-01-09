@@ -18,7 +18,7 @@
  *
  */
 
-#include "trace_resolver.h"
+#include "resolver.h"
 #include "../utilities/utils.h"
 #include "../engine/fast_execution.h"
 #include "../main.h"
@@ -40,7 +40,7 @@ static UINT32 local_reexec_number = 0;
  * @param new_resolving_state 
  * @return void
  */
-void trace_resolver::set_resolving_state(resolving_state new_resolving_state)
+void resolver::set_resolving_state(resolving_state new_resolving_state)
 {
   current_resolving_state = new_resolving_state;
   return;
@@ -57,7 +57,7 @@ void trace_resolver::set_resolving_state(resolving_state new_resolving_state)
  * @param instruction_address address of the instrumented instruction
  * @return void
  */
-void trace_resolver::generic_instruction_callback(ADDRINT instruction_address)
+void resolver::generic_instruction_callback(ADDRINT instruction_address)
 {
   if (instruction_at_execorder[current_execorder]->address == instruction_address)
   {
@@ -82,7 +82,7 @@ void trace_resolver::generic_instruction_callback(ADDRINT instruction_address)
  * @param is_branch_taken the branch will be taken or not
  * @return void
  */
-void trace_resolver::cbranch_instruction_callback(bool is_branch_taken)
+void resolver::cbranch_instruction_callback(bool is_branch_taken)
 {
   // verify if the current examined instruction is branch
   if (instruction_at_execorder[current_execorder]->is_cbranch) 
@@ -120,7 +120,7 @@ void trace_resolver::cbranch_instruction_callback(bool is_branch_taken)
  * @param instruction_address address of the instrumented instruction
  * @return void
  */
-void trace_resolver::indirectBrOrCall_instruction_callback(ADDRINT target_address)
+void resolver::indirectBrOrCall_instruction_callback(ADDRINT target_address)
 {
   // in x86-64 architecture, an indirect branch (or call) instruction is always unconditional so 
   // the target address must be the next executed instruction, let's verify that

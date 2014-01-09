@@ -19,8 +19,8 @@
 
 #include "dbi.h"
 #include "../main.h"
-#include "trace_analyzer.h"
-#include "trace_resolver.h"
+#include "analyzer.h"
+#include "resolver.h"
 #include "../analysis/instruction.h"
 #include "../analysis/cbranch.h"
 #include <boost/unordered_map.hpp>
@@ -142,7 +142,7 @@ static void trace_analyzing_state_handler(const INS& curr_ins, ADDRINT curr_ins_
   if (curr_ptr_ins->is_syscall)
   {
     INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
-                             (AFUNPTR)trace_analyzer::syscall_instruction_callback, IARG_INST_PTR, 
+                             (AFUNPTR)analyzer::syscall_instruction_callback, IARG_INST_PTR, 
                              IARG_END);
   }
   else 
@@ -150,14 +150,14 @@ static void trace_analyzing_state_handler(const INS& curr_ins, ADDRINT curr_ins_
     if (curr_ptr_ins->is_vdso) 
     {
       INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
-                               (AFUNPTR)trace_analyzer::vdso_instruction_callback, IARG_INST_PTR, 
+                               (AFUNPTR)analyzer::vdso_instruction_callback, IARG_INST_PTR, 
                                IARG_END);
     }
     else 
     {
       // generic callback for normal instruction
       INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
-                               (AFUNPTR)trace_analyzer::normal_instruction_callback,
+                               (AFUNPTR)analyzer::normal_instruction_callback,
                                IARG_INST_PTR, IARG_END);
   
       // update running time information for normal instructions, note that the first 3 callbacks 
@@ -165,7 +165,7 @@ static void trace_analyzing_state_handler(const INS& curr_ins, ADDRINT curr_ins_
       if (curr_ptr_ins->is_cbranch) 
       {
         INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
-                                 (AFUNPTR)trace_analyzer::cbranch_instruction_callback,
+                                 (AFUNPTR)analyzer::cbranch_instruction_callback,
                                  IARG_BRANCH_TAKEN, IARG_END);
       }
       
@@ -173,7 +173,7 @@ static void trace_analyzing_state_handler(const INS& curr_ins, ADDRINT curr_ins_
       if (curr_ptr_ins->is_memread) 
       {
         INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
-                                 (AFUNPTR)trace_analyzer::mread_instruction_callback,
+                                 (AFUNPTR)analyzer::mread_instruction_callback,
                                  IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE, IARG_END);
       }
       
@@ -181,20 +181,20 @@ static void trace_analyzing_state_handler(const INS& curr_ins, ADDRINT curr_ins_
       if (curr_ptr_ins->is_memwrite) 
       {
         INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
-                                 (AFUNPTR)trace_analyzer::mwrite_instruction_callback,
+                                 (AFUNPTR)analyzer::mwrite_instruction_callback,
                                  IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE, IARG_END);
       }
       
       // propagate the running time information along the instruction's execution
       INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
-                               (AFUNPTR)trace_analyzer::dataflow_propagation_callback, IARG_END);
+                               (AFUNPTR)analyzer::dataflow_propagation_callback, IARG_END);
       
       
       // capture a callback whenever the instruction read some bytes of the input
       if (curr_ptr_ins->is_memread) 
       {
         INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
-                                 (AFUNPTR)trace_analyzer::checkpoint_storing_callback, 
+                                 (AFUNPTR)analyzer::checkpoint_storing_callback, 
                                  IARG_CONTEXT, IARG_END);
       }
     }
@@ -216,7 +216,7 @@ static void trace_resolving_state_handler(const INS& curr_ins, ADDRINT curr_ins_
 {
   // insert generic callback
   INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
-                           (AFUNPTR)trace_resolver::generic_instruction_callback, IARG_INST_PTR, 
+                           (AFUNPTR)resolver::generic_instruction_callback, IARG_INST_PTR, 
                            IARG_END);
   
   // insert callbacks for conditional branch and indirect one, note that the following conditions 
@@ -225,14 +225,14 @@ static void trace_resolving_state_handler(const INS& curr_ins, ADDRINT curr_ins_
   if (curr_ptr_ins->is_cbranch)
   {
     INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
-                             (AFUNPTR)trace_resolver::cbranch_instruction_callback, IARG_INST_PTR, 
+                             (AFUNPTR)resolver::cbranch_instruction_callback, IARG_INST_PTR, 
                              IARG_BRANCH_TAKEN, IARG_END);
   }
   
   if (curr_ptr_ins->is_indirectBrOrCall) 
   {
     INS_InsertPredicatedCall(curr_ins, IPOINT_BEFORE, 
-                             (AFUNPTR)trace_resolver::indirectBrOrCall_instruction_callback, 
+                             (AFUNPTR)resolver::indirectBrOrCall_instruction_callback, 
                              IARG_INST_PTR, IARG_BRANCH_TARGET_ADDR, IARG_END);
   }
   

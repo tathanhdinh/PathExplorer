@@ -17,7 +17,7 @@
  *
  */
 
-#include "trace_analyzer.h"
+#include "analyzer.h"
 #include "../main.h"
 #include "../engine/checkpoint.h"
 #include "../analysis/dataflow.h"
@@ -70,7 +70,7 @@ static void switch_to_trace_resolving_state()
  * @param instruction_address address of the instrumented instruction.
  * @return void
  */
-void trace_analyzer::syscall_instruction_callback(ADDRINT instruction_address)
+void analyzer::syscall_instruction_callback(ADDRINT instruction_address)
 {
   BOOST_LOG_TRIVIAL(warning) 
     << boost::format("meet a system call at %s after %d instructions executed.") 
@@ -87,7 +87,7 @@ void trace_analyzer::syscall_instruction_callback(ADDRINT instruction_address)
  * @param instruction_address address of the instrumented instruction
  * @return void
  */
-void trace_analyzer::vdso_instruction_callback(ADDRINT instruction_address)
+void analyzer::vdso_instruction_callback(ADDRINT instruction_address)
 {
   BOOST_LOG_TRIVIAL(warning) 
     << boost::format("meet a vdso instruction at %s after %d instructions executed.") 
@@ -103,7 +103,7 @@ void trace_analyzer::vdso_instruction_callback(ADDRINT instruction_address)
  * @param instruction_address address of the instrumented instruction
  * @return void
  */
-void trace_analyzer::normal_instruction_callback(ADDRINT instruction_address)
+void analyzer::normal_instruction_callback(ADDRINT instruction_address)
 {
   if (current_execorder < exectrace_max_length) 
   {
@@ -139,7 +139,7 @@ void trace_analyzer::normal_instruction_callback(ADDRINT instruction_address)
  * @param is_branch_taken the branch will be taken or not
  * @return void
  */
-void trace_analyzer::cbranch_instruction_callback(bool is_branch_taken)
+void analyzer::cbranch_instruction_callback(bool is_branch_taken)
 {
   // update dynamic information: the branch is taken or not
   static_cast<cbranch*>(
@@ -159,7 +159,7 @@ void trace_analyzer::cbranch_instruction_callback(bool is_branch_taken)
  * @param cpu_context cpu context
  * @return void
  */
-void trace_analyzer::mread_instruction_callback(ADDRINT memory_read_address,
+void analyzer::mread_instruction_callback(ADDRINT memory_read_address,
                                                 UINT32 memory_read_size)
 {
   // update dynamic information: read memory addresses
@@ -177,7 +177,7 @@ void trace_analyzer::mread_instruction_callback(ADDRINT memory_read_address,
  * @param memory_written_size size of the written address
  * @return void
  */
-void trace_analyzer::mwrite_instruction_callback(ADDRINT memory_written_address,
+void analyzer::mwrite_instruction_callback(ADDRINT memory_written_address,
                                                  UINT32 memory_written_size)
 {
   // update dynamic information: written memory addresses
@@ -196,7 +196,7 @@ void trace_analyzer::mwrite_instruction_callback(ADDRINT memory_written_address,
  * @param instruction_address address of the instrumented instruction
  * @return void
  */
-void trace_analyzer::dataflow_propagation_callback()
+void analyzer::dataflow_propagation_callback()
 {
   dataflow::propagate_along_instruction(current_execorder);
   return;
@@ -209,7 +209,7 @@ void trace_analyzer::dataflow_propagation_callback()
  * @param cpu_context cpu registers along with their values
  * @return void
  */
-void trace_analyzer::checkpoint_storing_callback(CONTEXT* cpu_context)
+void analyzer::checkpoint_storing_callback(CONTEXT* cpu_context)
 {
   ptr_instruction_t curr_ins = instruction_at_execorder[current_execorder];
   boost::unordered_set<ptr_insoperand_t>::iterator operand_iter;
