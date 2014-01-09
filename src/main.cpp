@@ -24,15 +24,15 @@ using namespace instrumentation;
 
 ADDRINT received_message_address;
 INT32 received_message_length;
-UINT32 current_execution_order;
-UINT32 execution_trace_max_length;
-UINT32 focal_checkpoint_exeorder;
-UINT32 total_reexecution_times;
-UINT32 max_local_reexec_times;
+UINT32 current_execorder;
+UINT32 exectrace_max_length;
+UINT32 focal_checkpoint_execorder;
+UINT32 total_reexec_times;
+UINT32 max_local_reexec_number;
 
 boost::unordered_map<ADDRINT, ptr_instruction_t> instruction_at_address;
 boost::unordered_map<UINT32, ptr_instruction_t> instruction_at_execorder;
-boost::unordered_map<UINT32, ptr_cbranch_t> branch_at_exeorder;
+boost::unordered_map<UINT32, ptr_cbranch_t> cbranch_at_execorder;
 boost::unordered_map<UINT32, ptr_checkpoint_t> checkpoint_at_exeorder;
 boost::unordered_map<UINT32, exeorders_t> chkorders_affecting_branch_at_exeorder;
 boost::unordered_map<ADDRINT, UINT8> original_msg_at;
@@ -50,7 +50,7 @@ VOID start_exploring(VOID* data)
 {
   instruction_at_address.clear();
   instruction_at_execorder.clear();
-  branch_at_exeorder.clear();
+  cbranch_at_execorder.clear();
   return;
 }
 

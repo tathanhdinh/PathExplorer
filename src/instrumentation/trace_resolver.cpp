@@ -31,7 +31,8 @@ namespace instrumentation
 using namespace utilities;  
 using namespace engine;
 
-static resolving_state current_resolving_state;
+static resolving_state current_resolving_state = execution_with_orig_input;
+static UINT32 local_reexec_number = 0;
 
 /**
  * @brief set a new resolving state.
@@ -58,16 +59,16 @@ void trace_resolver::set_resolving_state(resolving_state new_resolving_state)
  */
 void trace_resolver::generic_instruction_callback(ADDRINT instruction_address)
 {
-  if (instruction_at_execorder[current_execution_order]->address == instruction_address)
+  if (instruction_at_execorder[current_execorder]->address == instruction_address)
   {
     // better performance because of branch prediction ?!!
-    current_execution_order++;
+    current_execorder++;
   }
   else 
   {
     BOOST_LOG_TRIVIAL(fatal) 
       << boost::format("in trace resolving state: meet a wrong instruction at %s after %d instruction executed.") 
-          % utils::addrint2hexstring(instruction_address) % current_execution_order;
+          % utils::addrint2hexstring(instruction_address) % current_execorder;
     PIN_ExitApplication(current_resolving_state);
   }
   
@@ -84,19 +85,28 @@ void trace_resolver::generic_instruction_callback(ADDRINT instruction_address)
 void trace_resolver::cbranch_instruction_callback(bool is_branch_taken)
 {
   // verify if the current examined instruction is branch
-  if (instruction_at_execorder[current_execution_order]->is_cbranch) 
+  if (instruction_at_execorder[current_execorder]->is_cbranch) 
   {
-    if (!branch_at_exeorder[current_execution_order]->is_resolved 
-        && !branch_at_exeorder[current_execution_order]->is_bypassed) 
+    // yes, then verify if the branch is needed to resolve
+    if (!cbranch_at_execorder[current_execorder]->is_resolved && 
+        !cbranch_at_execorder[current_execorder]->is_bypassed) 
     {
-      //
+      // verify if the local re-execution number reaches its bound value
+      if (local_reexec_number < max_local_reexec_number) 
+      {
+        //
+      }
+      else 
+      {
+        //
+      }
     }
   }
   else 
   {
     BOOST_LOG_TRIVIAL(fatal) 
       << boost::format("in trace resolving state: meet a wrong branch at execution order %d") 
-          % current_execution_order;
+          % current_execorder;
   }
   return;
 }
@@ -114,19 +124,19 @@ void trace_resolver::indirectBrOrCall_instruction_callback(ADDRINT target_addres
 {
   // in x86-64 architecture, an indirect branch (or call) instruction is always unconditional so 
   // the target address must be the next executed instruction, let's verify that
-  if (instruction_at_execorder[current_execution_order + 1]->address != target_address) 
+  if (instruction_at_execorder[current_execorder + 1]->address != target_address) 
   {
     switch (current_resolving_state)
     {
       case execution_with_orig_input:
         BOOST_LOG_TRIVIAL(fatal) 
           << boost::format("indirect branch at %d will take new target in executing with the original input.")
-              % current_execution_order;
+              % current_execorder;
         PIN_ExitApplication(current_resolving_state);
         break;
         
       case execution_with_modif_input:
-        fast_execution::move_backward_and_modify_input(focal_checkpoint_exeorder);
+        fast_execution::move_backward_and_modify_input(focal_checkpoint_execorder);
         break;
         
       default:

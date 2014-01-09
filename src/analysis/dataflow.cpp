@@ -224,7 +224,7 @@ static inline void construct_outerface()
   for (alive_vertex_iter = outer_interface.begin(); alive_vertex_iter != outer_interface.end(); 
        ++alive_vertex_iter) 
   {
-    outerface_at_exeorder[current_execution_order].insert(forward_dataflow[*alive_vertex_iter]);
+    outerface_at_exeorder[current_execorder].insert(forward_dataflow[*alive_vertex_iter]);
   }
   
   return;
@@ -343,7 +343,7 @@ static void determine_branches_checkpoints_dependance()
   ADDRINT accessing_mem_addr;
   
   // for each conditional branch
-  for (ptr_branch_iter = branch_at_exeorder.begin(); ptr_branch_iter != branch_at_exeorder.end(); 
+  for (ptr_branch_iter = cbranch_at_execorder.begin(); ptr_branch_iter != cbranch_at_execorder.end(); 
        ++ptr_branch_iter)
   {
     // get its execution order

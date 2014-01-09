@@ -74,7 +74,7 @@ void trace_analyzer::syscall_instruction_callback(ADDRINT instruction_address)
 {
   BOOST_LOG_TRIVIAL(warning) 
     << boost::format("meet a system call at %s after %d instructions executed.") 
-        % utils::addrint2hexstring(instruction_address) % current_execution_order;
+        % utils::addrint2hexstring(instruction_address) % current_execorder;
   return;
 }
 
@@ -91,7 +91,7 @@ void trace_analyzer::vdso_instruction_callback(ADDRINT instruction_address)
 {
   BOOST_LOG_TRIVIAL(warning) 
     << boost::format("meet a vdso instruction at %s after %d instructions executed.") 
-        % utils::addrint2hexstring(instruction_address) % current_execution_order;
+        % utils::addrint2hexstring(instruction_address) % current_execorder;
   return;
 }
 
@@ -105,22 +105,22 @@ void trace_analyzer::vdso_instruction_callback(ADDRINT instruction_address)
  */
 void trace_analyzer::normal_instruction_callback(ADDRINT instruction_address)
 {
-  if (current_execution_order < execution_trace_max_length) 
+  if (current_execorder < exectrace_max_length) 
   {
     // log the instruction
-    current_execution_order++;
+    current_execorder++;
     // first get its static information
     ptr_instruction_t curr_ins = instruction_at_address[instruction_address];
     // then duplicate it using copy constructor instead of constructing from a PIN instruction 
     if (curr_ins->is_cbranch) 
     {
       cbranch* curr_branch = new cbranch(*curr_ins);
-      instruction_at_execorder[current_execution_order].reset(curr_branch);
-      branch_at_exeorder[current_execution_order].reset(curr_branch);
+      instruction_at_execorder[current_execorder].reset(curr_branch);
+      cbranch_at_execorder[current_execorder].reset(curr_branch);
     }
     else 
     {
-      instruction_at_execorder[current_execution_order].reset(new instruction(*curr_ins));
+      instruction_at_execorder[current_execorder].reset(new instruction(*curr_ins));
     }
     
   }
@@ -143,7 +143,7 @@ void trace_analyzer::cbranch_instruction_callback(bool is_branch_taken)
 {
   // update dynamic information: the branch is taken or not
   static_cast<cbranch*>(
-    instruction_at_execorder[current_execution_order].get())->is_taken = is_branch_taken;
+    instruction_at_execorder[current_execorder].get())->is_taken = is_branch_taken;
   return;
 }
 
@@ -163,7 +163,7 @@ void trace_analyzer::mread_instruction_callback(ADDRINT memory_read_address,
                                                 UINT32 memory_read_size)
 {
   // update dynamic information: read memory addresses
-  ptr_instruction_t curr_ins = instruction_at_execorder[current_execution_order];
+  ptr_instruction_t curr_ins = instruction_at_execorder[current_execorder];
   curr_ins->update_memory_access_info(memory_read_address, memory_read_size, MEMORY_READ);  
   return;
 }
@@ -181,7 +181,7 @@ void trace_analyzer::mwrite_instruction_callback(ADDRINT memory_written_address,
                                                  UINT32 memory_written_size)
 {
   // update dynamic information: written memory addresses
-  ptr_instruction_t curr_ins = instruction_at_execorder[current_execution_order];
+  ptr_instruction_t curr_ins = instruction_at_execorder[current_execorder];
   curr_ins->update_memory_access_info(memory_written_address, memory_written_size, MEMORY_WRITE);
   return;
 }
@@ -198,7 +198,7 @@ void trace_analyzer::mwrite_instruction_callback(ADDRINT memory_written_address,
  */
 void trace_analyzer::dataflow_propagation_callback()
 {
-  dataflow::propagate_along_instruction(current_execution_order);
+  dataflow::propagate_along_instruction(current_execorder);
   return;
 }
 
@@ -211,7 +211,7 @@ void trace_analyzer::dataflow_propagation_callback()
  */
 void trace_analyzer::checkpoint_storing_callback(CONTEXT* cpu_context)
 {
-  ptr_instruction_t curr_ins = instruction_at_execorder[current_execution_order];
+  ptr_instruction_t curr_ins = instruction_at_execorder[current_execorder];
   boost::unordered_set<ptr_insoperand_t>::iterator operand_iter;
 
   // iterate over the set of the current instruction's source operands
@@ -223,7 +223,7 @@ void trace_analyzer::checkpoint_storing_callback(CONTEXT* cpu_context)
         utils::is_in_input_buffer(boost::get<ADDRINT>((*operand_iter)->value)))
     {
       // then capture a checkpoint
-      checkpoint_at_exeorder[current_execution_order].reset(new checkpoint(cpu_context));
+      checkpoint_at_exeorder[current_execorder].reset(new checkpoint(cpu_context));
       break;
     }
   }
