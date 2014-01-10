@@ -81,7 +81,7 @@ void resolver::generic_instruction_callback(ADDRINT instruction_address)
 /**
  * @brief Callback applied for a conditional branch. 
  * The semantics of this function is quite sophisticated because each examined branch can fall into 
- * one of 36 different states combined from 4 components:
+ * one of 36 different states combined from 4 categories:
  *  1. resolving (resolved, bypassed, neither resolved nor bypassed):                    3 values
  *  2. re-execution number in comparison with the max value N (< N-1, = N-1, > N-1):     3 values
  *  3. examined branch is the focused one (yes, no):                                     2 values
@@ -98,27 +98,55 @@ void resolver::generic_instruction_callback(ADDRINT instruction_address)
  * @param is_branch_taken the branch will be taken or not
  * @return void
  */
+inline static void unfocused_newtaken_branch_handler() 
+{
+  return;
+}
+
+inline static void focused_newtaken_branch_handler()
+{
+  return;
+}
+
+inline static void unfocused_oldtaken_branch_handler()
+{
+  return;
+}
+
+inline static void focused_oldtaken_branch_handler()
+{
+  return;
+}
+
 void resolver::cbranch_instruction_callback(bool is_branch_taken)
 {
   // verify if the current examined instruction is branch
   if (instruction_at_execorder[current_execorder]->is_cbranch) 
   {
-    // the examined branch takes a different decision (component 4)
+    // the examined branch takes a different decision (category 4)
     if (cbranch_at_execorder[current_execorder]->is_taken != is_branch_taken) 
     {
-      // the examined branch is the focused one (component 3)
+      // the examined branch is the focused one (category 3)
       if (current_execorder == focused_cbranch_execorder) 
       {
-        // 
+        focused_newtaken_branch_handler(); 
       }
-      else // the examined branch is not the focused one (component 3)
+      else // the examined branch is not the focused one (category 3)
       {
-        //
+        unfocused_newtaken_branch_handler();
       }
     }
-    else // the examined branch keeps the old decision (component 4)
+    else // the examined branch keeps the old decision (category 4)
     {
-      //
+      // the examined branch is the focused one (category 3)
+      if (current_execorder == focused_cbranch_execorder) 
+      {
+        focused_oldtaken_branch_handler();
+      }
+      else // the examined branch is not the focused one (category 3)
+      {
+        unfocused_oldtaken_branch_handler();
+      }
     }
     
     
