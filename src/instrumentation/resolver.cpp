@@ -86,7 +86,15 @@ void resolver::generic_instruction_callback(ADDRINT instruction_address)
  *  2. re-execution number in comparison with the max value N (< N-1, = N-1, > N-1):     3 values
  *  3. examined branch is the focused one (yes, no):                                     2 values
  *  4. new branch taken (yes, no):                                                       2 values 
- * so the total is 3 x 3 x 2 x 2 = 36 states.
+ * so the total is 3 x 3 x 2 x 2 = 36 states. The mean idea to treat with this sophistication is to 
+ * imagine that the examination, goes along with the execution, and when it meets a conditional 
+ * branch then it can make this branch take a new decision or keep the old decision, depending on 
+ * the current status of the examined branch, the execution will continue or back to a previous 
+ * checkpoint.
+ * 
+ * (new decision is taken or not) {0,1} ------> current status -------> {0,1} (continue or back)
+ * 
+ * 
  * @param is_branch_taken the branch will be taken or not
  * @return void
  */
@@ -95,6 +103,25 @@ void resolver::cbranch_instruction_callback(bool is_branch_taken)
   // verify if the current examined instruction is branch
   if (instruction_at_execorder[current_execorder]->is_cbranch) 
   {
+    // the examined branch takes a different decision (component 4)
+    if (cbranch_at_execorder[current_execorder]->is_taken != is_branch_taken) 
+    {
+      // the examined branch is the focused one (component 3)
+      if (current_execorder == focused_cbranch_execorder) 
+      {
+        // 
+      }
+      else // the examined branch is not the focused one (component 3)
+      {
+        //
+      }
+    }
+    else // the examined branch keeps the old decision (component 4)
+    {
+      //
+    }
+    
+    
     if (cbranch_at_execorder[current_execorder]->is_resolved) 
     {
       //
