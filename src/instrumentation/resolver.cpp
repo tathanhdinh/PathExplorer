@@ -22,6 +22,7 @@
 #include "../utilities/utils.h"
 #include "../engine/fast_execution.h"
 #include "../main.h"
+#include <boost/integer_traits.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/format.hpp>
 
@@ -31,7 +32,7 @@ namespace instrumentation
 using namespace utilities;  
 using namespace engine;
 
-static UINT32 focused_checkpoint_execorder;
+static UINT32 pivot_checkpoint_execorder;
 static UINT32 focused_cbranch_execorder;
 static UINT32 local_reexec_number = 0;
 static resolving_state current_resolving_state = execution_with_orig_input;
@@ -99,6 +100,7 @@ void resolver::generic_instruction_callback(ADDRINT instruction_address)
 static void unfocused_newtaken_branch_handler (ptr_cbranch_t examined_cbranch);
 static void focused_newtaken_branch_handler   (ptr_cbranch_t examined_cbranch);
 static void unfocused_oldtaken_branch_handler (ptr_cbranch_t examined_branch);
+static UINT32 next_checkpoint_execorder       (ptr_cbranch_t examined_branch);
 static void focused_oldtaken_branch_handler   (ptr_cbranch_t examined_branch);
 /**
  * @param is_branch_taken the branch will be taken or not
@@ -147,11 +149,11 @@ void resolver::cbranch_instruction_callback(bool is_branch_taken)
 
 
 /**
- * @brief Handle the case where the examined branch is un-focused and a new decision is taken. 
+ * @brief Handle the case where the examined branch is unfocused and a new decision is taken. 
  * The situation is as follows: in re-executing, a conditional branch is met, the current value of 
  * input makes the branch take a different decision.
  * 
- * @param examined_branch the met branch
+ * @param examined_branch the examined branch
  * @return void
  */
 inline static void unfocused_newtaken_branch_handler(ptr_cbranch_t examined_branch) 
@@ -172,11 +174,11 @@ inline static void unfocused_newtaken_branch_handler(ptr_cbranch_t examined_bran
   local_reexec_number++;
   if (local_reexec_number < max_local_reexec_number) 
   {
-    fast_execution::move_backward_and_modify_input(focused_checkpoint_execorder);
+    fast_execution::move_backward_and_modify_input(pivot_checkpoint_execorder);
   }
-  else // must be local_reexec_number == max_local_reexec_number
+  else // i.e. local_reexec_number == max_local_reexec_number
   {
-    fast_execution::move_backward_and_restore_input(focused_checkpoint_execorder);
+    fast_execution::move_backward_and_restore_input(pivot_checkpoint_execorder);
   }
   
   return;
@@ -184,11 +186,11 @@ inline static void unfocused_newtaken_branch_handler(ptr_cbranch_t examined_bran
 
 
 /**
- * @brief Handle the case where the examined is focused and a new decision is taken.
+ * @brief Handle the case where the examined branch is focused and a new decision is taken.
  * The situation is as follows: in re-executing, the branch needed to resolve is met, the current 
  * value of input makes the branch take a different decision.
  * 
- * @param examined_branch the met branch
+ * @param examined_branch the examined branch
  * @return void
  */
 inline static void focused_newtaken_branch_handler(ptr_cbranch_t examined_branch)
@@ -204,24 +206,106 @@ inline static void focused_newtaken_branch_handler(ptr_cbranch_t examined_branch
   local_reexec_number++;
   if (local_reexec_number < max_local_reexec_number) 
   {
-    fast_execution::move_backward_and_modify_input(focused_checkpoint_execorder);
+    fast_execution::move_backward_and_modify_input(pivot_checkpoint_execorder);
   }
   else 
   {
-    fast_execution::move_backward_and_restore_input(focused_checkpoint_execorder);
+    fast_execution::move_backward_and_restore_input(pivot_checkpoint_execorder);
   }
   
   return;
 }
 
+
+/**
+ * @brief Handle the case where the examined branch is unfocused and the current value of the input 
+ * keeps the decision of the branch.
+ * 
+ * @param examined_branch the examined branch
+ * @return void
+ */
 inline static void unfocused_oldtaken_branch_handler(ptr_cbranch_t examined_branch)
 {
+  // just do nothing
   return;
 }
 
+
+/**
+ * @brief Handle the case where the examined branch is focused and the current value of the input 
+ * keeps the decision of the branch.
+ * 
+ * @param examined_branch the examined branch
+ * @return void
+ */
+
 inline static void focused_oldtaken_branch_handler(ptr_cbranch_t examined_branch)
 {
+  if (local_reexec_number < max_local_reexec_number - 1) 
+  {
+    // back again
+    ++local_reexec_number;
+    fast_execution::move_backward_and_modify_input(pivot_checkpoint_execorder);
+  }
+  else 
+  {
+    if (local_reexec_number == max_local_reexec_number - 1) 
+    {
+      // set the examined branch as bypassed
+      examined_branch->is_bypassed = true;
+      // and back to the original trace
+      ++local_reexec_number;
+      fast_execution::move_backward_and_restore_input(pivot_checkpoint_execorder);
+    }
+    else // i.e. local_reexec_number == max_local_reexec_number
+    {
+      UINT32 chkpnt_execorder = next_checkpoint_execorder(examined_branch);
+      // the next checkpoint exists
+      if (chkpnt_execorder != 0) 
+      {
+        // back to the next checkpoint
+        pivot_checkpoint_execorder = chkpnt_execorder;
+        local_reexec_number = 0;
+        fast_execution::move_backward_and_modify_input(pivot_checkpoint_execorder);
+      }
+      else // the next checkpoint does not exist
+      {
+        // continue executing
+        local_reexec_number = 0;
+      }
+    }
+  }
   return;
+}
+
+
+/**
+ * @brief Get the execution order of the next checkpoint (with respect to the pivot checkpoint) in 
+ * the branch's checkpoint list.
+ * A branch's decision may depend on the several computations each starts from some checkpoint. In 
+ * the "trace analyzing state", the list of checkpoints for each branch has been computed, so the 
+ * execution will be restarted from each checkpoint in this list, together with the input 
+ * modification until the branch changes its decision or the re-execution number for the checkpoint 
+ * exceeds its bounded value. In this case, the next checkpoint (in this list) will be extracted 
+ * and the execution will restart from this checkpoint. 
+ * 
+ * @param examined_branch the examined branch
+ * @return UINT32
+ */
+inline static UINT32 next_checkpoint_execorder(ptr_cbranch_t examined_branch)
+{
+  UINT32 nearest_chkpnt_execorder = 0;
+  exeorders_t::iterator chkpt_iter;
+  for (chkpt_iter = chkorders_affecting_branch_of_execorder[current_execorder].begin(); 
+       chkpt_iter != chkorders_affecting_branch_of_execorder[current_execorder].end(); ++chkpt_iter) 
+  {
+    if ((*chkpt_iter < pivot_checkpoint_execorder) && (nearest_chkpnt_execorder < *chkpt_iter))
+    {
+      nearest_chkpnt_execorder = *chkpt_iter;
+    }
+  }
+  
+  return nearest_chkpnt_execorder;
 }
 
 
@@ -249,7 +333,7 @@ void resolver::indirectBrOrCall_instruction_callback(ADDRINT target_address)
         break;
         
       case execution_with_modif_input:
-        fast_execution::move_backward_and_modify_input(focused_checkpoint_execorder);
+        fast_execution::move_backward_and_modify_input(pivot_checkpoint_execorder);
         break;
         
       default:
