@@ -147,14 +147,37 @@ void resolver::cbranch_instruction_callback(bool is_branch_taken)
 
 
 /**
- * @brief when the examined branch is un-focused and a new decision is taken.
+ * @brief Handle the case where the examined branch is un-focused and a new decision is taken. 
+ * The situation is as follows: in re-executing, a conditional branch is met, the value of input in 
+ * this re-execution makes the branch take a different decision.
  * 
  * @return void
  */
 inline static void unfocused_newtaken_branch_handler(ptr_cbranch_t examined_branch) 
 {
-  examined_branch->is_resolved = true;
-  examined_branch->is_bypassed = false;
+  // if the examined branch is not resolved yet
+  if (!examined_branch->is_resolved) 
+  {
+    // then save the current input
+    examined_branch->save_current_input(!examined_branch->is_taken);
+    // and set it as resolved
+    examined_branch->is_resolved = true;
+    examined_branch->is_bypassed = false;
+  }
+  
+  // because the branch will take a different target if the execution continue, so that implicitly 
+  // means that the local_reexec_number is less than max_local_reexec_number, we increase the local 
+  // execution number and back.
+  local_reexec_number++;
+  if (local_reexec_number < max_local_reexec_number) 
+  {
+    fast_execution::move_backward_and_modify_input(focused_checkpoint_execorder);
+  }
+  else // it should satisfy local_reexec_number == max_local_reexec_number
+  {
+    fast_execution::move_backward_and_restore_input(focused_checkpoint_execorder);
+  }
+  
   return;
 }
 
