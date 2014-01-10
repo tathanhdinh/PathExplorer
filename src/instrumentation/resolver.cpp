@@ -93,47 +93,34 @@ void resolver::generic_instruction_callback(ADDRINT instruction_address)
  * checkpoint.
  * 
  * (new decision is taken or not) {0,1} ------> current status -------> {0,1} (continue or back)
- * 
- * 
+ *
+ * We devise the callback into several smaller functions:  
+ */
+static void unfocused_newtaken_branch_handler (ptr_cbranch_t examined_cbranch);
+static void focused_newtaken_branch_handler   (ptr_cbranch_t examined_cbranch);
+static void unfocused_oldtaken_branch_handler (ptr_cbranch_t examined_branch);
+static void focused_oldtaken_branch_handler   (ptr_cbranch_t examined_branch);
+/**
  * @param is_branch_taken the branch will be taken or not
  * @return void
  */
-inline static void unfocused_newtaken_branch_handler() 
-{
-  return;
-}
-
-inline static void focused_newtaken_branch_handler()
-{
-  return;
-}
-
-inline static void unfocused_oldtaken_branch_handler()
-{
-  return;
-}
-
-inline static void focused_oldtaken_branch_handler()
-{
-  return;
-}
-
 void resolver::cbranch_instruction_callback(bool is_branch_taken)
 {
   // verify if the current examined instruction is branch
   if (instruction_at_execorder[current_execorder]->is_cbranch) 
   {
+    ptr_cbranch_t curr_examined_cbranch;
     // the examined branch takes a different decision (category 4)
-    if (cbranch_at_execorder[current_execorder]->is_taken != is_branch_taken) 
+    if (curr_examined_cbranch->is_taken != is_branch_taken) 
     {
       // the examined branch is the focused one (category 3)
       if (current_execorder == focused_cbranch_execorder) 
       {
-        focused_newtaken_branch_handler(); 
+        focused_newtaken_branch_handler(curr_examined_cbranch); 
       }
       else // the examined branch is not the focused one (category 3)
       {
-        unfocused_newtaken_branch_handler();
+        unfocused_newtaken_branch_handler(curr_examined_cbranch);
       }
     }
     else // the examined branch keeps the old decision (category 4)
@@ -141,32 +128,11 @@ void resolver::cbranch_instruction_callback(bool is_branch_taken)
       // the examined branch is the focused one (category 3)
       if (current_execorder == focused_cbranch_execorder) 
       {
-        focused_oldtaken_branch_handler();
+        focused_oldtaken_branch_handler(curr_examined_cbranch);
       }
       else // the examined branch is not the focused one (category 3)
       {
-        unfocused_oldtaken_branch_handler();
-      }
-    }
-    
-    
-    if (cbranch_at_execorder[current_execorder]->is_resolved) 
-    {
-      //
-    }
-    
-    // yes, then verify if the branch is needed to resolve
-    if (!cbranch_at_execorder[current_execorder]->is_resolved && 
-        !cbranch_at_execorder[current_execorder]->is_bypassed) 
-    {
-      // verify if the local re-execution number reaches its bound value
-      if (local_reexec_number < max_local_reexec_number) 
-      {
-        //
-      }
-      else 
-      {
-        //
+        unfocused_oldtaken_branch_handler(curr_examined_cbranch);
       }
     }
   }
@@ -176,6 +142,34 @@ void resolver::cbranch_instruction_callback(bool is_branch_taken)
       << boost::format("in trace resolving state: meet a wrong branch at execution order %d") 
           % current_execorder;
   }
+  return;
+}
+
+
+/**
+ * @brief when the examined branch is un-focused and a new decision is taken.
+ * 
+ * @return void
+ */
+inline static void unfocused_newtaken_branch_handler(ptr_cbranch_t examined_branch) 
+{
+  examined_branch->is_resolved = true;
+  examined_branch->is_bypassed = false;
+  return;
+}
+
+inline static void focused_newtaken_branch_handler(ptr_cbranch_t examined_branch)
+{
+  return;
+}
+
+inline static void unfocused_oldtaken_branch_handler(ptr_cbranch_t examined_branch)
+{
+  return;
+}
+
+inline static void focused_oldtaken_branch_handler(ptr_cbranch_t examined_branch)
+{
   return;
 }
 

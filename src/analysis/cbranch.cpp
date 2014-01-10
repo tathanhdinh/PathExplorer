@@ -18,6 +18,7 @@
  */
 
 #include "cbranch.h"
+#include "../main.h"
 
 namespace analysis 
 {
@@ -43,5 +44,22 @@ cbranch::cbranch(const instruction& other_instruction) : instruction(other_instr
 {
   this->is_resolved = false; this->is_bypassed = false;
 }
+
+
+/**
+ * @brief Save the current input that leads to the current branch decision.
+ * 
+ * @param current_branch_decision current decision
+ * @return void
+ */
+void cbranch::save_current_input(bool current_branch_decision)
+{
+  ptr_uint8_t new_input_buff(new UINT8[received_message_length]);
+  PIN_SafeCopy(new_input_buff.get(), reinterpret_cast<UINT8*>(received_message_address), 
+               received_message_length);
+  this->inputs_lead_to_decision[current_branch_decision].insert(new_input_buff);
+  return;
+}
+
 
 } // end of analysis namespace

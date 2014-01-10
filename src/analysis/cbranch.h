@@ -21,9 +21,15 @@
 #define CBRANCH_H
 
 #include "instruction.h"
+#include <boost/shared_ptr.hpp>
+#include <boost/unordered_set.hpp>
+#include <boost/unordered_map.hpp>
 
 namespace analysis 
 {
+
+typedef boost::shared_ptr<UINT8> ptr_uint8_t;
+typedef boost::unordered_set<ptr_uint8_t> ptr_uint8s_t;
 
 class cbranch : public instruction
 {
@@ -31,13 +37,13 @@ public:
   bool is_taken;
   bool is_resolved;
   bool is_bypassed;
+  
+  boost::unordered_map<bool, ptr_uint8s_t> inputs_lead_to_decision;
 
 public:
   cbranch(const INS& current_instruction);
   cbranch(const instruction& other_instruction);
-//   conditional_branch(const conditional_branch& other);
-//   conditional_branch& operator=(const conditional_branch& other);
-//   bool operator==(const conditional_branch& other);
+  void save_current_input(bool current_branch_decision);
 };
 
 typedef boost::shared_ptr<cbranch> ptr_cbranch_t;
