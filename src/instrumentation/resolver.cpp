@@ -362,25 +362,16 @@ void resolver::indirectBrOrCall_instruction_callback(ADDRINT target_address)
   // the target address must be the next executed instruction, let's verify that
   if (instruction_at_execorder[current_execorder + 1]->address != target_address) 
   {
-    switch (current_resolving_state)
+    ++local_reexec_number;
+    if (local_reexec_number < max_local_reexec_number) 
     {
-      case execution_with_orig_input:
-        BOOST_LOG_TRIVIAL(fatal) 
-          << boost::format("indirect branch at %d will take new target in executing with the original input.")
-              % current_execorder;
-        PIN_ExitApplication(current_resolving_state);
-        break;
-        
-      case execution_with_modif_input:
-        fast_execution::move_backward_and_modify_input(pivot_checkpoint_execorder);
-        break;
-        
-      default:
-        BOOST_LOG_TRIVIAL(fatal)
-          << boost::format("trace resolver falls into a unknown running state %d")
-              % current_resolving_state;
-        PIN_ExitApplication(current_resolving_state);
-        break;
+      // back and modify the input to try to pass this branch
+      fast_execution::move_backward_and_modify_input(pivot_checkpoint_execorder);
+    }
+    else // that means local_reexec_number == max_local_reexec_number 
+    {
+      // back and restore the input to back to the original trace
+      fast_execution::move_backward_and_restore_input(pivot_checkpoint_execorder);
     }
   }
   
