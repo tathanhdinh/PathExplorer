@@ -26,16 +26,10 @@
 namespace instrumentation 
 {
 
-typedef enum 
-{
-  execution_with_orig_input  = 0, // execution with the original input
-  execution_with_modif_input = 1  // execution with some modified input
-} resolving_state;
-
 class resolver
 {
 public:
-  static void set_resolving_state(resolving_state new_resolving_state);
+  
   static void generic_instruction_callback(ADDRINT instruction_address);
   static void cbranch_instruction_callback(bool is_branch_taken);
   static void indirectBrOrCall_instruction_callback(ADDRINT target_address);

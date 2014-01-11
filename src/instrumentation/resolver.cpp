@@ -35,20 +35,6 @@ using namespace engine;
 static UINT32 pivot_checkpoint_execorder;
 static UINT32 focused_cbranch_execorder;
 static UINT32 local_reexec_number = 0;
-static resolving_state current_resolving_state = execution_with_orig_input;
-
-/**
- * @brief set a new resolving state.
- * 
- * @param new_resolving_state 
- * @return void
- */
-void resolver::set_resolving_state(resolving_state new_resolving_state)
-{
-  current_resolving_state = new_resolving_state;
-  return;
-}
-
 
 /**
  * @brief Generic callback applied for all instructions. 
@@ -109,41 +95,33 @@ static UINT32 next_focused_cbranch_execorder  ();
  */
 void resolver::cbranch_instruction_callback(bool is_branch_taken)
 {
-  // verify if the current examined instruction is branch
-  if (instruction_at_execorder[current_execorder]->is_cbranch) 
+  ptr_cbranch_t curr_examined_cbranch;
+  // the examined branch takes a different decision (category 4)
+  if (curr_examined_cbranch->is_taken != is_branch_taken) 
   {
-    ptr_cbranch_t curr_examined_cbranch;
-    // the examined branch takes a different decision (category 4)
-    if (curr_examined_cbranch->is_taken != is_branch_taken) 
+    // the examined branch is the focused one (category 3)
+    if (current_execorder == focused_cbranch_execorder) 
     {
-      // the examined branch is the focused one (category 3)
-      if (current_execorder == focused_cbranch_execorder) 
-      {
-        focused_newtaken_branch_handler(curr_examined_cbranch); 
-      }
-      else // the examined branch is not the focused one (category 3)
-      {
-        unfocused_newtaken_branch_handler(curr_examined_cbranch);
-      }
+      focused_newtaken_branch_handler(curr_examined_cbranch); 
     }
-    else // the examined branch keeps the old decision (category 4)
+    else // the examined branch is not the focused one (category 3)
     {
-      // the examined branch is the focused one (category 3)
-      if (current_execorder == focused_cbranch_execorder) 
-      {
-        focused_oldtaken_branch_handler(curr_examined_cbranch);
-      }
-      else // the examined branch is not the focused one (category 3)
-      {
-        unfocused_oldtaken_branch_handler(curr_examined_cbranch);
-      }
+      unfocused_newtaken_branch_handler(curr_examined_cbranch);
     }
   }
-  else 
+  else // the examined branch keeps the old decision (category 4)
   {
-    BOOST_LOG_TRIVIAL(fatal) 
-      << boost::format("meet a wrong branch at execution order %d") % current_execorder;
+    // the examined branch is the focused one (category 3)
+    if (current_execorder == focused_cbranch_execorder) 
+    {
+      focused_oldtaken_branch_handler(curr_examined_cbranch);
+    }
+    else // the examined branch is not the focused one (category 3)
+    {
+      unfocused_oldtaken_branch_handler(curr_examined_cbranch);
+    }
   }
+  
   return;
 }
 
@@ -331,8 +309,8 @@ inline static UINT32 next_focused_cbranch_execorder()
   UINT32 nearest_cbranch_execorder = boost::integer_traits<UINT32>::const_max;
   UINT32 cbranch_execorder;
   boost::unordered_map<UINT32, ptr_cbranch_t>::iterator cbranch_iter;
-  for (cbranch_iter = cbranch_at_execorder.begin(); 
-       cbranch_iter != cbranch_at_execorder.end(); ++cbranch_iter) 
+  for (cbranch_iter = cbranch_at_execorder.begin();
+       cbranch_iter != cbranch_at_execorder.end(); ++cbranch_iter)
   {
     cbranch_execorder = cbranch_iter->first;
     if ((cbranch_execorder > current_execorder) && 
