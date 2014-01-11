@@ -70,7 +70,7 @@ void resolver::generic_instruction_callback(ADDRINT instruction_address)
   else 
   {
     BOOST_LOG_TRIVIAL(fatal) 
-      << boost::format("in trace resolving state: meet a wrong instruction at %s after %d instruction executed.") 
+      << boost::format("meet a wrong instruction at address %s and at execution order %d") 
           % utils::addrint2hexstring(instruction_address) % current_execorder;
     PIN_ExitApplication(current_resolving_state);
   }
@@ -100,8 +100,9 @@ void resolver::generic_instruction_callback(ADDRINT instruction_address)
 static void unfocused_newtaken_branch_handler (ptr_cbranch_t examined_cbranch);
 static void focused_newtaken_branch_handler   (ptr_cbranch_t examined_cbranch);
 static void unfocused_oldtaken_branch_handler (ptr_cbranch_t examined_branch);
-static UINT32 next_checkpoint_execorder       (ptr_cbranch_t examined_branch);
 static void focused_oldtaken_branch_handler   (ptr_cbranch_t examined_branch);
+static UINT32 next_checkpoint_execorder       ();
+static UINT32 next_focused_cbranch_execorder  ();
 /**
  * @param is_branch_taken the branch will be taken or not
  * @return void
@@ -141,8 +142,7 @@ void resolver::cbranch_instruction_callback(bool is_branch_taken)
   else 
   {
     BOOST_LOG_TRIVIAL(fatal) 
-      << boost::format("in trace resolving state: meet a wrong branch at execution order %d") 
-          % current_execorder;
+      << boost::format("meet a wrong branch at execution order %d") % current_execorder;
   }
   return;
 }
@@ -257,21 +257,33 @@ inline static void focused_oldtaken_branch_handler(ptr_cbranch_t examined_branch
       ++local_reexec_number;
       fast_execution::move_backward_and_restore_input(pivot_checkpoint_execorder);
     }
-    else // i.e. local_reexec_number == max_local_reexec_number
+    else // that means local_reexec_number == max_local_reexec_number
     {
-      UINT32 chkpnt_execorder = next_checkpoint_execorder(examined_branch);
-      // the next checkpoint exists
+      UINT32 chkpnt_execorder = next_checkpoint_execorder();
+      // if the next checkpoint exists
       if (chkpnt_execorder != 0) 
       {
-        // back to the next checkpoint
+        // then back to the next checkpoint
         pivot_checkpoint_execorder = chkpnt_execorder;
         local_reexec_number = 0;
         fast_execution::move_backward_and_modify_input(pivot_checkpoint_execorder);
       }
       else // the next checkpoint does not exist
       {
-        // continue executing
-        local_reexec_number = 0;
+        UINT32 cbranch_execorder = next_focused_cbranch_execorder();
+        // if there exist some conditional branch to resolve
+        if (cbranch_execorder != boost::integer_traits<UINT32>::const_max) 
+        {
+          // then continue executing
+          focused_cbranch_execorder = cbranch_execorder;
+          local_reexec_number = 0;
+        }
+        else 
+        {
+          BOOST_LOG_TRIVIAL(info) 
+            << boost::format("there is no more branch to resolve, stop at execution order %d") 
+                % current_execorder;
+        }
       }
     }
   }
@@ -292,7 +304,7 @@ inline static void focused_oldtaken_branch_handler(ptr_cbranch_t examined_branch
  * @param examined_branch the examined branch
  * @return UINT32
  */
-inline static UINT32 next_checkpoint_execorder(ptr_cbranch_t examined_branch)
+inline static UINT32 next_checkpoint_execorder()
 {
   UINT32 nearest_chkpnt_execorder = 0;
   exeorders_t::iterator chkpt_iter;
@@ -307,6 +319,33 @@ inline static UINT32 next_checkpoint_execorder(ptr_cbranch_t examined_branch)
   
   return nearest_chkpnt_execorder;
 }
+
+
+/**
+ * @brief Get the execution order of the next conditional branch needed to resolve.
+ * 
+ * @return UINT32
+ */
+inline static UINT32 next_focused_cbranch_execorder()
+{
+  UINT32 nearest_cbranch_execorder = boost::integer_traits<UINT32>::const_max;
+  UINT32 cbranch_execorder;
+  boost::unordered_map<UINT32, ptr_cbranch_t>::iterator cbranch_iter;
+  for (cbranch_iter = cbranch_at_execorder.begin(); 
+       cbranch_iter != cbranch_at_execorder.end(); ++cbranch_iter) 
+  {
+    cbranch_execorder = cbranch_iter->first;
+    if ((cbranch_execorder > current_execorder) && 
+        (nearest_cbranch_execorder > cbranch_execorder) &&
+        !chkorders_affecting_branch_of_execorder[cbranch_execorder].empty())
+    {
+      nearest_cbranch_execorder = cbranch_execorder;
+    }
+  }
+  
+  return nearest_cbranch_execorder;
+}
+
 
 
 /**
