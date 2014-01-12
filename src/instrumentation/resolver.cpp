@@ -22,6 +22,7 @@
 #include "../utilities/utils.h"
 #include "../engine/fast_execution.h"
 #include "../main.h"
+
 #include <boost/integer_traits.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/format.hpp>
@@ -184,8 +185,7 @@ inline static exec_direction_t unfocused_newtaken_branch_handler(ptr_cbranch_t e
   if (!examined_branch->is_resolved) 
   {
     // then set it as resolved
-    examined_branch->is_resolved = true;
-    examined_branch->is_bypassed = false;
+    examined_branch->is_resolved = true; examined_branch->is_bypassed = false;
     // and save the current input
     examined_branch->save_current_input(!examined_branch->is_taken);
   }
@@ -254,10 +254,8 @@ inline static exec_direction_t focused_oldtaken_branch_handler(ptr_cbranch_t exa
   {
     if (local_reexec_number == max_local_reexec_number - 1) 
     {
-      // set the examined branch as bypassed
-      examined_branch->is_bypassed = true;
-      // and back to the original trace
-      exec_direction = backward;
+      // set the examined branch as bypassed and back to the original trace
+      examined_branch->is_bypassed = true; exec_direction = backward;
     }
     else // that means local_reexec_number == max_local_reexec_number
     {
@@ -266,8 +264,7 @@ inline static exec_direction_t focused_oldtaken_branch_handler(ptr_cbranch_t exa
       if (chkpnt_execorder != 0) 
       {
         // then back to the next checkpoint
-        pivot_checkpoint_execorder = chkpnt_execorder;
-        local_reexec_number = 0;
+        pivot_checkpoint_execorder = chkpnt_execorder; local_reexec_number = 0;
         exec_direction = backward;        
       }
       else // the next checkpoint does not exist
@@ -277,17 +274,18 @@ inline static exec_direction_t focused_oldtaken_branch_handler(ptr_cbranch_t exa
         if (cbranch_execorder != boost::integer_traits<UINT32>::const_max) 
         {
           // then continue executing
-          focused_cbranch_execorder = cbranch_execorder;
-          local_reexec_number = 0;
+          focused_cbranch_execorder = cbranch_execorder; local_reexec_number = 0;
           exec_direction = forward;
         }
         else 
         {
+          // else stop
           exec_direction = stop;
         }
       }
     }
   }
+  
   return exec_direction;
 }
 

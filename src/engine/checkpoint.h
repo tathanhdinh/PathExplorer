@@ -21,7 +21,9 @@
 #define CHECKPOINT_H
 
 #include <pin.H>
+
 #include "../analysis/dataflow.h"
+
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
 #include <boost/shared_ptr.hpp>
