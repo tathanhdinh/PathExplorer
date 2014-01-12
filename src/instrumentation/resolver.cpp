@@ -46,6 +46,37 @@ typedef enum
 } exec_direction_t;
 
 /**
+ * @brief Calculate the execution order of the first focused branch in this resolving phase.
+ * This branch is the first one after the previous resolved branch (fixed in the analyzing phase) 
+ * whose decision depends on the input.
+ * 
+ * @param previous_resolved_cbranch_execorder the execution order of the previous resolved branch 
+ * fixed in the analyzing phase
+ * @return void
+ */
+void resolver::set_first_focused_cbranch_execorder(UINT32 previous_resolved_cbranch_execorder)
+{
+  boost::unordered_map<UINT32, ptr_cbranch_t>::iterator cbranch_iter;
+  UINT32 cbranch_execorder;
+  
+  focused_cbranch_execorder = boost::integer_traits<UINT32>::const_max;
+  for (cbranch_iter = cbranch_at_execorder.begin();
+       cbranch_iter != cbranch_at_execorder.end(); ++cbranch_iter)
+  {
+    cbranch_execorder = cbranch_iter->first;
+    if ((cbranch_execorder > previous_resolved_cbranch_execorder) &&
+        (!checkpoint_execorders_of_cbranch_at_execorder[cbranch_execorder].empty()) && 
+        (cbranch_execorder < focused_cbranch_execorder))
+    {
+      focused_cbranch_execorder = cbranch_execorder;
+    }
+  }
+  
+  return;
+}
+
+
+/**
  * @brief Generic callback applied for all instructions. 
  * Principally it is very similar to the "generic normal instruction" callback in the trace-analyzer 
  * class. But in the trace-resolving state, it does not have to handle the system call and vdso 
@@ -133,9 +164,12 @@ void resolver::cbranch_instruction_callback(bool is_branch_taken)
     }
   }
   
+  // the execution will back or continue depending on the direction and the current value of the 
+  // local re-execution number
   switch (exec_direction) 
   {
     case backward:
+      ++total_reexec_times;
       ++local_reexec_number;
       if (local_reexec_number < max_local_reexec_number) 
       {
@@ -148,7 +182,7 @@ void resolver::cbranch_instruction_callback(bool is_branch_taken)
       break;
       
     case forward:
-      // move forward is default
+      // move forward is the default
       break;
       
     case stop:
@@ -177,7 +211,7 @@ void resolver::cbranch_instruction_callback(bool is_branch_taken)
  * input makes the branch take a different decision.
  * 
  * @param examined_branch the examined branch
- * @return 0 = back, 1 = continue
+ * @return exec_direction_t
  */
 inline static exec_direction_t unfocused_newtaken_branch_handler(ptr_cbranch_t examined_branch) 
 {
@@ -203,7 +237,7 @@ inline static exec_direction_t unfocused_newtaken_branch_handler(ptr_cbranch_t e
  * value of input makes the branch take a different decision.
  * 
  * @param examined_branch the examined branch
- * @return 0 = back, 1 = continue
+ * @return exec_direction_t
  */
 inline static exec_direction_t focused_newtaken_branch_handler(ptr_cbranch_t examined_branch)
 {
@@ -224,7 +258,7 @@ inline static exec_direction_t focused_newtaken_branch_handler(ptr_cbranch_t exa
  * keeps the decision of the branch.
  * 
  * @param examined_branch the examined branch
- * @return void
+ * @return exec_direction_t
  */
 inline static exec_direction_t unfocused_oldtaken_branch_handler(ptr_cbranch_t examined_branch)
 {
@@ -238,7 +272,7 @@ inline static exec_direction_t unfocused_oldtaken_branch_handler(ptr_cbranch_t e
  * keeps the decision of the branch.
  * 
  * @param examined_branch the examined branch
- * @return void
+ * @return exec_direction_t
  */
 
 inline static exec_direction_t focused_oldtaken_branch_handler(ptr_cbranch_t examined_branch)
@@ -307,8 +341,8 @@ inline static UINT32 next_checkpoint_execorder()
 {
   UINT32 nearest_chkpnt_execorder = 0;
   exeorders_t::iterator chkpt_iter;
-  for (chkpt_iter = chkorders_affecting_branch_of_execorder[current_execorder].begin(); 
-       chkpt_iter != chkorders_affecting_branch_of_execorder[current_execorder].end(); ++chkpt_iter) 
+  for (chkpt_iter = checkpoint_execorders_of_cbranch_at_execorder[current_execorder].begin(); 
+       chkpt_iter != checkpoint_execorders_of_cbranch_at_execorder[current_execorder].end(); ++chkpt_iter) 
   {
     if ((*chkpt_iter < pivot_checkpoint_execorder) && (nearest_chkpnt_execorder < *chkpt_iter))
     {
@@ -330,13 +364,13 @@ inline static UINT32 next_focused_cbranch_execorder()
   UINT32 nearest_cbranch_execorder = boost::integer_traits<UINT32>::const_max;
   UINT32 cbranch_execorder;
   boost::unordered_map<UINT32, ptr_cbranch_t>::iterator cbranch_iter;
-  for (cbranch_iter = cbranch_at_execorder.begin();
+  for (cbranch_iter = cbranch_at_execorder.begin(); 
        cbranch_iter != cbranch_at_execorder.end(); ++cbranch_iter)
   {
     cbranch_execorder = cbranch_iter->first;
     if ((cbranch_execorder > current_execorder) && 
         (nearest_cbranch_execorder > cbranch_execorder) &&
-        !chkorders_affecting_branch_of_execorder[cbranch_execorder].empty())
+        !checkpoint_execorders_of_cbranch_at_execorder[cbranch_execorder].empty())
     {
       nearest_cbranch_execorder = cbranch_execorder;
     }
@@ -344,7 +378,6 @@ inline static UINT32 next_focused_cbranch_execorder()
   
   return nearest_cbranch_execorder;
 }
-
 
 
 /**

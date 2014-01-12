@@ -33,7 +33,7 @@ boost::unordered_map<ADDRINT, ptr_instruction_t> instruction_at_address;
 boost::unordered_map<UINT32, ptr_instruction_t> instruction_at_execorder;
 boost::unordered_map<UINT32, ptr_cbranch_t> cbranch_at_execorder;
 boost::unordered_map<UINT32, ptr_checkpoint_t> checkpoint_at_execorder;
-boost::unordered_map<UINT32, exeorders_t> chkorders_affecting_branch_of_execorder;
+boost::unordered_map<UINT32, exeorders_t> checkpoint_execorders_of_cbranch_at_execorder;
 boost::unordered_map<UINT32, ptr_insoperands_t> outerface_at_execorder;
 boost::unordered_map<ADDRINT, UINT8> original_msgstate_at_address;
 boost::unordered_map<ADDRINT, UINT8> original_memstate_at_address;

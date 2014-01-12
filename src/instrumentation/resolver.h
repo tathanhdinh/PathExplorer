@@ -29,6 +29,7 @@ namespace instrumentation
 class resolver
 {
 public:
+  static void set_first_focused_cbranch_execorder(UINT32 previous_resolved_cbranch_execorder);
   static void generic_instruction_callback(ADDRINT instruction_address);
   static void cbranch_instruction_callback(bool is_branch_taken);
   static void indirectBrOrCall_instruction_callback(ADDRINT target_address);

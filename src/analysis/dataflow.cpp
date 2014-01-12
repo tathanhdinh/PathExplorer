@@ -367,7 +367,7 @@ static void determine_branches_checkpoints_dependance()
           if (utils::is_in_input_buffer(accessing_mem_addr)) 
           {
             //  then add the checkpoint into the list
-            chkorders_affecting_branch_of_execorder[branch_exeorder].insert(checkpoint_exeorder);
+            checkpoint_execorders_of_cbranch_at_execorder[branch_exeorder].insert(checkpoint_exeorder);
             // and add the accessed memory to the checkpoint
             ptr_chkpnt = ptr_checkpoint_iter->second;
             ptr_chkpnt->memory_addresses_to_modify.insert(accessing_mem_addr);
