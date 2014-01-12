@@ -88,7 +88,12 @@ void resolver::set_first_focused_cbranch_execorder(UINT32 previous_resolved_cbra
 void resolver::generic_instruction_callback(ADDRINT instruction_address)
 {
   current_execorder++;
-  
+  // fast execution
+  if ((pivot_checkpoint_execorder != 0) && 
+      (checkpoint_at_execorder[pivot_checkpoint_execorder]->jumping_point == current_execorder)) 
+  {
+    //
+  }
   
   // debug enabled
   if (debug_enabled) 
@@ -172,12 +177,13 @@ void resolver::cbranch_instruction_callback(bool is_branch_taken)
       ++local_reexec_number;
       if (local_reexec_number < max_local_reexec_number) 
       {
-        fast_execution::move_backward_and_modify_input(pivot_checkpoint_execorder);
+        checkpoint_at_execorder[pivot_checkpoint_execorder]->modify_input();
       }
       else // that means local_reexec_number == max_local_reexec_number 
       {
-        fast_execution::move_backward_and_restore_input(pivot_checkpoint_execorder);
+        checkpoint_at_execorder[pivot_checkpoint_execorder]->restore_input();
       }
+      fast_execution::move_backward(pivot_checkpoint_execorder);
       break;
       
     case forward:
@@ -193,12 +199,6 @@ void resolver::cbranch_instruction_callback(bool is_branch_taken)
     default:
       break;
   }
-  
-  if ((exec_direction == backward) && (local_reexec_number < max_local_reexec_number - 1)) 
-  {
-    fast_execution::move_backward_and_modify_input(pivot_checkpoint_execorder);
-  }
-  
   
   return;
 }
@@ -397,14 +397,16 @@ void resolver::indirectBrOrCall_instruction_callback(ADDRINT target_address)
     ++local_reexec_number;
     if (local_reexec_number < max_local_reexec_number) 
     {
-      // back and modify the input to try to pass this branch
-      fast_execution::move_backward_and_modify_input(pivot_checkpoint_execorder);
+      // modify the input to try to pass this branch
+      checkpoint_at_execorder[pivot_checkpoint_execorder]->modify_input();
     }
     else // that means local_reexec_number == max_local_reexec_number 
     {
-      // back and restore the input to back to the original trace
-      fast_execution::move_backward_and_restore_input(pivot_checkpoint_execorder);
+      // restore the input to back to the original trace
+      checkpoint_at_execorder[pivot_checkpoint_execorder]->restore_input();
     }
+    // and back
+    fast_execution::move_backward(pivot_checkpoint_execorder);
   }
   
   return;
