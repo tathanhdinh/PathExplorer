@@ -22,6 +22,7 @@
 #define MAIN_H
 
 #include <pin.H>
+#include <boost/cstdint.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
 #include "analysis/instruction.h"

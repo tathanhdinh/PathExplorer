@@ -34,7 +34,15 @@ using namespace engine;
 
 static UINT32 pivot_checkpoint_execorder;
 static UINT32 focused_cbranch_execorder;
+// static UINT32 starting_cbranch_execorder;
 static UINT32 local_reexec_number = 0;
+
+typedef enum 
+{
+  backward = 0,
+  forward  = 1,
+  stop     = 2
+} exec_direction_t;
 
 /**
  * @brief Generic callback applied for all instructions. 
@@ -58,7 +66,7 @@ void resolver::generic_instruction_callback(ADDRINT instruction_address)
     BOOST_LOG_TRIVIAL(fatal) 
       << boost::format("meet a wrong instruction at address %s and at execution order %d") 
           % utils::addrint2hexstring(instruction_address) % current_execorder;
-    PIN_ExitApplication(current_resolving_state);
+    PIN_ExitApplication(0);
   }
   
   return;
@@ -77,16 +85,16 @@ void resolver::generic_instruction_callback(ADDRINT instruction_address)
  * imagine that the examination, goes along with the execution, and when it meets a conditional 
  * branch then it can make this branch take a new decision or keep the old decision, depending on 
  * the current status of the examined branch, the execution will continue or back to a previous 
- * checkpoint.
+ * checkpoint. So that leads to a "functional" view as follows:
  * 
  * (new decision is taken or not) {0,1} ------> current status -------> {0,1} (continue or back)
  *
  * We devise the callback into several smaller functions:  
  */
-static void unfocused_newtaken_branch_handler (ptr_cbranch_t examined_cbranch);
-static void focused_newtaken_branch_handler   (ptr_cbranch_t examined_cbranch);
-static void unfocused_oldtaken_branch_handler (ptr_cbranch_t examined_branch);
-static void focused_oldtaken_branch_handler   (ptr_cbranch_t examined_branch);
+static exec_direction_t unfocused_newtaken_branch_handler (ptr_cbranch_t examined_cbranch);
+static exec_direction_t focused_newtaken_branch_handler   (ptr_cbranch_t examined_cbranch);
+static exec_direction_t unfocused_oldtaken_branch_handler (ptr_cbranch_t examined_branch);
+static exec_direction_t focused_oldtaken_branch_handler   (ptr_cbranch_t examined_branch);
 static UINT32 next_checkpoint_execorder       ();
 static UINT32 next_focused_cbranch_execorder  ();
 /**
@@ -95,18 +103,20 @@ static UINT32 next_focused_cbranch_execorder  ();
  */
 void resolver::cbranch_instruction_callback(bool is_branch_taken)
 {
+  exec_direction_t exec_direction;
   ptr_cbranch_t curr_examined_cbranch;
+  
   // the examined branch takes a different decision (category 4)
   if (curr_examined_cbranch->is_taken != is_branch_taken) 
   {
     // the examined branch is the focused one (category 3)
     if (current_execorder == focused_cbranch_execorder) 
     {
-      focused_newtaken_branch_handler(curr_examined_cbranch); 
+      exec_direction = focused_newtaken_branch_handler(curr_examined_cbranch); 
     }
     else // the examined branch is not the focused one (category 3)
     {
-      unfocused_newtaken_branch_handler(curr_examined_cbranch);
+      exec_direction = unfocused_newtaken_branch_handler(curr_examined_cbranch);
     }
   }
   else // the examined branch keeps the old decision (category 4)
@@ -114,13 +124,46 @@ void resolver::cbranch_instruction_callback(bool is_branch_taken)
     // the examined branch is the focused one (category 3)
     if (current_execorder == focused_cbranch_execorder) 
     {
-      focused_oldtaken_branch_handler(curr_examined_cbranch);
+      exec_direction = focused_oldtaken_branch_handler(curr_examined_cbranch);
     }
     else // the examined branch is not the focused one (category 3)
     {
-      unfocused_oldtaken_branch_handler(curr_examined_cbranch);
+      exec_direction = unfocused_oldtaken_branch_handler(curr_examined_cbranch);
     }
   }
+  
+  switch (exec_direction) 
+  {
+    case backward:
+      ++local_reexec_number;
+      if (local_reexec_number < max_local_reexec_number) 
+      {
+        fast_execution::move_backward_and_modify_input(pivot_checkpoint_execorder);
+      }
+      else // that means local_reexec_number == max_local_reexec_number 
+      {
+        fast_execution::move_forward_and_restore_input(pivot_checkpoint_execorder);
+      }
+      break;
+      
+    case forward:
+      break;
+      
+    case stop:
+      BOOST_LOG_TRIVIAL(info) 
+        << boost::format("there is no more branch to resolve, stop at execution order %d") 
+            % current_execorder;
+      break;
+      
+    default:
+      break;
+  }
+  
+  if ((exec_direction == backward) && (local_reexec_number < max_local_reexec_number - 1)) 
+  {
+    fast_execution::move_backward_and_modify_input(pivot_checkpoint_execorder);
+  }
+  
   
   return;
 }
@@ -132,9 +175,9 @@ void resolver::cbranch_instruction_callback(bool is_branch_taken)
  * input makes the branch take a different decision.
  * 
  * @param examined_branch the examined branch
- * @return void
+ * @return 0 = back, 1 = continue
  */
-inline static void unfocused_newtaken_branch_handler(ptr_cbranch_t examined_branch) 
+inline static exec_direction_t unfocused_newtaken_branch_handler(ptr_cbranch_t examined_branch) 
 {
   // if the examined branch is not resolved yet
   if (!examined_branch->is_resolved) 
@@ -149,17 +192,18 @@ inline static void unfocused_newtaken_branch_handler(ptr_cbranch_t examined_bran
   // because the branch will take a different target if the execution continue, so that implicitly 
   // means that the local_reexec_number is less than max_local_reexec_number, we increase the local 
   // execution number and back.
+  
   local_reexec_number++;
   if (local_reexec_number < max_local_reexec_number) 
   {
-    fast_execution::move_backward_and_modify_input(pivot_checkpoint_execorder);
+//     fast_execution::move_backward_and_modify_input(pivot_checkpoint_execorder);
   }
   else // i.e. local_reexec_number == max_local_reexec_number
   {
-    fast_execution::move_backward_and_restore_input(pivot_checkpoint_execorder);
+//     fast_execution::move_backward_and_restore_input(pivot_checkpoint_execorder);
   }
   
-  return;
+  return backward;
 }
 
 
@@ -169,9 +213,9 @@ inline static void unfocused_newtaken_branch_handler(ptr_cbranch_t examined_bran
  * value of input makes the branch take a different decision.
  * 
  * @param examined_branch the examined branch
- * @return void
+ * @return 0 = back, 1 = continue
  */
-inline static void focused_newtaken_branch_handler(ptr_cbranch_t examined_branch)
+inline static exec_direction_t focused_newtaken_branch_handler(ptr_cbranch_t examined_branch)
 {
   // set it as resolved
   examined_branch->is_resolved = true;
@@ -181,17 +225,17 @@ inline static void focused_newtaken_branch_handler(ptr_cbranch_t examined_branch
   // because the branch will take a different target if the execution continue, so that implicitly 
   // means that the local_reexec_number is less than max_local_reexec_number, we increase the local 
   // execution number and back.
-  local_reexec_number++;
-  if (local_reexec_number < max_local_reexec_number) 
-  {
-    fast_execution::move_backward_and_modify_input(pivot_checkpoint_execorder);
-  }
-  else 
-  {
-    fast_execution::move_backward_and_restore_input(pivot_checkpoint_execorder);
-  }
+//   local_reexec_number++;
+//   if (local_reexec_number < max_local_reexec_number) 
+//   {
+//     fast_execution::move_backward_and_modify_input(pivot_checkpoint_execorder);
+//   }
+//   else 
+//   {
+//     fast_execution::move_backward_and_restore_input(pivot_checkpoint_execorder);
+//   }
   
-  return;
+  return backward;
 }
 
 
@@ -202,10 +246,10 @@ inline static void focused_newtaken_branch_handler(ptr_cbranch_t examined_branch
  * @param examined_branch the examined branch
  * @return void
  */
-inline static void unfocused_oldtaken_branch_handler(ptr_cbranch_t examined_branch)
+inline static exec_direction_t unfocused_oldtaken_branch_handler(ptr_cbranch_t examined_branch)
 {
   // just do nothing
-  return;
+  return forward;
 }
 
 
@@ -217,13 +261,17 @@ inline static void unfocused_oldtaken_branch_handler(ptr_cbranch_t examined_bran
  * @return void
  */
 
-inline static void focused_oldtaken_branch_handler(ptr_cbranch_t examined_branch)
+inline static exec_direction_t focused_oldtaken_branch_handler(ptr_cbranch_t examined_branch)
 {
+  exec_direction_t exec_direction;
+  
   if (local_reexec_number < max_local_reexec_number - 1) 
   {
     // back again
-    ++local_reexec_number;
-    fast_execution::move_backward_and_modify_input(pivot_checkpoint_execorder);
+    exec_direction = backward;
+    
+//     ++local_reexec_number;
+//     fast_execution::move_backward_and_modify_input(pivot_checkpoint_execorder);
   }
   else 
   {
@@ -232,8 +280,10 @@ inline static void focused_oldtaken_branch_handler(ptr_cbranch_t examined_branch
       // set the examined branch as bypassed
       examined_branch->is_bypassed = true;
       // and back to the original trace
-      ++local_reexec_number;
-      fast_execution::move_backward_and_restore_input(pivot_checkpoint_execorder);
+      exec_direction = backward;
+      
+//       ++local_reexec_number;
+//       fast_execution::move_backward_and_restore_input(pivot_checkpoint_execorder);
     }
     else // that means local_reexec_number == max_local_reexec_number
     {
@@ -244,7 +294,9 @@ inline static void focused_oldtaken_branch_handler(ptr_cbranch_t examined_branch
         // then back to the next checkpoint
         pivot_checkpoint_execorder = chkpnt_execorder;
         local_reexec_number = 0;
-        fast_execution::move_backward_and_modify_input(pivot_checkpoint_execorder);
+        exec_direction = backward;
+        
+//         fast_execution::move_backward_and_modify_input(pivot_checkpoint_execorder);
       }
       else // the next checkpoint does not exist
       {
@@ -255,17 +307,19 @@ inline static void focused_oldtaken_branch_handler(ptr_cbranch_t examined_branch
           // then continue executing
           focused_cbranch_execorder = cbranch_execorder;
           local_reexec_number = 0;
+          exec_direction = forward;
         }
         else 
         {
-          BOOST_LOG_TRIVIAL(info) 
-            << boost::format("there is no more branch to resolve, stop at execution order %d") 
-                % current_execorder;
+          exec_direction = stop;
+//           BOOST_LOG_TRIVIAL(info) 
+//             << boost::format("there is no more branch to resolve, stop at execution order %d") 
+//                 % current_execorder;
         }
       }
     }
   }
-  return;
+  return exec_direction;
 }
 
 

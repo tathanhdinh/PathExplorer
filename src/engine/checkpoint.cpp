@@ -19,12 +19,14 @@
 
 #include "checkpoint.h"
 #include "../analysis/dataflow.h"
+#include "../utilities/utils.h"
 #include "../main.h"
 
 namespace engine
 {
 
 using namespace analysis;
+using namespace utilities;
 
 /**
  * @brief a checkpoint is created before the execution of the current examined instruction. 
@@ -79,5 +81,41 @@ void checkpoint::log_before_execution(ADDRINT memory_written_address, UINT8 memo
   
   return;
 }
+
+
+/**
+ * @brief modify randomly memory values (at the input buffer) which read at the checkpoint.
+ * 
+ * @return void
+ */
+void checkpoint::modify_input()
+{
+  boost::unordered_set<ADDRINT>::iterator mem_addr_iter;
+  for (mem_addr_iter = this->memory_addresses_to_modify.begin(); 
+       mem_addr_iter != this->memory_addresses_to_modify.end(); ++mem_addr_iter) 
+  {
+    *(reinterpret_cast<UINT8*>(*mem_addr_iter)) = utils::random_uint8();
+  }
+  return;
+}
+
+
+/**
+ * @brief restore original memory values (at the input buffer) which read at the checkpoint.
+ * 
+ * @return void
+ */
+void checkpoint::restore_input()
+{
+  boost::unordered_set<ADDRINT>::iterator mem_addr_iter;
+  for (mem_addr_iter = this->memory_addresses_to_modify.begin(); 
+       mem_addr_iter != this->memory_addresses_to_modify.end(); ++mem_addr_iter) 
+  {
+    *(reinterpret_cast<UINT8*>(*mem_addr_iter)) = original_msgstate_at_address[*mem_addr_iter];
+  }
+  return;
+}
+
+
 
 } // end of engine namespace

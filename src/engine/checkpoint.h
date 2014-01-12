@@ -45,7 +45,9 @@ public:
   
 public:
   checkpoint(CONTEXT* current_context);
-  void log_before_execution(ADDRINT memory_written_address, UINT8 memory_written_length);  
+  void log_before_execution(ADDRINT memory_written_address, UINT8 memory_written_length); 
+  void modify_input();
+  void restore_input();
 };
 
 typedef boost::shared_ptr<checkpoint> ptr_checkpoint_t;
