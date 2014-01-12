@@ -27,10 +27,10 @@ namespace engine
 using namespace utilities;
 
 /**
- * @brief the control moves back to a previously logged checkpoint; this operation can always be 
- * invoked safely (in the program's space) if the checkpoint is logged fully (by invoking the log 
- * function just before the execution of a memory written instruction). Note that the instruction 
- * (pointed by the IP in the checkpoint's cpu context) will be re-executed.
+ * @brief The control moves back to a previously logged checkpoint. 
+ * This operation can always be invoked safely (in the program's space) if the checkpoint is logged 
+ * fully (by invoking the log function just before the execution of a memory written instruction). 
+ * Note that the instruction (pointed by the IP in the checkpoint's cpu context) will be re-executed.
  * 
  * @param checkpoint_exeorder the execution order of the target past checkpoint.
  * @return void
@@ -87,11 +87,27 @@ void fast_execution::move_backward(UINT32 checkpoint_exeorder)
 
 
 /**
- * @brief the control moves forward to a previously logged checkpoint: this operation is NOT ALWAYS 
- * SAFE, it should be called only from jumping point of the current checkpoint to move to the next 
- * checkpoint. The current memory state is now a subset of the memory state saved at the future 
- * checkpoint. Note that the instruction (determined by the instruction pointer in the checkpoint's 
- * cpu context) will be re-executed.
+ * @brief The control moves forward to a previously logged checkpoint. 
+ * The semantics of this function is quite sophisticated but can be represented by a functional 
+ * view as follows. The execution (starting from a checkpoint) to the current execution order (in 
+ * supposing that the instruction at this order is not executed) is represented by a function:
+ *                                         f : A -> B
+ * where A and B are domains which are Cartesian products of some registers and memory addresses, 
+ * the domain A intersects with the input buffer so the values on B will change when the value of 
+ * the input changes. The execution from the current execution order (in supposing that the 
+ * instruction at this order is executed) to some other order is represented by a function:
+ *                                        g : C -> D
+ * so that g does not depend on the input. If such a function g is found then the re-execution of 
+ * the composing instructions inside g is not necessary, and the execution can jump to the 
+ * instruction after g with some rational static (i.e. does not depend on the input) modification.
+ * The necessary condition (proof needed here) for the function g is that any instruction (that is 
+ * represented also as some function ins: operands -> operands) in g is not derived from any 
+ * input-dependent domain in B.
+ * 
+ * This operation is NOT ALWAYS SAFE, it should be called only from jumping point of the current 
+ * checkpoint to move to the next checkpoint. The current memory state is now a subset of the memory 
+ * state saved at the future checkpoint. Note that the instruction (determined by the instruction 
+ * pointer in the checkpoint's cpu context) will be re-executed.
  * 
  * @param checkpoint_exeorder the future checkpoint's execution order
  * @return void
