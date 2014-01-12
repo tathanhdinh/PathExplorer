@@ -22,6 +22,8 @@
 
 using namespace instrumentation;
 
+bool debug_enabled;
+
 ADDRINT received_message_address;
 INT32 received_message_length;
 UINT32 current_execorder;

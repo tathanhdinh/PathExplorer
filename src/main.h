@@ -36,6 +36,8 @@ typedef boost::unordered_set<UINT32> exeorders_t;
 typedef boost::unordered_set<ADDRINT> addresses_t;
 typedef boost::unordered_set<ptr_insoperand_t> ptr_insoperands_t;
 
+extern bool debug_enabled;
+
 extern ADDRINT received_message_address;
 extern INT32 received_message_length;
 extern UINT32 current_execorder;

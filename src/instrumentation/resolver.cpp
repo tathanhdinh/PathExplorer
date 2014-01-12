@@ -35,7 +35,6 @@ using namespace engine;
 
 static UINT32 pivot_checkpoint_execorder;
 static UINT32 focused_cbranch_execorder;
-// static UINT32 starting_cbranch_execorder;
 static UINT32 local_reexec_number = 0;
 
 typedef enum 
@@ -88,17 +87,19 @@ void resolver::set_first_focused_cbranch_execorder(UINT32 previous_resolved_cbra
  */
 void resolver::generic_instruction_callback(ADDRINT instruction_address)
 {
-  if (instruction_at_execorder[current_execorder]->address == instruction_address)
+  current_execorder++;
+  
+  
+  // debug enabled
+  if (debug_enabled) 
   {
-    // better performance because of branch prediction ?!!
-    current_execorder++;
-  }
-  else 
-  {
-    BOOST_LOG_TRIVIAL(fatal) 
-      << boost::format("meet a wrong instruction at address %s and at execution order %d") 
-          % utils::addrint2hexstring(instruction_address) % current_execorder;
-    PIN_ExitApplication(0);
+    if (instruction_at_execorder[current_execorder]->address != instruction_address) 
+    {
+       BOOST_LOG_TRIVIAL(fatal) 
+        << boost::format("meet a wrong instruction at address %s and at execution order %d") 
+            % utils::addrint2hexstring(instruction_address) % current_execorder;
+        PIN_ExitApplication(0);
+    }
   }
   
   return;
@@ -127,8 +128,6 @@ static exec_direction_t unfocused_newtaken_branch_handler (ptr_cbranch_t examine
 static exec_direction_t focused_newtaken_branch_handler   (ptr_cbranch_t examined_cbranch);
 static exec_direction_t unfocused_oldtaken_branch_handler (ptr_cbranch_t examined_branch);
 static exec_direction_t focused_oldtaken_branch_handler   (ptr_cbranch_t examined_branch);
-static UINT32 next_checkpoint_execorder       ();
-static UINT32 next_focused_cbranch_execorder  ();
 /**
  * @param is_branch_taken the branch will be taken or not
  * @return void
@@ -274,7 +273,8 @@ inline static exec_direction_t unfocused_oldtaken_branch_handler(ptr_cbranch_t e
  * @param examined_branch the examined branch
  * @return exec_direction_t
  */
-
+static UINT32 next_checkpoint_execorder();
+static UINT32 next_focused_cbranch_execorder();
 inline static exec_direction_t focused_oldtaken_branch_handler(ptr_cbranch_t examined_branch)
 {
   exec_direction_t exec_direction;
