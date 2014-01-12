@@ -142,11 +142,12 @@ void resolver::cbranch_instruction_callback(bool is_branch_taken)
       }
       else // that means local_reexec_number == max_local_reexec_number 
       {
-        fast_execution::move_forward_and_restore_input(pivot_checkpoint_execorder);
+        fast_execution::move_backward_and_restore_input(pivot_checkpoint_execorder);
       }
       break;
       
     case forward:
+      // move forward is default
       break;
       
     case stop:
@@ -192,17 +193,6 @@ inline static exec_direction_t unfocused_newtaken_branch_handler(ptr_cbranch_t e
   // because the branch will take a different target if the execution continue, so that implicitly 
   // means that the local_reexec_number is less than max_local_reexec_number, we increase the local 
   // execution number and back.
-  
-  local_reexec_number++;
-  if (local_reexec_number < max_local_reexec_number) 
-  {
-//     fast_execution::move_backward_and_modify_input(pivot_checkpoint_execorder);
-  }
-  else // i.e. local_reexec_number == max_local_reexec_number
-  {
-//     fast_execution::move_backward_and_restore_input(pivot_checkpoint_execorder);
-  }
-  
   return backward;
 }
 
@@ -224,17 +214,7 @@ inline static exec_direction_t focused_newtaken_branch_handler(ptr_cbranch_t exa
   
   // because the branch will take a different target if the execution continue, so that implicitly 
   // means that the local_reexec_number is less than max_local_reexec_number, we increase the local 
-  // execution number and back.
-//   local_reexec_number++;
-//   if (local_reexec_number < max_local_reexec_number) 
-//   {
-//     fast_execution::move_backward_and_modify_input(pivot_checkpoint_execorder);
-//   }
-//   else 
-//   {
-//     fast_execution::move_backward_and_restore_input(pivot_checkpoint_execorder);
-//   }
-  
+  // execution number and back.  
   return backward;
 }
 
@@ -269,9 +249,6 @@ inline static exec_direction_t focused_oldtaken_branch_handler(ptr_cbranch_t exa
   {
     // back again
     exec_direction = backward;
-    
-//     ++local_reexec_number;
-//     fast_execution::move_backward_and_modify_input(pivot_checkpoint_execorder);
   }
   else 
   {
@@ -281,9 +258,6 @@ inline static exec_direction_t focused_oldtaken_branch_handler(ptr_cbranch_t exa
       examined_branch->is_bypassed = true;
       // and back to the original trace
       exec_direction = backward;
-      
-//       ++local_reexec_number;
-//       fast_execution::move_backward_and_restore_input(pivot_checkpoint_execorder);
     }
     else // that means local_reexec_number == max_local_reexec_number
     {
@@ -294,9 +268,7 @@ inline static exec_direction_t focused_oldtaken_branch_handler(ptr_cbranch_t exa
         // then back to the next checkpoint
         pivot_checkpoint_execorder = chkpnt_execorder;
         local_reexec_number = 0;
-        exec_direction = backward;
-        
-//         fast_execution::move_backward_and_modify_input(pivot_checkpoint_execorder);
+        exec_direction = backward;        
       }
       else // the next checkpoint does not exist
       {
@@ -312,9 +284,6 @@ inline static exec_direction_t focused_oldtaken_branch_handler(ptr_cbranch_t exa
         else 
         {
           exec_direction = stop;
-//           BOOST_LOG_TRIVIAL(info) 
-//             << boost::format("there is no more branch to resolve, stop at execution order %d") 
-//                 % current_execorder;
         }
       }
     }
