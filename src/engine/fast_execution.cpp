@@ -132,47 +132,6 @@ void fast_execution::move_forward(UINT32 checkpoint_exeorder)
   return;
 }
 
-
-/**
- * @brief modify randomly memory values (at the input buffer) which read at the checkpoint.
- * 
- * @param checkpoint_exeorder the checkpoint's execution order
- * @return void
- */
-inline static void modify_input_at_checkpoint(UINT32 checkpoint_exeorder) 
-{
-  ptr_checkpoint_t curr_chkpnt = checkpoint_at_execorder[checkpoint_exeorder];
-  boost::unordered_set<ADDRINT>::iterator mem_addr_iter;
-  for (mem_addr_iter = curr_chkpnt->memory_addresses_to_modify.begin(); 
-       mem_addr_iter != curr_chkpnt->memory_addresses_to_modify.end(); ++mem_addr_iter) 
-  {
-    *(reinterpret_cast<UINT8*>(*mem_addr_iter)) = utils::random_uint8();
-  }
-
-  return;
-}
-
-
-/**
- * @brief restore original memory values (at the input buffer) which read at the checkpoint.
- * 
- * @param checkpoint_exeorder the checkpoint's execution order
- * @return void
- */
-inline static void restore_input_at_checkpoint(UINT32 checkpoint_exeorder) 
-{
-  ptr_checkpoint_t curr_chkpnt = checkpoint_at_execorder[checkpoint_exeorder];
-  boost::unordered_set<ADDRINT>::iterator mem_addr_iter;
-  for (mem_addr_iter = curr_chkpnt->memory_addresses_to_modify.begin(); 
-       mem_addr_iter != curr_chkpnt->memory_addresses_to_modify.end(); ++mem_addr_iter) 
-  {
-    *(reinterpret_cast<UINT8*>(*mem_addr_iter)) = original_msgstate_at_address[*mem_addr_iter];
-  }
-  
-  return;
-}
-
-
 /**
  * @brief back to a checkpoint and modify randomly its read values (in the input buffer).
  * 
@@ -181,7 +140,7 @@ inline static void restore_input_at_checkpoint(UINT32 checkpoint_exeorder)
  */
 void fast_execution::move_backward_and_modify_input(UINT32 checkpoint_exeorder)
 {
-  modify_input_at_checkpoint(checkpoint_exeorder);
+  checkpoint_at_execorder[checkpoint_exeorder]->modify_input();
   move_backward(checkpoint_exeorder);
   return;
 }
@@ -195,7 +154,7 @@ void fast_execution::move_backward_and_modify_input(UINT32 checkpoint_exeorder)
  */
 void fast_execution::move_backward_and_restore_input(UINT32 checkpoint_exeorder)
 {
-  restore_input_at_checkpoint(checkpoint_exeorder);
+  checkpoint_at_execorder[checkpoint_exeorder]->restore_input();
   move_backward(checkpoint_exeorder);
   return;
 }
@@ -209,7 +168,7 @@ void fast_execution::move_backward_and_restore_input(UINT32 checkpoint_exeorder)
  */
 void fast_execution::move_forward_and_modify_input(UINT32 checkpoint_exeorder)
 {
-  modify_input_at_checkpoint(checkpoint_exeorder);
+  checkpoint_at_execorder[checkpoint_exeorder]->modify_input();
   move_forward(checkpoint_exeorder);
   return;
 }
@@ -223,7 +182,7 @@ void fast_execution::move_forward_and_modify_input(UINT32 checkpoint_exeorder)
  */
 void fast_execution::move_forward_and_restore_input(UINT32 checkpoint_exeorder)
 {
-  restore_input_at_checkpoint(checkpoint_exeorder);
+  checkpoint_at_execorder[checkpoint_exeorder]->restore_input();
   move_forward(checkpoint_exeorder);
   return;
 }

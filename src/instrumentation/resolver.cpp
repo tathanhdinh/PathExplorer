@@ -228,7 +228,7 @@ inline static exec_direction_t focused_newtaken_branch_handler(ptr_cbranch_t exa
  */
 inline static exec_direction_t unfocused_oldtaken_branch_handler(ptr_cbranch_t examined_branch)
 {
-  // just do nothing
+  // just forward
   return forward;
 }
 
