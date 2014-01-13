@@ -112,13 +112,17 @@ void fast_execution::move_backward(UINT32 checkpoint_exeorder)
  *                                        mov eax, 0x70
  *                                        add eax, 0x90
  * then the value of eax in the computation of g is dependent from one of f. The verification if 
- * some domain is re-initialized is taken by observing its life-span: the 
- * Second, some 
- * instructions on g simply do not use the domain of B, e.g. the function of g is composed by:
+ * some operand (i.e. domain) is re-initialized is taken by observing its life-span: the 
+ * re-initialized operand (i.e. eax) has its life-span finished in g (i.e. eax is re-initialized by 
+ * the first instruction in g). Second, some instructions on g simply do not use the domain of B, 
+ * e.g. the function of g is composed by:
  *                                        add edx, 0x50
  *                                        sub edx, 0x90
+ * then the value of edx is dependent from g. The verification in this case is taken also by 
+ * observing the dependence between the domain in B and the operands of instruction in g.
  * 
- * So the algorithm for the STATIC UPDATE is as follows: 
+ * Bot the life-span and dependence can be observed in the data-flow graph: so the algorithm for 
+ * the STATIC UPDATE is as follows: 
  * 
  * This operation is NOT ALWAYS SAFE, it should be called only from jumping point of the current 
  * checkpoint to move to the next checkpoint. The current memory state is now a subset of the memory 
