@@ -40,6 +40,7 @@ boost::unordered_map<UINT32, ptr_insoperands_t> outerface_at_execorder;
 boost::unordered_map<ADDRINT, UINT8> original_msgstate_at_address;
 boost::unordered_map<ADDRINT, UINT8> original_memstate_at_address;
 boost::unordered_map<ADDRINT, UINT8> current_memstate_at_address;
+boost::unordered_set<ptr_bridge_t> bridges_on_exectrace;
 
 /**
  * @brief callback to initialize trace exploration.

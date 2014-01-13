@@ -22,12 +22,15 @@
 #define MAIN_H
 
 #include <pin.H>
-#include <boost/cstdint.hpp>
-#include <boost/unordered_map.hpp>
-#include <boost/unordered_set.hpp>
+
 #include "analysis/instruction.h"
 #include "analysis/cbranch.h"
 #include "engine/checkpoint.h"
+#include "engine/fast_execution.h"
+
+#include <boost/cstdint.hpp>
+#include <boost/unordered_map.hpp>
+#include <boost/unordered_set.hpp>
 
 using namespace analysis;
 using namespace engine;
@@ -54,6 +57,7 @@ extern boost::unordered_map<UINT32, ptr_insoperands_t> outerface_at_execorder;
 extern boost::unordered_map<ADDRINT, UINT8> original_msgstate_at_address;
 extern boost::unordered_map<ADDRINT, UINT8> original_memstate_at_address;
 extern boost::unordered_map<ADDRINT, UINT8> current_memstate_at_address;
+extern boost::unordered_set<ptr_bridge_t> bridges_on_exectrace;
 
 
 #endif // MAIN_H

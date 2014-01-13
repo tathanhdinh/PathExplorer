@@ -22,6 +22,9 @@
 
 #include "checkpoint.h"
 
+#include <boost/compressed_pair.hpp>
+#include <boost/shared_ptr.hpp>
+
 namespace engine
 {
 
@@ -31,6 +34,9 @@ public:
   static void move_backward(UINT32 checkpoint_exeorder);  
   static void move_forward(UINT32 checkpoint_exeorder);
 };
+
+typedef boost::compressed_pair<UINT32, UINT32> bridge;
+typedef boost::shared_ptr<bridge> ptr_bridge_t;
 
 } // end of engine namespace
 

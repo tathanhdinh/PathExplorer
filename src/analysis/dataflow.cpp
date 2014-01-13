@@ -18,9 +18,11 @@
  */
 
 #include "dataflow.h"
+
 #include "../main.h"
 #include "../utilities/utils.h"
 #include "../engine/checkpoint.h"
+
 #include <boost/range/algorithm.hpp>
 #include <boost/bind.hpp>
 #include <boost/container/set.hpp>

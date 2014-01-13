@@ -123,11 +123,16 @@ void fast_execution::move_backward(UINT32 checkpoint_exeorder)
  * 
  * Bot the life-span and dependence can be observed in the data-flow graph: so the algorithm for 
  * the STATIC UPDATE is as follows: 
+ * Step 1: construction the function g
+ *  1.1 in the data-flow graph there no paths from any operand B to any operand in g.
  * 
- * This operation is NOT ALWAYS SAFE, it should be called only from jumping point of the current 
- * checkpoint to move to the next checkpoint. The current memory state is now a subset of the memory 
- * state saved at the future checkpoint. Note that the instruction (determined by the instruction 
- * pointer in the checkpoint's cpu context) will be re-executed.
+ * Step 2: static update
+ *  2.1 if an operand has its life-span finished in g, then its value is reset by one of the domain 
+ *      D after the execution of g,
+ *  2.2 if an operand has its life-span beyond g, then its value is kept.
+ * 
+ * Note that this operation is NOT ALWAYS SAFE because it is not freely called from any execution 
+ * order.
  * 
  * @param checkpoint_exeorder the future checkpoint's execution order
  * @return void
