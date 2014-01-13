@@ -197,7 +197,7 @@ static inline dataflow_vertex_descs construct_target_vertices(ptr_instruction_t 
       if (forward_dataflow[*outerface_iter]->name == (*ptr_operand_iter)->name)
 			{
         // set the life-span of this instruction operand
-        forward_dataflow[*outerface_iter]->duration = execution_order;
+        forward_dataflow[*outerface_iter]->life_span = execution_order;
         // the instance in the outer-interface is removed
         outer_interface.erase(outerface_iter);
 				break;

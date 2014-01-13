@@ -38,7 +38,7 @@ class operand
 public:
   std::string                           name;
   boost::variant<ADDRINT, REG, UINT32>  value;
-  UINT32                                duration;
+  UINT32                                life_span;
   
 public:
 	operand();

@@ -106,15 +106,18 @@ void fast_execution::move_backward(UINT32 checkpoint_exeorder)
  * There are two principles for the STATIC UPDATE depending on how g is independent from f. First 
  * some instructions on g will re-initialize the domain of B before their execution, e.g. suppose 
  * the function f is composed by:
- * mov ebx, eax
- * add eax, ecx
+ *                                        mov ebx, eax
+ *                                        add eax, ecx
  * and the function of g is composed by:
- * mov eax, 0x70
- * add eax, 0x90
- * then the value of eax in the computation of g is dependent from one of f. Second, some 
+ *                                        mov eax, 0x70
+ *                                        add eax, 0x90
+ * then the value of eax in the computation of g is dependent from one of f. The verification if 
+ * some domain is re-initialized is taken by observing its life-span: the 
+ * Second, some 
  * instructions on g simply do not use the domain of B, e.g. the function of g is composed by:
- * add edx, 0x50
- * sub edx, 0x90
+ *                                        add edx, 0x50
+ *                                        sub edx, 0x90
+ * 
  * So the algorithm for the STATIC UPDATE is as follows: 
  * 
  * This operation is NOT ALWAYS SAFE, it should be called only from jumping point of the current 

@@ -38,7 +38,7 @@ using namespace utilities;
 operand::operand()
 {
 	this->name = "terminal";
-  this->duration = boost::integer_traits<UINT32>::const_max;
+  this->life_span = boost::integer_traits<UINT32>::const_max;
 }
 
 /**
