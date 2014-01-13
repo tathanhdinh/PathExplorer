@@ -54,7 +54,7 @@ static dataflow_graph         backward_dataflow;
 static dataflow_vertex_descs  outer_interface;
 
 static boost::unordered_map<ADDRINT, exeorders_t> exeorders_afffected_by_memaddr_at;
-static boost::unordered_map<UINT32, addresses_t>  memaddrs_affecting_exeorder_at;
+static boost::unordered_map<UINT32, addresses_t>  input_memaddrs_affecting_exeorder_at;
   
 /**
  * @brief BFS visitor to discover all dependent edges from a vertex.
@@ -276,9 +276,9 @@ void dataflow::propagate_along_instruction(UINT32 execution_order)
 /**
  * @brief the following information will be extracted from the data-flow:
  *  1. for each memory address: a set of instruction execution orders that propagate information 
- *     of this address, the results are stored in the map exeorders_afffected_by_memory_at,
+ *     of this address, the results are stored in the map exeorders_afffected_by_memaddr_at,
  *  2. for each instruction execution order: a set of memory addresses whose information 
- *     propagate to this order, the results are stored in the map memories_affecting_exeorder_at.
+ *     propagate to this order, the results are stored in the map memaddrs_affecting_exeorder_at.
  * 
  * @return void
  */
@@ -300,6 +300,7 @@ static inline void determine_inputs_instructions_dependance()
 		if (forward_dataflow[*vertex_iter]->value.type() == typeid(ADDRINT)) 
 		{
 			memory_address = boost::get<ADDRINT>(forward_dataflow[*vertex_iter]->value);
+      // and this address is in the input buffer
 			if (utils::is_in_input_buffer(memory_address)) 
 			{
 				// take BFS from this vertex to find out all dependent edge descriptors
@@ -312,7 +313,7 @@ static inline void determine_inputs_instructions_dependance()
           // dependence extraction
 					ins_order = forward_dataflow[*dataflow_edge_iter];
 					exeorders_afffected_by_memaddr_at[memory_address].insert(ins_order); // see 1
-          memaddrs_affecting_exeorder_at[ins_order].insert(memory_address);    // see 2
+          input_memaddrs_affecting_exeorder_at[ins_order].insert(memory_address);    // see 2
 				}
 			}
 		}
@@ -352,7 +353,7 @@ static inline void determine_branches_checkpoints_dependance()
     // get its execution order
     branch_exeorder = ptr_branch_iter->first;
     // and the set of memory addresses affecting its decision
-    affecting_mem_addrs = memaddrs_affecting_exeorder_at[branch_exeorder];
+    affecting_mem_addrs = input_memaddrs_affecting_exeorder_at[branch_exeorder];
     // then iterate over checkpoints 
     for (ptr_checkpoint_iter = checkpoint_at_execorder.begin(); 
          ptr_checkpoint_iter != checkpoint_at_execorder.end(); ++ptr_checkpoint_iter) 
@@ -385,15 +386,54 @@ static inline void determine_branches_checkpoints_dependance()
 
 
 /**
- * @brief Determine bridges on the trace so that the execution can jump 
+ * @brief Determine bridges on the trace so that for each bridge the execution can jump from the 
+ * source (of the bridge) to the target.
  * 
  * @return void
  */
 static inline void determine_jumping_bridges()
 {
-  UINT32 execorder;
+  UINT32 last_cbranch_execorder = 1;
+  UINT32 curr_cbranch_execorder;
+  boost::unordered_map<UINT32, ptr_cbranch_t>::iterator cbranch_iter;
+  // iterate over the conditional branch map to find the last branch depending on the input
+  for (cbranch_iter = cbranch_at_execorder.begin(); 
+       cbranch_iter != cbranch_at_execorder.end(); ++cbranch_iter) 
+  {
+    curr_cbranch_execorder = cbranch_iter->first;
+    if (!input_memaddrs_affecting_exeorder_at[curr_cbranch_execorder].empty() && 
+        (last_cbranch_execorder < curr_cbranch_execorder))
+    {
+      last_cbranch_execorder = curr_cbranch_execorder;
+    }
+  }
   
-  
+  // scan from the first instruction to the last conditional branch instruction
+  UINT32 source_bridge_execorder, target_bridge_execorder;
+  for (source_bridge_execorder = 1; source_bridge_execorder < last_cbranch_execorder; 
+       ++source_bridge_execorder) 
+  {
+    // verify if the instruction at source is independent from the input
+    if (input_memaddrs_affecting_exeorder_at[source_bridge_execorder].size() == 0) 
+    {
+      // then verify if there exist successive input-independent instructions
+      target_bridge_execorder = source_bridge_execorder;
+      while ((input_memaddrs_affecting_exeorder_at[target_bridge_execorder].size() == 0) && 
+             (target_bridge_execorder <= last_cbranch_execorder))
+      {
+        ++target_bridge_execorder;
+      }
+      
+      // if the length of the successive instruction is greater than the minimal length
+      if (target_bridge_execorder - source_bridge_execorder > min_bridge_length) 
+      {
+        // then create a bridge
+        target_execorder_of_bridge_at_execorder[source_bridge_execorder] = target_bridge_execorder;
+      }
+      
+      source_bridge_execorder = target_bridge_execorder;
+    }
+  }
   
   return;
 }
@@ -420,8 +460,8 @@ static inline void determine_jumping_points()
   addresses_t::iterator curr_addr_iter;
   
   // construct a map showing the input buffer addresses affecting a given instruction execution
-  for (map_iter = memaddrs_affecting_exeorder_at.begin(); 
-       map_iter != memaddrs_affecting_exeorder_at.end(); ++map_iter) 
+  for (map_iter = input_memaddrs_affecting_exeorder_at.begin(); 
+       map_iter != input_memaddrs_affecting_exeorder_at.end(); ++map_iter) 
   {
     curr_exeorder = map_iter->first;
     curr_affecting_addrs = map_iter->second;
@@ -493,6 +533,7 @@ void dataflow::analyze_executed_instructions()
   determine_inputs_instructions_dependance();
   determine_branches_checkpoints_dependance();
   determine_jumping_points();
+  determine_jumping_bridges();
   
   return;
 }

@@ -35,9 +35,6 @@ public:
   static void move_forward(UINT32 checkpoint_exeorder);
 };
 
-typedef boost::compressed_pair<UINT32, UINT32> bridge;
-typedef boost::shared_ptr<bridge> ptr_bridge_t;
-
 } // end of engine namespace
 
 #endif // ENGINE_H

@@ -59,6 +59,6 @@ extern boost::unordered_map<UINT32, ptr_insoperands_t> outerface_at_execorder;
 extern boost::unordered_map<ADDRINT, UINT8> original_msgstate_at_address;
 extern boost::unordered_map<ADDRINT, UINT8> original_memstate_at_address;
 extern boost::unordered_map<ADDRINT, UINT8> current_memstate_at_address;
-extern boost::unordered_set<ptr_bridge_t> bridges_on_exectrace;
+extern boost::unordered_map<UINT32, UINT32> target_execorder_of_bridge_at_execorder;
 
 #endif // MAIN_H
