@@ -282,7 +282,7 @@ void dataflow::propagate_along_instruction(UINT32 execution_order)
  * 
  * @return void
  */
-static void determine_inputs_instructions_dependance()
+static inline void determine_inputs_instructions_dependance()
 {
 	dataflow_vertex_iter vertex_iter;
 	dataflow_vertex_iter vertex_last_iter;
@@ -323,7 +323,8 @@ static void determine_inputs_instructions_dependance()
 
 
 /**
- * @brief the following information will be extracted from the two dependence maps above:
+ * @brief Determine for each conditional branch a list of affecting checkpoints.
+ * The following information will be extracted from the two dependence maps above:
  *  1. for each conditional branch: a set of checkpoints so that if the program re-executes from 
  *     any of its elements with some modification on the input buffer, then the new execution may 
  *     lead to a new decision of the branch.
@@ -332,7 +333,7 @@ static void determine_inputs_instructions_dependance()
  *     may lead to a new decision of its dependent branches.
  * @return void
  */
-static void determine_branches_checkpoints_dependance()
+static inline void determine_branches_checkpoints_dependance()
 {
   boost::unordered_map<UINT32, ptr_cbranch_t>::iterator ptr_branch_iter;
   boost::unordered_map<UINT32, ptr_checkpoint_t>::iterator ptr_checkpoint_iter;
@@ -384,7 +385,21 @@ static void determine_branches_checkpoints_dependance()
 
 
 /**
- * @brief the following information will be extracted from the two dependence maps (and the 
+ * @brief Determine bridges on the trace so that the execution can jump 
+ * 
+ * @return void
+ */
+static inline void determine_jumping_bridges()
+{
+  UINT32 execorder;
+  
+  
+  
+  return;
+}
+
+/**
+ * @brief The following information will be extracted from the two dependence maps (and the 
  * checkpoint list) above:
  *  1. for each checkpoint: an execution order so that the execution of the program from the 
  *     checkpoint until this order can jump to the next checkpoint without executing instructions 
@@ -392,7 +407,7 @@ static void determine_branches_checkpoints_dependance()
  * 
  * @return void
  */
-static void determine_jumping_points()
+static inline void determine_jumping_points()
 {
   boost::unordered_map<UINT32, addresses_t> input_memaddrs_affecting_exeorder_at;
   boost::unordered_map<UINT32, addresses_t>::iterator map_iter;
@@ -466,6 +481,7 @@ static void determine_jumping_points()
   
   return;
 }
+
 
 /**
  * @brief analyze the information extracted from the execution of the program with a given input.

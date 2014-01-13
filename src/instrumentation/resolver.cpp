@@ -212,7 +212,7 @@ void resolver::cbranch_instruction_callback(bool is_branch_taken)
  * @param examined_branch the examined branch
  * @return exec_direction_t
  */
-inline static exec_direction_t unfocused_newtaken_branch_handler(ptr_cbranch_t examined_branch) 
+static inline exec_direction_t unfocused_newtaken_branch_handler(ptr_cbranch_t examined_branch) 
 {
   // if the examined branch is not resolved yet
   if (!examined_branch->is_resolved) 
@@ -238,7 +238,7 @@ inline static exec_direction_t unfocused_newtaken_branch_handler(ptr_cbranch_t e
  * @param examined_branch the examined branch
  * @return exec_direction_t
  */
-inline static exec_direction_t focused_newtaken_branch_handler(ptr_cbranch_t examined_branch)
+static inline exec_direction_t focused_newtaken_branch_handler(ptr_cbranch_t examined_branch)
 {
   // set it as resolved
   examined_branch->is_resolved = true;
@@ -259,7 +259,7 @@ inline static exec_direction_t focused_newtaken_branch_handler(ptr_cbranch_t exa
  * @param examined_branch the examined branch
  * @return exec_direction_t
  */
-inline static exec_direction_t unfocused_oldtaken_branch_handler(ptr_cbranch_t examined_branch)
+static inline exec_direction_t unfocused_oldtaken_branch_handler(ptr_cbranch_t examined_branch)
 {
   // just forward
   return forward;

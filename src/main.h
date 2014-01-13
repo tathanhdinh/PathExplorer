@@ -47,17 +47,18 @@ extern UINT32 current_execorder;
 extern UINT32 exectrace_max_length;
 extern UINT32 total_reexec_times;
 extern UINT32 max_local_reexec_number;
+extern UINT32 min_bridge_length;
 
 extern boost::unordered_map<ADDRINT, ptr_instruction_t> instruction_at_address;
 extern boost::unordered_map<UINT32, ptr_instruction_t> instruction_at_execorder;
 extern boost::unordered_map<UINT32, ptr_cbranch_t> cbranch_at_execorder;
 extern boost::unordered_map<UINT32, ptr_checkpoint_t> checkpoint_at_execorder;
 extern boost::unordered_map<UINT32, exeorders_t> checkpoint_execorders_of_cbranch_at_execorder;
+extern boost::unordered_map<UINT32, addresses_t> inputaddrs_affecting_cbranch_at_execorder;
 extern boost::unordered_map<UINT32, ptr_insoperands_t> outerface_at_execorder;
 extern boost::unordered_map<ADDRINT, UINT8> original_msgstate_at_address;
 extern boost::unordered_map<ADDRINT, UINT8> original_memstate_at_address;
 extern boost::unordered_map<ADDRINT, UINT8> current_memstate_at_address;
 extern boost::unordered_set<ptr_bridge_t> bridges_on_exectrace;
-
 
 #endif // MAIN_H
