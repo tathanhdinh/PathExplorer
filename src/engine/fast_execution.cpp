@@ -99,10 +99,23 @@ void fast_execution::move_backward(UINT32 checkpoint_exeorder)
  *                                        g : C -> D
  * so that g does not depend on the input. If such a function g is found then the re-execution of 
  * the composing instructions inside g is not necessary, and the execution can jump to the 
- * instruction after g with some rational static (i.e. does not depend on the input) modification.
+ * instruction after g with some rational STATIC (i.e. does not depend on the input) UPDATE.
  * The necessary condition (proof needed here) for the function g is that any instruction (that is 
  * represented also as some function ins: operands -> operands) in g is not derived from any 
  * input-dependent domain in B.
+ * There are two principles for the STATIC UPDATE depending on how g is independent from f. First 
+ * some instructions on g will re-initialize the domain of B before their execution, e.g. suppose 
+ * the function f is composed by:
+ * mov ebx, eax
+ * add eax, ecx
+ * and the function of g is composed by:
+ * mov eax, 0x70
+ * add eax, 0x90
+ * then the value of eax in the computation of g is dependent from one of f. Second, some 
+ * instructions on g simply do not use the domain of B, e.g. the function of g is composed by:
+ * add edx, 0x50
+ * sub edx, 0x90
+ * So the algorithm for the STATIC UPDATE is as follows: 
  * 
  * This operation is NOT ALWAYS SAFE, it should be called only from jumping point of the current 
  * checkpoint to move to the next checkpoint. The current memory state is now a subset of the memory 
