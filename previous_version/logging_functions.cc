@@ -222,12 +222,14 @@ inline void compute_branch_mem_dependency()
 inline void compute_branch_min_checkpoint()
 {
   std::vector<ptr_checkpoint>::iterator   ptr_checkpoint_iter;
+  std::vector<ptr_checkpoint>::reverse_iterator ptr_checkpoint_reverse_iter;
   std::set<ADDRINT>::iterator             addr_iter;
   std::map<UINT32, ptr_branch>::iterator  order_ptr_branch_iter;
 
   ptr_branch      current_ptr_branch;
   ptr_checkpoint  nearest_ptr_checkpoint;
-
+  
+  bool nearest_checkpoint_found;
   std::set<ADDRINT> intersec_mems;
 
   order_ptr_branch_iter = order_tainted_ptr_branch_map.begin();
@@ -248,14 +250,28 @@ inline void compute_branch_min_checkpoint()
         ptr_checkpoint_iter = saved_ptr_checkpoints.begin();
         for (; ptr_checkpoint_iter != saved_ptr_checkpoints.end(); ++ptr_checkpoint_iter) 
         {
+          nearest_checkpoint_found = false;
           // *addr_iter is found in (*ptr_checkpoint_iter)->dep_mems
           if (std::find((*ptr_checkpoint_iter)->dep_mems.begin(), 
                         (*ptr_checkpoint_iter)->dep_mems.end(), *addr_iter) 
               != (*ptr_checkpoint_iter)->dep_mems.end()) 
           {
+            nearest_checkpoint_found = true;
             current_ptr_branch->nearest_checkpoints[*ptr_checkpoint_iter].insert(*addr_iter);
             break;
           }
+        }
+        
+        // find the ideal checkpoint
+        if (nearest_checkpoint_found) 
+        {
+          ptr_checkpoint_reverse_iter = saved_ptr_checkpoints.rbegin();
+          for (; ptr_checkpoint_reverse_iter != saved_ptr_checkpoints.rend(); 
+               ++ptr_checkpoint_reverse_iter) 
+          {
+            
+          }
+          
         }
       }
       

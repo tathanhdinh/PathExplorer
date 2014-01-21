@@ -58,6 +58,11 @@ public:
             std::set<ADDRINT>, 
             ptr_checkpoint_less
           >             nearest_checkpoints;
+          
+  std::map< ptr_checkpoint, 
+            UINT32, 
+            ptr_checkpoint_less 
+          >             econ_execution_length;
   
   bool                  is_resolved;
   bool                  is_just_resolved;

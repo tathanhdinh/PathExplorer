@@ -84,6 +84,8 @@ UINT8                                         received_msg_num;
 ADDRINT                                       received_msg_addr;
 UINT32                                        received_msg_size;
 
+UINT64                                        executed_ins_number;
+
 boost::shared_ptr<boost::posix_time::ptime>   start_ptr_time;
 boost::shared_ptr<boost::posix_time::ptime>   stop_ptr_time;
 
@@ -124,6 +126,8 @@ VOID start_tracing(VOID *data)
   
   max_local_rollback_times  = max_local_rollback.Value();
   local_rollback_times      = 0;
+  
+  executed_ins_number       = 0;
   
   in_tainting               = true;
   received_msg_num          = 0;

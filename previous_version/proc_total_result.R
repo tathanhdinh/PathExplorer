@@ -5,7 +5,7 @@ total_result <- read.table(file = "total_result", header = TRUE, sep = "\t");
 
 # calculate the percentage
 resolved_ratio_table <- data.frame("max_rollback"  = total_result$"max_rollback", 
-																	 "used_rollback" = total_result$"used_rollback", 
+				   "used_rollback" = total_result$"used_rollback", 
                                    "trace_depth"   = total_result$"trace_depth",
                                    "solved_ratio"  = total_result$"solved_branch" / total_result$"total_branch"); 
 # aggregate data
