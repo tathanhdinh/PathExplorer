@@ -55,6 +55,8 @@ extern ptr_branch                                 exploring_ptr_branch;
 
 extern std::set<ADDRINT>                          active_input_dep_addrs;
 
+extern UINT64                                     executed_ins_number;
+extern UINT64                                     econed_ins_number;
 // extern UINT32                                     input_dep_branch_num;
 // extern UINT32                                     resolved_branch_num;
 
@@ -71,6 +73,7 @@ VOID resolving_ins_count_analyzer(ADDRINT ins_addr)
 //   BOOST_LOG_TRIVIAL(trace) 
 //     << explored_trace.size() << "  " << remove_leading_zeros(StringFromAddrint(ins_addr)) << " " 
 //     << addr_ins_static_map[ins_addr].disass;
+  executed_ins_number++;
   return;
 }
 
@@ -282,6 +285,10 @@ inline void exploring_new_branch_or_stop()
   ptr_branch unexplored_ptr_branch = next_unexplored_branch();
   if (unexplored_ptr_branch) 
   {
+    BOOST_LOG_TRIVIAL(info) 
+    << boost::format("\033[33mEcon/total executed instruction number %d/%d\033[0m") 
+        % econed_ins_number % executed_ins_number;
+        
     std::cout 
       << boost::format("\033[33mExploring the branch at %d (%s) by start tainting a new path.\n\033[0m") 
           % unexplored_ptr_branch->trace.size() 
@@ -368,6 +375,9 @@ inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr,
         
         if (local_rollback_times < max_local_rollback_times)
         {
+//           econed_ins_number += active_ptr_branch->econ_execution_length[active_nearest_checkpoint.first];
+//           std::cout << econed_ins_number << "  " << executed_ins_number << std::endl;
+          
           // the original trace will be lost if go further, so rollback
           total_rollback_times++;
           local_rollback_times++;
@@ -376,6 +386,9 @@ inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr,
         }
         else
         {
+//           econed_ins_number += active_ptr_branch->econ_execution_length[active_nearest_checkpoint.first];
+//           std::cout << econed_ins_number << "  " << executed_ins_number << std::endl;
+          
           // back to the original trace
           local_rollback_times++;
           rollback_with_input_replacement(active_nearest_checkpoint.first,
@@ -415,6 +428,9 @@ inline void unresolved_branch_takes_new_decision(ADDRINT ins_addr,
     accept_branch(active_ptr_branch);
     
     // now back to the original trace
+    econed_ins_number += active_ptr_branch->econ_execution_length[active_nearest_checkpoint.first];
+//     std::cout << econed_ins_number << "  " << executed_ins_number << std::endl;
+    
     local_rollback_times++;
     rollback_with_input_replacement(active_nearest_checkpoint.first, 
                                     active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());
@@ -459,6 +475,9 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
       if ((local_rollback_times < max_local_rollback_times) && 
           active_nearest_checkpoint.first) 
       {
+        econed_ins_number += active_ptr_branch->econ_execution_length[active_nearest_checkpoint.first];
+//         std::cout << econed_ins_number << "  " << executed_ins_number << std::endl;
+        
         total_rollback_times++;
         local_rollback_times++;
         rollback_with_input_random_modification(active_nearest_checkpoint.first, 
@@ -470,6 +489,9 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
         if (local_rollback_times == max_local_rollback_times) 
         {
           // back to the original trace
+          econed_ins_number += active_ptr_branch->econ_execution_length[active_nearest_checkpoint.first];
+//           std::cout << econed_ins_number << "  " << executed_ins_number << std::endl;
+          
           local_rollback_times++;
           rollback_with_input_replacement(active_nearest_checkpoint.first, 
                                           active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());
@@ -495,6 +517,9 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
                     % active_nearest_checkpoint.first->trace.size() 
                     % order_ins_dynamic_map[active_nearest_checkpoint.first->trace.size()].disass;
           
+              econed_ins_number += active_ptr_branch->econ_execution_length[active_nearest_checkpoint.first];
+//               std::cout << econed_ins_number << "  " << executed_ins_number << std::endl;
+              
               total_rollback_times++;
               local_rollback_times++;
               rollback_with_input_random_modification(active_nearest_checkpoint.first, 
@@ -509,6 +534,9 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
                                           
               bypass_branch(active_ptr_branch);      
 
+              econed_ins_number += active_ptr_branch->econ_execution_length[last_active_ptr_checkpoint];
+//               std::cout << econed_ins_number << "  " << executed_ins_number << std::endl;
+              
               // and back to the original trace
               local_rollback_times++;
               rollback_with_input_replacement(last_active_ptr_checkpoint, 
@@ -546,6 +574,9 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
           % active_nearest_checkpoint.first->trace.size() 
           % order_ins_dynamic_map[active_nearest_checkpoint.first->trace.size()].disass;
    
+    econed_ins_number += active_ptr_branch->econ_execution_length[active_nearest_checkpoint.first];
+//     std::cout << econed_ins_number << "  " << executed_ins_number << std::endl;
+    
     total_rollback_times++;
     local_rollback_times++;
     rollback_with_input_random_modification(active_nearest_checkpoint.first, 
@@ -668,6 +699,9 @@ inline void process_input_independent_branch(ADDRINT ins_addr,
       // in some rollback
       if (active_nearest_checkpoint.first) 
       {
+//         econed_ins_number += active_ptr_branch->econ_execution_length[active_nearest_checkpoint.first];
+//         std::cout << econed_ins_number << "  " << executed_ins_number << std::endl;
+        
         // the original trace will lost if go further, so rollback
         total_rollback_times++;
         local_rollback_times++;
@@ -727,7 +761,6 @@ VOID resolving_cond_branch_analyzer(ADDRINT ins_addr, bool br_taken)
   
   std::map<UINT32, ptr_branch>::iterator order_ptr_branch_iter;
   
-  
   // search in the list of input dependent branches
   order_ptr_branch_iter = order_input_dep_ptr_branch_map.find(explored_trace.size());
   if (order_ptr_branch_iter != order_input_dep_ptr_branch_map.end()) 
@@ -770,6 +803,9 @@ VOID resolving_indirect_branch_call_analyzer(ADDRINT ins_addr, ADDRINT target_ad
     // active_ptr_branch is enabled, namely in some rollback
     if (active_ptr_branch) 
     {
+//       econed_ins_number += active_ptr_branch->econ_execution_length[active_nearest_checkpoint.first];
+//       std::cout << econed_ins_number << "  " << executed_ins_number << std::endl;
+      
       // the original trace will lost if go further, so rollback
       total_rollback_times++;
       local_rollback_times++;

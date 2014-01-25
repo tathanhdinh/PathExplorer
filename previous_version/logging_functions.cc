@@ -262,14 +262,25 @@ inline void compute_branch_min_checkpoint()
           }
         }
         
-        // find the ideal checkpoint
+        // find the ideal checkpoint by finding reversely the checkpoint list 
         if (nearest_checkpoint_found) 
         {
           ptr_checkpoint_reverse_iter = saved_ptr_checkpoints.rbegin();
           for (; ptr_checkpoint_reverse_iter != saved_ptr_checkpoints.rend(); 
                ++ptr_checkpoint_reverse_iter) 
           {
-            
+            if ((*ptr_checkpoint_reverse_iter)->trace.size() < current_ptr_branch->trace.size()) 
+            {
+              if (std::find((*ptr_checkpoint_reverse_iter)->dep_mems.begin(), 
+                            (*ptr_checkpoint_reverse_iter)->dep_mems.end(), *addr_iter) 
+                  != (*ptr_checkpoint_reverse_iter)->dep_mems.end()) 
+              {
+                current_ptr_branch->econ_execution_length[*ptr_checkpoint_iter] = 
+                (*ptr_checkpoint_reverse_iter)->trace.size() - (*ptr_checkpoint_iter)->trace.size();
+//                 std::cout << current_ptr_branch->econ_execution_length[*ptr_checkpoint_iter] << std::endl;
+                break;
+              }
+            }
           }
           
         }

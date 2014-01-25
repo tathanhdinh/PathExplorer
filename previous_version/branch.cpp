@@ -86,6 +86,7 @@ branch::branch(const branch& other)
   this->dep_backward_traces = other.dep_backward_traces;
   
   this->nearest_checkpoints = other.nearest_checkpoints;
+  this->econ_execution_length = other.econ_execution_length;
 
   this->checkpoint        = other.checkpoint;
   this->inputs            = other.inputs;
@@ -110,6 +111,7 @@ branch& branch::operator=(const branch& other)
   this->dep_backward_traces = other.dep_backward_traces;
   
   this->nearest_checkpoints = other.nearest_checkpoints;
+  this->econ_execution_length = other.econ_execution_length;
 
   this->checkpoint        = other.checkpoint;
   this->inputs            = other.inputs;

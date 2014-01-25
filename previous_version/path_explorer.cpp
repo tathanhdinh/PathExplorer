@@ -85,6 +85,7 @@ ADDRINT                                       received_msg_addr;
 UINT32                                        received_msg_size;
 
 UINT64                                        executed_ins_number;
+UINT64                                        econed_ins_number;
 
 boost::shared_ptr<boost::posix_time::ptime>   start_ptr_time;
 boost::shared_ptr<boost::posix_time::ptime>   stop_ptr_time;
@@ -128,6 +129,7 @@ VOID start_tracing(VOID *data)
   local_rollback_times      = 0;
   
   executed_ins_number       = 0;
+  econed_ins_number         = 0;
   
   in_tainting               = true;
   received_msg_num          = 0;
@@ -154,6 +156,10 @@ VOID stop_tracing(INT32 code, VOID *data)
         % elapsed_millisec % total_rollback_times
         % (total_resolved_ptr_branches.size() + found_new_ptr_branches.size()) 
         % total_input_dep_ptr_branches.size();
+        
+  BOOST_LOG_TRIVIAL(info) 
+    << boost::format("\033[33mEcon/total executed instruction number %d/%d\033[0m") 
+        % econed_ins_number % executed_ins_number;
                               
   return;
 }
