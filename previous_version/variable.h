@@ -35,7 +35,7 @@ public:
   variable();
   variable(ADDRINT new_mem);
   variable(REG new_reg);
-  variable(UINT32 new_imm);
+  //variable(UINT32 new_imm);
   variable(const variable& var);
   
   variable& operator=(const variable& var);

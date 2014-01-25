@@ -1,0 +1,103 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{79FAF1DB-C582-409D-B1E9-8AD89FA1C59E}</ProjectGuid>
+    <RootNamespace>windows_version</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>C:\Users\Ta Thanh Dinh\Documents\pin-2.13-62732-msvc11-windows\extras\xed2-ia32\include;C:\Users\Ta Thanh Dinh\Documents\pin-2.13-62732-msvc11-windows\source\include\pin\gen;C:\Users\Ta Thanh Dinh\Documents\pin-2.13-62732-msvc11-windows\source\include\pin;C:\local\boost_1_53_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>C:\Users\Ta Thanh Dinh\Documents\pin-2.13-62732-msvc11-windows\extras\components\include;C:\Users\Ta Thanh Dinh\Documents\pin-2.13-62732-msvc11-windows\extras\xed2-ia32\include;C:\Users\Ta Thanh Dinh\Documents\pin-2.13-62732-msvc11-windows\source\include\pin\gen;C:\Users\Ta Thanh Dinh\Documents\pin-2.13-62732-msvc11-windows\source\include\pin;C:\Users\Ta Thanh Dinh\Documents\boost_1_55_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>TARGET_IA32;HOST_IA32;TARGET_WINDOWS;USING_XED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
+      <AdditionalOptions>/D_SECURE_SCL=0 %(AdditionalOptions)</AdditionalOptions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>C:\Users\Ta Thanh Dinh\Documents\pin-2.13-62732-msvc11-windows\extras\xed2-ia32\lib;C:\Users\Ta Thanh Dinh\Documents\pin-2.13-62732-msvc11-windows\ia32\lib-ext;C:\Users\Ta Thanh Dinh\Documents\pin-2.13-62732-msvc11-windows\ia32\lib;C:\Users\Ta Thanh Dinh\Documents\boost_1_55_0\lib32-msvc-11.0;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>pin.lib;pinvm.lib;ntdll-32.lib;libxed.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\previous_version\analysis_functions.cc" />
+    <ClCompile Include="..\previous_version\branch.cpp" />
+    <ClCompile Include="..\previous_version\checkpoint.cpp" />
+    <ClCompile Include="..\previous_version\instruction.cpp" />
+    <ClCompile Include="..\previous_version\instrumentation_functions.cc" />
+    <ClCompile Include="..\previous_version\logging_functions.cc" />
+    <ClCompile Include="..\previous_version\path_explorer.cpp" />
+    <ClCompile Include="..\previous_version\resolving_functions.cc" />
+    <ClCompile Include="..\previous_version\stuffs.cc" />
+    <ClCompile Include="..\previous_version\tainting_functions.cc" />
+    <ClCompile Include="..\previous_version\variable.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\previous_version\analysis_functions.h" />
+    <ClInclude Include="..\previous_version\branch.h" />
+    <ClInclude Include="..\previous_version\checkpoint.h" />
+    <ClInclude Include="..\previous_version\instruction.h" />
+    <ClInclude Include="..\previous_version\instrumentation_functions.h" />
+    <ClInclude Include="..\previous_version\logging_functions.h" />
+    <ClInclude Include="..\previous_version\resolving_functions.h" />
+    <ClInclude Include="..\previous_version\stuffs.h" />
+    <ClInclude Include="..\previous_version\tainting_functions.h" />
+    <ClInclude Include="..\previous_version\variable.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

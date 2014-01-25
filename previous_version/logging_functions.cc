@@ -380,7 +380,7 @@ VOID logging_syscall_instruction_analyzer(ADDRINT ins_addr)
 VOID logging_general_instruction_analyzer(ADDRINT ins_addr)
 {
   if ((explored_trace.size() < max_trace_size) && 
-      (!addr_ins_static_map[ins_addr].contained_image.empty()))
+	  (!addr_ins_static_map[ins_addr].contained_image.empty()))
   {
     explored_trace.push_back(ins_addr);
     order_ins_dynamic_map[explored_trace.size()] = addr_ins_static_map[ins_addr];

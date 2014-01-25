@@ -27,18 +27,18 @@ variable::variable(ADDRINT new_mem) : mem(new_mem)
 variable::variable(REG new_reg) : reg(new_reg)
 {
   REG full_reg = REG_FullRegName(reg);
-  this->name = REG_StringShort (full_reg);
+  this->name = REG_StringShort(full_reg);
 //   this->name = REG_StringShort(reg_name);
   this->type = REG_VAR;
 }
 
 /*================================================================================================*/
 
-variable::variable(UINT32 new_imm) : imm(new_imm)
-{
-  this->name = hexstr (imm);
-  this->type = IMM_VAR;
-}
+//variable::variable(UINT32 new_imm) : imm(new_imm)
+//{
+//  this->name = hexstr(imm);
+//  this->type = IMM_VAR;
+//}
 
 /*================================================================================================*/
 
