@@ -134,7 +134,8 @@ VOID start_tracing(VOID *data)
   in_tainting               = true;
   received_msg_num          = 0;
   logged_syscall_index      = syscall_inexist;
-  ::srand(::time(0));
+
+  ::srand(static_cast<uint32_t>(::time(0)));
 
   return;
 }
@@ -149,7 +150,7 @@ VOID stop_tracing(INT32 code, VOID *data)
   }
 
   boost::posix_time::time_duration elapsed_time = *stop_ptr_time - *start_ptr_time;
-  long elapsed_millisec = elapsed_time.total_milliseconds();
+  uint64_t elapsed_millisec = elapsed_time.total_milliseconds();
   
   BOOST_LOG_TRIVIAL(info) 
     << boost::format("\033[33mStop examining, %d milli-seconds elapsed, %d rollbacks used, and %d/%d branches resolved.\033[0m") 
@@ -175,6 +176,7 @@ int main (int argc, char *argv[])
   // 0 is the (unused) input data
   PIN_AddApplicationStartFunction(start_tracing, 0);
 
+	IMG_AddInstrumentFunction(image_load_instrumenter, 0);
   INS_AddInstrumentFunction(ins_instrumenter, 0);
 
   PIN_AddSyscallEntryFunction(syscall_entry_analyzer, 0 );
