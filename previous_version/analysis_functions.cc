@@ -83,3 +83,11 @@ VOID syscall_exit_analyzer(THREADID thread_id, CONTEXT* p_ctxt, SYSCALL_STANDARD
 
   return;
 }
+
+/*====================================================================================================================*/
+
+VOID image_load_analyzer(IMG loaded_img, VOID *data)
+{
+  std::string loaded_img_name = IMG_Name(loaded_img);
+
+}
