@@ -62,7 +62,7 @@ VOID syscall_exit_analyzer(THREADID thread_id, CONTEXT* p_ctxt, SYSCALL_STANDARD
   {
     if (logged_syscall_index == syscall_recvfrom) 
     {
-      ADDRINT ret_val = PIN_GetSyscallReturn (p_ctxt, syscall_std);
+      ADDRINT ret_val = PIN_GetSyscallReturn(p_ctxt, syscall_std);
       if (ret_val > 0) 
       {
         received_msg_num++;
@@ -82,12 +82,4 @@ VOID syscall_exit_analyzer(THREADID thread_id, CONTEXT* p_ctxt, SYSCALL_STANDARD
   }
 
   return;
-}
-
-/*====================================================================================================================*/
-
-VOID image_load_analyzer(IMG loaded_img, VOID *data)
-{
-  std::string loaded_img_name = IMG_Name(loaded_img);
-
 }

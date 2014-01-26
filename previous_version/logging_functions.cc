@@ -45,6 +45,7 @@ extern ptr_checkpoint                           master_ptr_checkpoint;
 extern std::map< UINT32,
                  std::vector<ptr_checkpoint> >  exepoint_checkpoints_map;
 
+extern UINT8																		received_msg_num;
 extern ADDRINT                                  received_msg_addr;
 extern UINT32                                   received_msg_size;
 
@@ -461,4 +462,25 @@ VOID logging_cond_br_analyzer(ADDRINT ins_addr, bool br_taken)
   order_tainted_ptr_branch_map[explored_trace.size()] = new_ptr_branch;
 
   return;
+}
+
+/*================================================================================================*/
+
+VOID logging_before_recv_functions_analyzer(ADDRINT msg_addr)
+{
+	received_msg_addr = msg_addr;
+	return;
+}
+
+/*================================================================================================*/
+
+VOID logging_after_recv_functions_analyzer(UINT32 msg_length)
+{
+	if (msg_length > 0)
+	{
+		received_msg_num++;
+		received_msg_size = msg_length;
+	}
+	
+	return;
 }

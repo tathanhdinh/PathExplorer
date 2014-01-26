@@ -13,4 +13,8 @@ VOID logging_mem_write_instruction_analyzer(ADDRINT ins_addr, ADDRINT mem_writte
 
 VOID logging_cond_br_analyzer(ADDRINT ins_addr, bool br_taken);
 
+VOID logging_before_recv_functions_analyzer(ADDRINT msg_addr);
+
+VOID logging_after_recv_functions_analyzer(UINT32 msg_length);
+
 #endif

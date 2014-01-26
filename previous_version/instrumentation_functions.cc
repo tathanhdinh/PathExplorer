@@ -7,6 +7,7 @@
 
 #include <boost/format.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/filesystem.hpp>
 
 #include "stuffs.h"
 #include "branch.h"
@@ -176,4 +177,40 @@ VOID ins_instrumenter(INS ins, VOID *data)
   }
 
   return;
+}
+
+/*====================================================================================================================*/
+
+VOID image_load_instrumenter(IMG loaded_img, VOID *data)
+{
+	const static std::string winsock_dll_name("WS2_32.dll");
+
+	// verify whether the winsock2 module is loaded
+	boost::filesystem::path loaded_image_path(IMG_Name(loaded_img));
+	if (loaded_image_path.filename() == winsock_dll_name)
+	{
+		RTN recv_function = RTN_FindByName(loaded_img, "recv");
+		if (RTN_Valid(recv_function))
+		{
+			RTN_InsertCall(recv_function, IPOINT_BEFORE, (AFUNPTR)logging_before_recv_functions_analyzer, 
+										 IARG_FUNCARG_ENTRYPOINT_VALUE, 1, 
+										 IARG_END);
+			RTN_InsertCall(recv_function, IPOINT_AFTER, (AFUNPTR)logging_after_recv_functions_analyzer, 
+										 IARG_FUNCRET_EXITPOINT_VALUE, 
+										 IARG_END);
+		}
+
+		RTN recvfrom_function = RTN_FindByName(loaded_img, "recvfrom");
+		if (RTN_Valid(recvfrom_function))
+		{
+			RTN_InsertCall(recvfrom_function, IPOINT_BEFORE, (AFUNPTR)logging_before_recv_functions_analyzer, 
+										 IARG_FUNCARG_ENTRYPOINT_VALUE, 1, 
+										 IARG_END);
+			RTN_InsertCall(recvfrom_function, IPOINT_AFTER, (AFUNPTR)logging_after_recv_functions_analyzer, 
+										 IARG_FUNCRET_EXITPOINT_VALUE, 
+										 IARG_END);
+		}
+	}
+
+	return;
 }
