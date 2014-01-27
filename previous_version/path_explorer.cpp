@@ -83,6 +83,7 @@ std::vector<ADDRINT>                          explored_trace;
 UINT8                                         received_msg_num;
 ADDRINT                                       received_msg_addr;
 UINT32                                        received_msg_size;
+ADDRINT																				received_msg_struct_addr;
 
 UINT64                                        executed_ins_number;
 UINT64                                        econed_ins_number;
@@ -179,8 +180,8 @@ int main (int argc, char *argv[])
 	IMG_AddInstrumentFunction(image_load_instrumenter, 0);
   INS_AddInstrumentFunction(ins_instrumenter, 0);
 
-  PIN_AddSyscallEntryFunction(syscall_entry_analyzer, 0 );
-  PIN_AddSyscallExitFunction(syscall_exit_analyzer, 0 );
+  //PIN_AddSyscallEntryFunction(syscall_entry_analyzer, 0);
+  //PIN_AddSyscallExitFunction(syscall_exit_analyzer, 0);
 
   PIN_AddFiniFunction(stop_tracing, 0 );
 

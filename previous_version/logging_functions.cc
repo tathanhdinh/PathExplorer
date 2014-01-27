@@ -48,6 +48,7 @@ extern std::map< UINT32,
 extern UINT8																		received_msg_num;
 extern ADDRINT                                  received_msg_addr;
 extern UINT32                                   received_msg_size;
+extern ADDRINT																	received_msg_struct_addr;
 
 extern KNOB<BOOL>                               print_debug_text;
 extern KNOB<UINT32>                             max_trace_length;
@@ -468,6 +469,7 @@ VOID logging_cond_br_analyzer(ADDRINT ins_addr, bool br_taken)
 
 VOID logging_before_recv_functions_analyzer(ADDRINT msg_addr)
 {
+	std::cout << "msg_addr logged\n";
 	received_msg_addr = msg_addr;
 	return;
 }
@@ -478,9 +480,35 @@ VOID logging_after_recv_functions_analyzer(UINT32 msg_length)
 {
 	if (msg_length > 0)
 	{
-		received_msg_num++;
-		received_msg_size = msg_length;
+		std::cout << "msg_size logged\n";
+		received_msg_num++; received_msg_size = msg_length;
 	}
-	
+	return;
+}
+
+/*================================================================================================*/
+namespace WINDOWS
+{
+#include <WinSock2.h>
+#include <Windows.h>
+};
+VOID logging_before_wsarecv_functions_analyzer(ADDRINT msg_struct_adddr)
+{
+	std::cout << "msg_addr logged\n";
+	received_msg_struct_addr = msg_struct_adddr;
+	received_msg_addr = reinterpret_cast<ADDRINT>((reinterpret_cast<WINDOWS::LPWSABUF>(received_msg_struct_addr))->buf);
+	return;
+}
+
+/*================================================================================================*/
+
+VOID logging_after_wsarecv_funtions_analyzer()
+{
+	std::cout << "msg_size logged\n";
+	received_msg_size = (reinterpret_cast<WINDOWS::LPWSABUF>(received_msg_struct_addr))->len;
+	if (received_msg_size > 0)
+	{
+		++received_msg_num; 
+	}
 	return;
 }

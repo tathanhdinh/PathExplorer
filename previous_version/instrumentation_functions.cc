@@ -189,11 +189,14 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
 	{
 		// verify whether the winsock2 module is loaded
 		boost::filesystem::path loaded_image_path(IMG_Name(loaded_img));
+		std::cout << "Loaded module: " << loaded_image_path.filename() << "\n";
 		if (loaded_image_path.filename() == winsock_dll_name)
 		{
+			std::cout << "winsock found\n";
 			RTN recv_function = RTN_FindByName(loaded_img, "recv");
 			if (RTN_Valid(recv_function))
 			{
+				std::cout << "recv instrumented\n";
 				RTN_Open(recv_function);
 
 				RTN_InsertCall(recv_function, IPOINT_BEFORE, (AFUNPTR)logging_before_recv_functions_analyzer,
@@ -209,6 +212,7 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
 			RTN recvfrom_function = RTN_FindByName(loaded_img, "recvfrom");
 			if (RTN_Valid(recvfrom_function))
 			{
+				std::cout << "recvfrom instrumented\n";
 				RTN_Open(recvfrom_function);
 
 				RTN_InsertCall(recvfrom_function, IPOINT_BEFORE, (AFUNPTR)logging_before_recv_functions_analyzer,
@@ -219,6 +223,36 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
 											 IARG_END);
 
 				RTN_Close(recvfrom_function);
+			}
+
+			RTN wsarecv_function = RTN_FindByName(loaded_img, "WSARecv");
+			if (RTN_Valid(wsarecv_function))
+			{
+				std::cout << "WSARecv instrumented\n";
+				RTN_Open(wsarecv_function);
+
+				RTN_InsertCall(wsarecv_function, IPOINT_BEFORE, 
+											 (AFUNPTR)logging_before_wsarecv_functions_analyzer, 
+											 IARG_FUNCARG_ENTRYPOINT_VALUE, 1, 
+											 IARG_END);
+				RTN_InsertCall(wsarecv_function, IPOINT_AFTER, 
+											 (AFUNPTR)logging_after_wsarecv_funtions_analyzer, 
+											 IARG_END);
+
+				RTN_Close(wsarecv_function);
+			}
+
+			RTN wsarecvfrom_function = RTN_FindByName(loaded_img, "WSARecvFrom");
+			if (RTN_Valid(wsarecvfrom_function))
+			{
+				std::cout << "WSARecvFrom instrumented\n";
+				RTN_Open(wsarecvfrom_function);
+
+				RTN_InsertCall(wsarecvfrom_function, IPOINT_BEFORE, 
+											 (AFUNPTR)logging_before_wsarecv_functions_analyzer, 
+											 IARG_FUNCARG_ENTRYPOINT_VALUE, 1, 
+											 IARG_END);
+				RTN_InsertCall(wsarecvfrom_function, IPOINT_BEFORE, (AFUNPTR)
 			}
 		}
 	}

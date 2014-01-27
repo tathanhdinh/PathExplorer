@@ -24,7 +24,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v100</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -57,7 +57,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\Users\Ta Thanh Dinh\Documents\pin-2.13-62732-msvc11-windows\extras\components\include;C:\Users\Ta Thanh Dinh\Documents\pin-2.13-62732-msvc11-windows\extras\xed2-ia32\include;C:\Users\Ta Thanh Dinh\Documents\pin-2.13-62732-msvc11-windows\source\include\pin\gen;C:\Users\Ta Thanh Dinh\Documents\pin-2.13-62732-msvc11-windows\source\include\pin;C:\Users\Ta Thanh Dinh\Documents\boost_1_55_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Ta Thanh Dinh\Documents\pin-2.13-62732-msvc10-windows\extras\components\include;C:\Users\Ta Thanh Dinh\Documents\pin-2.13-62732-msvc10-windows\extras\xed2-ia32\include;C:\Users\Ta Thanh Dinh\Documents\pin-2.13-62732-msvc10-windows\source\include\pin\gen;C:\Users\Ta Thanh Dinh\Documents\pin-2.13-62732-msvc10-windows\source\include\pin;C:\Users\Ta Thanh Dinh\Documents\boost_1_55_0-msvc-10.0-32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>TARGET_IA32;HOST_IA32;TARGET_WINDOWS;USING_XED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
       <AdditionalOptions>/D_SECURE_SCL=0 %(AdditionalOptions)</AdditionalOptions>
@@ -67,9 +67,10 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>C:\Users\Ta Thanh Dinh\Documents\pin-2.13-62732-msvc11-windows\extras\xed2-ia32\lib;C:\Users\Ta Thanh Dinh\Documents\pin-2.13-62732-msvc11-windows\ia32\lib-ext;C:\Users\Ta Thanh Dinh\Documents\pin-2.13-62732-msvc11-windows\ia32\lib;C:\Users\Ta Thanh Dinh\Documents\boost_1_55_0\lib32-msvc-11.0;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\Ta Thanh Dinh\Documents\pin-2.13-62732-msvc10-windows\extras\xed2-ia32\lib;C:\Users\Ta Thanh Dinh\Documents\pin-2.13-62732-msvc10-windows\ia32\lib-ext;C:\Users\Ta Thanh Dinh\Documents\pin-2.13-62732-msvc10-windows\ia32\lib;C:\Users\Ta Thanh Dinh\Documents\boost_1_55_0-msvc-10.0-32\lib32-msvc-10.0;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>pin.lib;pinvm.lib;ntdll-32.lib;libxed.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <AdditionalOptions> /EXPORT:main /ENTRY:Ptrace_DllMainCRTStartup@12 %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
