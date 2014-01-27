@@ -215,10 +215,12 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
 				std::cout << "recvfrom instrumented\n";
 				RTN_Open(recvfrom_function);
 
-				RTN_InsertCall(recvfrom_function, IPOINT_BEFORE, (AFUNPTR)logging_before_recv_functions_analyzer,
-											IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
-											IARG_END);
-				RTN_InsertCall(recvfrom_function, IPOINT_AFTER, (AFUNPTR)logging_after_recv_functions_analyzer,
+				RTN_InsertCall(recvfrom_function, IPOINT_BEFORE, 
+											 (AFUNPTR)logging_before_recv_functions_analyzer,
+											 IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
+											 IARG_END);
+				RTN_InsertCall(recvfrom_function, IPOINT_AFTER, 
+											 (AFUNPTR)logging_after_recv_functions_analyzer,
 											 IARG_FUNCRET_EXITPOINT_VALUE,
 											 IARG_END);
 
@@ -252,7 +254,11 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
 											 (AFUNPTR)logging_before_wsarecv_functions_analyzer, 
 											 IARG_FUNCARG_ENTRYPOINT_VALUE, 1, 
 											 IARG_END);
-				RTN_InsertCall(wsarecvfrom_function, IPOINT_BEFORE, (AFUNPTR)
+				RTN_InsertCall(wsarecvfrom_function, IPOINT_AFTER, 
+											 (AFUNPTR)logging_after_wsarecv_funtions_analyzer, 
+											 IARG_END);
+
+				RTN_Close(wsarecvfrom_function);
 			}
 		}
 	}

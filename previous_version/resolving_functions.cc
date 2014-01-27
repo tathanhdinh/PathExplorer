@@ -745,8 +745,7 @@ inline void log_input(ADDRINT ins_addr, bool br_taken)
   else 
   {
     BOOST_LOG_TRIVIAL(fatal) 
-      << boost::format("The branch at %d cannot found.") 
-          % explored_trace.size();
+      << boost::format("The branch at %d cannot found.") % explored_trace.size();
     PIN_ExitApplication(0);
   }
 

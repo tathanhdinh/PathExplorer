@@ -60,6 +60,8 @@ extern UINT32                                   max_trace_size;
 static std::map<vdep_vertex_desc,
                 vdep_vertex_desc>               prec_vertex_desc;
 
+static bool function_has_been_called = false;
+
 /*================================================================================================*/
 
 class dep_bfs_visitor : public boost::default_bfs_visitor
@@ -474,13 +476,11 @@ VOID logging_before_recv_functions_analyzer(ADDRINT msg_addr)
 	return;
 }
 
-/*================================================================================================*/
-
 VOID logging_after_recv_functions_analyzer(UINT32 msg_length)
 {
 	if (msg_length > 0)
 	{
-		std::cout << "msg_size logged\n";
+		std::cout << "msg_size logged in recv\n";
 		received_msg_num++; received_msg_size = msg_length;
 	}
 	return;
@@ -494,21 +494,26 @@ namespace WINDOWS
 };
 VOID logging_before_wsarecv_functions_analyzer(ADDRINT msg_struct_adddr)
 {
-	std::cout << "msg_addr logged\n";
+	std::cout << "before\n" << std::fflush;
 	received_msg_struct_addr = msg_struct_adddr;
 	received_msg_addr = reinterpret_cast<ADDRINT>((reinterpret_cast<WINDOWS::LPWSABUF>(received_msg_struct_addr))->buf);
+	function_has_been_called = true;
 	return;
 }
 
-/*================================================================================================*/
-
 VOID logging_after_wsarecv_funtions_analyzer()
 {
-	std::cout << "msg_size logged\n";
-	received_msg_size = (reinterpret_cast<WINDOWS::LPWSABUF>(received_msg_struct_addr))->len;
-	if (received_msg_size > 0)
+	if (function_has_been_called)
 	{
-		++received_msg_num; 
+		std::cout << "after\n";
+		received_msg_size = (reinterpret_cast<WINDOWS::LPWSABUF>(received_msg_struct_addr))->len;
+		std::cerr << received_msg_size << "\n";
+		if (received_msg_size > 0)
+		{
+		++received_msg_num;
+		}
+		function_has_been_called = false;
 	}
+	
 	return;
 }
