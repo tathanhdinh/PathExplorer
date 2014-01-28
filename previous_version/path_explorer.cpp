@@ -9,6 +9,7 @@
 #include <string>
 #include <iostream>
 #include <limits>
+#include <bitset>
 
 #include <boost/timer.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -23,6 +24,7 @@
 #include "branch.h"
 #include "instrumentation_functions.h"
 #include "analysis_functions.h"
+#include "exploring_graph.h"
 
 extern "C" 
 {
@@ -80,6 +82,9 @@ ptr_branch                                    exploring_ptr_branch;
 
 std::vector<ADDRINT>                          explored_trace;
 
+ptr_exploring_graph                           explored_graph;
+std::bitset<20>                               path_code;
+
 UINT8                                         received_msg_num;
 ADDRINT                                       received_msg_addr;
 UINT32                                        received_msg_size;
@@ -135,6 +140,8 @@ VOID start_tracing(VOID *data)
   received_msg_num          = 0;
   logged_syscall_index      = syscall_inexist;
   ::srand(::time(0));
+  
+  explored_graph.reset(new exploring_graph());
 
   return;
 }
@@ -160,6 +167,8 @@ VOID stop_tracing(INT32 code, VOID *data)
   BOOST_LOG_TRIVIAL(info) 
     << boost::format("\033[33mEcon/total executed instruction number %d/%d\033[0m") 
         % econed_ins_number % executed_ins_number;
+        
+  explored_graph->print_to_file("exploring_graph.dot");
                               
   return;
 }

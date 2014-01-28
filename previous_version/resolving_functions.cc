@@ -9,6 +9,7 @@
 #include "instruction.h"
 #include "checkpoint.h"
 #include "branch.h"
+#include "exploring_graph.h"
 #include "stuffs.h"
 
 extern std::map< ADDRINT,
@@ -53,6 +54,8 @@ extern ptr_branch                                 active_ptr_branch;
 extern ptr_branch                                 last_active_ptr_branch;
 extern ptr_branch                                 exploring_ptr_branch;
 
+extern ptr_exploring_graph                        explored_graph;
+
 extern std::set<ADDRINT>                          active_input_dep_addrs;
 
 extern UINT64                                     executed_ins_number;
@@ -65,7 +68,11 @@ extern KNOB<UINT32>                               max_local_rollback;
 extern KNOB<UINT32>                               max_trace_length;
 extern KNOB<BOOL>                                 print_debug_text;
 
-/*====================================================================================================================*/
+/*================================================================================================*/
+
+
+
+/*================================================================================================*/
 
 VOID resolving_ins_count_analyzer(ADDRINT ins_addr)
 {
@@ -77,7 +84,7 @@ VOID resolving_ins_count_analyzer(ADDRINT ins_addr)
   return;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 // memory read
 VOID resolving_mem_to_st_analyzer(ADDRINT ins_addr, 
                                   ADDRINT mem_read_addr, 
@@ -123,7 +130,7 @@ VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr,
   return;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 inline void prepare_new_tainting_phase(ptr_branch& unexplored_ptr_branch)
 {
@@ -162,7 +169,7 @@ inline void prepare_new_tainting_phase(ptr_branch& unexplored_ptr_branch)
   return;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 inline ptr_branch next_unexplored_branch()
 {
@@ -286,7 +293,7 @@ inline void exploring_new_branch_or_stop()
   if (unexplored_ptr_branch) 
   {
     BOOST_LOG_TRIVIAL(info) 
-    << boost::format("\033[33mEcon/total executed instruction number %d/%d\033[0m") 
+    << boost::format("\033[33mEconomized/total executed instruction number %d/%d\033[0m") 
         % econed_ins_number % executed_ins_number;
         
     std::cout 
@@ -317,7 +324,7 @@ inline void exploring_new_branch_or_stop()
 
 
 /**
- * @brief reset all active branche and checkpoints to continue resolve the next branch.
+ * @brief reset all active branches and checkpoints to continue resolve the next branch.
  * 
  * @return void
  */
@@ -427,6 +434,12 @@ inline void unresolved_branch_takes_new_decision(ADDRINT ins_addr,
     
     accept_branch(active_ptr_branch);
     
+    
+    explored_graph->add_edge(ins_addr, active_nearest_checkpoint.first->addr, ROLLBACK, 
+                             active_nearest_checkpoint.second.size(), 
+                             active_ptr_branch->trace.size() - active_nearest_checkpoint.first->trace.size(), 
+                             local_rollback_times);
+    
     // now back to the original trace
     econed_ins_number += active_ptr_branch->econ_execution_length[active_nearest_checkpoint.first];
 //     std::cout << econed_ins_number << "  " << executed_ins_number << std::endl;
@@ -457,7 +470,7 @@ inline void unresolved_branch_takes_new_decision(ADDRINT ins_addr,
  * @return void
  */
 inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr, 
-                                                 bool br_taken, ptr_branch& examined_ptr_branch)
+                                                  bool br_taken, ptr_branch& examined_ptr_branch)
 {
   // active_ptr_branch is enabled, namely in some rollback
   if (active_ptr_branch) 
@@ -501,6 +514,12 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
           // this comes from the rollback_with_input_replacement
           if (local_rollback_times > max_local_rollback_times) 
           {
+            std::cout << active_nearest_checkpoint.second.size() << "\n";
+            explored_graph->add_edge(ins_addr, active_nearest_checkpoint.first->addr, ROLLBACK, 
+                                     active_nearest_checkpoint.second.size(), 
+                                     active_ptr_branch->trace.size() - active_nearest_checkpoint.first->trace.size(), 
+                                     local_rollback_times);
+            
             // store the last active checkpoint
             last_active_ptr_checkpoint = active_nearest_checkpoint.first;
             

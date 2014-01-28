@@ -85,7 +85,7 @@ std::string remove_leading_zeros(std::string input)
 
 /*====================================================================================================================*/
 
-void journal_buffer ( const std::string& filename, UINT8* buffer_addr, UINT32 buffer_size )
+void journal_buffer(const std::string& filename, UINT8* buffer_addr, UINT32 buffer_size )
 {
   std::ofstream file ( filename.c_str(),
                        std::ofstream::binary | std::ofstream::out | std::ofstream::trunc );
