@@ -8,6 +8,7 @@
 #include <boost/format.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/log/trivial.hpp>
 
 #include "stuffs.h"
 #include "branch.h"
@@ -183,6 +184,8 @@ VOID ins_instrumenter(INS ins, VOID *data)
 
 VOID image_load_instrumenter(IMG loaded_img, VOID *data)
 {
+  std::cout << "image_load_instrumenter activated\n";
+
 	const static std::string winsock_dll_name("WS2_32.dll");
 
 	if (received_msg_num < 1)
@@ -264,4 +267,13 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
 	}
 
 	return;
+}
+
+/*====================================================================================================================*/
+
+BOOL process_create_instrumenter(CHILD_PROCESS created_process, VOID* data)
+{
+  BOOST_LOG_TRIVIAL(warning) 
+    << boost::format("new process created with id %d") % CHILD_PROCESS_GetId(created_process);
+  return TRUE;
 }

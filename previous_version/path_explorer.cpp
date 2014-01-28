@@ -171,19 +171,25 @@ VOID stop_tracing(INT32 code, VOID *data)
 /* ------------------------------------------------------------------------------------------------------------------ */
 int main (int argc, char *argv[])
 {
-  PIN_InitSymbols();
+  //std::cout << "initializing image symbols\n" << std::flush;
+  //PIN_InitSymbols();
+
+  std::cout << "initializaing Pin\n";
   PIN_Init(argc, argv);
 
+  std::cout << "initializing Pintool data\n";
   // 0 is the (unused) input data
-  PIN_AddApplicationStartFunction(start_tracing, 0);
+  //PIN_AddApplicationStartFunction(start_tracing, 0);
 
-	IMG_AddInstrumentFunction(image_load_instrumenter, 0);
-  INS_AddInstrumentFunction(ins_instrumenter, 0);
+  //std::cout << "activating image_load_instrumenter\n";
+	//IMG_AddInstrumentFunction(image_load_instrumenter, 0);
+  //INS_AddInstrumentFunction(ins_instrumenter, 0);
+  PIN_AddFollowChildProcessFunction(process_create_instrumenter, 0);
 
   //PIN_AddSyscallEntryFunction(syscall_entry_analyzer, 0);
   //PIN_AddSyscallExitFunction(syscall_exit_analyzer, 0);
 
-  PIN_AddFiniFunction(stop_tracing, 0 );
+  //PIN_AddFiniFunction(stop_tracing, 0);
 
   // now the control is passed to pin, so the main function will never return
   PIN_StartProgram();
