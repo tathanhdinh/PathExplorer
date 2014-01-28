@@ -70,7 +70,7 @@ extern KNOB<BOOL>                                 print_debug_text;
 
 /*================================================================================================*/
 
-
+// static UINT32 curr_br_order = 0;
 
 /*================================================================================================*/
 
@@ -86,18 +86,14 @@ VOID resolving_ins_count_analyzer(ADDRINT ins_addr)
 
 /*================================================================================================*/
 // memory read
-VOID resolving_mem_to_st_analyzer(ADDRINT ins_addr, 
-                                  ADDRINT mem_read_addr, 
-                                  UINT32 mem_read_size) 
+VOID resolving_mem_to_st_analyzer(ADDRINT ins_addr, ADDRINT mem_read_addr, UINT32 mem_read_size) 
 {
   return;
 }
 
 /*====================================================================================================================*/
 // memory written
-VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr, 
-                                  ADDRINT mem_written_addr, 
-                                  UINT32 mem_written_size) 
+VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 mem_written_size) 
 {
   if (active_ptr_branch) // in rollbacking
   {
@@ -409,6 +405,26 @@ inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr,
 }
 
 
+inline UINT32 current_branch_order()
+{
+  UINT32 curr_br_order = 0;
+  std::map<UINT32, ptr_branch>::iterator ptr_branch_iter;
+  for (ptr_branch_iter = order_tainted_ptr_branch_map.begin(); 
+       ptr_branch_iter != order_tainted_ptr_branch_map.end(); ++ptr_branch_iter) 
+  {
+    if (ptr_branch_iter->first < explored_trace.size()) 
+    {
+      ++curr_br_order;
+    }
+    else 
+    {
+      break;
+    }
+  }
+  return curr_br_order;
+}
+
+
 /**
  * @brief handle the case where the examined branch takes a different target. 
  * Note that this branch is always the active branch because the following procedure is used in 
@@ -434,9 +450,9 @@ inline void unresolved_branch_takes_new_decision(ADDRINT ins_addr,
     
     accept_branch(active_ptr_branch);
     
-    
-    explored_graph->add_edge(ins_addr, active_nearest_checkpoint.first->addr, ROLLBACK, 
-                             active_nearest_checkpoint.second.size(), 
+    UINT32 curr_br_order = current_branch_order();
+    explored_graph->add_edge(ins_addr, active_nearest_checkpoint.first->addr, curr_br_order, 
+                             ROLLBACK, active_nearest_checkpoint.second.size(), 
                              active_ptr_branch->trace.size() - active_nearest_checkpoint.first->trace.size(), 
                              local_rollback_times);
     
@@ -514,9 +530,10 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
           // this comes from the rollback_with_input_replacement
           if (local_rollback_times > max_local_rollback_times) 
           {
-            std::cout << active_nearest_checkpoint.second.size() << "\n";
-            explored_graph->add_edge(ins_addr, active_nearest_checkpoint.first->addr, ROLLBACK, 
-                                     active_nearest_checkpoint.second.size(), 
+//             std::cout << active_nearest_checkpoint.second.size() << "\n";
+            UINT32 curr_br_order = current_branch_order();
+            explored_graph->add_edge(ins_addr, active_nearest_checkpoint.first->addr, curr_br_order, 
+                                     ROLLBACK, active_nearest_checkpoint.second.size(), 
                                      active_ptr_branch->trace.size() - active_nearest_checkpoint.first->trace.size(), 
                                      local_rollback_times);
             

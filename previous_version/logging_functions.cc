@@ -49,6 +49,7 @@ extern std::map< UINT32,
                  std::vector<ptr_checkpoint> >  exepoint_checkpoints_map;
                  
 extern ptr_exploring_graph                      explored_graph;
+extern std::bitset<30>                          path_code;
 
 extern ADDRINT                                  received_msg_addr;
 extern UINT32                                   received_msg_size;
@@ -66,7 +67,6 @@ static std::map<vdep_vertex_desc,
 static ADDRINT                                  prec_ins_addr = 0;
 static bool                                     prec_br_taken;
 static UINT32                                   curr_br_order = 0;
-static boost::dynamic_bitset<>                  curr_path_code(30);
 
 /*================================================================================================*/
 
@@ -399,22 +399,22 @@ VOID logging_general_instruction_analyzer(ADDRINT ins_addr)
     order_ins_dynamic_map[explored_trace.size()] = addr_ins_static_map[ins_addr];
 
 //     explored_graph->add_node(ins_addr);
-    explored_graph->add_node(ins_addr, curr_path_code, curr_br_order);
+    explored_graph->add_node(ins_addr, curr_br_order);
     if (prec_ins_addr != 0) 
     {
       if (addr_ins_static_map[prec_ins_addr].category != XED_CATEGORY_COND_BR) 
       {
-        explored_graph->add_edge(prec_ins_addr, ins_addr, NEXT, 0, 0, 0);
+        explored_graph->add_edge(prec_ins_addr, ins_addr, curr_br_order, NEXT, 0, 0, 0);
       }
       else 
       {
         if (prec_br_taken) 
         {
-          explored_graph->add_edge(prec_ins_addr, ins_addr, TAKEN, 0, 0, 0);
+          explored_graph->add_edge(prec_ins_addr, ins_addr, curr_br_order, TAKEN, 0, 0, 0);
         }
         else 
         {
-          explored_graph->add_edge(prec_ins_addr, ins_addr, NOT_TAKEN, 0, 0, 0);
+          explored_graph->add_edge(prec_ins_addr, ins_addr, curr_br_order, NOT_TAKEN, 0, 0, 0);
         }
       }
     }
@@ -481,7 +481,7 @@ VOID logging_mem_write_instruction_analyzer(ADDRINT ins_addr,
 VOID logging_cond_br_analyzer(ADDRINT ins_addr, bool br_taken)
 {
   prec_br_taken = br_taken;
-  curr_path_code[curr_br_order] = br_taken;
+  path_code[curr_br_order] = br_taken;
   ++curr_br_order;
   
   ptr_branch new_ptr_branch(new branch(ins_addr, br_taken));

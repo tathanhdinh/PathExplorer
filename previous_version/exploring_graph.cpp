@@ -5,6 +5,7 @@
 #include <list>
 #include <iostream>
 #include <fstream>
+#include <bitset>
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graphviz.hpp>
@@ -12,7 +13,7 @@
 #include <boost/tuple/tuple.hpp>
 #include <boost/format.hpp>
 
-typedef boost::tuple<ADDRINT, dynamic_bitset<> >              exp_vertex;
+typedef boost::tuple<ADDRINT, std::string>                    exp_vertex;
 typedef boost::tuple<next_exe_type, UINT32, UINT32, UINT32>   exp_edge;
 typedef boost::adjacency_list<boost::listS, boost::vecS, 
                               boost::bidirectionalS, 
@@ -27,6 +28,10 @@ typedef boost::graph_traits<exp_graph>::edge_iterator         exp_edge_iter;
 /*================================================================================================*/
 
 extern std::map<ADDRINT, instruction> addr_ins_static_map;
+extern std::bitset<30>                path_code;
+
+/*================================================================================================*/
+
 static exp_graph internal_exp_graph;
 
 /*================================================================================================*/
@@ -36,22 +41,23 @@ exploring_graph::exploring_graph()
   internal_exp_graph.clear();
 }
 
-void exploring_graph::add_node(ADDRINT node_addr, 
-                               boost::dynamic_bitset<>& path_code, UINT32 br_order)
+void exploring_graph::add_node(ADDRINT node_addr, UINT32 br_order)
 {
   boost::dynamic_bitset<> node_code(br_order);
   for (UINT32 bit_idx = 0; bit_idx < br_order; ++bit_idx) 
   {
     node_code[bit_idx] = path_code[bit_idx];
   }
-  exp_vertex curr_vertex = boost::make_tuple(node_addr, node_code);
+  std::string node_code_str; boost::to_string(node_code, node_code_str);
+  exp_vertex curr_vertex = boost::make_tuple(node_addr, node_code_str);
   
   exp_vertex_iter vertex_iter;
   exp_vertex_iter last_vertex_iter;
   boost::tie(vertex_iter, last_vertex_iter) = boost::vertices(internal_exp_graph);
   for (; vertex_iter != last_vertex_iter; ++vertex_iter)
   {
-    if (internal_exp_graph[*vertex_iter] == curr_vertex) 
+    if ((boost::get<0>(internal_exp_graph[*vertex_iter]) == boost::get<0>(curr_vertex)) && 
+        (boost::get<1>(internal_exp_graph[*vertex_iter]) == boost::get<1>(curr_vertex)))
     {
       break;
     }
@@ -63,17 +69,16 @@ void exploring_graph::add_node(ADDRINT node_addr,
   return;
 }
 
-void exploring_graph::add_edge(ADDRINT source_addr, ADDRINT target_addr, 
-                               boost::dynamic_bitset<>& path_code, UINT32 br_order,
+void exploring_graph::add_edge(ADDRINT source_addr, ADDRINT target_addr, UINT32 br_order,
                                next_exe_type direction, UINT32 nb_bits, UINT32 rb_length, UINT32 nb_rb)
 {
   boost::dynamic_bitset<> node_code(br_order);
   for (UINT32 bit_idx = 0; bit_idx < br_order; ++bit_idx) 
   {
-    
+    node_code[bit_idx] = path_code[bit_idx];
   }
-  
-  exp_vertex source_vertex = boost::make_tuple(source_addr,)
+  exp_vertex source_vertex = boost::make_tuple(source_addr, node_code);
+  exp_vertex target_vertex = boost::make_tuple(target_addr, node_code);
   
   exp_vertex_desc source_desc = 0;
   exp_vertex_desc target_desc = 0;
@@ -83,11 +88,11 @@ void exploring_graph::add_edge(ADDRINT source_addr, ADDRINT target_addr,
   boost::tie(vertex_iter, last_vertex_iter) = boost::vertices(internal_exp_graph);
   for (; vertex_iter != last_vertex_iter; ++vertex_iter) 
   {
-    if (internal_exp_graph[*vertex_iter] == source_addr) 
+    if (internal_exp_graph[*vertex_iter] == source_vertex) 
     {
       source_desc = *vertex_iter;
     }
-    if (internal_exp_graph[*vertex_iter] == target_addr) 
+    if (internal_exp_graph[*vertex_iter] == target_vertex) 
     {
       target_desc = *vertex_iter;
     }
@@ -101,7 +106,7 @@ void exploring_graph::add_edge(ADDRINT source_addr, ADDRINT target_addr,
   exp_edge_desc edge_desc;
   bool edge_existed;
   boost::tie(edge_desc, edge_existed) = boost::edge(source_desc, target_desc, internal_exp_graph);
-  if (!edge_existed) 
+  if (!edge_existed && (source_desc != 0) && (target_desc != 0)) 
   {
     boost::add_edge(source_desc, target_desc, 
                     boost::make_tuple(direction, nb_bits, rb_length, nb_rb), internal_exp_graph);
