@@ -8,10 +8,11 @@
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graphviz.hpp>
+#include <boost/dynamic_bitset.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/format.hpp>
 
-typedef ADDRINT                                               exp_vertex;
+typedef boost::tuple<ADDRINT, dynamic_bitset<> >              exp_vertex;
 typedef boost::tuple<next_exe_type, UINT32, UINT32, UINT32>   exp_edge;
 typedef boost::adjacency_list<boost::listS, boost::vecS, 
                               boost::bidirectionalS, 
@@ -35,28 +36,45 @@ exploring_graph::exploring_graph()
   internal_exp_graph.clear();
 }
 
-void exploring_graph::add_node(ADDRINT node_addr)
+void exploring_graph::add_node(ADDRINT node_addr, 
+                               boost::dynamic_bitset<>& path_code, UINT32 br_order)
 {
+  boost::dynamic_bitset<> node_code(br_order);
+  for (UINT32 bit_idx = 0; bit_idx < br_order; ++bit_idx) 
+  {
+    node_code[bit_idx] = path_code[bit_idx];
+  }
+  exp_vertex curr_vertex = boost::make_tuple(node_addr, node_code);
+  
   exp_vertex_iter vertex_iter;
   exp_vertex_iter last_vertex_iter;
   boost::tie(vertex_iter, last_vertex_iter) = boost::vertices(internal_exp_graph);
   for (; vertex_iter != last_vertex_iter; ++vertex_iter)
   {
-    if (internal_exp_graph[*vertex_iter] == node_addr) 
+    if (internal_exp_graph[*vertex_iter] == curr_vertex) 
     {
       break;
     }
   }
   if (vertex_iter == last_vertex_iter) 
   {
-    boost::add_vertex(node_addr, internal_exp_graph);
+    boost::add_vertex(curr_vertex, internal_exp_graph);
   }
   return;
 }
 
-void exploring_graph::add_edge(ADDRINT source_addr, ADDRINT target_addr, next_exe_type direction, 
-                               UINT32 nb_bits, UINT32 rb_length, UINT32 nb_rb)
+void exploring_graph::add_edge(ADDRINT source_addr, ADDRINT target_addr, 
+                               boost::dynamic_bitset<>& path_code, UINT32 br_order,
+                               next_exe_type direction, UINT32 nb_bits, UINT32 rb_length, UINT32 nb_rb)
 {
+  boost::dynamic_bitset<> node_code(br_order);
+  for (UINT32 bit_idx = 0; bit_idx < br_order; ++bit_idx) 
+  {
+    
+  }
+  
+  exp_vertex source_vertex = boost::make_tuple(source_addr,)
+  
   exp_vertex_desc source_desc = 0;
   exp_vertex_desc target_desc = 0;
   

@@ -398,7 +398,8 @@ VOID logging_general_instruction_analyzer(ADDRINT ins_addr)
     explored_trace.push_back(ins_addr);
     order_ins_dynamic_map[explored_trace.size()] = addr_ins_static_map[ins_addr];
 
-    explored_graph->add_node(ins_addr);
+//     explored_graph->add_node(ins_addr);
+    explored_graph->add_node(ins_addr, curr_path_code, curr_br_order);
     if (prec_ins_addr != 0) 
     {
       if (addr_ins_static_map[prec_ins_addr].category != XED_CATEGORY_COND_BR) 

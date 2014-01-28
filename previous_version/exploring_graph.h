@@ -3,6 +3,7 @@
 
 #include <pin.H>
 #include <boost/shared_ptr.hpp>
+#include <boost/dynamic_bitset.hpp>
 #include <string>
 
 typedef enum 
@@ -16,9 +17,10 @@ class exploring_graph
 {
 public:
   exploring_graph();
-  void add_node(ADDRINT node_addr);
-  void add_edge(ADDRINT source_addr, ADDRINT target_addr, next_exe_type direction,
-                UINT32 nb_bits, UINT32 rb_length, UINT32 nb_rb);
+  void add_node(ADDRINT node_addr, boost::dynamic_bitset<>& path_code, UINT32 br_order);
+  void add_edge(ADDRINT source_addr, ADDRINT target_addr, 
+                boost::dynamic_bitset<>& path_code, UINT32 br_order,
+                next_exe_type direction, UINT32 nb_bits, UINT32 rb_length, UINT32 nb_rb);
   void print_to_file(const std::string& filename);
 };
 
