@@ -41,15 +41,24 @@ exploring_graph::exploring_graph()
   internal_exp_graph.clear();
 }
 
-void exploring_graph::add_node(ADDRINT node_addr, UINT32 br_order)
+/*------------------------------------------------------------------------------------------------*/
+
+static inline exp_vertex make_vertex(ADDRINT node_addr, UINT32 node_br_order)
 {
-  boost::dynamic_bitset<> node_code(br_order);
-  for (UINT32 bit_idx = 0; bit_idx < br_order; ++bit_idx) 
+  boost::dynamic_bitset<> node_code(node_br_order);
+  for (UINT32 bit_idx = 0; bit_idx < node_br_order; ++bit_idx) 
   {
     node_code[bit_idx] = path_code[bit_idx];
   }
   std::string node_code_str; boost::to_string(node_code, node_code_str);
-  exp_vertex curr_vertex = boost::make_tuple(node_addr, node_code_str);
+  return boost::make_tuple(node_addr, node_code_str);
+}
+
+/*================================================================================================*/
+
+void exploring_graph::add_node(ADDRINT node_addr, UINT32 node_br_order)
+{
+  exp_vertex curr_vertex = make_vertex(node_addr, node_br_order);
   
   exp_vertex_iter vertex_iter;
   exp_vertex_iter last_vertex_iter;
@@ -69,16 +78,15 @@ void exploring_graph::add_node(ADDRINT node_addr, UINT32 br_order)
   return;
 }
 
-void exploring_graph::add_edge(ADDRINT source_addr, ADDRINT target_addr, UINT32 br_order,
+/*================================================================================================*/
+
+void exploring_graph::add_edge(ADDRINT source_addr, UINT32 source_br_order, 
+                               ADDRINT target_addr, UINT32 target_br_order,
                                next_exe_type direction, UINT32 nb_bits, UINT32 rb_length, UINT32 nb_rb)
 {
-  boost::dynamic_bitset<> node_code(br_order);
-  for (UINT32 bit_idx = 0; bit_idx < br_order; ++bit_idx) 
-  {
-    node_code[bit_idx] = path_code[bit_idx];
-  }
-  exp_vertex source_vertex = boost::make_tuple(source_addr, node_code);
-  exp_vertex target_vertex = boost::make_tuple(target_addr, node_code);
+  exp_vertex source_vertex = make_vertex(source_addr, source_br_order);
+  exp_vertex target_vertex = make_vertex(target_addr, target_br_order);
+  exp_vertex curr_vertex;
   
   exp_vertex_desc source_desc = 0;
   exp_vertex_desc target_desc = 0;
@@ -88,11 +96,15 @@ void exploring_graph::add_edge(ADDRINT source_addr, ADDRINT target_addr, UINT32 
   boost::tie(vertex_iter, last_vertex_iter) = boost::vertices(internal_exp_graph);
   for (; vertex_iter != last_vertex_iter; ++vertex_iter) 
   {
-    if (internal_exp_graph[*vertex_iter] == source_vertex) 
+    curr_vertex = internal_exp_graph[*vertex_iter];
+    
+    if ((boost::get<0>(curr_vertex) == boost::get<0>(source_vertex)) && 
+        (boost::get<1>(curr_vertex) == boost::get<1>(source_vertex)))
     {
       source_desc = *vertex_iter;
     }
-    if (internal_exp_graph[*vertex_iter] == target_vertex) 
+    if ((boost::get<0>(curr_vertex) == boost::get<0>(target_vertex)) && 
+        (boost::get<1>(curr_vertex) == boost::get<1>(target_vertex))) 
     {
       target_desc = *vertex_iter;
     }

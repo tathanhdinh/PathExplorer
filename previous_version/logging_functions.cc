@@ -404,17 +404,20 @@ VOID logging_general_instruction_analyzer(ADDRINT ins_addr)
     {
       if (addr_ins_static_map[prec_ins_addr].category != XED_CATEGORY_COND_BR) 
       {
-        explored_graph->add_edge(prec_ins_addr, ins_addr, curr_br_order, NEXT, 0, 0, 0);
+        explored_graph->add_edge(prec_ins_addr, curr_br_order, ins_addr, curr_br_order, 
+                                 NEXT, 0, 0, 0);
       }
       else 
       {
         if (prec_br_taken) 
         {
-          explored_graph->add_edge(prec_ins_addr, ins_addr, curr_br_order, TAKEN, 0, 0, 0);
+          explored_graph->add_edge(prec_ins_addr, curr_br_order - 1, ins_addr, curr_br_order, 
+                                   TAKEN, 0, 0, 0);
         }
         else 
         {
-          explored_graph->add_edge(prec_ins_addr, ins_addr, curr_br_order, NOT_TAKEN, 0, 0, 0);
+          explored_graph->add_edge(prec_ins_addr, curr_br_order - 1, ins_addr, curr_br_order, 
+                                   NOT_TAKEN, 0, 0, 0);
         }
       }
     }

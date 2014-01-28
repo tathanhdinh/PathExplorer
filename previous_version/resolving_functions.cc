@@ -405,14 +405,14 @@ inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr,
 }
 
 
-inline UINT32 current_branch_order()
+inline UINT32 branch_order_of(UINT32 ins_order)
 {
   UINT32 curr_br_order = 0;
   std::map<UINT32, ptr_branch>::iterator ptr_branch_iter;
   for (ptr_branch_iter = order_tainted_ptr_branch_map.begin(); 
        ptr_branch_iter != order_tainted_ptr_branch_map.end(); ++ptr_branch_iter) 
   {
-    if (ptr_branch_iter->first < explored_trace.size()) 
+    if (ptr_branch_iter->first < ins_order) 
     {
       ++curr_br_order;
     }
@@ -450,8 +450,10 @@ inline void unresolved_branch_takes_new_decision(ADDRINT ins_addr,
     
     accept_branch(active_ptr_branch);
     
-    UINT32 curr_br_order = current_branch_order();
-    explored_graph->add_edge(ins_addr, active_nearest_checkpoint.first->addr, curr_br_order, 
+    explored_graph->add_edge(active_ptr_branch->addr, 
+                             branch_order_of(active_ptr_branch->trace.size()),
+                             active_nearest_checkpoint.first->addr, 
+                             branch_order_of(active_nearest_checkpoint.first->trace.size()), 
                              ROLLBACK, active_nearest_checkpoint.second.size(), 
                              active_ptr_branch->trace.size() - active_nearest_checkpoint.first->trace.size(), 
                              local_rollback_times);
@@ -531,8 +533,11 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
           if (local_rollback_times > max_local_rollback_times) 
           {
 //             std::cout << active_nearest_checkpoint.second.size() << "\n";
-            UINT32 curr_br_order = current_branch_order();
-            explored_graph->add_edge(ins_addr, active_nearest_checkpoint.first->addr, curr_br_order, 
+//             UINT32 curr_br_order = current_branch_order();
+            explored_graph->add_edge(active_ptr_branch->addr, 
+                                     branch_order_of(active_ptr_branch->trace.size()),
+                                     active_nearest_checkpoint.first->addr, 
+                                     branch_order_of(active_nearest_checkpoint.first->trace.size()),
                                      ROLLBACK, active_nearest_checkpoint.second.size(), 
                                      active_ptr_branch->trace.size() - active_nearest_checkpoint.first->trace.size(), 
                                      local_rollback_times);
