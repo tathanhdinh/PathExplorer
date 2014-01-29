@@ -174,7 +174,7 @@ int main (int argc, char *argv[])
   //std::cout << "initializing image symbols\n" << std::flush;
   //PIN_InitSymbols();
 
-  std::cout << "initializaing Pin\n";
+  std::cout << "initializing Pin\n";
   PIN_Init(argc, argv);
 
   std::cout << "initializing Pintool data\n";
