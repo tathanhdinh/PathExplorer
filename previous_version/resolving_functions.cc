@@ -408,17 +408,26 @@ inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr,
 inline UINT32 branch_order_of(UINT32 ins_order)
 {
   UINT32 curr_br_order = 0;
+  
   std::map<UINT32, ptr_branch>::iterator ptr_branch_iter;
   for (ptr_branch_iter = order_tainted_ptr_branch_map.begin(); 
        ptr_branch_iter != order_tainted_ptr_branch_map.end(); ++ptr_branch_iter) 
   {
-    if (ptr_branch_iter->first < ins_order) 
+    if (ptr_branch_iter->first < saved_ptr_checkpoints[0]->trace.size()) 
     {
-      ++curr_br_order;
+      continue;
     }
     else 
     {
-      break;
+      if ((ptr_branch_iter->first < ins_order) /*&& 
+        (ptr_branch_iter->first > saved_ptr_checkpoints[0]->trace.size())*/)
+      {
+        ++curr_br_order;
+      }
+      else 
+      {
+        break;
+      }
     }
   }
   return curr_br_order;

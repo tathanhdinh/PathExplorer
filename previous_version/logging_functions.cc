@@ -339,7 +339,10 @@ inline void prepare_new_rollbacking_phase()
 //   explored_graph->normalize_orders_of_nodes(added_vertices);  
   prec_ins_addr = 0;
   curr_br_order = 0;
-  added_vertices.clear();
+  
+  std::set<std::size_t> previous_added_vertices;
+  previous_added_vertices.swap(added_vertices);
+//   added_vertices.clear();
     
   BOOST_LOG_TRIVIAL(info) 
     << boost::format("\033[33mStop detecting, %d checkpoints and %d/%d branches detected. Start rollbacking.\033[0m") 
@@ -355,8 +358,7 @@ inline void prepare_new_rollbacking_phase()
   if (exploring_ptr_branch)
   {
     rollback_with_input_replacement(saved_ptr_checkpoints[0],
-                                    exploring_ptr_branch
-                                      ->inputs[!exploring_ptr_branch->br_taken][0].get());
+                                    exploring_ptr_branch->inputs[!exploring_ptr_branch->br_taken][0].get());
   }
   else
   {
@@ -367,6 +369,8 @@ inline void prepare_new_rollbacking_phase()
     // the first rollbacking phase
     if (!order_input_dep_ptr_branch_map.empty())
     { 
+      explored_graph->normalize_orders_of_nodes(previous_added_vertices);
+      
       ptr_branch first_ptr_branch = order_input_dep_ptr_branch_map.begin()->second;
       rollback_with_input_replacement(saved_ptr_checkpoints[0], 
                                       first_ptr_branch
