@@ -5,6 +5,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/dynamic_bitset.hpp>
 #include <string>
+#include <set>
 
 typedef enum 
 {
@@ -17,10 +18,11 @@ class exploring_graph
 {
 public:
   exploring_graph();
-  void add_node(ADDRINT node_addr, UINT32 br_order);
+  std::size_t add_vertex(ADDRINT node_addr, UINT32 br_order);
   void add_edge(ADDRINT source_addr, UINT32 source_br_order, 
                 ADDRINT target_addr, UINT32 target_br_order,
                 next_exe_type direction, UINT32 nb_bits, UINT32 rb_length, UINT32 nb_rb);
+  void normalize_orders_of_nodes(std::set<std::size_t>& added_nodes);
   void print_to_file(const std::string& filename);
 };
 

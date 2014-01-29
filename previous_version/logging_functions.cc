@@ -67,6 +67,7 @@ static std::map<vdep_vertex_desc,
 static ADDRINT                                  prec_ins_addr = 0;
 static bool                                     prec_br_taken;
 static UINT32                                   curr_br_order = 0;
+static std::set<std::size_t>                    added_vertices;
 
 /*================================================================================================*/
 
@@ -331,13 +332,14 @@ inline void prepare_new_rollbacking_phase()
         % explored_trace.size();
   
 //   journal_tainting_graph("tainting_graph.dot");
-//   PIN_ExitApplication(0);
-  
-  prec_ins_addr = 0;
-  curr_br_order = 0;
-        
+//   PIN_ExitApplication(0);      
   compute_branch_mem_dependency();
   compute_branch_min_checkpoint();
+  
+//   explored_graph->normalize_orders_of_nodes(added_vertices);  
+  prec_ins_addr = 0;
+  curr_br_order = 0;
+  added_vertices.clear();
     
   BOOST_LOG_TRIVIAL(info) 
     << boost::format("\033[33mStop detecting, %d checkpoints and %d/%d branches detected. Start rollbacking.\033[0m") 
@@ -399,7 +401,8 @@ VOID logging_general_instruction_analyzer(ADDRINT ins_addr)
     order_ins_dynamic_map[explored_trace.size()] = addr_ins_static_map[ins_addr];
 
 //     explored_graph->add_node(ins_addr);
-    explored_graph->add_node(ins_addr, curr_br_order);
+    std::size_t new_vertex = explored_graph->add_vertex(ins_addr, curr_br_order);
+    added_vertices.insert(new_vertex);
     if (prec_ins_addr != 0) 
     {
       if (addr_ins_static_map[prec_ins_addr].category != XED_CATEGORY_COND_BR) 

@@ -27,6 +27,10 @@ typedef boost::graph_traits<exp_graph>::edge_iterator         exp_edge_iter;
 
 /*================================================================================================*/
 
+extern std::map<UINT32, ptr_branch>   order_input_dep_ptr_branch_map;
+extern std::map<UINT32, ptr_branch>   order_input_indep_ptr_branch_map;
+extern std::map<UINT32, ptr_branch>   order_tainted_ptr_branch_map;
+
 extern std::map<ADDRINT, instruction> addr_ins_static_map;
 extern std::bitset<30>                path_code;
 
@@ -45,7 +49,7 @@ exploring_graph::exploring_graph()
 
 static inline exp_vertex make_vertex(ADDRINT node_addr, UINT32 node_br_order)
 {
-  boost::dynamic_bitset<> node_code(node_br_order);
+  boost::dynamic_bitset<unsigned char> node_code(node_br_order);
   for (UINT32 bit_idx = 0; bit_idx < node_br_order; ++bit_idx) 
   {
     node_code[bit_idx] = path_code[bit_idx];
@@ -56,10 +60,11 @@ static inline exp_vertex make_vertex(ADDRINT node_addr, UINT32 node_br_order)
 
 /*================================================================================================*/
 
-void exploring_graph::add_node(ADDRINT node_addr, UINT32 node_br_order)
+std::size_t exploring_graph::add_vertex(ADDRINT node_addr, UINT32 node_br_order)
 {
   exp_vertex curr_vertex = make_vertex(node_addr, node_br_order);
   
+  exp_vertex_desc added_node;
   exp_vertex_iter vertex_iter;
   exp_vertex_iter last_vertex_iter;
   boost::tie(vertex_iter, last_vertex_iter) = boost::vertices(internal_exp_graph);
@@ -68,14 +73,15 @@ void exploring_graph::add_node(ADDRINT node_addr, UINT32 node_br_order)
     if ((boost::get<0>(internal_exp_graph[*vertex_iter]) == boost::get<0>(curr_vertex)) && 
         (boost::get<1>(internal_exp_graph[*vertex_iter]) == boost::get<1>(curr_vertex)))
     {
+      added_node = *vertex_iter;
       break;
     }
   }
   if (vertex_iter == last_vertex_iter) 
   {
-    boost::add_vertex(curr_vertex, internal_exp_graph);
+    added_node = boost::add_vertex(curr_vertex, internal_exp_graph);
   }
-  return;
+  return added_node;
 }
 
 /*================================================================================================*/
@@ -115,17 +121,84 @@ void exploring_graph::add_edge(ADDRINT source_addr, UINT32 source_br_order,
     }
   }
   
-  exp_edge_desc edge_desc;
-  bool edge_existed;
-  boost::tie(edge_desc, edge_existed) = boost::edge(source_desc, target_desc, internal_exp_graph);
-  if (!edge_existed && (source_desc != 0) && (target_desc != 0)) 
+  if ((source_desc != 0) && (target_desc != 0)) 
   {
-    boost::add_edge(source_desc, target_desc, 
-                    boost::make_tuple(direction, nb_bits, rb_length, nb_rb), internal_exp_graph);
+    exp_edge_desc edge_desc;
+    bool edge_existed;
+    boost::tie(edge_desc, edge_existed) = boost::edge(source_desc, target_desc, internal_exp_graph);
+    if (!edge_existed) 
+    {
+      boost::add_edge(source_desc, target_desc, 
+                      boost::make_tuple(direction, nb_bits, rb_length, nb_rb), internal_exp_graph);
+    }
   }
+  else 
+  {
+    if (source_desc == 0) 
+    {
+      std::cout << "source " << remove_leading_zeros(StringFromAddrint(source_addr)) << "\n";
+    }
+    else 
+    {
+      std::cout << "target " << remove_leading_zeros(StringFromAddrint(target_addr)) << "\n";
+    }
+    std::cout << "edge not found" << boost::num_vertices(internal_exp_graph) << "\n";
+  }
+  
 //   std::cout << nb_bits << "\n";
   return;
 }
+
+/*================================================================================================*/
+
+void exploring_graph::normalize_orders_of_nodes(std::set<std::size_t>& added_nodes)
+{
+  std::set<UINT32> input_dep_br_orders;
+  UINT32 br_order = 0;
+  std::map<UINT32, ptr_branch>::iterator branch_iter;
+  for (branch_iter = order_tainted_ptr_branch_map.begin(); 
+       branch_iter != order_tainted_ptr_branch_map.end(); ++branch_iter) 
+  {
+    if (order_input_dep_ptr_branch_map.find(branch_iter->first) != 
+        order_input_dep_ptr_branch_map.end()) 
+    {
+      input_dep_br_orders.insert(br_order);
+    }
+    ++br_order;
+  }
+  
+  std::set<std::size_t>::iterator added_node_iter;
+  for (added_node_iter = added_nodes.begin(); added_node_iter != added_nodes.end(); 
+       ++added_node_iter) 
+  {
+    boost::dynamic_bitset<unsigned char> node_code = 
+      boost::dynamic_bitset<unsigned char>(boost::get<1>(internal_exp_graph[*added_node_iter]));
+
+    std::set<UINT32> node_code_br_orders(boost::counting_iterator<UINT32>(0), 
+                                         boost::counting_iterator<UINT32>(node_code.size()));
+    std::set<UINT32> node_code_input_dep_br_orders;
+    std::set_intersection(node_code_br_orders.begin(), node_code_br_orders.end(), 
+                          input_dep_br_orders.begin(), input_dep_br_orders.end(), 
+                          std::inserter(node_code_input_dep_br_orders, node_code_input_dep_br_orders.begin()));
+    
+    boost::dynamic_bitset<unsigned char> node_new_code(node_code_input_dep_br_orders.size());
+    std::set<UINT32>::iterator br_order_iter;
+    UINT32 bit_idx = 0;
+    for (br_order_iter = node_code_input_dep_br_orders.begin(); 
+         br_order_iter != node_code_input_dep_br_orders.end(); ++br_order_iter) 
+    {
+      node_new_code[bit_idx] = node_code[*br_order_iter];
+      ++bit_idx;
+    }
+    
+    ADDRINT node_addr = boost::get<0>(internal_exp_graph[*added_node_iter]);
+    std::string node_new_code_str; boost::to_string(node_new_code, node_new_code_str);
+    internal_exp_graph[*added_node_iter] = boost::make_tuple(node_addr, node_new_code_str);
+  }
+  
+  return;
+}
+
 
 /*================================================================================================*/
 
@@ -139,10 +212,11 @@ public:
   template <typename Vertex>
   void operator()(std::ostream& out, Vertex v) 
   {
-    exp_vertex vertex_addr = graph[v];
-    out << boost::format("[label=\"<%s,%s>\"]") 
-            % remove_leading_zeros(StringFromAddrint(vertex_addr)) 
-            % addr_ins_static_map[vertex_addr].disass;
+    exp_vertex curr_vertex = graph[v];
+    out << boost::format("[label=\"<%s@%s,%s>\"]") 
+            % remove_leading_zeros(StringFromAddrint(boost::get<0>(curr_vertex))) 
+            % boost::get<1>(curr_vertex)
+            % addr_ins_static_map[boost::get<0>(curr_vertex)].disass;
 //     std::string vertex_label;
 //     vertex_label = "<" + remove_leading_zeros(StringFromAddrint(vertex_addr)) + ", " + 
 //                    addr_ins_static_map[vertex_addr].disass + ">";
