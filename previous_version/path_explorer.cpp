@@ -1,5 +1,6 @@
 #include <pin.H>
 
+#include <string>
 #include <map>
 #include <vector>
 #include <algorithm>
@@ -14,7 +15,14 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/format.hpp>
+#include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/sinks/text_file_backend.hpp>
+#include <boost/log/utility/setup/file.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
+#include <boost/log/sources/severity_logger.hpp>
+#include <boost/log/sources/record_ostream.hpp>
 
 #include "instruction.h"
 #include "checkpoint.h"
@@ -91,6 +99,9 @@ UINT64                                        econed_ins_number;
 boost::shared_ptr<boost::posix_time::ptime>   start_ptr_time;
 boost::shared_ptr<boost::posix_time::ptime>   stop_ptr_time;
 
+boost::log::sources::severity_logger<boost::log::trivial::severity_level> log_instance;
+boost::shared_ptr< boost::log::sinks::synchronous_sink<boost::log::sinks::text_file_backend> > log_sink;
+
 // std::ofstream                                 tainting_log_file;
 
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -166,32 +177,63 @@ VOID stop_tracing(INT32 code, VOID *data)
   return;
 }
 
+/*====================================================================================================================*/
+
+inline static void initialize_logging(std::string log_filename)
+{
+  log_sink = boost::log::add_file_log(log_filename.c_str());
+  boost::log::core::get()->set_filter
+  (
+  boost::log::trivial::severity >= boost::log::trivial::info
+  );
+  boost::log::add_common_attributes();
+  return;
+}
+
 /* ------------------------------------------------------------------------------------------------------------------ */
 /*                                                        main function                                               */
 /* ------------------------------------------------------------------------------------------------------------------ */
-int main (int argc, char *argv[])
+int main(int argc, char *argv[])
 {
-  //std::cout << "initializing image symbols\n" << std::flush;
-  //PIN_InitSymbols();
+  initialize_logging("path_explorer.log");
 
-  std::cout << "initializing Pin\n";
-  PIN_Init(argc, argv);
+  BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "initializing image symbol tables";
+  PIN_InitSymbols();
 
-  std::cout << "initializing Pintool data\n";
-  // 0 is the (unused) input data
-  //PIN_AddApplicationStartFunction(start_tracing, 0);
+  BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "initializing Pin";
+	if (PIN_Init(argc, argv))
+	{
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal) << "Pin initialization failed";
+    log_sink->flush();
+	}
+  else
+  {
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "Pin initialization success";
+    log_sink->flush();
 
-  //std::cout << "activating image_load_instrumenter\n";
-	//IMG_AddInstrumentFunction(image_load_instrumenter, 0);
-  //INS_AddInstrumentFunction(ins_instrumenter, 0);
-  PIN_AddFollowChildProcessFunction(process_create_instrumenter, 0);
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "activating Pintool data-initialization";
+    // 0 is the (unused) input data
+    PIN_AddApplicationStartFunction(start_tracing, 0);
 
-  //PIN_AddSyscallEntryFunction(syscall_entry_analyzer, 0);
-  //PIN_AddSyscallExitFunction(syscall_exit_analyzer, 0);
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "activating image-load instrumenter";
+    IMG_AddInstrumentFunction(image_load_instrumenter, 0);
 
-  //PIN_AddFiniFunction(stop_tracing, 0);
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "activating instruction instrumenters";
+    INS_AddInstrumentFunction(ins_instrumenter, 0);
 
-  // now the control is passed to pin, so the main function will never return
-  PIN_StartProgram();
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "activating process-fork instrumenter";
+    PIN_AddFollowChildProcessFunction(process_create_instrumenter, 0);
+
+    //PIN_AddSyscallEntryFunction(syscall_entry_analyzer, 0);
+    //PIN_AddSyscallExitFunction(syscall_exit_analyzer, 0);
+
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "activating Pintool data-finalization";
+    PIN_AddFiniFunction(stop_tracing, 0);
+
+    // now the control is passed to pin, so the main function will never return
+    PIN_StartProgram();
+  }
+
+  // in fact, it is never reached
   return 0;
 }

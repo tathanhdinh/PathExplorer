@@ -511,7 +511,7 @@ VOID logging_after_wsarecv_funtions_analyzer()
 		std::cerr << received_msg_size << "\n";
 		if (received_msg_size > 0)
 		{
-		++received_msg_num;
+		  ++received_msg_num;
 		}
 		function_has_been_called = false;
 	}
