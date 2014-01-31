@@ -187,29 +187,28 @@ void exploring_graph::add_edge(ADDRINT source_addr, UINT32 source_br_order,
 //     std::string path_code_str; 
 //     boost::to_string(path_code, path_code_str);
     
-    if (source_desc == boost::integer_traits<std::size_t>::const_max) 
-    {
-      std::cout << "source not found\n";
-    }
-    
-    if (target_desc == boost::integer_traits<std::size_t>::const_max) 
-    {
-      std::cout << "target not found\n";
-    }
-    
-    std::cout << "edge not found\n";
+//     if (source_desc == boost::integer_traits<std::size_t>::const_max) 
+//     {
+//       std::cout << "source not found\n";
+//     }
+//     
+//     if (target_desc == boost::integer_traits<std::size_t>::const_max) 
+//     {
+//       std::cout << "target not found\n";
+//     }
+//     
+//     std::cout << "edge not found\n";
 //     PIN_ExitApplication(0);
   }
   
-  std::cout << "path code " << path_code.to_string() << "\n";
-  std::cout << remove_leading_zeros(StringFromAddrint(source_addr)) 
-              << "  " << boost::get<1>(source_vertex) 
-              << " " << source_br_order << "\n";
-    std::cout << remove_leading_zeros(StringFromAddrint(target_addr)) 
-              << "  " << boost::get<1>(target_vertex) 
-              << "  " << target_br_order << "\n";
+//   std::cout << "path code " << path_code.to_string() << "\n";
+//   std::cout << remove_leading_zeros(StringFromAddrint(source_addr)) 
+//               << "  " << boost::get<1>(source_vertex) 
+//               << " " << source_br_order << "\n";
+//     std::cout << remove_leading_zeros(StringFromAddrint(target_addr)) 
+//               << "  " << boost::get<1>(target_vertex) 
+//               << "  " << target_br_order << "\n";
   
-//   std::cout << nb_bits << "\n";
   return;
 }
 
