@@ -8,7 +8,14 @@
 #include <boost/format.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/sinks/text_file_backend.hpp>
+#include <boost/log/utility/setup/file.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
+#include <boost/log/sources/severity_logger.hpp>
+#include <boost/log/sources/record_ostream.hpp>
 
 #include "stuffs.h"
 #include "branch.h"
@@ -33,6 +40,11 @@ extern UINT8                                        received_msg_num;
 
 extern boost::shared_ptr<boost::posix_time::ptime>  start_ptr_time;
 extern boost::shared_ptr<boost::posix_time::ptime>  stop_ptr_time;
+
+extern boost::log::sources::severity_logger<boost::log::trivial::severity_level> log_instance;
+extern boost::shared_ptr< boost::log::sinks::synchronous_sink<boost::log::sinks::text_file_backend> > log_sink;
+
+/*====================================================================================================================*/
 
 /**
  * @brief instrumentation function.
@@ -184,87 +196,96 @@ VOID ins_instrumenter(INS ins, VOID *data)
 
 VOID image_load_instrumenter(IMG loaded_img, VOID *data)
 {
-  std::cout << "image_load_instrumenter activated\n";
-
 	const static std::string winsock_dll_name("WS2_32.dll");
 
-	if (received_msg_num < 1)
+  // verify whether the winsock2 module is loaded
+  boost::filesystem::path loaded_image_path(IMG_Name(loaded_img));
+
+  BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "loaded module: " << loaded_image_path.filename();
+
+  if (loaded_image_path.filename() == winsock_dll_name)
+  {
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "winsock module found";
+
+    RTN recv_function = RTN_FindByName(loaded_img, "recv");
+    if (RTN_Valid(recv_function))
+    {
+      BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "recv instrumented";
+
+      RTN_Open(recv_function);
+
+      RTN_InsertCall(recv_function, IPOINT_BEFORE, (AFUNPTR)logging_before_recv_functions_analyzer,
+        IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
+        IARG_END);
+      RTN_InsertCall(recv_function, IPOINT_AFTER, (AFUNPTR)logging_after_recv_functions_analyzer,
+        IARG_FUNCRET_EXITPOINT_VALUE,
+        IARG_END);
+
+      RTN_Close(recv_function);
+    }
+
+    RTN recvfrom_function = RTN_FindByName(loaded_img, "recvfrom");
+    if (RTN_Valid(recvfrom_function))
+    {
+      BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "recvfrom instrumented";
+
+      RTN_Open(recvfrom_function);
+
+      RTN_InsertCall(recvfrom_function, IPOINT_BEFORE,
+        (AFUNPTR)logging_before_recv_functions_analyzer,
+        IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
+        IARG_END);
+      RTN_InsertCall(recvfrom_function, IPOINT_AFTER,
+        (AFUNPTR)logging_after_recv_functions_analyzer,
+        IARG_FUNCRET_EXITPOINT_VALUE,
+        IARG_END);
+
+      RTN_Close(recvfrom_function);
+    }
+
+    RTN wsarecv_function = RTN_FindByName(loaded_img, "WSARecv");
+    if (RTN_Valid(wsarecv_function))
+    {
+      BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "WSARecv instrumented";
+
+      RTN_Open(wsarecv_function);
+
+      RTN_InsertCall(wsarecv_function, IPOINT_BEFORE,
+        (AFUNPTR)logging_before_wsarecv_functions_analyzer,
+        IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
+        IARG_END);
+      RTN_InsertCall(wsarecv_function, IPOINT_AFTER,
+        (AFUNPTR)logging_after_wsarecv_funtions_analyzer,
+        IARG_END);
+
+      RTN_Close(wsarecv_function);
+    }
+
+    RTN wsarecvfrom_function = RTN_FindByName(loaded_img, "WSARecvFrom");
+    if (RTN_Valid(wsarecvfrom_function))
+    {
+      BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "WSARecvFrom instrumented";
+
+      RTN_Open(wsarecvfrom_function);
+
+      RTN_InsertCall(wsarecvfrom_function, IPOINT_BEFORE,
+        (AFUNPTR)logging_before_wsarecv_functions_analyzer,
+        IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
+        IARG_END);
+      RTN_InsertCall(wsarecvfrom_function, IPOINT_AFTER,
+        (AFUNPTR)logging_after_wsarecv_funtions_analyzer,
+        IARG_END);
+
+      RTN_Close(wsarecvfrom_function);
+    }
+  }
+
+  log_sink->flush();
+
+	/*if (received_msg_num < 1)
 	{
-		// verify whether the winsock2 module is loaded
-		boost::filesystem::path loaded_image_path(IMG_Name(loaded_img));
-		std::cout << "Loaded module: " << loaded_image_path.filename() << "\n";
-		if (loaded_image_path.filename() == winsock_dll_name)
-		{
-			std::cout << "winsock found\n";
-			RTN recv_function = RTN_FindByName(loaded_img, "recv");
-			if (RTN_Valid(recv_function))
-			{
-				std::cout << "recv instrumented\n";
-				RTN_Open(recv_function);
-
-				RTN_InsertCall(recv_function, IPOINT_BEFORE, (AFUNPTR)logging_before_recv_functions_analyzer,
-											 IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
-											 IARG_END);
-				RTN_InsertCall(recv_function, IPOINT_AFTER, (AFUNPTR)logging_after_recv_functions_analyzer,
-											 IARG_FUNCRET_EXITPOINT_VALUE,
-											 IARG_END);
-
-				RTN_Close(recv_function);
-			}
-
-			RTN recvfrom_function = RTN_FindByName(loaded_img, "recvfrom");
-			if (RTN_Valid(recvfrom_function))
-			{
-				std::cout << "recvfrom instrumented\n";
-				RTN_Open(recvfrom_function);
-
-				RTN_InsertCall(recvfrom_function, IPOINT_BEFORE, 
-											 (AFUNPTR)logging_before_recv_functions_analyzer,
-											 IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
-											 IARG_END);
-				RTN_InsertCall(recvfrom_function, IPOINT_AFTER, 
-											 (AFUNPTR)logging_after_recv_functions_analyzer,
-											 IARG_FUNCRET_EXITPOINT_VALUE,
-											 IARG_END);
-
-				RTN_Close(recvfrom_function);
-			}
-
-			RTN wsarecv_function = RTN_FindByName(loaded_img, "WSARecv");
-			if (RTN_Valid(wsarecv_function))
-			{
-				std::cout << "WSARecv instrumented\n";
-				RTN_Open(wsarecv_function);
-
-				RTN_InsertCall(wsarecv_function, IPOINT_BEFORE, 
-											 (AFUNPTR)logging_before_wsarecv_functions_analyzer, 
-											 IARG_FUNCARG_ENTRYPOINT_VALUE, 1, 
-											 IARG_END);
-				RTN_InsertCall(wsarecv_function, IPOINT_AFTER, 
-											 (AFUNPTR)logging_after_wsarecv_funtions_analyzer, 
-											 IARG_END);
-
-				RTN_Close(wsarecv_function);
-			}
-
-			RTN wsarecvfrom_function = RTN_FindByName(loaded_img, "WSARecvFrom");
-			if (RTN_Valid(wsarecvfrom_function))
-			{
-				std::cout << "WSARecvFrom instrumented\n";
-				RTN_Open(wsarecvfrom_function);
-
-				RTN_InsertCall(wsarecvfrom_function, IPOINT_BEFORE, 
-											 (AFUNPTR)logging_before_wsarecv_functions_analyzer, 
-											 IARG_FUNCARG_ENTRYPOINT_VALUE, 1, 
-											 IARG_END);
-				RTN_InsertCall(wsarecvfrom_function, IPOINT_AFTER, 
-											 (AFUNPTR)logging_after_wsarecv_funtions_analyzer, 
-											 IARG_END);
-
-				RTN_Close(wsarecvfrom_function);
-			}
-		}
-	}
+		
+	}*/
 
 	return;
 }
@@ -273,7 +294,8 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
 
 BOOL process_create_instrumenter(CHILD_PROCESS created_process, VOID* data)
 {
-  BOOST_LOG_TRIVIAL(warning) 
+  BOOST_LOG_SEV(log_instance, boost::log::trivial::warning) 
     << boost::format("new process created with id %d") % CHILD_PROCESS_GetId(created_process);
+  log_sink->flush();
   return TRUE;
 }

@@ -6,8 +6,15 @@
 #include <set>
 
 #include <boost/format.hpp>
-#include <boost/log/trivial.hpp>
 #include <boost/graph/breadth_first_search.hpp>
+#include <boost/log/core.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/sinks/text_file_backend.hpp>
+#include <boost/log/utility/setup/file.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
+#include <boost/log/sources/severity_logger.hpp>
+#include <boost/log/sources/record_ostream.hpp>
 
 #include "stuffs.h"
 #include "instruction.h"
@@ -54,6 +61,9 @@ extern KNOB<BOOL>                               print_debug_text;
 extern KNOB<UINT32>                             max_trace_length;
 
 extern UINT32                                   max_trace_size;
+
+extern boost::log::sources::severity_logger<boost::log::trivial::severity_level> log_instance;
+extern boost::shared_ptr< boost::log::sinks::synchronous_sink<boost::log::sinks::text_file_backend> > log_sink;
 
 /*================================================================================================*/
 
@@ -109,7 +119,9 @@ std::vector<UINT32> backward_trace(vdep_vertex_desc root_vertex, vdep_vertex_des
     }
     else
     {
-      BOOST_LOG_TRIVIAL(fatal) << "Edge not found in backward trace construction.";
+      //BOOST_LOG_TRIVIAL(fatal) << "Edge not found in backward trace construction.";
+      BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal) 
+        << "edge not found in backward trace construction";
       PIN_ExitApplication(0);
     }
 
@@ -182,7 +194,8 @@ inline void compute_branch_mem_dependency()
         }
         else
         {
-          BOOST_LOG_TRIVIAL(fatal) << "Backward edge not found in BFS.";
+          //BOOST_LOG_TRIVIAL(fatal) << "Backward edge not found in BFS.";
+          BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal) << "backward edge not found in BFS";
           PIN_ExitApplication(0);
         }
       }
@@ -495,10 +508,16 @@ namespace WINDOWS
 };
 VOID logging_before_wsarecv_functions_analyzer(ADDRINT msg_struct_adddr)
 {
-	std::cout << "before\n" << std::fflush;
+	//std::cout << "before\n" << std::fflush;
 	received_msg_struct_addr = msg_struct_adddr;
 	received_msg_addr = reinterpret_cast<ADDRINT>((reinterpret_cast<WINDOWS::LPWSABUF>(received_msg_struct_addr))->buf);
 	function_has_been_called = true;
+
+  BOOST_LOG_SEV(log_instance, boost::log::trivial::info) 
+    << "WSARecv or WSARecvFrom called, received msg buffer: " 
+    << remove_leading_zeros(StringFromAddrint(received_msg_addr));
+  log_sink->flush();
+
 	return;
 }
 
@@ -506,14 +525,17 @@ VOID logging_after_wsarecv_funtions_analyzer()
 {
 	if (function_has_been_called)
 	{
-		std::cout << "after\n";
 		received_msg_size = (reinterpret_cast<WINDOWS::LPWSABUF>(received_msg_struct_addr))->len;
-		std::cerr << received_msg_size << "\n";
+		//std::cerr << received_msg_size << "\n";
 		if (received_msg_size > 0)
 		{
 		  ++received_msg_num;
 		}
 		function_has_been_called = false;
+
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) 
+      << "WSARecv or WSARecvFrom returned, received msg size: " << received_msg_size;
+    log_sink->flush();
 	}
 	
 	return;

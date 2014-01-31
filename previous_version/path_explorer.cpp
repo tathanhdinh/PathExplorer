@@ -197,10 +197,10 @@ int main(int argc, char *argv[])
 {
   initialize_logging("path_explorer.log");
 
-  BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "initializing image symbol tables";
+  BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "initialize image symbol tables";
   PIN_InitSymbols();
 
-  BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "initializing Pin";
+  BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "initialize Pin";
 	if (PIN_Init(argc, argv))
 	{
     BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal) << "Pin initialization failed";
@@ -210,23 +210,23 @@ int main(int argc, char *argv[])
   {
     BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "Pin initialization success";
 
-    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "activating Pintool data-initialization";
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "activate Pintool data-initialization";
     PIN_AddApplicationStartFunction(start_tracing, 0);  // 0 is the (unused) input data
 
-    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "activating image-load instrumenter";
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "activate image-load instrumenter";
     IMG_AddInstrumentFunction(image_load_instrumenter, 0);
 
-    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "activating instruction instrumenters";
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "activate instruction instrumenters";
     INS_AddInstrumentFunction(ins_instrumenter, 0);
 
-    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "activating process-fork instrumenter";
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "activate process-fork instrumenter";
     PIN_AddFollowChildProcessFunction(process_create_instrumenter, 0);
 
     // In Windows environment, the input tracing is through socket api instead of system call
     //PIN_AddSyscallEntryFunction(syscall_entry_analyzer, 0);
     //PIN_AddSyscallExitFunction(syscall_exit_analyzer, 0);
 
-    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "activating Pintool data-finalization";
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "activate Pintool data-finalization";
     PIN_AddFiniFunction(stop_tracing, 0);
 
     log_sink->flush();
