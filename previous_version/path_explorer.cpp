@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
     PIN_AddFollowChildProcessFunction(process_create_instrumenter, 0);
 
     // In Windows environment, the input tracing is through socket api instead of system call
-    PIN_AddSyscallEntryFunction(syscall_entry_analyzer, 0);
+    //PIN_AddSyscallEntryFunction(syscall_entry_analyzer, 0);
     //PIN_AddSyscallExitFunction(syscall_exit_analyzer, 0);
 
     BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "activate Pintool data-finalization";

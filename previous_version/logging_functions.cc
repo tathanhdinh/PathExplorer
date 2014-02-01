@@ -337,8 +337,9 @@ inline void prepare_new_rollbacking_phase()
 {
   //BOOST_LOG_TRIVIAL(info) 
   BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-    << boost::format("\033[33mstop exploring, %d instructions analyzed; start detecting checkpoints\033[0m")
+    << boost::format("stop exploring, %d instructions analyzed; start detecting checkpoints")
         % explored_trace.size();
+  log_sink->flush();
   
 //   journal_tainting_graph("tainting_graph.dot");
 //   PIN_ExitApplication(0);
@@ -348,10 +349,11 @@ inline void prepare_new_rollbacking_phase()
     
   //BOOST_LOG_TRIVIAL(info) 
   BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-    << boost::format("\033[33mstop detecting, %d checkpoints and %d/%d branches detected; start rollbacking.\033[0m")
+    << boost::format("stop detecting, %d checkpoints and %d/%d branches detected; start rollbacking")
         % saved_ptr_checkpoints.size() 
         % order_input_dep_ptr_branch_map.size() 
         % order_tainted_ptr_branch_map.size();
+  log_sink->flush();
 
 //   journal_tainting_log();
     
@@ -416,11 +418,11 @@ VOID logging_general_instruction_analyzer(ADDRINT ins_addr)
     explored_trace.push_back(ins_addr);
     order_ins_dynamic_map[explored_trace.size()] = addr_ins_static_map[ins_addr];
 
-    /*BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << boost::format("%-15s %-35s %s")
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << boost::format("%-15s %-45s %s")
       % remove_leading_zeros(StringFromAddrint(ins_addr))
       % addr_ins_static_map[ins_addr].disass
       % addr_ins_static_map[ins_addr].contained_function;
-    log_sink->flush();*/
+    log_sink->flush();
   }
   else // trace length limit reached
   {
@@ -566,10 +568,10 @@ VOID logging_after_wsarecv_funtions_analyzer()
         << "WSARecv or WSARecvFrom returned, received msg size: " << received_msg_size;
 
       BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-        << boost::format("\033[33mthe first message saved at %s with size %d bytes.\033[0m")
+        << boost::format("the first message saved at %s with size %d bytes")
             % remove_leading_zeros(StringFromAddrint(received_msg_addr)) % received_msg_size
         << "\n-------------------------------------------------------------------------------------------------\n"
-        << boost::format("\033[33mStart tainting the first time with trace size %d.\033[0m") 
+        << boost::format("start tainting the first time with trace size %d") 
             % max_trace_size;
       log_sink->flush();
 

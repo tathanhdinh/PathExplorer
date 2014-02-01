@@ -100,9 +100,9 @@ VOID ins_instrumenter(INS ins, VOID *data)
       if (in_tainting) 
       {
         /* START LOGGING */
-        BOOST_LOG_SEV(log_instance, boost::log::trivial::info) 
+        /*BOOST_LOG_SEV(log_instance, boost::log::trivial::info) 
           << "instruction tainting activated";
-        log_sink->flush();
+        log_sink->flush();*/
 
         if (INS_IsSyscall(ins))
         {
