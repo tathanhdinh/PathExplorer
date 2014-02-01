@@ -201,11 +201,11 @@ int main(int argc, char *argv[])
   PIN_InitSymbols();
 
   BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "initialize Pin";
-	if (PIN_Init(argc, argv))
-	{
+  if (PIN_Init(argc, argv))
+  {
     BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal) << "Pin initialization failed";
     log_sink->flush();
-	}
+  }
   else
   {
     BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "Pin initialization success";

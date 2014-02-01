@@ -305,8 +305,9 @@ inline void compute_branch_min_checkpoint()
       
       if (current_ptr_branch->nearest_checkpoints.size() != 0) 
       {
-        BOOST_LOG_TRIVIAL(info) 
-          << boost::format("The branch at %d:%d (%s: %s) has %d nearest checkpoints.") 
+        //BOOST_LOG_TRIVIAL(info) 
+        BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
+          << boost::format("the branch at %d:%d (%s: %s) has %d nearest checkpoints.") 
               % current_ptr_branch->trace.size()
               % current_ptr_branch->br_taken
               % remove_leading_zeros(StringFromAddrint(current_ptr_branch->addr))
@@ -317,8 +318,9 @@ inline void compute_branch_min_checkpoint()
       }
       else 
       {
-        BOOST_LOG_TRIVIAL(fatal) 
-          << boost::format("Cannot found any nearest checkpoint for the branch at %d.!") 
+        //BOOST_LOG_TRIVIAL(fatal)
+        BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
+          << boost::format("cannot found any nearest checkpoint for the branch at %d.!") 
               % current_ptr_branch->trace.size();
               
         PIN_ExitApplication(0);
@@ -333,8 +335,9 @@ inline void compute_branch_min_checkpoint()
 
 inline void prepare_new_rollbacking_phase()
 {
-  BOOST_LOG_TRIVIAL(info) 
-    << boost::format("\033[33mStop exploring, %d instructions analyzed. Start detecting checkpoints\033[0m") 
+  //BOOST_LOG_TRIVIAL(info) 
+  BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
+    << boost::format("\033[33mstop exploring, %d instructions analyzed. Start detecting checkpoints\033[0m") 
         % explored_trace.size();
   
 //   journal_tainting_graph("tainting_graph.dot");
@@ -343,8 +346,9 @@ inline void prepare_new_rollbacking_phase()
   compute_branch_mem_dependency();
   compute_branch_min_checkpoint();
     
-  BOOST_LOG_TRIVIAL(info) 
-    << boost::format("\033[33mStop detecting, %d checkpoints and %d/%d branches detected. Start rollbacking.\033[0m") 
+  //BOOST_LOG_TRIVIAL(info) 
+  BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
+    << boost::format("\033[33mstop detecting, %d checkpoints and %d/%d branches detected. Start rollbacking.\033[0m") 
         % saved_ptr_checkpoints.size() 
         % order_input_dep_ptr_branch_map.size() 
         % order_tainted_ptr_branch_map.size();
@@ -376,7 +380,9 @@ inline void prepare_new_rollbacking_phase()
     }
     else
     {
-      BOOST_LOG_TRIVIAL(info) << "There is no branch needed to resolve.";
+      //BOOST_LOG_TRIVIAL(info) << "There is no branch needed to resolve.";
+      BOOST_LOG_SEV(log_instance, boost::log::trivial::info) 
+        << "there is no branch needed to resolve";
       PIN_ExitApplication(0);
     }
   }
@@ -393,15 +399,30 @@ VOID logging_syscall_instruction_analyzer(ADDRINT ins_addr)
 }
 
 /*================================================================================================*/
+VOID instruction_execution_simple_logger(ADDRINT ins_addr)
+{
+  BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << boost::format("%-15s %-35s %s")
+    % remove_leading_zeros(StringFromAddrint(ins_addr))
+    % addr_ins_static_map[ins_addr].disass
+    % addr_ins_static_map[ins_addr].contained_function;
+  return;
+}
 
 VOID logging_general_instruction_analyzer(ADDRINT ins_addr)
 {
   if ((explored_trace.size() < max_trace_size) && 
-	  (!addr_ins_static_map[ins_addr].contained_image.empty()))
+    (!addr_ins_static_map[ins_addr].contained_image.empty()))
   {
     explored_trace.push_back(ins_addr);
     order_ins_dynamic_map[explored_trace.size()] = addr_ins_static_map[ins_addr];
-    std::cout << addr_ins_static_map[ins_addr].disass << "\n";
+
+    /*BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << boost::format("%-15s %-35s %s")
+      % remove_leading_zeros(StringFromAddrint(ins_addr))
+      % addr_ins_static_map[ins_addr].disass
+      % addr_ins_static_map[ins_addr].contained_function;*/
+    /*BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << addr_ins_static_map[ins_addr].disass;
+    log_sink->flush();*/
+    //std::cout << addr_ins_static_map[ins_addr].disass << "\n";
   }
   else // trace length limit reached
   {
@@ -425,8 +446,9 @@ VOID logging_mem_read_instruction_analyzer(ADDRINT ins_addr,
                                                      mem_read_addr, mem_read_size));
     saved_ptr_checkpoints.push_back(new_ptr_checkpoint);
     
-    BOOST_LOG_TRIVIAL(trace) 
-      << boost::format("Checkpoint detected at %d (%s).") 
+    //BOOST_LOG_TRIVIAL(trace) 
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::trace)
+      << boost::format("checkpoint detected at %d (%s).") 
           % new_ptr_checkpoint->trace.size() % addr_ins_static_map[ins_addr].disass;
   }
 
@@ -485,19 +507,28 @@ VOID logging_cond_br_analyzer(ADDRINT ins_addr, bool br_taken)
 
 VOID logging_before_recv_functions_analyzer(ADDRINT msg_addr)
 {
-	std::cout << "msg_addr logged\n";
-	received_msg_addr = msg_addr;
-	return;
+  //std::cout << "msg_addr logged\n";
+  received_msg_addr = msg_addr;
+
+  BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
+    << "recv or recvfrom called, received msg buffer: "
+    << remove_leading_zeros(StringFromAddrint(received_msg_addr));
+  //log_sink->flush();
+  return;
 }
 
 VOID logging_after_recv_functions_analyzer(UINT32 msg_length)
 {
-	if (msg_length > 0)
-	{
-		std::cout << "msg_size logged in recv\n";
-		received_msg_num++; received_msg_size = msg_length;
-	}
-	return;
+  if (msg_length > 0)
+  {
+    //std::cout << "msg_size logged in recv\n";
+    received_msg_num++; received_msg_size = msg_length;
+
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
+      << "recv or recvfrom returned, received msg size: " << received_msg_size;
+    //log_sink->flush();
+  }
+  return;
 }
 
 /*================================================================================================*/
@@ -508,35 +539,35 @@ namespace WINDOWS
 };
 VOID logging_before_wsarecv_functions_analyzer(ADDRINT msg_struct_adddr)
 {
-	//std::cout << "before\n" << std::fflush;
-	received_msg_struct_addr = msg_struct_adddr;
-	received_msg_addr = reinterpret_cast<ADDRINT>((reinterpret_cast<WINDOWS::LPWSABUF>(received_msg_struct_addr))->buf);
-	function_has_been_called = true;
+  //std::cout << "before\n" << std::fflush;
+  received_msg_struct_addr = msg_struct_adddr;
+  received_msg_addr = reinterpret_cast<ADDRINT>((reinterpret_cast<WINDOWS::LPWSABUF>(received_msg_struct_addr))->buf);
+  function_has_been_called = true;
 
   BOOST_LOG_SEV(log_instance, boost::log::trivial::info) 
     << "WSARecv or WSARecvFrom called, received msg buffer: " 
     << remove_leading_zeros(StringFromAddrint(received_msg_addr));
   log_sink->flush();
 
-	return;
+  return;
 }
 
 VOID logging_after_wsarecv_funtions_analyzer()
 {
-	if (function_has_been_called)
-	{
-		received_msg_size = (reinterpret_cast<WINDOWS::LPWSABUF>(received_msg_struct_addr))->len;
-		//std::cerr << received_msg_size << "\n";
-		if (received_msg_size > 0)
-		{
-		  ++received_msg_num;
-		}
-		function_has_been_called = false;
+  if (function_has_been_called)
+  {
+    received_msg_size = (reinterpret_cast<WINDOWS::LPWSABUF>(received_msg_struct_addr))->len;
+    //std::cerr << received_msg_size << "\n";
+    if (received_msg_size > 0)
+    {
+      ++received_msg_num;
+    }
+    function_has_been_called = false;
 
     BOOST_LOG_SEV(log_instance, boost::log::trivial::info) 
       << "WSARecv or WSARecvFrom returned, received msg size: " << received_msg_size;
     log_sink->flush();
-	}
-	
-	return;
+  }
+  
+  return;
 }

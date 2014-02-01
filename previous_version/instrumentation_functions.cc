@@ -57,8 +57,19 @@ VOID ins_instrumenter(INS ins, VOID *data)
 {
   // logging the parsed instructions statically
   ADDRINT ins_addr = INS_Address(ins);
-
   addr_ins_static_map[ins_addr] = instruction(ins);
+
+  /*BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << boost::format("%-15s %-35s %s")
+    % remove_leading_zeros(StringFromAddrint(ins_addr)) 
+    % addr_ins_static_map[ins_addr].disass 
+    % addr_ins_static_map[ins_addr].contained_function;*/
+  //log_sink->flush();
+
+  INS_InsertPredicatedCall(ins, IPOINT_BEFORE, 
+                           (AFUNPTR)instruction_execution_simple_logger,
+                           IARG_INST_PTR,
+                           IARG_END);
+
 //   addr_ins_static_map[ins_addr].contained_image = contained_image_name(ins_addr);
 
   if (
@@ -75,6 +86,9 @@ VOID ins_instrumenter(INS ins, VOID *data)
   {
     if (received_msg_num == 1) 
     {
+      BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "instruction tainting activated";
+      //log_sink->flush();
+
       if (!start_ptr_time) 
       {
         start_ptr_time.reset(new boost::posix_time::ptime(boost::posix_time::microsec_clock::local_time()));
@@ -196,7 +210,7 @@ VOID ins_instrumenter(INS ins, VOID *data)
 
 VOID image_load_instrumenter(IMG loaded_img, VOID *data)
 {
-	const static std::string winsock_dll_name("WS2_32.dll");
+  const static std::string winsock_dll_name("WS2_32.dll");
 
   // verify whether the winsock2 module is loaded
   boost::filesystem::path loaded_image_path(IMG_Name(loaded_img));
@@ -282,12 +296,12 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
 
   log_sink->flush();
 
-	/*if (received_msg_num < 1)
-	{
-		
-	}*/
+  /*if (received_msg_num < 1)
+  {
+    
+  }*/
 
-	return;
+  return;
 }
 
 /*====================================================================================================================*/

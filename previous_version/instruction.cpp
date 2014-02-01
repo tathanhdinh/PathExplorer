@@ -1,11 +1,25 @@
 #include "instruction.h"
 
+#include <boost/log/core.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/sinks/text_file_backend.hpp>
+#include <boost/log/utility/setup/file.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
+#include <boost/log/sources/severity_logger.hpp>
+#include <boost/log/sources/record_ostream.hpp>
+
 #include <pin.H>
 extern "C" {
 #include <xed-interface.h>
 }
 
 #include "stuffs.h"
+
+/*====================================================================================================================*/
+
+extern boost::log::sources::severity_logger<boost::log::trivial::severity_level> log_instance;
+extern boost::shared_ptr< boost::log::sinks::synchronous_sink<boost::log::sinks::text_file_backend> > log_sink;
 
 /*====================================================================================================================*/
 
@@ -43,6 +57,8 @@ instruction::instruction()
 
 instruction::instruction(const INS& ins)
 {
+
+
   this->address         = INS_Address(ins);
   this->disass          = INS_Disassemble(ins);
   this->category        = static_cast<xed_category_enum_t>(INS_Category(ins));

@@ -2,6 +2,14 @@
 
 #include <boost/format.hpp>
 #include <boost/log/trivial.hpp>
+#include <boost/log/core.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/sinks/text_file_backend.hpp>
+#include <boost/log/utility/setup/file.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
+#include <boost/log/sources/severity_logger.hpp>
+#include <boost/log/sources/record_ostream.hpp>
 
 #include <algorithm>
 
@@ -10,6 +18,8 @@
 #include "checkpoint.h"
 #include "branch.h"
 #include "stuffs.h"
+
+/*====================================================================================================================*/
 
 extern std::map< ADDRINT,
                  instruction >                    addr_ins_static_map;
@@ -59,6 +69,9 @@ extern UINT64                                     executed_ins_number;
 extern UINT64                                     econed_ins_number;
 // extern UINT32                                     input_dep_branch_num;
 // extern UINT32                                     resolved_branch_num;
+
+extern boost::log::sources::severity_logger<boost::log::trivial::severity_level> log_instance;
+extern boost::shared_ptr< boost::log::sinks::synchronous_sink<boost::log::sinks::text_file_backend> > log_sink;
 
 extern KNOB<UINT32>                               max_total_rollback;
 extern KNOB<UINT32>                               max_local_rollback;
@@ -258,8 +271,9 @@ inline void set_next_active_nearest_checkpoint(ptr_branch& current_ptr_branch)
     }
     else 
     {
-      BOOST_LOG_TRIVIAL(fatal) 
-        << boost::format("Nearest checkpoint for the branch at %d cannot found.") 
+      //BOOST_LOG_TRIVIAL(fatal) 
+      BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
+        << boost::format("nearest checkpoint for the branch at %d cannot found.") 
             % current_ptr_branch->trace.size();
       PIN_ExitApplication(4);
     }
@@ -285,12 +299,14 @@ inline void exploring_new_branch_or_stop()
   ptr_branch unexplored_ptr_branch = next_unexplored_branch();
   if (unexplored_ptr_branch) 
   {
-    BOOST_LOG_TRIVIAL(info) 
-    << boost::format("\033[33mEcon/total executed instruction number %d/%d\033[0m") 
+    //BOOST_LOG_TRIVIAL(info) 
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
+    << boost::format("\033[33mecon/total executed instruction number %d/%d\033[0m") 
         % econed_ins_number % executed_ins_number;
         
-    std::cout 
-      << boost::format("\033[33mExploring the branch at %d (%s) by start tainting a new path.\n\033[0m") 
+    //std::cout 
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
+      << boost::format("\033[33mexploring the branch at %d (%s) by start tainting a new path.\n\033[0m") 
           % unexplored_ptr_branch->trace.size() 
           % addr_ins_static_map[unexplored_ptr_branch->addr].disass;
     
@@ -308,7 +324,9 @@ inline void exploring_new_branch_or_stop()
   }
   else 
   {
-    BOOST_LOG_TRIVIAL(info) << "Stop exploring, all branches are explored.";
+    //BOOST_LOG_TRIVIAL(info) 
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
+      << "stop exploring, all branches are explored.";
     PIN_ExitApplication(0);
   }
   
@@ -364,8 +382,9 @@ inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr,
       {
         if (examined_ptr_branch->is_bypassed)
         {
-          BOOST_LOG_TRIVIAL(trace) 
-            << boost::format("\033[36mThe branch at %d is resolved accidentally in resolving the branch at %d.\033[0m") 
+          //BOOST_LOG_TRIVIAL(trace) 
+          BOOST_LOG_SEV(log_instance, boost::log::trivial::trace)
+            << boost::format("\033[36mthe branch at %d is resolved accidentally in resolving the branch at %d.\033[0m") 
                 % examined_ptr_branch->trace.size() % active_ptr_branch->trace.size();
                 
           // the branch has been marked as bypassed before, 
@@ -420,7 +439,8 @@ inline void unresolved_branch_takes_new_decision(ADDRINT ins_addr,
   if (active_ptr_branch) 
   {
     // so this branch is resolved
-    BOOST_LOG_TRIVIAL(trace) 
+    //BOOST_LOG_TRIVIAL(trace) 
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::trace)
       << boost::format("\033[32mThe branch at %d is successfully resolved after %d rollbacks.\033[0m") 
           % examined_ptr_branch->trace.size() 
           % (local_rollback_times + (used_checkpoint_number - 1) * max_local_rollback_times) ;
@@ -437,8 +457,10 @@ inline void unresolved_branch_takes_new_decision(ADDRINT ins_addr,
   }
   else // active_ptr_branch is disabled, namely in some forward
   {
-    BOOST_LOG_TRIVIAL(fatal) << boost::format("The branch at %d takes a different decision in forwarding.") 
-                                  % explored_trace.size();
+    //BOOST_LOG_TRIVIAL(fatal) 
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
+      << boost::format("The branch at %d takes a different decision in forwarding.") 
+          % explored_trace.size();
     PIN_ExitApplication(2);
   }
 
@@ -465,8 +487,9 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
     // so the unresolved examined_ptr_branch must be the active branch
     if (active_ptr_branch != examined_ptr_branch) 
     {
-      BOOST_LOG_TRIVIAL(fatal) 
-        << boost::format("In rollback but the tainted (at %d) and the active branch (at %d) are not matched.") 
+      //BOOST_LOG_TRIVIAL(fatal) 
+      BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
+        << boost::format("in rollback but the tainted (at %d) and the active branch (at %d) are not matched.") 
             % examined_ptr_branch->trace.size() % active_ptr_branch->trace.size();
       PIN_ExitApplication(3);
     }
@@ -512,8 +535,9 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
               local_rollback_times = 0;
               
               // then rollback to it
-              BOOST_LOG_TRIVIAL(trace) 
-                << boost::format("Rollback to the next checkpoint at %d (%s).") 
+              //BOOST_LOG_TRIVIAL(trace) 
+              BOOST_LOG_SEV(log_instance, boost::log::trivial::trace)
+                << boost::format("rollback to the next checkpoint at %d (%s).") 
                     % active_nearest_checkpoint.first->trace.size() 
                     % order_ins_dynamic_map[active_nearest_checkpoint.first->trace.size()].disass;
           
@@ -528,8 +552,9 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
             else // cannot get any new nearest checkpoint
             {
               // so bypass this branch
-              BOOST_LOG_TRIVIAL(trace) 
-              << boost::format("\033[31mCannot resolve the branch at %d, bypass it.\033[0m") 
+              //BOOST_LOG_TRIVIAL(trace) 
+              BOOST_LOG_SEV(log_instance, boost::log::trivial::trace)
+              << boost::format("\033[31mcannot resolve the branch at %d, bypass it.\033[0m") 
                   % active_ptr_branch->trace.size();
                                           
               bypass_branch(active_ptr_branch);      
@@ -547,8 +572,9 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
           {
             // that contradict to the fact that the active_branch is not empty
             // and unresolved
-            BOOST_LOG_TRIVIAL(fatal) 
-              << boost::format("The branch at %d is unresolved but the nearest checkpoint is empty.") 
+            //BOOST_LOG_TRIVIAL(fatal) 
+            BOOST_LOG_SEV(log_instance, boost::log::trivial::trace)
+              << boost::format("the branch at %d is unresolved but the nearest checkpoint is empty.") 
                   % active_ptr_branch->trace.size();
             PIN_ExitApplication(5);
           }
@@ -565,8 +591,9 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
     set_next_active_nearest_checkpoint(active_ptr_branch);
     
     // then rollback to it
-    BOOST_LOG_TRIVIAL(trace) 
-      << boost::format("Resolve the branch at %d:%d (%s: %s) by rollback to the checkpoint at %d (%s).") 
+    //BOOST_LOG_TRIVIAL(trace) 
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::trace)
+      << boost::format("resolve the branch at %d:%d (%s: %s) by rollback to the checkpoint at %d (%s).") 
           % active_ptr_branch->trace.size() 
           % active_ptr_branch->br_taken
           % remove_leading_zeros(StringFromAddrint(active_ptr_branch->addr))
@@ -639,7 +666,8 @@ inline void process_input_dependent_branch(ADDRINT ins_addr,
 //         << "FOR TESTING ONLY: stop at the last branch of the first tainting result.";
 //       PIN_ExitApplication(0);
 
-      BOOST_LOG_TRIVIAL(info) 
+      //BOOST_LOG_TRIVIAL(info) 
+      BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
         << boost::format("\033[33mStop rollbacking, %d/%d branches resolved.\n\033[0m") 
             % total_resolved_ptr_branches.size() 
             % total_input_dep_ptr_branches.size()
@@ -710,16 +738,18 @@ inline void process_input_independent_branch(ADDRINT ins_addr,
       }
       else // in a re-execution from rollback_with_input_replacement
       {
-        BOOST_LOG_TRIVIAL(fatal) 
-          << boost::format("The branch at %d takes a new decision in a clean re-execution.") 
+        //BOOST_LOG_TRIVIAL(fatal) 
+        BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
+          << boost::format("the branch at %d takes a new decision in a clean re-execution") 
               % examined_ptr_branch->trace.size();
       }
     }
     else // active_ptr_branch is disabled, namely in forwarding
     {
       // but new taken found
-      BOOST_LOG_TRIVIAL(fatal) 
-        << boost::format("The branch at %d takes a new decision in forwarding.") 
+      //BOOST_LOG_TRIVIAL(fatal) 
+      BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
+        << boost::format("the branch at %d takes a new decision in forwarding.") 
             % examined_ptr_branch->trace.size();
       PIN_ExitApplication(0);
     }
@@ -744,8 +774,9 @@ inline void log_input(ADDRINT ins_addr, bool br_taken)
   }
   else 
   {
-    BOOST_LOG_TRIVIAL(fatal) 
-      << boost::format("The branch at %d cannot found.") % explored_trace.size();
+    //BOOST_LOG_TRIVIAL(fatal)
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
+      << boost::format("the branch at %d cannot found.") % explored_trace.size();
     PIN_ExitApplication(0);
   }
 
@@ -778,7 +809,8 @@ VOID resolving_cond_branch_analyzer(ADDRINT ins_addr, bool br_taken)
     }
     else 
     {
-      BOOST_LOG_TRIVIAL(fatal) 
+      //BOOST_LOG_TRIVIAL(fatal) 
+      BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
         << boost::format("The branch at %d cannot found.") % explored_trace.size();
       PIN_ExitApplication(0);
     }
@@ -813,8 +845,9 @@ VOID resolving_indirect_branch_call_analyzer(ADDRINT ins_addr, ADDRINT target_ad
     }
     else // active_ptr_branch is empty, namely in forwarding, but new target found
     {
-      BOOST_LOG_TRIVIAL(fatal) 
-        << boost::format("The indirect branch at %d takes a different decision in forwarding.") 
+      //BOOST_LOG_TRIVIAL(fatal) 
+      BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
+        << boost::format("the indirect branch at %d takes a different decision in forwarding.") 
             % explored_trace.size();
       PIN_ExitApplication(0);
     }    
