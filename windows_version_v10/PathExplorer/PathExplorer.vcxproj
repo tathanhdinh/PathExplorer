@@ -82,7 +82,7 @@
       </PrecompiledHeader>
       <Optimization>Disabled</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
       <PreprocessorDefinitions>TARGET_IA32;HOST_IA32;TARGET_WINDOWS;USING_XED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>C:\Users\Ta Thanh Dinh\Documents\pin-2.13-62732-msvc10-windows\extras\components\include;C:\Users\Ta Thanh Dinh\Documents\pin-2.13-62732-msvc10-windows\extras\xed2-ia32\include;C:\Users\Ta Thanh Dinh\Documents\pin-2.13-62732-msvc10-windows\source\include\pin\gen;C:\Users\Ta Thanh Dinh\Documents\pin-2.13-62732-msvc10-windows\source\include\pin;C:\Users\Ta Thanh Dinh\Documents\boost_1_55_0-msvc-10.0-32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/D_SECURE_SCL=0 %(AdditionalOptions)</AdditionalOptions>

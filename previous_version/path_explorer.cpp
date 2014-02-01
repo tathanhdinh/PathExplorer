@@ -88,7 +88,7 @@ ptr_branch                                    exploring_ptr_branch;
 
 std::vector<ADDRINT>                          explored_trace;
 
-UINT8                                         received_msg_num;
+UINT32                                        received_msg_num;
 ADDRINT                                       received_msg_addr;
 UINT32                                        received_msg_size;
 ADDRINT																				received_msg_struct_addr;
@@ -164,14 +164,14 @@ VOID stop_tracing(INT32 code, VOID *data)
   boost::posix_time::time_duration elapsed_time = *stop_ptr_time - *start_ptr_time;
   uint64_t elapsed_millisec = elapsed_time.total_milliseconds();
   
-  BOOST_LOG_TRIVIAL(info) 
-    << boost::format("\033[33mStop examining, %d milli-seconds elapsed, %d rollbacks used, and %d/%d branches resolved.\033[0m") 
+  BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
+    << boost::format("\033[33mstop examining, %d milli-seconds elapsed, %d rollbacks used, and %d/%d branches resolved.\033[0m") 
         % elapsed_millisec % total_rollback_times
         % (total_resolved_ptr_branches.size() + found_new_ptr_branches.size()) 
         % total_input_dep_ptr_branches.size();
         
-  BOOST_LOG_TRIVIAL(info) 
-    << boost::format("\033[33mEcon/total executed instruction number %d/%d\033[0m") 
+  BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
+    << boost::format("\033[33meconomized/total executed instruction number %d/%d\033[0m") 
         % econed_ins_number % executed_ins_number;
                               
   return;
@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
     PIN_AddFollowChildProcessFunction(process_create_instrumenter, 0);
 
     // In Windows environment, the input tracing is through socket api instead of system call
-    //PIN_AddSyscallEntryFunction(syscall_entry_analyzer, 0);
+    PIN_AddSyscallEntryFunction(syscall_entry_analyzer, 0);
     //PIN_AddSyscallExitFunction(syscall_exit_analyzer, 0);
 
     BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "activate Pintool data-finalization";

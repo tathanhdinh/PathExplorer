@@ -15,7 +15,7 @@ extern ADDRINT logged_syscall_args[6];
 extern std::map< ADDRINT,
        instruction > addr_ins_static_map;
 
-extern UINT8    received_msg_num;
+extern UINT32   received_msg_num;
 extern ADDRINT  received_msg_addr;
 extern UINT32   received_msg_size;
 
@@ -26,14 +26,14 @@ extern UINT32       max_trace_size;
 
 /*====================================================================================================================*/
 
-VOID unhandled_analyzer(ADDRINT ins_addr, UINT32 dst_opr_id, UINT32 src_opr_id)
-{
-  std::cerr << addr_ins_static_map[ins_addr].disass;
-
-  std::cerr << "\t\e[1;31m(Unhandled instruction).";
-  std::cerr << "\n\e[0m";
-  return;
-}
+//VOID unhandled_analyzer(ADDRINT ins_addr, UINT32 dst_opr_id, UINT32 src_opr_id)
+//{
+//  std::cerr << addr_ins_static_map[ins_addr].disass;
+//
+//  std::cerr << "\t\e[1;31m(unhandled instruction).";
+//  std::cerr << "\n\e[0m";
+//  return;
+//}
 
 /*====================================================================================================================*/
 
@@ -71,10 +71,10 @@ VOID syscall_exit_analyzer(THREADID thread_id, CONTEXT* p_ctxt, SYSCALL_STANDARD
         
         std::cout << std::endl;
         BOOST_LOG_TRIVIAL(info) 
-          << boost::format("\033[33mThe first message saved at %s with size %d bytes.\033[0m") 
+          << boost::format("\033[33mthe first message saved at %s with size %d bytes.\033[0m") 
               % remove_leading_zeros(StringFromAddrint(received_msg_addr)) % received_msg_size 
           << "\n-------------------------------------------------------------------------------------------------\n" 
-          << boost::format("\033[33mStart tainting the first time with trace size %d.\033[0m") % max_trace_size;
+          << boost::format("\033[33mstart tainting the first time with trace size %d.\033[0m") % max_trace_size;
           
         PIN_RemoveInstrumentation();
       }

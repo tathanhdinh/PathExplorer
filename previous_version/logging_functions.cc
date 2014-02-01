@@ -52,7 +52,7 @@ extern ptr_checkpoint                           master_ptr_checkpoint;
 extern std::map< UINT32,
                  std::vector<ptr_checkpoint> >  exepoint_checkpoints_map;
 
-extern UINT8																		received_msg_num;
+extern UINT32																		received_msg_num;
 extern ADDRINT                                  received_msg_addr;
 extern UINT32                                   received_msg_size;
 extern ADDRINT																	received_msg_struct_addr;
@@ -337,7 +337,7 @@ inline void prepare_new_rollbacking_phase()
 {
   //BOOST_LOG_TRIVIAL(info) 
   BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-    << boost::format("\033[33mstop exploring, %d instructions analyzed. Start detecting checkpoints\033[0m") 
+    << boost::format("\033[33mstop exploring, %d instructions analyzed; start detecting checkpoints\033[0m")
         % explored_trace.size();
   
 //   journal_tainting_graph("tainting_graph.dot");
@@ -348,7 +348,7 @@ inline void prepare_new_rollbacking_phase()
     
   //BOOST_LOG_TRIVIAL(info) 
   BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-    << boost::format("\033[33mstop detecting, %d checkpoints and %d/%d branches detected. Start rollbacking.\033[0m") 
+    << boost::format("\033[33mstop detecting, %d checkpoints and %d/%d branches detected; start rollbacking.\033[0m")
         % saved_ptr_checkpoints.size() 
         % order_input_dep_ptr_branch_map.size() 
         % order_tainted_ptr_branch_map.size();
@@ -419,10 +419,8 @@ VOID logging_general_instruction_analyzer(ADDRINT ins_addr)
     /*BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << boost::format("%-15s %-35s %s")
       % remove_leading_zeros(StringFromAddrint(ins_addr))
       % addr_ins_static_map[ins_addr].disass
-      % addr_ins_static_map[ins_addr].contained_function;*/
-    /*BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << addr_ins_static_map[ins_addr].disass;
+      % addr_ins_static_map[ins_addr].contained_function;
     log_sink->flush();*/
-    //std::cout << addr_ins_static_map[ins_addr].disass << "\n";
   }
   else // trace length limit reached
   {
@@ -507,26 +505,30 @@ VOID logging_cond_br_analyzer(ADDRINT ins_addr, bool br_taken)
 
 VOID logging_before_recv_functions_analyzer(ADDRINT msg_addr)
 {
-  //std::cout << "msg_addr logged\n";
   received_msg_addr = msg_addr;
+  function_has_been_called = true;
 
   BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
     << "recv or recvfrom called, received msg buffer: "
     << remove_leading_zeros(StringFromAddrint(received_msg_addr));
-  //log_sink->flush();
+  log_sink->flush();
   return;
 }
 
 VOID logging_after_recv_functions_analyzer(UINT32 msg_length)
 {
-  if (msg_length > 0)
+  if (function_has_been_called)
   {
-    //std::cout << "msg_size logged in recv\n";
-    received_msg_num++; received_msg_size = msg_length;
+    if (msg_length > 0)
+    {
+      received_msg_num++; received_msg_size = msg_length;
 
-    BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-      << "recv or recvfrom returned, received msg size: " << received_msg_size;
-    //log_sink->flush();
+      BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
+        << "recv or recvfrom returned, received msg size: " << received_msg_size;
+      log_sink->flush();
+    }
+
+    function_has_been_called = false;
   }
   return;
 }
@@ -539,7 +541,6 @@ namespace WINDOWS
 };
 VOID logging_before_wsarecv_functions_analyzer(ADDRINT msg_struct_adddr)
 {
-  //std::cout << "before\n" << std::fflush;
   received_msg_struct_addr = msg_struct_adddr;
   received_msg_addr = reinterpret_cast<ADDRINT>((reinterpret_cast<WINDOWS::LPWSABUF>(received_msg_struct_addr))->buf);
   function_has_been_called = true;
@@ -557,16 +558,24 @@ VOID logging_after_wsarecv_funtions_analyzer()
   if (function_has_been_called)
   {
     received_msg_size = (reinterpret_cast<WINDOWS::LPWSABUF>(received_msg_struct_addr))->len;
-    //std::cerr << received_msg_size << "\n";
     if (received_msg_size > 0)
     {
       ++received_msg_num;
+
+      BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
+        << "WSARecv or WSARecvFrom returned, received msg size: " << received_msg_size;
+
+      BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
+        << boost::format("\033[33mthe first message saved at %s with size %d bytes.\033[0m")
+            % remove_leading_zeros(StringFromAddrint(received_msg_addr)) % received_msg_size
+        << "\n-------------------------------------------------------------------------------------------------\n"
+        << boost::format("\033[33mStart tainting the first time with trace size %d.\033[0m") 
+            % max_trace_size;
+      log_sink->flush();
+
+      PIN_RemoveInstrumentation();
     }
     function_has_been_called = false;
-
-    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) 
-      << "WSARecv or WSARecvFrom returned, received msg size: " << received_msg_size;
-    log_sink->flush();
   }
   
   return;
