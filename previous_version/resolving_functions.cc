@@ -87,16 +87,25 @@ VOID resolving_ins_count_analyzer(ADDRINT ins_addr)
 
   if (order_ins_dynamic_map[explored_trace.size()].address == ins_addr)
   {
-    BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
+    /*BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
       << boost::format("instruction at %d (%s: %s) will be executed")
       % explored_trace.size()
       % remove_leading_zeros(StringFromAddrint(ins_addr))
-      % addr_ins_static_map[ins_addr].disass;
+      % addr_ins_static_map[ins_addr].disass;*/
   }
   else
   {
     if (local_rollback_times < max_local_rollback)
     {
+      BOOST_LOG_SEV(log_instance, boost::log::trivial::info) 
+        << boost::format("random-rollback from %d (%s: %s) to %d (%s: %s)")
+        % explored_trace.size()
+        % remove_leading_zeros(StringFromAddrint(ins_addr))
+        % addr_ins_static_map[ins_addr].disass
+        % active_nearest_checkpoint.first->trace.size()
+        % remove_leading_zeros(StringFromAddrint(active_nearest_checkpoint.first->addr))
+        % addr_ins_static_map[active_nearest_checkpoint.first->addr].disass;
+
       // the original trace will be lost if go further, so rollback
       total_rollback_times++;
       local_rollback_times++;
@@ -105,10 +114,21 @@ VOID resolving_ins_count_analyzer(ADDRINT ins_addr)
     }
     else
     {
+      BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
+        << boost::format("replace-rollback from %d (%s: %s) to %d (%s: %s)")
+        % explored_trace.size()
+        % remove_leading_zeros(StringFromAddrint(ins_addr))
+        % addr_ins_static_map[ins_addr].disass
+        % active_nearest_checkpoint.first->trace.size()
+        % remove_leading_zeros(StringFromAddrint(active_nearest_checkpoint.first->addr))
+        % addr_ins_static_map[active_nearest_checkpoint.first->addr].disass;
+
       // back to the original trace
       local_rollback_times++;
       rollback_with_input_replacement(active_nearest_checkpoint.first, 
                                       active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());
+      /*rollback_with_input_replacement(saved_ptr_checkpoints[0], 
+                                      active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());*/
     }
   }
 
@@ -834,11 +854,11 @@ inline void log_input(ADDRINT ins_addr, bool br_taken)
 
 VOID resolving_cond_branch_analyzer(ADDRINT ins_addr, bool br_taken)
 {
-  BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
+  /*BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
     << boost::format("met a branch at %d (%s: %s)")
         % explored_trace.size()
         % remove_leading_zeros(StringFromAddrint(ins_addr))
-        % addr_ins_static_map[ins_addr].disass;
+        % addr_ins_static_map[ins_addr].disass;*/
 
   log_input(ins_addr, br_taken);
   
@@ -864,7 +884,9 @@ VOID resolving_cond_branch_analyzer(ADDRINT ins_addr, bool br_taken)
     {
       //BOOST_LOG_TRIVIAL(fatal) 
       BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
-        << boost::format("%s: the branch at %d cannot found") % __FUNCTION__ % explored_trace.size();
+        << boost::format("the branch at %d (%s: %s) cannot found")
+        % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr)) 
+        % addr_ins_static_map[ins_addr].disass;
       log_sink->flush();
 
       PIN_ExitApplication(0);
