@@ -87,11 +87,11 @@ VOID resolving_ins_count_analyzer(ADDRINT ins_addr)
 
   if (order_ins_dynamic_map[explored_trace.size()].address == ins_addr)
   {
-    /*BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
       << boost::format("instruction at %d (%s: %s) will be executed")
       % explored_trace.size()
       % remove_leading_zeros(StringFromAddrint(ins_addr))
-      % addr_ins_static_map[ins_addr].disass;*/
+      % addr_ins_static_map[ins_addr].disass;
   }
   else
   {
