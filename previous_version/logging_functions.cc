@@ -339,7 +339,7 @@ inline void prepare_new_rollbacking_phase()
   BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
     << boost::format("stop exploring, %d instructions analyzed; start detecting checkpoints")
         % explored_trace.size();
-  log_sink->flush();
+  //log_sink->flush();
   
 //   journal_tainting_graph("tainting_graph.dot");
 //   PIN_ExitApplication(0);
@@ -353,7 +353,7 @@ inline void prepare_new_rollbacking_phase()
         % saved_ptr_checkpoints.size() 
         % order_input_dep_ptr_branch_map.size() 
         % order_tainted_ptr_branch_map.size();
-  log_sink->flush();
+  //log_sink->flush();
 
 //   journal_tainting_log();
     
@@ -363,8 +363,7 @@ inline void prepare_new_rollbacking_phase()
   if (exploring_ptr_branch)
   {
     rollback_with_input_replacement(saved_ptr_checkpoints[0],
-                                    exploring_ptr_branch
-                                      ->inputs[!exploring_ptr_branch->br_taken][0].get());
+                                    exploring_ptr_branch->inputs[!exploring_ptr_branch->br_taken][0].get());
   }
   else
   {
@@ -377,8 +376,7 @@ inline void prepare_new_rollbacking_phase()
     { 
       ptr_branch first_ptr_branch = order_input_dep_ptr_branch_map.begin()->second;
       rollback_with_input_replacement(saved_ptr_checkpoints[0], 
-                                      first_ptr_branch
-                                        ->inputs[first_ptr_branch->br_taken][0].get());
+                                      first_ptr_branch->inputs[first_ptr_branch->br_taken][0].get());
     }
     else
     {
@@ -422,7 +420,7 @@ VOID logging_general_instruction_analyzer(ADDRINT ins_addr)
       % remove_leading_zeros(StringFromAddrint(ins_addr))
       % addr_ins_static_map[ins_addr].disass
       % addr_ins_static_map[ins_addr].contained_function;
-    log_sink->flush();
+    //log_sink->flush();
   }
   else // trace length limit reached
   {
@@ -447,9 +445,12 @@ VOID logging_mem_read_instruction_analyzer(ADDRINT ins_addr,
     saved_ptr_checkpoints.push_back(new_ptr_checkpoint);
     
     //BOOST_LOG_TRIVIAL(trace) 
-    BOOST_LOG_SEV(log_instance, boost::log::trivial::trace)
-      << boost::format("checkpoint detected at %d (%s).") 
-          % new_ptr_checkpoint->trace.size() % addr_ins_static_map[ins_addr].disass;
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
+      << boost::format("checkpoint detected at %d (%s: %s) because memory is read (%s: %d)")
+      % new_ptr_checkpoint->trace.size()
+      % remove_leading_zeros(StringFromAddrint(ins_addr))
+      % addr_ins_static_map[ins_addr].disass 
+      % remove_leading_zeros(StringFromAddrint(mem_read_addr)) % mem_read_size;
   }
 
   for (UINT32 idx = 0; idx < mem_read_size; ++idx)

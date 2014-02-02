@@ -165,14 +165,16 @@ VOID stop_tracing(INT32 code, VOID *data)
   uint64_t elapsed_millisec = elapsed_time.total_milliseconds();
   
   BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-    << boost::format("\033[33mstop examining, %d milli-seconds elapsed, %d rollbacks used, and %d/%d branches resolved.\033[0m") 
+    << boost::format("stop examining, %d milli-seconds elapsed, %d rollbacks used, and %d/%d branches resolved") 
         % elapsed_millisec % total_rollback_times
         % (total_resolved_ptr_branches.size() + found_new_ptr_branches.size()) 
         % total_input_dep_ptr_branches.size();
         
   BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-    << boost::format("\033[33meconomized/total executed instruction number %d/%d\033[0m") 
+    << boost::format("economized/total executed instruction number %d/%d") 
         % econed_ins_number % executed_ins_number;
+
+  log_sink->flush();
                               
   return;
 }
