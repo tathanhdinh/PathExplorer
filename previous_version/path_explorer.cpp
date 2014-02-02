@@ -183,12 +183,19 @@ VOID stop_tracing(INT32 code, VOID *data)
 
 inline static void initialize_logging(std::string log_filename)
 {
-  log_sink = boost::log::add_file_log(log_filename.c_str());
+  log_sink = boost::log::add_file_log
+  (
+    boost::log::keywords::file_name = log_filename.c_str(),
+    boost::log::keywords::format = boost::log::expressions::format("<%1%> %2%") 
+      % boost::log::trivial::severity % boost::log::expressions::smessage
+  );
+
   boost::log::core::get()->set_filter
   (
-  boost::log::trivial::severity >= boost::log::trivial::info
+    boost::log::trivial::severity >= boost::log::trivial::info
   );
   boost::log::add_common_attributes();
+
   return;
 }
 

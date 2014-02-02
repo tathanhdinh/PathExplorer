@@ -401,7 +401,7 @@ VOID logging_syscall_instruction_analyzer(ADDRINT ins_addr)
 /*================================================================================================*/
 VOID instruction_execution_simple_logger(ADDRINT ins_addr)
 {
-  BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << boost::format("%-15s %-35s %s")
+  BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << boost::format("%-15s %-45s %s")
     % remove_leading_zeros(StringFromAddrint(ins_addr))
     % addr_ins_static_map[ins_addr].disass
     % addr_ins_static_map[ins_addr].contained_function;

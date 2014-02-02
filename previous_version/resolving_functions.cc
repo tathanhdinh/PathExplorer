@@ -85,11 +85,34 @@ VOID resolving_ins_count_analyzer(ADDRINT ins_addr)
   explored_trace.push_back(ins_addr);
   executed_ins_number++;
 
-  BOOST_LOG_SEV(log_instance, boost::log::trivial::info) 
-    << boost::format("instruction at %d (%s: %s) will be executed") 
-        % explored_trace.size() 
-        % remove_leading_zeros(StringFromAddrint(ins_addr)) 
-        % addr_ins_static_map[ins_addr].disass;
+  if (order_ins_dynamic_map[explored_trace.size()].address == ins_addr)
+  {
+    /*BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
+      << boost::format("instruction at %d (%s: %s) will be executed")
+      % explored_trace.size()
+      % remove_leading_zeros(StringFromAddrint(ins_addr))
+      % addr_ins_static_map[ins_addr].disass;*/
+  }
+  else
+  {
+    if (local_rollback_times < max_local_rollback)
+    {
+      // the original trace will be lost if go further, so rollback
+      total_rollback_times++;
+      local_rollback_times++;
+      rollback_with_input_random_modification(active_nearest_checkpoint.first, 
+                                              active_nearest_checkpoint.second);
+    }
+    else
+    {
+      // back to the original trace
+      local_rollback_times++;
+      rollback_with_input_replacement(active_nearest_checkpoint.first, 
+                                      active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());
+    }
+  }
+
+  
   //log_sink->flush();
   return;
 }
@@ -131,9 +154,7 @@ VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr,
     for (; ptr_checkpoint_iter != exepoint_checkpoints_map[explored_trace.size()].end(); 
          ++ptr_checkpoint_iter)
     {
-      (*ptr_checkpoint_iter)->mem_written_logging(ins_addr, 
-                                                  mem_written_addr, 
-                                                  mem_written_size);
+      (*ptr_checkpoint_iter)->mem_written_logging(ins_addr, mem_written_addr, mem_written_size);
     }
   }
 
