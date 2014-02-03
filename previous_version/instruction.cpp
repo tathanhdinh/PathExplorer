@@ -130,6 +130,8 @@ instruction::instruction(const INS& ins)
     }
   }
 
+  this->has_mem_read2 = INS_HasMemoryRead2(ins);
+
 //   if ((this->opcode == XED_ICLASS_PUSH) || (this->opcode == XED_ICLASS_POP))
 //   {
 //     std::set<REG> common_regs;
@@ -166,6 +168,8 @@ instruction::instruction(const instruction& other)
   this->dst_regs          = other.dst_regs;
   this->src_mems          = other.src_mems;
   this->dst_mems          = other.dst_mems;
+
+  this->has_mem_read2 = other.has_mem_read2;
 }
 
 /*====================================================================================================================*/
@@ -186,6 +190,8 @@ instruction& instruction::operator=(const instruction& other)
   this->dst_regs          = other.dst_regs;
   this->src_mems          = other.src_mems;
   this->dst_mems          = other.dst_mems;
+
+  this->has_mem_read2 = other.has_mem_read2;
 
   return *this;
 }

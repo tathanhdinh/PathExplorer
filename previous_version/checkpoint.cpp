@@ -123,24 +123,27 @@ void rollback_with_input_replacement(ptr_checkpoint& dest_ptr_checkpoint, UINT8*
   explored_trace.pop_back();
 
   // restore written memories
-//   UINT8 single_byte;
+   UINT8 single_byte;
   
   std::map<ADDRINT, UINT8>::iterator mem_map_iter = dest_ptr_checkpoint->mem_written_log.begin();
   for (; mem_map_iter != dest_ptr_checkpoint->mem_written_log.end(); ++mem_map_iter)
   {
-//     single_byte = mem_map_iter->second;
-//     PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_map_iter->first), &single_byte, 1);
-    *(reinterpret_cast<UINT8*>(mem_map_iter->first)) = mem_map_iter->second;
+     single_byte = mem_map_iter->second;
+     PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_map_iter->first), &single_byte, 1);
+    //*(reinterpret_cast<UINT8*>(mem_map_iter->first)) = mem_map_iter->second;
   }
   dest_ptr_checkpoint->mem_read_log.clear();
 //   std::map<ADDRINT, UINT8>().swap(dest_ptr_checkpoint->mem_written_log);
 
   // replace input and go back
-//   PIN_SafeCopy(reinterpret_cast<UINT8*>(received_msg_addr), backup_input_addr, received_msg_size);
-  for (UINT32 idx = 0; idx < received_msg_size; ++idx) 
+  PIN_SafeCopy(reinterpret_cast<UINT8*>(received_msg_addr), backup_input_addr, received_msg_size);
+  std::cout << remove_leading_zeros(StringFromAddrint(received_msg_addr))
+    << reinterpret_cast<UINT8*>(backup_input_addr)[0] << std::endl;;
+
+  /*for (UINT32 idx = 0; idx < received_msg_size; ++idx) 
   {
     reinterpret_cast<UINT8*>(received_msg_addr)[idx] = backup_input_addr[idx];
-  }
+  }*/
   
   // go back
   PIN_ExecuteAt(dest_ptr_checkpoint->ptr_ctxt.get());
@@ -158,13 +161,13 @@ void rollback_with_input_random_modification(ptr_checkpoint& current_ptr_checkpo
   explored_trace.pop_back();
 
   // restore written memories
-//   UINT8 single_byte;
+  UINT8 single_byte;
   std::map<ADDRINT, UINT8>::iterator mem_map_iter = current_ptr_checkpoint->mem_written_log.begin();
   for (; mem_map_iter != current_ptr_checkpoint->mem_written_log.end(); ++mem_map_iter)
   {
-//     single_byte = mem_map_iter->second;
-//     PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_map_iter->first), &single_byte, 1);
-    *(reinterpret_cast<UINT8*>(mem_map_iter->first)) = mem_map_iter->second;
+     single_byte = mem_map_iter->second;
+     PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_map_iter->first), &single_byte, 1);
+    //*(reinterpret_cast<UINT8*>(mem_map_iter->first)) = mem_map_iter->second;
   }
   std::map<ADDRINT, UINT8>().swap(current_ptr_checkpoint->mem_written_log);
 
@@ -172,9 +175,9 @@ void rollback_with_input_random_modification(ptr_checkpoint& current_ptr_checkpo
   std::set<ADDRINT>::iterator mem_set_iter = dep_mems.begin();
   for (; mem_set_iter != dep_mems.end(); ++mem_set_iter)
   {
-//     single_byte = rand() % std::numeric_limits<UINT8>::max();
-//     PIN_SafeCopy(reinterpret_cast<UINT8*>(*mem_set_iter), &single_byte, 1);
-    *(reinterpret_cast<UINT8*>(*mem_set_iter)) = rand() % std::numeric_limits<UINT8>::max();
+     single_byte = rand() % std::numeric_limits<UINT8>::max();
+     PIN_SafeCopy(reinterpret_cast<UINT8*>(*mem_set_iter), &single_byte, 1);
+    //*(reinterpret_cast<UINT8*>(*mem_set_iter)) = rand() % std::numeric_limits<UINT8>::max();
   }
 
   // go back

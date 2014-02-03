@@ -362,13 +362,15 @@ inline void prepare_new_rollbacking_phase()
   
   if (exploring_ptr_branch)
   {
+    journal_explored_trace("last_explored_trace.log");
+
     rollback_with_input_replacement(saved_ptr_checkpoints[0],
                                     exploring_ptr_branch->inputs[!exploring_ptr_branch->br_taken][0].get());
   }
   else
   {
     journal_tainting_graph("tainting_graph.dot");
-    journal_explored_trace("explored_trace.log");
+    journal_explored_trace("first_explored_trace.log");
 //     journal_static_trace("static_trace");
     
     // the first rollbacking phase
@@ -401,7 +403,7 @@ VOID logging_syscall_instruction_analyzer(ADDRINT ins_addr)
 /*================================================================================================*/
 VOID instruction_execution_simple_logger(ADDRINT ins_addr)
 {
-  BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << boost::format("%-15s %-45s %s")
+  BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << boost::format("%d (%s %s) %s")
     % remove_leading_zeros(StringFromAddrint(ins_addr))
     % addr_ins_static_map[ins_addr].disass
     % addr_ins_static_map[ins_addr].contained_function;
@@ -416,10 +418,12 @@ VOID logging_general_instruction_analyzer(ADDRINT ins_addr)
     explored_trace.push_back(ins_addr);
     order_ins_dynamic_map[explored_trace.size()] = addr_ins_static_map[ins_addr];
 
-    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << boost::format("%-15s %-45s %s")
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << boost::format("%d (%s %s)")
+      % explored_trace.size()
       % remove_leading_zeros(StringFromAddrint(ins_addr))
-      % addr_ins_static_map[ins_addr].disass
-      % addr_ins_static_map[ins_addr].contained_function;
+      % addr_ins_static_map[ins_addr].disass;
+      /*% addr_ins_static_map[ins_addr].contained_image
+      % addr_ins_static_map[ins_addr].contained_function;*/
     //log_sink->flush();
   }
   else // trace length limit reached
@@ -462,6 +466,24 @@ VOID logging_mem_read_instruction_analyzer(ADDRINT ins_addr,
 }
 
 /*================================================================================================*/
+// memmory read 2
+VOID logging_mem_read2_instruction_analyzer(ADDRINT ins_addr, 
+                                            ADDRINT mem_read_addr, UINT32 mem_read_size, 
+                                            CONTEXT* p_ctxt)
+{
+  logging_mem_read_instruction_analyzer(ins_addr, mem_read_addr, mem_read_size, p_ctxt);
+  std::set<ADDRINT>::iterator addr_iter;
+  for (addr_iter = order_ins_dynamic_map[explored_trace.size()].src_mems.begin();
+       addr_iter != order_ins_dynamic_map[explored_trace.size()].src_mems.end(); ++addr_iter)
+  {
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
+      << boost::format("%s %d") 
+      % remove_leading_zeros(StringFromAddrint(*addr_iter)) % *(reinterpret_cast<UINT8*>(*addr_iter));
+  }
+  return;
+}
+
+/*================================================================================================*/
 // memory written
 VOID logging_mem_write_instruction_analyzer(ADDRINT ins_addr, 
                                             ADDRINT mem_written_addr, UINT32 mem_written_size)
@@ -500,6 +522,8 @@ VOID logging_cond_br_analyzer(ADDRINT ins_addr, bool br_taken)
   }
   
   order_tainted_ptr_branch_map[explored_trace.size()] = new_ptr_branch;
+  std::cout << "first value of the stored buffer at branch "
+    << new_ptr_branch->trace.size() << new_ptr_branch->inputs[br_taken][0].get()[0] << "\n";
 
   return;
 }
@@ -574,7 +598,7 @@ VOID logging_after_wsarecv_funtions_analyzer()
         << "\n-------------------------------------------------------------------------------------------------\n"
         << boost::format("start tainting the first time with trace size %d") 
             % max_trace_size;
-      log_sink->flush();
+      //log_sink->flush();
 
       PIN_RemoveInstrumentation();
     }

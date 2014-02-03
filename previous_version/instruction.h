@@ -46,6 +46,8 @@ public:
   std::set<REG>       src_regs, dst_regs;
   std::set<ADDRINT>   src_mems, dst_mems;
 
+  bool                has_mem_read2;
+
 public:
   instruction();
   instruction(INS const& ins);

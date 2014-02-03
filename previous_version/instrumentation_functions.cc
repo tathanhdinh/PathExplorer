@@ -139,6 +139,17 @@ VOID ins_instrumenter(INS ins, VOID *data)
                                        IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE,
                                        IARG_CONTEXT,
                                        IARG_END);
+
+              if (INS_HasMemoryRead2(ins))
+              {
+                // memory read2 (e.g. cmpsb instruction)
+                INS_InsertPredicatedCall(ins, IPOINT_BEFORE, 
+                                         (AFUNPTR)logging_mem_read2_instruction_analyzer, 
+                                         IARG_INST_PTR, 
+                                         IARG_MEMORYREAD2_EA, IARG_MEMORYREAD_SIZE, 
+                                         IARG_CONTEXT, 
+                                         IARG_END);
+              }
             }
 
             if (INS_IsMemoryWrite(ins)) 

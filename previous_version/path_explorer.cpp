@@ -165,7 +165,7 @@ VOID stop_tracing(INT32 code, VOID *data)
   uint64_t elapsed_millisec = elapsed_time.total_milliseconds();
 
   journal_static_trace("static_trace.log");
-  journal_explored_trace("last_explored_trace.log");
+  //journal_explored_trace("last_explored_trace.log");
   
   BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
     << boost::format("stop examining, %d milli-seconds elapsed, %d rollbacks used, and %d/%d branches resolved") 

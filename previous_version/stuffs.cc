@@ -166,11 +166,11 @@ void journal_tainting_graph(const std::string& filename)
 
 /*====================================================================================================================*/
 
-void store_input(ptr_branch& ptr_br, bool br_taken )
+void store_input(ptr_branch& ptr_br, bool br_taken)
 {
-  boost::shared_ptr<UINT8> new_input ( new UINT8 [received_msg_size] );
-  PIN_SafeCopy ( new_input.get(), reinterpret_cast<UINT8*> ( received_msg_addr ), received_msg_size );
-  ptr_br->inputs[br_taken].push_back ( new_input );
+  boost::shared_ptr<UINT8> new_input(new UINT8[received_msg_size]);
+  PIN_SafeCopy(new_input.get(), reinterpret_cast<UINT8*>(received_msg_addr), received_msg_size);
+  ptr_br->inputs[br_taken].push_back(new_input);
 
   return;
 }
