@@ -93,7 +93,8 @@ VOID resolving_ins_count_analyzer(ADDRINT ins_addr)
     {
       BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
         << boost::format("%s %d")
-        % remove_leading_zeros(StringFromAddrint(*addr_iter)) % *(reinterpret_cast<UINT8*>(*addr_iter));
+        % remove_leading_zeros(StringFromAddrint(*addr_iter)) 
+        % *(reinterpret_cast<UINT8*>(*addr_iter));
     }
   }
 
@@ -144,8 +145,8 @@ VOID resolving_ins_count_analyzer(ADDRINT ins_addr)
 
       // back to the original trace
       local_rollback_times++;
-      std::cerr << "first value of the stored buffer at branch " << active_ptr_branch->trace.size() << " : "
-        << active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get()[0] << "\n";
+      /*std::cerr << "first value of the stored buffer at branch " << active_ptr_branch->trace.size() << " : "
+        << active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get()[0] << "\n";*/
       rollback_with_input_replacement(active_nearest_checkpoint.first, 
                                       active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());
       /*rollback_with_input_replacement(saved_ptr_checkpoints[0], 

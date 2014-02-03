@@ -93,6 +93,8 @@ ADDRINT                                       received_msg_addr;
 UINT32                                        received_msg_size;
 ADDRINT																				received_msg_struct_addr;
 
+//boost::shared_ptr<UINT8>                      received_msg_backup;
+
 UINT64                                        executed_ins_number;
 UINT64                                        econed_ins_number;
 

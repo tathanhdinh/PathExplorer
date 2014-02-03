@@ -30,8 +30,7 @@ checkpoint::checkpoint()
 
 /*====================================================================================================================*/
 
-checkpoint::checkpoint(ADDRINT ip_addr, 
-                       CONTEXT* p_ctxt, 
+checkpoint::checkpoint(ADDRINT ip_addr, CONTEXT* p_ctxt, 
                        const std::vector<ADDRINT>& current_trace,
                        ADDRINT mem_read_addr, UINT32 mem_read_size)
 {
@@ -56,6 +55,10 @@ checkpoint::checkpoint(ADDRINT ip_addr,
   }
 
   this->rollback_times = 0;
+
+  this->curr_input.reset(new UINT8[received_msg_size]);
+  PIN_SafeCopy(this->curr_input.get(), 
+               reinterpret_cast<UINT8*>(received_msg_addr), received_msg_size);
 }
 
 /*====================================================================================================================*/
@@ -71,7 +74,7 @@ checkpoint& checkpoint::operator=(checkpoint const& other_chkpnt)
   this->dep_mems        = other_chkpnt.dep_mems;
   this->trace           = other_chkpnt.trace;
 
-  this->rollback_times        = other_chkpnt.rollback_times;
+  this->rollback_times  = other_chkpnt.rollback_times;
 
   return *this;
 }
@@ -118,6 +121,10 @@ void checkpoint::mem_written_logging(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 
 
 void rollback_with_input_replacement(ptr_checkpoint& dest_ptr_checkpoint, UINT8* backup_input_addr)
 {
+  // restore the input
+  PIN_SafeCopy(reinterpret_cast<UINT8*>(received_msg_addr), 
+               dest_ptr_checkpoint->curr_input.get(), received_msg_size);
+
   // restore the current trace
   explored_trace = dest_ptr_checkpoint->trace;
   explored_trace.pop_back();
@@ -136,9 +143,9 @@ void rollback_with_input_replacement(ptr_checkpoint& dest_ptr_checkpoint, UINT8*
 //   std::map<ADDRINT, UINT8>().swap(dest_ptr_checkpoint->mem_written_log);
 
   // replace input and go back
-  PIN_SafeCopy(reinterpret_cast<UINT8*>(received_msg_addr), backup_input_addr, received_msg_size);
-  std::cout << remove_leading_zeros(StringFromAddrint(received_msg_addr))
-    << reinterpret_cast<UINT8*>(backup_input_addr)[0] << std::endl;;
+  //PIN_SafeCopy(reinterpret_cast<UINT8*>(received_msg_addr), backup_input_addr, received_msg_size);
+  /*std::cout << remove_leading_zeros(StringFromAddrint(received_msg_addr))
+    << reinterpret_cast<UINT8*>(backup_input_addr)[0] << std::endl;;*/
 
   /*for (UINT32 idx = 0; idx < received_msg_size; ++idx) 
   {

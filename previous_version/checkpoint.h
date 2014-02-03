@@ -36,6 +36,8 @@ public:
   
   std::map<ADDRINT, UINT8>  mem_read_log;     // map between a read address and the original value at this address
   std::map<ADDRINT, UINT8>  mem_written_log;  // map between a written address and the original value at this address
+
+  boost::shared_ptr<UINT8>  curr_input;
   
   std::set<ADDRINT>         dep_mems;
   

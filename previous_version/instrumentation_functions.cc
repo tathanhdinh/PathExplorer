@@ -320,7 +320,7 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
     }
   }
 
-  log_sink->flush();
+  //log_sink->flush();
 
   /*if (received_msg_num < 1)
   {

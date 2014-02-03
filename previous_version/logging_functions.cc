@@ -353,7 +353,6 @@ inline void prepare_new_rollbacking_phase()
         % saved_ptr_checkpoints.size() 
         % order_input_dep_ptr_branch_map.size() 
         % order_tainted_ptr_branch_map.size();
-  //log_sink->flush();
 
 //   journal_tainting_log();
     
@@ -418,13 +417,13 @@ VOID logging_general_instruction_analyzer(ADDRINT ins_addr)
     explored_trace.push_back(ins_addr);
     order_ins_dynamic_map[explored_trace.size()] = addr_ins_static_map[ins_addr];
 
-    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << boost::format("%d (%s %s)")
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << boost::format("%-3d (%-10s %s) %s %s")
       % explored_trace.size()
       % remove_leading_zeros(StringFromAddrint(ins_addr))
-      % addr_ins_static_map[ins_addr].disass;
-      /*% addr_ins_static_map[ins_addr].contained_image
-      % addr_ins_static_map[ins_addr].contained_function;*/
-    //log_sink->flush();
+      % addr_ins_static_map[ins_addr].disass
+      % addr_ins_static_map[ins_addr].contained_image
+      % addr_ins_static_map[ins_addr].contained_function;
+    log_sink->flush();
   }
   else // trace length limit reached
   {
@@ -522,8 +521,8 @@ VOID logging_cond_br_analyzer(ADDRINT ins_addr, bool br_taken)
   }
   
   order_tainted_ptr_branch_map[explored_trace.size()] = new_ptr_branch;
-  std::cout << "first value of the stored buffer at branch "
-    << new_ptr_branch->trace.size() << new_ptr_branch->inputs[br_taken][0].get()[0] << "\n";
+  /*std::cout << "first value of the stored buffer at branch "
+    << new_ptr_branch->trace.size() << new_ptr_branch->inputs[br_taken][0].get()[0] << "\n";*/
 
   return;
 }
