@@ -23,6 +23,7 @@
 #include "../engine/fast_execution.h"
 #include "../main.h"
 
+#include <boost/unordered_map.hpp>
 #include <boost/integer_traits.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/format.hpp>

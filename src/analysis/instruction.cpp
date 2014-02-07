@@ -32,7 +32,7 @@ instruction::instruction(const INS& current_instruction)
 {
   this->address           = INS_Address(current_instruction);
   this->dissasembled_name = INS_Disassemble(current_instruction);
-  
+    
   // determine if the instruction is a system call
   this->is_syscall = INS_IsSyscall(current_instruction);
   
@@ -63,7 +63,6 @@ instruction::instruction(const INS& current_instruction)
   // the source and target registers of an instruction can be determined statically
   REG curr_register;
   uint8_t register_id, register_number;
-//   uint8_t register_number; 
   ptr_insoperand_t curr_ptr_operand;
   
   // source operands as read registers
@@ -145,7 +144,7 @@ instruction::instruction(const instruction& other_instruction)
  * @return void
  */
 void instruction::update_memory_access_info(ADDRINT access_address, UINT8 access_length, 
-                                memory_access_t access_type)
+                                            memory_access_t access_type)
 {
   ADDRINT address;
   ADDRINT upper_bound_address = access_address + access_length;

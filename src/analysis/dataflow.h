@@ -20,10 +20,7 @@
 #ifndef DATAFLOW_GRAPH_H
 #define DATAFLOW_GRAPH_H
 
-#include "instruction.h"
-#include "operand.h"
 #include <pin.H>
-#include <boost/unordered_set.hpp>
 
 namespace analysis 
 {
