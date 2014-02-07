@@ -12,8 +12,7 @@
 extern ADDRINT logged_syscall_index;
 extern ADDRINT logged_syscall_args[6];
 
-extern std::map< ADDRINT,
-       instruction > addr_ins_static_map;
+extern std::map<ADDRINT, instruction> addr_ins_static_map;
 
 extern UINT8    received_msg_num;
 extern ADDRINT  received_msg_addr;
@@ -24,7 +23,7 @@ extern KNOB<BOOL>   print_debug_text;
 
 extern UINT32       max_trace_size;
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 VOID unhandled_analyzer(ADDRINT ins_addr, UINT32 dst_opr_id, UINT32 src_opr_id)
 {
