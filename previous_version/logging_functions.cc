@@ -5,6 +5,7 @@
 #include <map>
 #include <set>
 
+#include <boost/predef.h>
 #include <boost/format.hpp>
 #include <boost/graph/breadth_first_search.hpp>
 #include <boost/log/core.hpp>
@@ -44,8 +45,6 @@ extern ptr_branch                               exploring_ptr_branch;
 
 extern std::vector<ptr_branch>                  total_input_dep_ptr_branches;
 
-// extern UINT32                                   input_dep_branch_num;
-
 extern std::vector<ptr_checkpoint>              saved_ptr_checkpoints;
 extern ptr_checkpoint                           master_ptr_checkpoint;
 
@@ -69,8 +68,6 @@ extern boost::shared_ptr< boost::log::sinks::synchronous_sink<boost::log::sinks:
 
 static std::map<vdep_vertex_desc,
                 vdep_vertex_desc>               prec_vertex_desc;
-
-static bool function_has_been_called = false;
 
 /*================================================================================================*/
 
@@ -528,7 +525,8 @@ VOID logging_cond_br_analyzer(ADDRINT ins_addr, bool br_taken)
 }
 
 /*================================================================================================*/
-
+#if defined(_WIN32) || defined(_WIN64)
+static bool function_has_been_called = false;
 VOID logging_before_recv_functions_analyzer(ADDRINT msg_addr)
 {
   received_msg_addr = msg_addr;
@@ -559,7 +557,6 @@ VOID logging_after_recv_functions_analyzer(UINT32 msg_length)
   return;
 }
 
-/*================================================================================================*/
 namespace WINDOWS
 {
 #include <WinSock2.h>
@@ -606,3 +603,4 @@ VOID logging_after_wsarecv_funtions_analyzer()
   
   return;
 }
+#endif

@@ -17,7 +17,7 @@
 #include <boost/format.hpp>
 #include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
-#include <boost/log/expressions.hpp>
+// #include <boost/log/expressions.hpp>
 #include <boost/log/sinks/text_file_backend.hpp>
 #include <boost/log/utility/setup/file.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
@@ -92,8 +92,6 @@ UINT32                                        received_msg_num;
 ADDRINT                                       received_msg_addr;
 UINT32                                        received_msg_size;
 ADDRINT																				received_msg_struct_addr;
-
-//boost::shared_ptr<UINT8>                      received_msg_backup;
 
 UINT64                                        executed_ins_number;
 UINT64                                        econed_ins_number;
@@ -190,9 +188,9 @@ inline static void initialize_logging(std::string log_filename)
 {
   log_sink = boost::log::add_file_log
   (
-    boost::log::keywords::file_name = log_filename.c_str(),
-    boost::log::keywords::format = boost::log::expressions::format("<%1%> %2%") 
-      % boost::log::trivial::severity % boost::log::expressions::smessage
+    boost::log::keywords::file_name = log_filename.c_str()
+//     boost::log::keywords::format = boost::log::expressions::format("<%1%> %2%") 
+//       % boost::log::trivial::severity % boost::log::expressions::smessage
   );
 
   boost::log::core::get()->set_filter
