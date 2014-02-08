@@ -33,7 +33,9 @@ class instruction
 {
 public:
   ADDRINT             address;
-  std::string         disass;
+  std::string         disassembled_name;
+  bool                is_syscall;
+  
   std::string         contained_image;
   std::string         contained_function;
   

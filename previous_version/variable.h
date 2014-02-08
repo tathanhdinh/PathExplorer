@@ -153,7 +153,7 @@ public:
   {
     vdep_edge ve = graph[edge];
     
-    out << "[label=\"(" << decstr(ve.second) << ") " << addr_ins_static_map[ve.first].disass << "\"]";
+    out << "[label=\"(" << decstr(ve.second) << ") " << addr_ins_static_map[ve.first].disassembled_name << "\"]";
   }
   
 private:

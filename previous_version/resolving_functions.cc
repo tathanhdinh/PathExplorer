@@ -377,7 +377,7 @@ inline void exploring_new_branch_or_stop()
     BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
       << boost::format("exploring the branch at %d (%s) by start tainting a new path.\n") 
           % unexplored_ptr_branch->trace.size() 
-          % addr_ins_static_map[unexplored_ptr_branch->addr].disass;
+          % addr_ins_static_map[unexplored_ptr_branch->addr].disassembled_name;
     log_sink->flush();
     
     // the MASTER checkpoint is the first element of saved_ptr_checkpoints, 
@@ -515,7 +515,7 @@ inline void unresolved_branch_takes_new_decision(ADDRINT ins_addr,
     BOOST_LOG_SEV(log_instance, boost::log::trivial::info) 
       << boost::format("the branch at %d (%s: %s) is successfully resolved after %d rollbacks") 
           % examined_ptr_branch->trace.size() 
-          % remove_leading_zeros(StringFromAddrint(ins_addr)) % addr_ins_static_map[ins_addr].disass
+          % remove_leading_zeros(StringFromAddrint(ins_addr)) % addr_ins_static_map[ins_addr].disassembled_name
           % (local_rollback_times + (used_checkpoint_number - 1) * max_local_rollback_times);
     
     accept_branch(active_ptr_branch);
@@ -614,7 +614,7 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
               BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
                 << boost::format("rollback to the next checkpoint at %d (%s).") 
                     % active_nearest_checkpoint.first->trace.size() 
-                    % order_ins_dynamic_map[active_nearest_checkpoint.first->trace.size()].disass;
+                    % order_ins_dynamic_map[active_nearest_checkpoint.first->trace.size()].disassembled_name;
               log_sink->flush();
           
               econed_ins_number += active_ptr_branch->econ_execution_length[active_nearest_checkpoint.first];
@@ -672,13 +672,13 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
     // then rollback to it
     //BOOST_LOG_TRIVIAL(trace) 
     BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-      << boost::format("resolve the branch at %d:%d (%s: %s) by rollback to the checkpoint at %d (%s).") 
+      << boost::format("resolve the branch at %d:%d (%s: %s) by rollback to the checkpoint at %d (%s)") 
           % active_ptr_branch->trace.size() 
           % active_ptr_branch->br_taken
           % remove_leading_zeros(StringFromAddrint(active_ptr_branch->addr))
-          % order_ins_dynamic_map[active_ptr_branch->trace.size()].disass 
+          % order_ins_dynamic_map[active_ptr_branch->trace.size()].disassembled_name 
           % active_nearest_checkpoint.first->trace.size() 
-          % order_ins_dynamic_map[active_nearest_checkpoint.first->trace.size()].disass;
+          % order_ins_dynamic_map[active_nearest_checkpoint.first->trace.size()].disassembled_name;
     log_sink->flush();
    
     econed_ins_number += active_ptr_branch->econ_execution_length[active_nearest_checkpoint.first];
@@ -863,7 +863,7 @@ inline void log_input(ADDRINT ins_addr, bool br_taken)
       << boost::format("%s: the branch at %d (%s: %s) cannot found") 
           % __FUNCTION__ % explored_trace.size() 
           % remove_leading_zeros(StringFromAddrint(ins_addr)) 
-          % addr_ins_static_map[ins_addr].disass;
+          % addr_ins_static_map[ins_addr].disassembled_name;
     log_sink->flush();
 
     PIN_ExitApplication(0);
@@ -908,7 +908,7 @@ VOID resolving_cond_branch_analyzer(ADDRINT ins_addr, bool br_taken)
       BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
         << boost::format("the branch at %d (%s: %s) cannot found")
         % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr)) 
-        % addr_ins_static_map[ins_addr].disass;
+        % addr_ins_static_map[ins_addr].disassembled_name;
       log_sink->flush();
 
       PIN_ExitApplication(0);

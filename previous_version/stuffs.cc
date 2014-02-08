@@ -21,47 +21,9 @@
 #include "variable.h"
 #include "checkpoint.h"
 #include "branch.h"
+#include "path_explorer.h"
 
 #include <pin.H>
-
-
-/* ------------------------------------------------------------------------------------------------------------------ */
-/*                                                       global variables                                             */
-/* ------------------------------------------------------------------------------------------------------------------ */
-extern std::map< ADDRINT,
-       instruction >      addr_ins_static_map;
-extern std::map< UINT32,
-       instruction >      order_ins_dynamic_map;
-
-extern vdep_graph                   dta_graph;
-extern map_ins_io                   dta_inss_io;
-
-extern std::vector<ptr_checkpoint>  saved_ptr_checkpoints;
-
-extern ptr_branch                   active_ptr_branch;
-extern ptr_branch                   exploring_ptr_branch;
-
-extern std::vector<ptr_branch>      total_resolved_ptr_branches;
-extern std::vector<ptr_branch>      found_new_ptr_branches;
-
-extern std::map<UINT32, ptr_branch> order_input_indep_ptr_branch_map;
-extern std::map<UINT32, ptr_branch> order_input_dep_ptr_branch_map;
-extern std::map<UINT32, ptr_branch> order_tainted_ptr_branch_map;
-
-extern std::vector<ADDRINT>         explored_trace;
-
-// extern UINT32                       input_dep_branch_num;
-// extern UINT32                       resolved_branch_num;
-
-extern KNOB<UINT32>                 max_trace_length;
-extern KNOB<BOOL>                   print_debug_text;
-
-// extern std::ofstream                tainting_log_file;
-
-
-/* ------------------------------------------------------------------------------------------------------------------ */
-/*                                                         implementation                                             */
-/* ------------------------------------------------------------------------------------------------------------------ */
 
 std::string remove_leading_zeros(std::string input)
 {
@@ -85,12 +47,12 @@ std::string remove_leading_zeros(std::string input)
 
 /*====================================================================================================================*/
 
-void journal_buffer ( const std::string& filename, UINT8* buffer_addr, UINT32 buffer_size )
+void journal_buffer (const std::string& filename, UINT8* buffer_addr, UINT32 buffer_size)
 {
-  std::ofstream file ( filename.c_str(),
-                       std::ofstream::binary | std::ofstream::out | std::ofstream::trunc );
+  std::ofstream file (filename.c_str(),
+                      std::ofstream::binary | std::ofstream::out | std::ofstream::trunc );
 
-  std::copy ( buffer_addr, buffer_addr + buffer_size, std::ostreambuf_iterator<char> ( file ) );
+  std::copy (buffer_addr, buffer_addr + buffer_size, std::ostreambuf_iterator<char>(file));
   file.close();
 
   return;
@@ -100,14 +62,14 @@ void journal_buffer ( const std::string& filename, UINT8* buffer_addr, UINT32 bu
 
 void journal_static_trace(const std::string& filename)
 {
-  std::ofstream out_file (filename.c_str(), std::ofstream::out | std::ofstream::trunc);
+  std::ofstream out_file(filename.c_str(), std::ofstream::out | std::ofstream::trunc);
 
   std::map<ADDRINT, instruction>::iterator addr_ins_iter = addr_ins_static_map.begin();
   for (; addr_ins_iter != addr_ins_static_map.end(); ++addr_ins_iter) 
   {
 //     out_file << boost::format("%-15s %-35s (r: %-i, w: %-i) %-25s %-25s\n")
     out_file << boost::format("%-15s %-35s %-25s %-25s\n")
-                  % remove_leading_zeros(StringFromAddrint(addr_ins_iter->first)) % addr_ins_iter->second.disass
+                  % remove_leading_zeros(StringFromAddrint(addr_ins_iter->first)) % addr_ins_iter->second.disassembled_name
 //                 % addr_ins_iter->second.mem_read_size % addr_ins_iter->second.mem_written_size
                   % addr_ins_iter->second.contained_image % addr_ins_iter->second.contained_function;
   }
@@ -138,7 +100,7 @@ void journal_explored_trace(const std::string& filename)
   {
     out_file << boost::format("%-20s %-45s")
                   % remove_leading_zeros(StringFromAddrint(*trace_iter)) 
-                      % addr_ins_static_map[*trace_iter].disass;
+                      % addr_ins_static_map[*trace_iter].disassembled_name;
 
     std::map<ADDRINT, UINT8>::iterator mem_access_iter;
     out_file << boost::format("(R: %i   W: %i)\n") 
@@ -150,7 +112,7 @@ void journal_explored_trace(const std::string& filename)
   return;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 void journal_tainting_graph(const std::string& filename)
 {
@@ -164,7 +126,7 @@ void journal_tainting_graph(const std::string& filename)
   return;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 void store_input(ptr_branch& ptr_br, bool br_taken)
 {
@@ -175,7 +137,7 @@ void store_input(ptr_branch& ptr_br, bool br_taken)
   return;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 // void print_debug_message_received()
 // {
@@ -190,7 +152,7 @@ void store_input(ptr_branch& ptr_br, bool br_taken)
 //   return;
 // }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 // void print_debug_start_rollbacking()
 // {
@@ -209,7 +171,7 @@ void store_input(ptr_branch& ptr_br, bool br_taken)
 //   return;
 // }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 void journal_tainting_log()
 {
@@ -294,7 +256,7 @@ void journal_tainting_log()
           // input independent branch
           tainting_log_file << boost::format("\033[33m%-4i %-16s %-34s %-16s %-19s %-40s %-40s %-2i %s %s\033[0m\n")
                             % idx % remove_leading_zeros(StringFromAddrint(order_ins_dynamic_map[idx].address))
-                            % order_ins_dynamic_map[idx].disass
+                            % order_ins_dynamic_map[idx].disassembled_name
                             % sstream_sregs.str() % sstream_dregs.str() % sstream_smems.str() % sstream_dmems.str()
                             % idx_ptr_branch->br_taken
                             % order_ins_dynamic_map[idx].contained_image
@@ -336,7 +298,7 @@ void journal_tainting_log()
           // an input dependent branch
           tainting_log_file << boost::format("\033[32m%-4i %-16s %-34s %-16s %-19s %-40s %-40s %-2i %-4i %s %s\033[0m\n")
                             % idx % remove_leading_zeros(StringFromAddrint(order_ins_dynamic_map[idx].address))
-                            % order_ins_dynamic_map[idx].disass
+                            % order_ins_dynamic_map[idx].disassembled_name
                             % sstream_sregs.str() % sstream_dregs.str() % sstream_smems.str() % sstream_dmems.str()
                             % idx_ptr_branch->br_taken % idx_ptr_branch->checkpoint->trace.size()
                             % order_ins_dynamic_map[idx].contained_image
@@ -373,7 +335,7 @@ void journal_tainting_log()
           // a checkpoint
           tainting_log_file << boost::format ("\033[36m%-4i %-16s %-34s %-16s %-19s %-40s %-40s %s %s\033[0m\n")
                                 % idx % remove_leading_zeros(StringFromAddrint(order_ins_dynamic_map[idx].address))
-                                % order_ins_dynamic_map[idx].disass
+                                % order_ins_dynamic_map[idx].disassembled_name
                                 % sstream_sregs.str() % sstream_dregs.str() % sstream_smems.str() % sstream_dmems.str()
                                 % order_ins_dynamic_map[idx].contained_image
                                 % order_ins_dynamic_map[idx].contained_function;
@@ -383,7 +345,7 @@ void journal_tainting_log()
           // a normal instruction
           tainting_log_file << boost::format("\033[0m%-4i %-16s %-34s %-16s %-19s %-40s %-40s %s %s\033[0m\n")
                                 % idx % remove_leading_zeros(StringFromAddrint(order_ins_dynamic_map[idx].address))
-                                % order_ins_dynamic_map[idx].disass
+                                % order_ins_dynamic_map[idx].disassembled_name
                                 % sstream_sregs.str() % sstream_dregs.str() % sstream_smems.str() % sstream_dmems.str()
                                 % order_ins_dynamic_map[idx].contained_image
                                 % order_ins_dynamic_map[idx].contained_function;

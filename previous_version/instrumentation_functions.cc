@@ -231,8 +231,8 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
 {
   boost::filesystem::path loaded_image_path(IMG_Name(loaded_img));
 
-  BOOST_LOG_SEV(log_instance, boost::log::trivial::info) 
-    << "loaded module: " << loaded_image_path.filename();
+  BOOST_LOG_SEV(log_instance, logging::trivial::info) 
+    << boost::format("module %s loaded") % loaded_image_path.filename();
 
 #if defined(_WIN32) || defined(_WIN64)
   // verify whether the winsock2 module is loaded
@@ -328,7 +328,7 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
 
 BOOL process_create_instrumenter(CHILD_PROCESS created_process, VOID* data)
 {
-  BOOST_LOG_SEV(log_instance, boost::log::trivial::warning) 
+  BOOST_LOG_SEV(log_instance, logging::trivial::warning) 
     << boost::format("new process created with id %d") % CHILD_PROCESS_GetId(created_process);
   return TRUE;
 }

@@ -1,29 +1,16 @@
 #include "instruction.h"
 
-#include <boost/log/core.hpp>
-#include <boost/log/trivial.hpp>
-#include <boost/log/expressions.hpp>
-#include <boost/log/sinks/text_file_backend.hpp>
-#include <boost/log/utility/setup/file.hpp>
-#include <boost/log/utility/setup/common_attributes.hpp>
-#include <boost/log/sources/severity_logger.hpp>
-#include <boost/log/sources/record_ostream.hpp>
-
 #include <pin.H>
 extern "C" {
 #include <xed-interface.h>
 }
 
-#include "stuffs.h"
+// #include "stuffs.h"
+#include "path_explorer.h"
 
 /*====================================================================================================================*/
 
-extern boost::log::sources::severity_logger<boost::log::trivial::severity_level> log_instance;
-extern boost::shared_ptr< boost::log::sinks::synchronous_sink<boost::log::sinks::text_file_backend> > log_sink;
-
-/*====================================================================================================================*/
-
-inline std::string contained_image_name(ADDRINT ins_addr)
+inline static std::string contained_image_name(ADDRINT ins_addr)
 {
 //   for (IMG img = APP_ImgHead(); IMG_Valid(img); img = IMG_Next(img)) 
 //   {
@@ -57,14 +44,18 @@ instruction::instruction()
 
 instruction::instruction(const INS& ins)
 {
-
-
-  this->address         = INS_Address(ins);
-  this->disass          = INS_Disassemble(ins);
-  this->category        = static_cast<xed_category_enum_t>(INS_Category(ins));
-  this->opcode          = INS_Opcode(ins);
-  this->contained_image = contained_image_name(this->address);
-  this->contained_function = RTN_FindNameByAddress(this->address);
+  this->address             = INS_Address(ins);
+  this->disassembled_name   = INS_Disassemble(ins);
+  
+  this->is_syscall          = INS_IsSyscall(ins);
+  
+//   this->category            = static_cast<xed_category_enum_t>(INS_Category(ins));
+//   this->opcode              = INS_Opcode(ins);
+//   this->contained_image     = contained_image_name(this->address);
+  this->contained_image = "";
+  IMG ins_img = IMG_FindByAddress(this->address);
+  if (IMG_Valid(ins_img)) this->contained_image = IMG_Name(ins_img);
+  this->contained_function  = RTN_FindNameByAddress(this->address);
   
 //   if (INS_IsDirectBranchOrCall(ins))
 //   {
@@ -155,7 +146,7 @@ instruction::instruction(const INS& ins)
 instruction::instruction(const instruction& other)
 {
   this->address           = other.address;
-  this->disass            = other.disass;
+  this->disassembled_name = other.disassembled_name;
   this->category          = other.category;
 
   this->contained_function  = other.contained_function;
@@ -177,7 +168,7 @@ instruction::instruction(const instruction& other)
 instruction& instruction::operator=(const instruction& other)
 {
   this->address           = other.address;
-  this->disass            = other.disass;
+  this->disassembled_name            = other.disassembled_name;
   this->category          = other.category;
 
   this->contained_function  = other.contained_function;

@@ -308,7 +308,7 @@ inline static void compute_branch_min_checkpoint()
               % current_ptr_branch->trace.size()
               % current_ptr_branch->br_taken
               % remove_leading_zeros(StringFromAddrint(current_ptr_branch->addr))
-              % order_ins_dynamic_map[current_ptr_branch->trace.size()].disass
+              % order_ins_dynamic_map[current_ptr_branch->trace.size()].disassembled_name
               % current_ptr_branch->nearest_checkpoints.size();
               
         current_ptr_branch->checkpoint = current_ptr_branch->nearest_checkpoints.rbegin()->first;
@@ -401,7 +401,7 @@ VOID instruction_execution_simple_logger(ADDRINT ins_addr)
 {
   BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << boost::format("%d (%s %s) %s")
     % remove_leading_zeros(StringFromAddrint(ins_addr))
-    % addr_ins_static_map[ins_addr].disass
+    % addr_ins_static_map[ins_addr].disassembled_name
     % addr_ins_static_map[ins_addr].contained_function;
   return;
 }
@@ -417,7 +417,7 @@ VOID logging_general_instruction_analyzer(ADDRINT ins_addr)
     BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << boost::format("%-3d (%-10s %s) %s %s")
       % explored_trace.size()
       % remove_leading_zeros(StringFromAddrint(ins_addr))
-      % addr_ins_static_map[ins_addr].disass
+      % addr_ins_static_map[ins_addr].disassembled_name
       % addr_ins_static_map[ins_addr].contained_image
       % addr_ins_static_map[ins_addr].contained_function;
     log_sink->flush();
@@ -449,7 +449,7 @@ VOID logging_mem_read_instruction_analyzer(ADDRINT ins_addr,
       << boost::format("checkpoint detected at %d (%s: %s) because memory is read (%s: %d)")
       % new_ptr_checkpoint->trace.size()
       % remove_leading_zeros(StringFromAddrint(ins_addr))
-      % addr_ins_static_map[ins_addr].disass 
+      % addr_ins_static_map[ins_addr].disassembled_name 
       % remove_leading_zeros(StringFromAddrint(mem_read_addr)) % mem_read_size;
   }
 
