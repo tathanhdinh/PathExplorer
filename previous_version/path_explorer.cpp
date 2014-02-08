@@ -58,7 +58,7 @@ UINT32                                        max_trace_size;
 
 bool                                          in_tainting;
 
-vdep_graph                                    dta_graph;
+dataflow_graph                                    dta_graph;
 map_ins_io                                    dta_inss_io;
 vdep_vertex_desc_set                          dta_outer_vertices;
 

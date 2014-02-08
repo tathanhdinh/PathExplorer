@@ -2,7 +2,6 @@
 #define VARIABLE_H
 
 #include <pin.H>
-// #include <z3++.h>
 
 #include <set>
 #include <map>
@@ -53,7 +52,7 @@ inline bool operator==(const variable& var_a, const variable& var_b)
   return ((var_a.type == var_b.type) && (var_a.name == var_b.name));
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 class variable_hash
 {
@@ -65,27 +64,23 @@ public:
   }
 };
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 typedef boost::unordered_set<variable, variable_hash>       var_set;
 
-typedef variable                                            vdep_vertex;
-typedef std::pair<ADDRINT, UINT32>                          vdep_edge;
+typedef variable                                            dataflow_vertex;
+typedef std::pair<ADDRINT, UINT32>                          dataflow_edge;
 
 typedef boost::adjacency_list<boost::listS, boost::vecS, 
                               boost::bidirectionalS, 
-                              vdep_vertex, vdep_edge>       vdep_graph;
-
-// typedef boost::adjacency_list<boost::listS, boost::listS, 
-//                               boost::bidirectionalS, 
-//                               vdep_vertex, vdep_edge>       vdep_graph;
+                              dataflow_vertex, dataflow_edge>       dataflow_graph;
                                                          
-typedef boost::graph_traits<vdep_graph>::vertex_descriptor  vdep_vertex_desc;
-typedef boost::graph_traits<vdep_graph>::edge_descriptor    vdep_edge_desc;
-typedef boost::graph_traits<vdep_graph>::vertex_iterator    vdep_vertex_iter;
-typedef boost::graph_traits<vdep_graph>::edge_iterator      vdep_edge_iter;
-typedef boost::graph_traits<vdep_graph>::out_edge_iterator  vdep_out_edge_iter;
-typedef boost::graph_traits<vdep_graph>::in_edge_iterator   vdep_in_edge_iter;
+typedef boost::graph_traits<dataflow_graph>::vertex_descriptor  vdep_vertex_desc;
+typedef boost::graph_traits<dataflow_graph>::edge_descriptor    vdep_edge_desc;
+typedef boost::graph_traits<dataflow_graph>::vertex_iterator    vdep_vertex_iter;
+typedef boost::graph_traits<dataflow_graph>::edge_iterator      vdep_edge_iter;
+typedef boost::graph_traits<dataflow_graph>::out_edge_iterator  vdep_out_edge_iter;
+typedef boost::graph_traits<dataflow_graph>::in_edge_iterator   vdep_in_edge_iter;
 
 // typedef std::vector<vdep_edge_desc>                         vdep_path
 typedef std::list<vdep_edge_desc>                           vdep_edge_desc_list;
@@ -97,7 +92,7 @@ typedef boost::unordered_map<vdep_edge_desc,
                              
 typedef boost::unordered_set<vdep_vertex_desc>              vdep_vertex_desc_set;
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 extern std::map< ADDRINT, 
                  instruction > addr_ins_static_map;
@@ -105,19 +100,19 @@ extern std::map< ADDRINT,
 extern ADDRINT                 received_msg_addr;
 extern UINT32                  received_msg_size;
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 class vertex_label_writer
 {
 public:
-  vertex_label_writer(vdep_graph& g) : graph(g) 
+  vertex_label_writer(dataflow_graph& g) : graph(g)
   {
   }
   
   template <typename Vertex>
   void operator()(std::ostream& out, Vertex v) 
   {
-    vdep_vertex vertex_var(graph[v]);
+    dataflow_vertex vertex_var(graph[v]);
     std::string vertex_label;
         
     if ((vertex_var.type == MEM_VAR) && (received_msg_addr <= vertex_var.mem) && 
@@ -136,28 +131,28 @@ public:
   }
   
 private:
-  vdep_graph graph;
+  dataflow_graph graph;
 };
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 class edge_label_writer
 {
 public:
-  edge_label_writer(vdep_graph& g) : graph(g)
+  edge_label_writer(dataflow_graph& g) : graph(g)
   {
   }
   
   template <typename Edge>
   void operator()(std::ostream& out, Edge edge) 
   {
-    vdep_edge ve = graph[edge];
+    dataflow_edge ve = graph[edge];
     
     out << "[label=\"(" << decstr(ve.second) << ") " << addr_ins_static_map[ve.first].disassembled_name << "\"]";
   }
   
 private:
-  vdep_graph graph;
+  dataflow_graph graph;
 };
 
 #endif // VARIABLE_H

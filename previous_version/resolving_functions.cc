@@ -28,7 +28,7 @@ extern std::map< UINT32,
 
 extern bool                                       in_tainting;
 
-extern vdep_graph                                 dta_graph;
+extern dataflow_graph                                 dta_graph;
 
 extern std::vector<ADDRINT>                       explored_trace;
 
@@ -87,15 +87,15 @@ VOID resolving_ins_count_analyzer(ADDRINT ins_addr)
 
   if (addr_ins_static_map[ins_addr].has_mem_read2)
   {
-    std::set<ADDRINT>::iterator addr_iter;
-    for (addr_iter = order_ins_dynamic_map[explored_trace.size()].src_mems.begin();
-      addr_iter != order_ins_dynamic_map[explored_trace.size()].src_mems.end(); ++addr_iter)
-    {
-      BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-        << boost::format("%s %d")
-        % remove_leading_zeros(StringFromAddrint(*addr_iter)) 
-        % *(reinterpret_cast<UINT8*>(*addr_iter));
-    }
+//     std::set<ADDRINT>::iterator addr_iter;
+//     for (addr_iter = order_ins_dynamic_map[explored_trace.size()].src_mems.begin();
+//       addr_iter != order_ins_dynamic_map[explored_trace.size()].src_mems.end(); ++addr_iter)
+//     {
+//       BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
+//         << boost::format("%s %d")
+//         % remove_leading_zeros(StringFromAddrint(*addr_iter)) 
+//         % *(reinterpret_cast<UINT8*>(*addr_iter));
+//     }
   }
 
   if (order_ins_dynamic_map[explored_trace.size()].address == ins_addr)

@@ -120,7 +120,7 @@ VOID ins_instrumenter(INS ins, VOID *data)
                                    IARG_INST_PTR,
                                    IARG_END);
 
-          if (addr_ins_static_map[ins_addr].category == XED_CATEGORY_COND_BR) 
+          if (addr_ins_static_map[ins_addr].is_cbranch/* == XED_CATEGORY_COND_BR*/) 
           {
             // conditional branch logging
             INS_InsertPredicatedCall(ins, IPOINT_BEFORE, 
@@ -199,7 +199,7 @@ VOID ins_instrumenter(INS ins, VOID *data)
         }
         
         // note that conditional branches are always direct
-        if (addr_ins_static_map[ins_addr].category == XED_CATEGORY_COND_BR) 
+        if (addr_ins_static_map[ins_addr].is_cbranch/*.category == XED_CATEGORY_COND_BR*/) 
         {
           INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
                                    (AFUNPTR)resolving_cond_branch_analyzer,

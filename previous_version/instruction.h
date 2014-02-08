@@ -12,12 +12,7 @@ extern "C"
 #include <xed-interface.h>
 }
 
-
-/* ------------------------------------------------------------------------------------------------------------------ */
-/*                                                           data types                                               */
-/* ------------------------------------------------------------------------------------------------------------------ */
-class instruction;
-// class checkpoint;
+#include "operand.h"
 
 typedef enum 
 {
@@ -26,35 +21,35 @@ typedef enum
   syscall_recvfrom = 45
 } syscall_id;
 
-/* ------------------------------------------------------------------------------------------------------------------ */
-/*                                                  class declaration                                                 */
-/* ------------------------------------------------------------------------------------------------------------------ */
+/* ---------------------------------------------------------------------------------------------- */
+/*                                            class declaration                                   */
+/* ---------------------------------------------------------------------------------------------- */
 class instruction
 {
 public:
   ADDRINT             address;
   std::string         disassembled_name;
-  bool                is_syscall;
   
   std::string         contained_image;
   std::string         contained_function;
-  
-  OPCODE              opcode;
-  xed_category_enum_t category;
-
-  UINT32              mem_read_size;
-  UINT32              mem_written_size;
-
-  std::set<REG>       src_regs, dst_regs;
-  std::set<ADDRINT>   src_mems, dst_mems;
-
+    
+  bool                is_syscall;
+  bool                is_mem_read;
+  bool                is_mem_write;
+  bool                is_mapped_from_kernel;
+  bool                is_cbranch;
   bool                has_mem_read2;
 
+  std::set<ptr_operand_t> src_operands;
+  std::set<ptr_operand_t> trg_operands;
+  
 public:
   instruction();
   instruction(INS const& ins);
   instruction(instruction const& other_ins);
   instruction& operator=(instruction const& other_ins);
 };
+
+typedef boost::shared_ptr<instruction> ptr_instruction_t;
 
 #endif // INSTRUCTION_H

@@ -159,8 +159,7 @@ void analyzer::cbranch_instruction_callback(bool is_branch_taken)
  * @param cpu_context cpu context
  * @return void
  */
-void analyzer::mread_instruction_callback(ADDRINT memory_read_address,
-                                                UINT32 memory_read_size)
+void analyzer::mread_instruction_callback(ADDRINT memory_read_address, UINT32 memory_read_size)
 {
   // update dynamic information: read memory addresses
   ptr_instruction_t curr_ins = instruction_at_execorder[current_execorder];
@@ -177,8 +176,8 @@ void analyzer::mread_instruction_callback(ADDRINT memory_read_address,
  * @param memory_written_size size of the written address
  * @return void
  */
-void analyzer::mwrite_instruction_callback(ADDRINT memory_written_address,
-                                                 UINT32 memory_written_size)
+void analyzer::mwrite_instruction_callback(ADDRINT memory_written_address, 
+                                           UINT32 memory_written_size)
 {
   // update dynamic information: written memory addresses
   ptr_instruction_t curr_ins = instruction_at_execorder[current_execorder];

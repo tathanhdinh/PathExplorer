@@ -23,7 +23,7 @@
 
 /*====================================================================================================================*/
 
-extern vdep_graph                   dta_graph;
+extern dataflow_graph                   dta_graph;
 extern std::vector<ADDRINT>         explored_trace;
 extern std::vector<ptr_checkpoint>  saved_ptr_checkpoints;
 

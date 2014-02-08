@@ -234,7 +234,7 @@ void journal_tainting_log()
         sstream_dregs << REG_StringShort(*reg_iter) << " ";
       }
 
-      if (order_ins_dynamic_map[idx].category == XED_CATEGORY_COND_BR) 
+      if (order_ins_dynamic_map[idx].is_cbranch/*category == XED_CATEGORY_COND_BR*/) 
       {
         sstream_dmems << "dmems: []";
 
@@ -360,7 +360,7 @@ void journal_tainting_log()
   return;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 void journal_branch_messages(ptr_branch& ptr_resolved_branch)
 {
@@ -391,4 +391,13 @@ void journal_branch_messages(ptr_branch& ptr_resolved_branch)
   }
 
   return;
+}
+
+/*================================================================================================*/
+
+std::string addrint_to_hexstring(ADDRINT input)
+{
+  std::stringstream num_stream;
+  num_stream << "0x" << std::hex << input;
+  return num_stream.str();
 }

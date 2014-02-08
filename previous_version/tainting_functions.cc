@@ -9,7 +9,7 @@
 
 /*================================================================================================*/
 
-extern vdep_graph               dta_graph;
+extern dataflow_graph               dta_graph;
 extern map_ins_io               dta_inss_io;
 extern vdep_vertex_desc_set     dta_outer_vertices;
 

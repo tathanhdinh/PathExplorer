@@ -32,7 +32,7 @@ extern std::map<UINT32, instruction>            order_ins_dynamic_map;
 
 extern UINT32                                   total_rollback_times;
 
-extern vdep_graph                               dta_graph;
+extern dataflow_graph                               dta_graph;
 extern map_ins_io                               dta_inss_io;
 
 extern std::vector<ADDRINT>                     explored_trace;
@@ -453,9 +453,12 @@ VOID logging_mem_read_instruction_analyzer(ADDRINT ins_addr,
       % remove_leading_zeros(StringFromAddrint(mem_read_addr)) % mem_read_size;
   }
 
+  ptr_operand_t mem_operand;
   for (UINT32 idx = 0; idx < mem_read_size; ++idx)
   {
-    order_ins_dynamic_map[explored_trace.size()].src_mems.insert(mem_read_addr + idx);
+//     order_ins_dynamic_map[explored_trace.size()].src_mems.insert(mem_read_addr + idx);
+    mem_operand.reset(new operand(mem_read_addr + idx));
+    order_ins_dynamic_map[explored_trace.size()].src_operands.insert(mem_operand);
   }
 
   return;
