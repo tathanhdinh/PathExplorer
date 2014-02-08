@@ -28,7 +28,7 @@ extern std::map< UINT32,
 
 extern bool                                       in_tainting;
 
-extern dataflow_graph                                 dta_graph;
+extern df_diagram                                 dta_graph;
 
 extern std::vector<ADDRINT>                       explored_trace;
 

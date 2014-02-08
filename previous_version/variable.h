@@ -11,13 +11,16 @@
 #include <iostream>
 #include <utility>
 
+#include <boost/format.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/functional/hash.hpp>
 #include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
 
+#include "operand.h"
 #include "instruction.h"
+//#include "path_explorer.h"
 
 /*================================================================================================*/
 
@@ -68,70 +71,84 @@ public:
 
 typedef boost::unordered_set<variable, variable_hash>       var_set;
 
-typedef variable                                            dataflow_vertex;
-typedef std::pair<ADDRINT, UINT32>                          dataflow_edge;
-
+//typedef variable                                            dataflow_vertex;
+//typedef std::pair<ADDRINT, UINT32>                          dataflow_edge;
+typedef ptr_operand_t                                       df_vertex;
+typedef UINT32                                              df_edge;
 typedef boost::adjacency_list<boost::listS, boost::vecS, 
                               boost::bidirectionalS, 
-                              dataflow_vertex, dataflow_edge>       dataflow_graph;
+                              df_vertex, df_edge>           df_diagram;
                                                          
-typedef boost::graph_traits<dataflow_graph>::vertex_descriptor  vdep_vertex_desc;
-typedef boost::graph_traits<dataflow_graph>::edge_descriptor    vdep_edge_desc;
-typedef boost::graph_traits<dataflow_graph>::vertex_iterator    vdep_vertex_iter;
-typedef boost::graph_traits<dataflow_graph>::edge_iterator      vdep_edge_iter;
-typedef boost::graph_traits<dataflow_graph>::out_edge_iterator  vdep_out_edge_iter;
-typedef boost::graph_traits<dataflow_graph>::in_edge_iterator   vdep_in_edge_iter;
+typedef boost::graph_traits<df_diagram>::vertex_descriptor  df_vertex_desc;
+typedef boost::graph_traits<df_diagram>::edge_descriptor    df_edge_desc;
+typedef boost::graph_traits<df_diagram>::vertex_iterator    df_vertex_iter;
+typedef boost::graph_traits<df_diagram>::edge_iterator      df_edge_iter;
+//typedef boost::graph_traits<df_diagram>::out_edge_iterator  vdep_out_edge_iter;
+//typedef boost::graph_traits<df_diagram>::in_edge_iterator   vdep_in_edge_iter;
 
-// typedef std::vector<vdep_edge_desc>                         vdep_path
-typedef std::list<vdep_edge_desc>                           vdep_edge_desc_list;
-typedef std::list<vdep_vertex_desc>                         vdep_vertex_desc_list;
-typedef boost::unordered_map<vdep_vertex_desc, 
-                             vdep_edge_desc_list>           vdep_vertex_edges_dependency;
-typedef boost::unordered_map<vdep_edge_desc, 
-                             vdep_vertex_desc_list>         vdep_edge_vertices_dependency;
+typedef std::list<df_edge_desc>                             df_edge_desc_list;
+typedef std::list<df_vertex_desc>                           df_vertex_desc_list;
+typedef boost::unordered_map<df_vertex_desc,
+                             df_edge_desc_list>             df_vertex_edges_dependency;
+typedef boost::unordered_map<df_edge_desc,
+                             df_vertex_desc_list>           df_edge_vertices_dependency;
                              
-typedef boost::unordered_set<vdep_vertex_desc>              vdep_vertex_desc_set;
+//typedef boost::unordered_set<vdep_vertex_desc>                  vdep_vertex_desc_set;
+typedef std::set<df_vertex_desc>                            df_vertex_desc_set;
 
 /*================================================================================================*/
 
-extern std::map< ADDRINT, 
-                 instruction > addr_ins_static_map;
+extern std::map<ADDRINT, instruction> addr_ins_static_map;
+extern std::map<UINT32, instruction>  order_ins_dynamic_map;
 
-extern ADDRINT                 received_msg_addr;
-extern UINT32                  received_msg_size;
+extern ADDRINT                        received_msg_addr;
+extern UINT32                         received_msg_size;
 
 /*================================================================================================*/
 
 class vertex_label_writer
 {
 public:
-  vertex_label_writer(dataflow_graph& g) : graph(g)
+  vertex_label_writer(df_diagram& g) : graph(g)
   {
   }
   
   template <typename Vertex>
   void operator()(std::ostream& out, Vertex v) 
   {
-    dataflow_vertex vertex_var(graph[v]);
-    std::string vertex_label;
+    df_vertex current_vertex = graph[v];
+    if ((current_vertex->value.type() == typeid(ADDRINT)) &&
+        (received_msg_addr <= boost::get<ADDRINT>(current_vertex->value)) &&
+        (boost::get<ADDRINT>(current_vertex->value) < received_msg_addr + received_msg_size))
+    {
+      out << boost::format("[color=blue,style=filled,label=\"%s\"]") % current_vertex->name;
+    }
+    else
+    {
+      out << boost::format("[color=black,label=\"%s\"]") % current_vertex->name;
+    }
+
+//    dataflow_vertex vertex_var(graph[v]);
+//    std::string vertex_label;
+
         
-    if ((vertex_var.type == MEM_VAR) && (received_msg_addr <= vertex_var.mem) && 
-        (vertex_var.mem < received_msg_addr + received_msg_size)) 
-    {
-      vertex_label = "[color=blue, style=filled, label=\"";
-    }
-    else 
-    {
-      vertex_label = "[color=black, label=\"";
-    }
-    vertex_label += vertex_var.name;
-    vertex_label += "\"]";
+//    if ((vertex_var.type == MEM_VAR) && (received_msg_addr <= vertex_var.mem) &&
+//        (vertex_var.mem < received_msg_addr + received_msg_size))
+//    {
+//      vertex_label = "[color=blue, style=filled, label=\"";
+//    }
+//    else
+//    {
+//      vertex_label = "[color=black, label=\"";
+//    }
+//    vertex_label += vertex_var.name;
+//    vertex_label += "\"]";
     
-    out << vertex_label;
+//    out << vertex_label;
   }
   
 private:
-  dataflow_graph graph;
+  df_diagram graph;
 };
 
 /*================================================================================================*/
@@ -139,20 +156,22 @@ private:
 class edge_label_writer
 {
 public:
-  edge_label_writer(dataflow_graph& g) : graph(g)
+  edge_label_writer(df_diagram& g) : graph(g)
   {
   }
   
   template <typename Edge>
   void operator()(std::ostream& out, Edge edge) 
   {
-    dataflow_edge ve = graph[edge];
+    df_edge current_edge = graph[edge];
+    out << boost::format("[label=\"%s: %s\"]")
+           % current_edge % order_ins_dynamic_map[current_edge].disassembled_name;
     
-    out << "[label=\"(" << decstr(ve.second) << ") " << addr_ins_static_map[ve.first].disassembled_name << "\"]";
+//    out << "[label=\"(" << decstr(ve.second) << ") " << addr_ins_static_map[ve.first].disassembled_name << "\"]";
   }
   
 private:
-  dataflow_graph graph;
+  df_diagram graph;
 };
 
 #endif // VARIABLE_H

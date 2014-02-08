@@ -5,9 +5,10 @@
 
 #include <boost/graph/breadth_first_search.hpp>
 
+//#include "instruction.h"
 #include "variable.h"
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 // static std::set<vdep_edge_desc> dep_edges;
 //
@@ -23,7 +24,7 @@
 
 /*====================================================================================================================*/
 
-extern dataflow_graph                   dta_graph;
+extern df_diagram                   dta_graph;
 extern std::vector<ADDRINT>         explored_trace;
 extern std::vector<ptr_checkpoint>  saved_ptr_checkpoints;
 

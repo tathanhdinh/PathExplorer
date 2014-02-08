@@ -58,9 +58,9 @@ UINT32                                        max_trace_size;
 
 bool                                          in_tainting;
 
-dataflow_graph                                    dta_graph;
+df_diagram                                dta_graph;
 map_ins_io                                    dta_inss_io;
-vdep_vertex_desc_set                          dta_outer_vertices;
+df_vertex_desc_set                          dta_outer_vertices;
 
 std::vector<ptr_checkpoint>                   saved_ptr_checkpoints;
 ptr_checkpoint                                master_ptr_checkpoint;

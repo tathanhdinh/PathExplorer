@@ -1,3 +1,6 @@
+#ifndef PATH_EXPLORER_H
+#define PATH_EXPLORER_H
+
 #include <pin.H>
 #include <map>
 
@@ -39,9 +42,9 @@ extern UINT32                                        max_trace_size;
 
 extern bool                                          in_tainting;
 
-extern dataflow_graph                                    dta_graph;
+extern df_diagram                                dta_graph;
 extern map_ins_io                                    dta_inss_io;
-extern vdep_vertex_desc_set                          dta_outer_vertices;
+extern df_vertex_desc_set                          dta_outer_vertices;
 
 extern std::vector<ptr_checkpoint>                   saved_ptr_checkpoints;
 extern ptr_checkpoint                                master_ptr_checkpoint;
@@ -95,3 +98,5 @@ extern KNOB<BOOL>    print_debug_text;
 extern KNOB<UINT32>  max_local_rollback;
 extern KNOB<UINT32>  max_total_rollback;
 extern KNOB<UINT32>  max_trace_length;
+
+#endif

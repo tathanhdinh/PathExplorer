@@ -32,7 +32,7 @@ extern std::map<UINT32, instruction>            order_ins_dynamic_map;
 
 extern UINT32                                   total_rollback_times;
 
-extern dataflow_graph                               dta_graph;
+extern df_diagram                               dta_graph;
 extern map_ins_io                               dta_inss_io;
 
 extern std::vector<ADDRINT>                     explored_trace;
@@ -66,8 +66,8 @@ extern boost::shared_ptr< boost::log::sinks::synchronous_sink<boost::log::sinks:
 
 /*================================================================================================*/
 
-static std::map<vdep_vertex_desc,
-                vdep_vertex_desc>               prec_vertex_desc;
+static std::map<df_vertex_desc,
+                df_vertex_desc>               prec_vertex_desc;
 
 /*================================================================================================*/
 
@@ -94,14 +94,14 @@ inline void mark_resolved(ptr_branch& omitted_ptr_branch)
 
 /*================================================================================================*/
 
-std::vector<UINT32> backward_trace(vdep_vertex_desc root_vertex, vdep_vertex_desc last_vertex)
+std::vector<UINT32> backward_trace(df_vertex_desc root_vertex, df_vertex_desc last_vertex)
 {
   std::vector<UINT32> backward_trace;
 
-  vdep_vertex_desc current_vertex = last_vertex;
-  vdep_vertex_desc backward_vertex;
+  df_vertex_desc current_vertex = last_vertex;
+  df_vertex_desc backward_vertex;
 
-  vdep_edge_desc current_edge;
+  df_edge_desc current_edge;
   bool edge_exist;
 
   while (current_vertex != root_vertex)
@@ -112,7 +112,8 @@ std::vector<UINT32> backward_trace(vdep_vertex_desc root_vertex, vdep_vertex_des
                                                        current_vertex, dta_graph);
     if (edge_exist)
     {
-      backward_trace.push_back(dta_graph[current_edge].second);
+//      backward_trace.push_back(dta_graph[current_edge].second);
+      backward_trace.push_back(dta_graph[current_edge]);
     }
     else
     {
@@ -132,10 +133,10 @@ std::vector<UINT32> backward_trace(vdep_vertex_desc root_vertex, vdep_vertex_des
 
 inline void compute_branch_mem_dependency()
 {
-  vdep_vertex_iter vertex_iter;
-  vdep_vertex_iter last_vertex_iter;
+  df_vertex_iter vertex_iter;
+  df_vertex_iter last_vertex_iter;
 
-  vdep_edge_desc edge_desc;
+  df_edge_desc edge_desc;
   bool edge_exist;
 
   dep_bfs_visitor dep_vis;
@@ -143,16 +144,16 @@ inline void compute_branch_mem_dependency()
   std::map<UINT32, ptr_branch>::iterator order_ptr_branch_iter;
   ptr_branch current_ptr_branch;
 
-  std::map<vdep_vertex_desc, vdep_vertex_desc>::iterator prec_vertex_iter;
+  std::map<df_vertex_desc, df_vertex_desc>::iterator prec_vertex_iter;
 
   ADDRINT current_addr;
 
   boost::tie(vertex_iter, last_vertex_iter) = boost::vertices(dta_graph);
   for (; vertex_iter != last_vertex_iter; ++vertex_iter)
   {
-    if (dta_graph[*vertex_iter].type == MEM_VAR)
+//    if (dta_graph[*vertex_iter].type == MEM_VAR)
+    if (dta_graph[*vertex_iter]->value.type() == typeid(ADDRINT))
     {
-//       std::map<vdep_vertex_desc, vdep_vertex_desc>().swap(prec_vertex_desc);
       prec_vertex_desc.clear();
 
       boost::breadth_first_search(dta_graph, *vertex_iter, boost::visitor(dep_vis));
@@ -170,9 +171,11 @@ inline void compute_branch_mem_dependency()
                ++order_ptr_branch_iter) 
           {
             current_ptr_branch = order_ptr_branch_iter->second;
-            if (dta_graph[edge_desc].second == current_ptr_branch->trace.size()) 
+//            if (dta_graph[edge_desc].second == current_ptr_branch->trace.size())
+            if (dta_graph[edge_desc] == current_ptr_branch->trace.size())
             {
-              current_addr = dta_graph[*vertex_iter].mem;
+//              current_addr = dta_graph[*vertex_iter].mem;
+              current_addr = boost::get<ADDRINT>(dta_graph[*vertex_iter]->value);
               
               if ((received_msg_addr <= current_addr) && 
                   (current_addr < received_msg_addr + received_msg_size)) 
@@ -472,13 +475,14 @@ VOID logging_mem_read2_instruction_analyzer(ADDRINT ins_addr,
 {
   logging_mem_read_instruction_analyzer(ins_addr, mem_read_addr, mem_read_size, p_ctxt);
   std::set<ADDRINT>::iterator addr_iter;
-  for (addr_iter = order_ins_dynamic_map[explored_trace.size()].src_mems.begin();
-       addr_iter != order_ins_dynamic_map[explored_trace.size()].src_mems.end(); ++addr_iter)
-  {
-    BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-      << boost::format("%s %d") 
-      % remove_leading_zeros(StringFromAddrint(*addr_iter)) % *(reinterpret_cast<UINT8*>(*addr_iter));
-  }
+//  for (addr_iter = order_ins_dynamic_map[explored_trace.size()].src_mems.begin();
+//       addr_iter != order_ins_dynamic_map[explored_trace.size()].src_mems.end(); ++addr_iter)
+//  {
+//    BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
+//      << boost::format("%s %d")
+//         % remove_leading_zeros(StringFromAddrint(*addr_iter))
+//         % *(reinterpret_cast<UINT8*>(*addr_iter));
+//  }
   return;
 }
 
@@ -495,9 +499,12 @@ VOID logging_mem_write_instruction_analyzer(ADDRINT ins_addr,
 
   exepoint_checkpoints_map[explored_trace.size()] = saved_ptr_checkpoints;
 
+  ptr_operand_t mem_operand;
   for (UINT32 idx = 0; idx < mem_written_size; ++idx)
   {
-    order_ins_dynamic_map[explored_trace.size()].dst_mems.insert(mem_written_addr + idx);
+    mem_operand.reset(new operand(mem_written_addr + idx));
+//    order_ins_dynamic_map[explored_trace.size()].dst_mems.insert(mem_written_addr + idx);
+    order_ins_dynamic_map[explored_trace.size()].src_operands.insert(mem_operand);
   }
 
   return;
