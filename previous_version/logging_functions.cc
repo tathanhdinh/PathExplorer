@@ -233,7 +233,7 @@ inline void compute_branch_mem_dependency()
 
 /*================================================================================================*/
 
-inline void compute_branch_min_checkpoint()
+inline static void compute_branch_min_checkpoint()
 {
   std::vector<ptr_checkpoint>::iterator   ptr_checkpoint_iter;
   std::vector<ptr_checkpoint>::reverse_iterator ptr_checkpoint_reverse_iter;

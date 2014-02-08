@@ -24,25 +24,26 @@
 #include "tainting_functions.h"
 #include "resolving_functions.h"
 #include "logging_functions.h"
+#include "path_explorer.h"
 
 /*====================================================================================================================*/
 
-extern std::map< ADDRINT,
-       instruction >                                addr_ins_static_map;
-
-extern std::vector<ADDRINT>                         explored_trace;
-
-extern bool                                         in_tainting;
-
-extern map_ins_io                                   dta_inss_io;
-
-extern UINT32                                       received_msg_num;
-
-extern boost::shared_ptr<boost::posix_time::ptime>  start_ptr_time;
-extern boost::shared_ptr<boost::posix_time::ptime>  stop_ptr_time;
-
-extern boost::log::sources::severity_logger<boost::log::trivial::severity_level> log_instance;
-extern boost::shared_ptr< boost::log::sinks::synchronous_sink<boost::log::sinks::text_file_backend> > log_sink;
+// extern std::map< ADDRINT,
+//        instruction >                                addr_ins_static_map;
+// 
+// extern std::vector<ADDRINT>                         explored_trace;
+// 
+// extern bool                                         in_tainting;
+// 
+// extern map_ins_io                                   dta_inss_io;
+// 
+// extern UINT32                                       received_msg_num;
+// 
+// extern boost::shared_ptr<boost::posix_time::ptime>  start_ptr_time;
+// extern boost::shared_ptr<boost::posix_time::ptime>  stop_ptr_time;
+// 
+// extern boost::log::sources::severity_logger<boost::log::trivial::severity_level> log_instance;
+// extern boost::shared_ptr< boost::log::sinks::synchronous_sink<boost::log::sinks::text_file_backend> > log_sink;
 
 /*====================================================================================================================*/
 
@@ -94,7 +95,7 @@ VOID ins_instrumenter(INS ins, VOID *data)
     {
       if (!start_ptr_time) 
       {
-        start_ptr_time.reset(new boost::posix_time::ptime(boost::posix_time::microsec_clock::local_time()));
+        start_ptr_time.reset(new btime::ptime(btime::microsec_clock::local_time()));
       }
 
       if (in_tainting) 
@@ -224,18 +225,18 @@ VOID ins_instrumenter(INS ins, VOID *data)
   return;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 VOID image_load_instrumenter(IMG loaded_img, VOID *data)
 {
-  const static std::string winsock_dll_name("WS2_32.dll");
-
-  // verify whether the winsock2 module is loaded
   boost::filesystem::path loaded_image_path(IMG_Name(loaded_img));
 
   BOOST_LOG_SEV(log_instance, boost::log::trivial::info) 
     << "loaded module: " << loaded_image_path.filename();
 
+#if defined(_WIN32) || defined(_WIN64)
+  // verify whether the winsock2 module is loaded
+  const static std::string winsock_dll_name("WS2_32.dll");
   if (loaded_image_path.filename() == winsock_dll_name)
   {
     BOOST_LOG_SEV(log_instance, boost::log::trivial::info) 
@@ -319,23 +320,15 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
       RTN_Close(wsarecvfrom_function);
     }
   }
-
-  //log_sink->flush();
-
-  /*if (received_msg_num < 1)
-  {
-    
-  }*/
-
+#endif
   return;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 BOOL process_create_instrumenter(CHILD_PROCESS created_process, VOID* data)
 {
   BOOST_LOG_SEV(log_instance, boost::log::trivial::warning) 
     << boost::format("new process created with id %d") % CHILD_PROCESS_GetId(created_process);
-  log_sink->flush();
   return TRUE;
 }

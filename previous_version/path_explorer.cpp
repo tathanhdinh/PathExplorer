@@ -17,7 +17,7 @@
 #include <boost/format.hpp>
 #include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
-// #include <boost/log/expressions.hpp>
+#include <boost/log/expressions.hpp>
 #include <boost/log/sinks/text_file_backend.hpp>
 #include <boost/log/utility/setup/file.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
@@ -37,9 +37,9 @@ extern "C"
 #include <xed-interface.h>
 }
 
-/* ------------------------------------------------------------------------------------------------------------------ */
-/*                                                      global variables                                              */
-/* ------------------------------------------------------------------------------------------------------------------ */
+/* ---------------------------------------------------------------------------------------------- */
+/*                                             global variables                                   */
+/* ---------------------------------------------------------------------------------------------- */
 std::map<ADDRINT, instruction>                addr_ins_static_map;    // statically examined instructions
 std::map<UINT32, instruction>                 order_ins_dynamic_map;  // dynamically examined instructions
 
@@ -99,14 +99,20 @@ UINT64                                        econed_ins_number;
 boost::shared_ptr<boost::posix_time::ptime>   start_ptr_time;
 boost::shared_ptr<boost::posix_time::ptime>   stop_ptr_time;
 
-boost::log::sources::severity_logger<boost::log::trivial::severity_level> log_instance;
-boost::shared_ptr< boost::log::sinks::synchronous_sink<boost::log::sinks::text_file_backend> > log_sink;
+namespace logging = boost::log;
+namespace sinks   = boost::log::sinks;
+namespace sources = boost::log::sources;
+typedef sinks::text_file_backend text_backend;
+typedef sinks::synchronous_sink<text_backend> sink_file_backend;
+typedef logging::trivial::severity_level      log_level;
 
-// std::ofstream                                 tainting_log_file;
+sources::severity_logger<log_level>           log_instance;
+boost::shared_ptr<sink_file_backend>          log_sink;
 
-/* ------------------------------------------------------------------------------------------------------------------ */
-/*                                               input handler functions                                              */
-/* ------------------------------------------------------------------------------------------------------------------ */
+
+/* ---------------------------------------------------------------------------------------------- */
+/*                                         input handler functions                                */
+/* ---------------------------------------------------------------------------------------------- */
 KNOB<BOOL>    print_debug_text    (KNOB_MODE_WRITEONCE, "pintool",
                                    "d", "1",
                                    "print debug text" );
@@ -122,9 +128,9 @@ KNOB<UINT32>  max_total_rollback  (KNOB_MODE_WRITEONCE, "pintool",
 KNOB<UINT32>  max_trace_length    (KNOB_MODE_WRITEONCE, "pintool", 
                                    "l", "100", "specify the length of the longest trace" );
 
-/* ------------------------------------------------------------------------------------------------------------------ */
-/*                                                instrumental functions                                              */
-/* -------------------------------------------------------+---------------------------------------------------------- */
+/* ---------------------------------------------------------------------------------------------- */
+/*                                                instrumental functions                          */
+/* -------------------------------------------------------+-------------------------------------- */
 VOID start_tracing(VOID *data)
 {
   max_trace_size            = max_trace_length.Value();
@@ -156,16 +162,16 @@ VOID start_tracing(VOID *data)
 
 VOID stop_tracing(INT32 code, VOID *data)
 {
+  using namespace boost::posix_time;
   if (!stop_ptr_time) 
   {
-    stop_ptr_time.reset(new boost::posix_time::ptime(boost::posix_time::microsec_clock::local_time()));
+    stop_ptr_time.reset(new ptime(microsec_clock::local_time()));
   }
 
   boost::posix_time::time_duration elapsed_time = *stop_ptr_time - *start_ptr_time;
   uint64_t elapsed_millisec = elapsed_time.total_milliseconds();
 
   journal_static_trace("static_trace.log");
-  //journal_explored_trace("last_explored_trace.log");
   
   BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
     << boost::format("stop examining, %d milli-seconds elapsed, %d rollbacks used, and %d/%d branches resolved") 
@@ -186,18 +192,19 @@ VOID stop_tracing(INT32 code, VOID *data)
 
 inline static void initialize_logging(std::string log_filename)
 {
-  log_sink = boost::log::add_file_log
-  (
-    boost::log::keywords::file_name = log_filename.c_str()
-//     boost::log::keywords::format = boost::log::expressions::format("<%1%> %2%") 
-//       % boost::log::trivial::severity % boost::log::expressions::smessage
-  );
+//   log_sink = logging::add_file_log
+//   (
+//     keywords::file_name = log_filename.c_str()
+//     keywords::format = expressions::format("<%1%> %2%") 
+//       % trivial::severity % expressions::smessage
+//   );
 
-  boost::log::core::get()->set_filter
+  log_sink = logging::add_file_log(log_filename.c_str());
+  logging::core::get()->set_filter
   (
-    boost::log::trivial::severity >= boost::log::trivial::info
+    logging::trivial::severity >= logging::trivial::info
   );
-  boost::log::add_common_attributes();
+  logging::add_common_attributes();
 
   return;
 }
@@ -227,16 +234,19 @@ int main(int argc, char *argv[])
 
     BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "activate image-load instrumenter";
     IMG_AddInstrumentFunction(image_load_instrumenter, 0);
+    
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "activate process-fork instrumenter";
+    PIN_AddFollowChildProcessFunction(process_create_instrumenter, 0);
 
     BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "activate instruction instrumenters";
     INS_AddInstrumentFunction(ins_instrumenter, 0);
 
-    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "activate process-fork instrumenter";
-    PIN_AddFollowChildProcessFunction(process_create_instrumenter, 0);
-
+#if defined(__linux__)
+    PIN_AddSyscallEntryFunction(syscall_entry_analyzer, 0);
+    PIN_AddSyscallExitFunction(syscall_exit_analyzer, 0);
+#elif
     // In Windows environment, the input tracing is through socket api instead of system call
-    //PIN_AddSyscallEntryFunction(syscall_entry_analyzer, 0);
-    //PIN_AddSyscallExitFunction(syscall_exit_analyzer, 0);
+#endif
 
     BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "activate Pintool data-finalization";
     PIN_AddFiniFunction(stop_tracing, 0);
