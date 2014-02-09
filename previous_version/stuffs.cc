@@ -55,8 +55,8 @@ std::string remove_leading_zeros(std::string input)
 
 void journal_buffer (const std::string& filename, UINT8* buffer_addr, UINT32 buffer_size)
 {
-  std::ofstream file (filename.c_str(),
-                      std::ofstream::binary | std::ofstream::out | std::ofstream::trunc );
+  std::ofstream file(filename.c_str(),
+                     std::ofstream::binary | std::ofstream::out | std::ofstream::trunc );
 
   std::copy (buffer_addr, buffer_addr + buffer_size, std::ostreambuf_iterator<char>(file));
   file.close();
@@ -64,7 +64,7 @@ void journal_buffer (const std::string& filename, UINT8* buffer_addr, UINT32 buf
   return;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 void journal_static_trace(const std::string& filename)
 {
@@ -74,10 +74,12 @@ void journal_static_trace(const std::string& filename)
   for (; addr_ins_iter != addr_ins_static_map.end(); ++addr_ins_iter) 
   {
 //     out_file << boost::format("%-15s %-35s (r: %-i, w: %-i) %-25s %-25s\n")
-    out_file << boost::format("%-15s %-35s %-25s %-25s\n")
-                  % remove_leading_zeros(StringFromAddrint(addr_ins_iter->first)) % addr_ins_iter->second->disassembled_name
+    out_file << boost::format("%-15s %-50s %-25s %-25s\n")
+                % remove_leading_zeros(StringFromAddrint(addr_ins_iter->first))
+                % addr_ins_iter->second->disassembled_name
 //                 % addr_ins_iter->second.mem_read_size % addr_ins_iter->second.mem_written_size
-                  % addr_ins_iter->second->contained_image % addr_ins_iter->second->contained_function;
+                % addr_ins_iter->second->contained_image
+                % addr_ins_iter->second->contained_function;
   }
   out_file.close();
 
@@ -104,7 +106,7 @@ void journal_explored_trace(const std::string& filename)
   std::vector<ADDRINT>::iterator trace_iter = explored_trace.begin();
   for (; trace_iter != explored_trace.end(); ++trace_iter) 
   {
-    out_file << boost::format("%-20s %-45s\n")
+    out_file << boost::format("%-15s %-50s\n")
                   % remove_leading_zeros(StringFromAddrint(*trace_iter)) 
                       % addr_ins_static_map[*trace_iter]->disassembled_name;
 
@@ -133,7 +135,7 @@ void journal_tainting_graph(const std::string& filename)
 
 /*================================================================================================*/
 
-void store_input(ptr_branch& ptr_br, bool br_taken)
+void store_input(ptr_branch_t& ptr_br, bool br_taken)
 {
   boost::shared_ptr<UINT8> new_input(new UINT8[received_msg_size]);
   PIN_SafeCopy(new_input.get(), reinterpret_cast<UINT8*>(received_msg_addr), received_msg_size);
@@ -367,7 +369,7 @@ void journal_tainting_log()
 
 /*================================================================================================*/
 
-void journal_branch_messages(ptr_branch& ptr_resolved_branch)
+void journal_branch_messages(ptr_branch_t& ptr_resolved_branch)
 {
   std::stringstream msg_number_name;
   std::string msg_file_name;

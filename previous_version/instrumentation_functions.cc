@@ -30,7 +30,7 @@
 
 extern std::map<ADDRINT, ptr_instruction_t>     addr_ins_static_map;
 extern bool                                     in_tainting;
-extern map_ins_io                               dta_inss_io;
+//extern map_ins_io                               dta_inss_io;
 extern UINT32                                   received_msg_num;
 
 namespace btime = boost::posix_time;

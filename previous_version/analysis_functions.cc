@@ -54,9 +54,10 @@ VOID syscall_entry_analyzer(THREADID thread_id, CONTEXT* p_ctxt, SYSCALL_STANDAR
   return;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
-VOID syscall_exit_analyzer(THREADID thread_id, CONTEXT* p_ctxt, SYSCALL_STANDARD syscall_std, VOID *data)
+VOID syscall_exit_analyzer(THREADID thread_id,
+                           CONTEXT* p_ctxt, SYSCALL_STANDARD syscall_std, VOID *data)
 {
   if (received_msg_num == 0) 
   {
@@ -69,12 +70,11 @@ VOID syscall_exit_analyzer(THREADID thread_id, CONTEXT* p_ctxt, SYSCALL_STANDARD
         received_msg_addr = logged_syscall_args[1];
         received_msg_size = ret_val;
         
-        std::cout << std::endl;
         BOOST_LOG_TRIVIAL(info) 
-          << boost::format("\033[33mthe first message saved at %s with size %d bytes.\033[0m") 
-              % remove_leading_zeros(StringFromAddrint(received_msg_addr)) % received_msg_size 
-          << "\n-------------------------------------------------------------------------------------------------\n" 
-          << boost::format("\033[33mstart tainting the first time with trace size %d.\033[0m") % max_trace_size;
+          << boost::format("the first message saved at %s with size %d bytes\n%s\n%s %d")
+             % addrint_to_hexstring(received_msg_addr) % received_msg_size
+             % "-----------------------------------------------------------------------------------"
+             % "start tainting the first time with trace size" % max_trace_size;
           
         PIN_RemoveInstrumentation();
       }

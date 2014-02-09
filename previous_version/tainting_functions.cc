@@ -10,7 +10,7 @@
 /*================================================================================================*/
 
 extern df_diagram           dta_graph;
-extern map_ins_io               dta_inss_io;
+//extern map_ins_io               dta_inss_io;
 extern df_vertex_desc_set     dta_outer_vertices;
 
 extern std::map<UINT32, ptr_instruction_t>  order_ins_dynamic_map;
@@ -68,13 +68,14 @@ inline std::set<df_vertex_desc> source_variables(UINT32 idx)
 //    }
 //  }
 
-  std::set<df_vertex_desc> src_vertex_descs;
+  std::cout << "src operand size: " << order_ins_dynamic_map[idx]->src_operands.size() << "\n";
+  df_vertex_desc_set src_vertex_descs;
+  df_vertex_desc_set::iterator outer_vertex_iter;
   df_vertex_desc new_vertex_desc;
   std::set<ptr_operand_t>::iterator src_operand_iter;
   for (src_operand_iter = order_ins_dynamic_map[idx]->src_operands.begin();
        src_operand_iter != order_ins_dynamic_map[idx]->src_operands.end(); ++src_operand_iter)
   {
-    df_vertex_desc_set::iterator outer_vertex_iter;
     // verify if the current source operand is
     for (outer_vertex_iter = dta_outer_vertices.begin();
          outer_vertex_iter != dta_outer_vertices.end(); ++outer_vertex_iter)
@@ -86,17 +87,19 @@ inline std::set<df_vertex_desc> source_variables(UINT32 idx)
         src_vertex_descs.insert(*outer_vertex_iter);
         break;
       }
+    }
 
-      // not found
-      if (outer_vertex_iter == dta_outer_vertices.end())
-      {
-        new_vertex_desc = boost::add_vertex(*src_operand_iter, dta_graph);
-        dta_outer_vertices.insert(new_vertex_desc);
-        src_vertex_descs.insert(new_vertex_desc);
-      }
+    // not found
+    if (outer_vertex_iter == dta_outer_vertices.end())
+    {
+      new_vertex_desc = boost::add_vertex(*src_operand_iter, dta_graph);
+      dta_outer_vertices.insert(new_vertex_desc);
+      src_vertex_descs.insert(new_vertex_desc);
     }
   }
 
+  std::cout << order_ins_dynamic_map[idx]->disassembled_name << "\n";
+  std::cout << "src size: " << src_vertex_descs.size() << "\n";
   return src_vertex_descs;
 }
 
@@ -164,31 +167,37 @@ inline std::set<df_vertex_desc> destination_variables(UINT32 idx)
 //    }
 //  }
 
+  std::cout << "dst operand size: " << order_ins_dynamic_map[idx]->dst_operands.size() << "\n";
+
   std::set<df_vertex_desc> dst_vertex_descs;
   df_vertex_desc new_vertex_desc;
-  std::set<ptr_operand_t>::iterator trg_operand_iter;
-  for (trg_operand_iter = order_ins_dynamic_map[idx]->trg_operands.begin();
-       trg_operand_iter != order_ins_dynamic_map[idx]->trg_operands.end(); ++trg_operand_iter)
-  {
-    df_vertex_desc_set::iterator outer_vertex_iter = dta_outer_vertices.begin();
-    df_vertex_desc_set::iterator next_vertex_iter;
+  df_vertex_desc_set::iterator outer_vertex_iter;
+  df_vertex_desc_set::iterator next_vertex_iter;
+  std::set<ptr_operand_t>::iterator dst_operand_iter;
 
+  for (dst_operand_iter = order_ins_dynamic_map[idx]->dst_operands.begin();
+       dst_operand_iter != order_ins_dynamic_map[idx]->dst_operands.end(); ++dst_operand_iter)
+  {
     // verify if the current target operand is
+    outer_vertex_iter = dta_outer_vertices.begin();
     for (next_vertex_iter = outer_vertex_iter;
          outer_vertex_iter != dta_outer_vertices.end(); outer_vertex_iter = next_vertex_iter)
     {
+      std::cout << "d";
       ++next_vertex_iter;
 
       // found in the outer interface
-      if (((*trg_operand_iter)->value.type() == dta_graph[*outer_vertex_iter]->value.type())
-          && ((*trg_operand_iter)->name == dta_graph[*outer_vertex_iter]->name))
+      if (((*dst_operand_iter)->value.type() == dta_graph[*outer_vertex_iter]->value.type())
+          && ((*dst_operand_iter)->name == dta_graph[*outer_vertex_iter]->name))
       {
         // then insert the current target operand into the graph
-        new_vertex_desc = boost::add_vertex(*trg_operand_iter, dta_graph);
+        new_vertex_desc = boost::add_vertex(*dst_operand_iter, dta_graph);
+
         // and modify the outer interface by replacing the old vertex with the new vertex
         dta_outer_vertices.erase(outer_vertex_iter);
         dta_outer_vertices.insert(new_vertex_desc);
 
+        std::cout << "dst found\n";
         dst_vertex_descs.insert(new_vertex_desc);
         break;
       }
@@ -198,14 +207,17 @@ inline std::set<df_vertex_desc> destination_variables(UINT32 idx)
     if (outer_vertex_iter == dta_outer_vertices.end())
     {
       // then insert the current target operand into the graph
-      new_vertex_desc = boost::add_vertex(*trg_operand_iter, dta_graph);
+      new_vertex_desc = boost::add_vertex(*dst_operand_iter, dta_graph);
+
       // and modify the outer interface by insert the new vertex
       dta_outer_vertices.insert(new_vertex_desc);
 
+      std::cout << "dst not found\n";
       dst_vertex_descs.insert(new_vertex_desc);
     }
   }
 
+  std::cout << "dst size: " << dst_vertex_descs.size() << "\n";
   return dst_vertex_descs;
 }
 

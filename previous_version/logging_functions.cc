@@ -33,17 +33,16 @@ extern std::map<UINT32, ptr_instruction_t>      order_ins_dynamic_map;
 extern UINT32                                   total_rollback_times;
 
 extern df_diagram                               dta_graph;
-extern map_ins_io                               dta_inss_io;
 
 extern std::vector<ADDRINT>                     explored_trace;
 
-extern std::map<UINT32, ptr_branch>             order_input_dep_ptr_branch_map;
-extern std::map<UINT32, ptr_branch>             order_input_indep_ptr_branch_map;
-extern std::map<UINT32, ptr_branch>             order_tainted_ptr_branch_map;
+extern std::map<UINT32, ptr_branch_t>             order_input_dep_ptr_branch_map;
+extern std::map<UINT32, ptr_branch_t>             order_input_indep_ptr_branch_map;
+extern std::map<UINT32, ptr_branch_t>             order_tainted_ptr_branch_map;
 
-extern ptr_branch                               exploring_ptr_branch;
+extern ptr_branch_t                               exploring_ptr_branch;
 
-extern std::vector<ptr_branch>                  total_input_dep_ptr_branches;
+extern std::vector<ptr_branch_t>                  total_input_dep_ptr_branches;
 
 extern std::vector<ptr_checkpoint_t>              saved_ptr_checkpoints;
 extern ptr_checkpoint_t                           master_ptr_checkpoint;
@@ -89,7 +88,7 @@ public:
 
 /*================================================================================================*/
 
-inline void mark_resolved(ptr_branch& omitted_ptr_branch)
+inline void mark_resolved(ptr_branch_t& omitted_ptr_branch)
 {
   omitted_ptr_branch->is_resolved = true;
   omitted_ptr_branch->is_bypassed = false;
@@ -147,8 +146,8 @@ inline void compute_branch_mem_dependency()
 
   dep_bfs_visitor dep_vis;
 
-  std::map<UINT32, ptr_branch>::iterator order_ptr_branch_iter;
-  ptr_branch current_ptr_branch;
+  std::map<UINT32, ptr_branch_t>::iterator order_ptr_branch_iter;
+  ptr_branch_t current_ptr_branch;
 
   std::map<df_vertex_desc, df_vertex_desc>::iterator prec_vertex_iter;
 
@@ -201,7 +200,8 @@ inline void compute_branch_mem_dependency()
         else
         {
           //BOOST_LOG_TRIVIAL(fatal) << "Backward edge not found in BFS.";
-          BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal) << "backward edge not found in BFS";
+          BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
+              << "backward edge not found in BFS";
           PIN_ExitApplication(0);
         }
       }
@@ -247,9 +247,9 @@ inline static void compute_branch_min_checkpoint()
   std::vector<ptr_checkpoint_t>::iterator   ptr_checkpoint_iter;
   std::vector<ptr_checkpoint_t>::reverse_iterator ptr_checkpoint_reverse_iter;
   std::set<ADDRINT>::iterator             addr_iter;
-  std::map<UINT32, ptr_branch>::iterator  order_ptr_branch_iter;
+  std::map<UINT32, ptr_branch_t>::iterator  order_ptr_branch_iter;
 
-  ptr_branch      current_ptr_branch;
+  ptr_branch_t      current_ptr_branch;
   ptr_checkpoint_t  nearest_ptr_checkpoint;
   
   bool nearest_checkpoint_found;
@@ -380,7 +380,7 @@ inline void prepare_new_rollbacking_phase()
     // the first rollbacking phase
     if (!order_input_dep_ptr_branch_map.empty())
     { 
-      ptr_branch first_ptr_branch = order_input_dep_ptr_branch_map.begin()->second;
+      ptr_branch_t first_ptr_branch = order_input_dep_ptr_branch_map.begin()->second;
       rollback_and_restore(saved_ptr_checkpoints[0],
                                       first_ptr_branch->inputs[first_ptr_branch->br_taken][0].get());
     }
@@ -414,12 +414,13 @@ VOID logging_general_instruction_analyzer(ADDRINT ins_addr)
     explored_trace.push_back(ins_addr);
     order_ins_dynamic_map[explored_trace.size()] = addr_ins_static_map[ins_addr];
 
-    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << boost::format("%-3d (%-10s %s) %s %s")
-      % explored_trace.size()
-      % remove_leading_zeros(StringFromAddrint(ins_addr))
-      % addr_ins_static_map[ins_addr]->disassembled_name
-      % addr_ins_static_map[ins_addr]->contained_image
-      % addr_ins_static_map[ins_addr]->contained_function;
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
+        << boost::format("%-3d %-15s %-50s %-25s %-25s")
+           % explored_trace.size()
+           % remove_leading_zeros(StringFromAddrint(ins_addr))
+           % addr_ins_static_map[ins_addr]->disassembled_name
+           % addr_ins_static_map[ins_addr]->contained_image
+           % addr_ins_static_map[ins_addr]->contained_function;
   }
   else // trace length limit reached
   {
@@ -500,7 +501,7 @@ VOID logging_mem_write_instruction_analyzer(ADDRINT ins_addr,
   {
     mem_operand.reset(new operand(mem_written_addr + idx));
 //    order_ins_dynamic_map[explored_trace.size()].dst_mems.insert(mem_written_addr + idx);
-    order_ins_dynamic_map[explored_trace.size()]->src_operands.insert(mem_operand);
+    order_ins_dynamic_map[explored_trace.size()]->dst_operands.insert(mem_operand);
   }
 
   return;
@@ -510,7 +511,7 @@ VOID logging_mem_write_instruction_analyzer(ADDRINT ins_addr,
 
 VOID logging_cond_br_analyzer(ADDRINT ins_addr, bool br_taken)
 {
-  ptr_branch new_ptr_branch(new branch(ins_addr, br_taken));
+  ptr_branch_t new_ptr_branch(new branch(ins_addr, br_taken));
 
   // save the first input
   store_input(new_ptr_branch, br_taken);

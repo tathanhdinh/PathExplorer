@@ -41,7 +41,7 @@ public:
   bool                has_mem_read2;
 
   std::set<ptr_operand_t> src_operands;
-  std::set<ptr_operand_t> trg_operands;
+  std::set<ptr_operand_t> dst_operands;
   
 public:
   instruction();

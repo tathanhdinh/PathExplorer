@@ -7,33 +7,10 @@
 #include <set>
 
 #include <boost/shared_ptr.hpp>
-#include <boost/tuple/tuple.hpp>
 
 #include "checkpoint.h"
 
-/*====================================================================================================================*/
-
-class branch;
-
-typedef boost::shared_ptr<branch>      ptr_branch;
-
-typedef std::pair< std::set<REG>, 
-                   std::set<REG> >     reg_io;
-                   
-typedef std::pair< std::set<UINT32>, 
-                   std::set<UINT32> >  imm_io;
-                   
-typedef std::pair< std::set<ADDRINT>, 
-                   std::set<ADDRINT> > mem_io;
-                                      
-typedef boost::tuple< reg_io, 
-                      imm_io, 
-                      mem_io,
-                      bool   >         ins_io;
-
-typedef std::map<ADDRINT, ins_io>      map_ins_io;
-
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 class branch
 {
@@ -76,5 +53,7 @@ public:
   branch& operator=(const branch& other);
   bool operator==(const branch& other);
 };
+
+typedef boost::shared_ptr<branch> ptr_branch_t;
 
 #endif // BRANCH_TAINTING_H

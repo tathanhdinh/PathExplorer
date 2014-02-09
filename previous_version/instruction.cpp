@@ -1,5 +1,7 @@
 #include "instruction.h"
 
+#include <boost/filesystem.hpp>
+
 #include <pin.H>
 extern "C" {
 #include <xed-interface.h>
@@ -8,7 +10,7 @@ extern "C" {
 #include "stuffs.h"
 //#include "path_explorer.h"
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 // inline static std::string contained_image_name(ADDRINT ins_addr)
 // {
@@ -39,7 +41,8 @@ instruction::instruction(const INS& ins)
   IMG ins_img = IMG_FindByAddress(this->address);
   if (IMG_Valid(ins_img)) 
   {
-    this->contained_image     = IMG_Name(ins_img);
+    namespace fs = boost::filesystem;
+    this->contained_image     = fs::path(IMG_Name(ins_img)).filename().stem().string();
   }
   else 
   {
@@ -48,12 +51,12 @@ instruction::instruction(const INS& ins)
   this->contained_function    = RTN_FindNameByAddress(this->address);
   
   this->is_syscall            = INS_IsSyscall(ins);
-  this->is_mapped_from_kernel = !(this->contained_image.empty());
+  this->is_mapped_from_kernel = this->contained_image.empty();
   this->is_mem_read           = INS_IsMemoryRead(ins);
   this->is_mem_write          = INS_IsMemoryWrite(ins);
   this->is_cbranch            = (INS_Category(ins) == XED_CATEGORY_COND_BR);
   
-  
+  this->has_mem_read2         = INS_HasMemoryRead2(ins);
 
   UINT32        register_id, register_num;
   REG           curr_register;
@@ -95,12 +98,10 @@ instruction::instruction(const INS& ins)
       else 
       {
         new_operand.reset(new operand(curr_register));
-        this->trg_operands.insert(new_operand);
+        this->dst_operands.insert(new_operand);
       }
     }
   }
-
-  this->has_mem_read2 = INS_HasMemoryRead2(ins);
 }
 
 /*================================================================================================*/
@@ -121,7 +122,7 @@ instruction::instruction(const instruction& other)
   this->has_mem_read2         = other.has_mem_read2;
   
   this->src_operands          = other.src_operands;
-  this->trg_operands          = other.trg_operands;
+  this->dst_operands          = other.dst_operands;
 }
 
 /*================================================================================================*/
@@ -142,7 +143,7 @@ instruction& instruction::operator=(const instruction& other)
   this->has_mem_read2         = other.has_mem_read2;
   
   this->src_operands          = other.src_operands;
-  this->trg_operands          = other.trg_operands;
+  this->dst_operands          = other.dst_operands;
 
   return *this;
 }

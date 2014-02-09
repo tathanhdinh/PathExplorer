@@ -49,17 +49,17 @@ extern UINT32                                     used_checkpoint_number;
 extern ADDRINT                                    received_msg_addr;
 extern UINT32                                     received_msg_size;
 
-extern std::map<UINT32, ptr_branch>               order_input_dep_ptr_branch_map;
-extern std::map<UINT32, ptr_branch>               order_input_indep_ptr_branch_map;
-extern std::map<UINT32, ptr_branch>               order_tainted_ptr_branch_map;
+extern std::map<UINT32, ptr_branch_t>               order_input_dep_ptr_branch_map;
+extern std::map<UINT32, ptr_branch_t>               order_input_indep_ptr_branch_map;
+extern std::map<UINT32, ptr_branch_t>               order_tainted_ptr_branch_map;
 
-extern std::vector<ptr_branch>                    found_new_ptr_branches;
-extern std::vector<ptr_branch>                    total_resolved_ptr_branches;
-extern std::vector<ptr_branch>                    total_input_dep_ptr_branches;
+extern std::vector<ptr_branch_t>                    found_new_ptr_branches;
+extern std::vector<ptr_branch_t>                    total_resolved_ptr_branches;
+extern std::vector<ptr_branch_t>                    total_input_dep_ptr_branches;
 
-extern ptr_branch                                 active_ptr_branch;
-extern ptr_branch                                 last_active_ptr_branch;
-extern ptr_branch                                 exploring_ptr_branch;
+extern ptr_branch_t                                 active_ptr_branch;
+extern ptr_branch_t                                 last_active_ptr_branch;
+extern ptr_branch_t                                 exploring_ptr_branch;
 
 extern std::set<ADDRINT>                          active_input_dep_addrs;
 
@@ -211,7 +211,7 @@ VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr,
 
 /*================================================================================================*/
 
-inline void prepare_new_tainting_phase(ptr_branch& unexplored_ptr_branch)
+inline void prepare_new_tainting_phase(ptr_branch_t& unexplored_ptr_branch)
 {
   in_tainting = true;
   exploring_ptr_branch = unexplored_ptr_branch;
@@ -250,11 +250,11 @@ inline void prepare_new_tainting_phase(ptr_branch& unexplored_ptr_branch)
 
 /*================================================================================================*/
 
-inline ptr_branch next_unexplored_branch()
+inline ptr_branch_t next_unexplored_branch()
 {
-  ptr_branch unexplored_ptr_branch;
+  ptr_branch_t unexplored_ptr_branch;
   
-  std::vector<ptr_branch>::iterator 
+  std::vector<ptr_branch_t>::iterator 
     unexplored_ptr_branch_iter = total_resolved_ptr_branches.begin();
   for (; unexplored_ptr_branch_iter != total_resolved_ptr_branches.end(); 
        ++unexplored_ptr_branch_iter)
@@ -270,7 +270,7 @@ inline ptr_branch next_unexplored_branch()
 
 /*================================================================================================*/
 
-inline void accept_branch(ptr_branch& accepted_ptr_branch)
+inline void accept_branch(ptr_branch_t& accepted_ptr_branch)
 {
   accepted_ptr_branch->is_resolved      = true;
   accepted_ptr_branch->is_just_resolved = true;
@@ -282,7 +282,7 @@ inline void accept_branch(ptr_branch& accepted_ptr_branch)
 
 /*================================================================================================*/
 
-inline void bypass_branch(ptr_branch& bypassed_ptr_branch)
+inline void bypass_branch(ptr_branch_t& bypassed_ptr_branch)
 {
   bypassed_ptr_branch->is_resolved      = true;
   bypassed_ptr_branch->is_just_resolved = true;
@@ -298,7 +298,7 @@ inline void bypass_branch(ptr_branch& bypassed_ptr_branch)
  * @param current_ptr_branch ...
  * @return void
  */
-inline void set_next_active_nearest_checkpoint(ptr_branch& current_ptr_branch) 
+inline void set_next_active_nearest_checkpoint(ptr_branch_t& current_ptr_branch) 
 {
   std::map<ptr_checkpoint_t, 
            std::set<ADDRINT>, 
@@ -371,7 +371,7 @@ inline void set_next_active_nearest_checkpoint(ptr_branch& current_ptr_branch)
  */
 inline void exploring_new_branch_or_stop()
 {
-  ptr_branch unexplored_ptr_branch = next_unexplored_branch();
+  ptr_branch_t unexplored_ptr_branch = next_unexplored_branch();
   if (unexplored_ptr_branch) 
   {
     //BOOST_LOG_TRIVIAL(info) 
@@ -440,7 +440,7 @@ inline void reset_current_active_branch_checkpoints()
  */
 inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr, 
                                                         bool br_taken, 
-                                                        ptr_branch& examined_ptr_branch)
+                                                        ptr_branch_t& examined_ptr_branch)
 {
   // consider only when active_ptr_branch is enabled, 
   // namely in some rollback of the current exploration.
@@ -512,7 +512,7 @@ inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr,
  */
 inline void unresolved_branch_takes_new_decision(ADDRINT ins_addr, 
                                                  bool br_taken, 
-                                                 ptr_branch& examined_ptr_branch)
+                                                 ptr_branch_t& examined_ptr_branch)
 {
   // active_ptr_branch is enabled, namely in some rollback
   if (active_ptr_branch) 
@@ -559,7 +559,7 @@ inline void unresolved_branch_takes_new_decision(ADDRINT ins_addr,
  * @return void
  */
 inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr, 
-                                                 bool br_taken, ptr_branch& examined_ptr_branch)
+                                                 bool br_taken, ptr_branch_t& examined_ptr_branch)
 {
   // active_ptr_branch is enabled, namely in some rollback
   if (active_ptr_branch) 
@@ -709,7 +709,7 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
  */
 inline void process_input_dependent_but_unresolved_branch(ADDRINT ins_addr, 
                                                           bool br_taken, 
-                                                          ptr_branch& examined_ptr_branch)
+                                                          ptr_branch_t& examined_ptr_branch)
 {
   // other decision is taken
   if (examined_ptr_branch->br_taken != br_taken) 
@@ -739,7 +739,7 @@ inline void process_input_dependent_but_unresolved_branch(ADDRINT ins_addr,
  */
 inline void process_input_dependent_branch(ADDRINT ins_addr, 
                                            bool br_taken, 
-                                           ptr_branch& examined_ptr_branch)
+                                           ptr_branch_t& examined_ptr_branch)
 {  
   if (examined_ptr_branch->is_resolved) // which is resolved
   {
@@ -790,7 +790,7 @@ inline void process_input_dependent_branch(ADDRINT ins_addr,
  */
 inline void process_input_independent_branch(ADDRINT ins_addr, 
                                              bool br_taken, 
-                                             ptr_branch& examined_ptr_branch)
+                                             ptr_branch_t& examined_ptr_branch)
 {
   // new taken found
   if (examined_ptr_branch->br_taken != br_taken) 
@@ -851,7 +851,7 @@ inline void process_input_independent_branch(ADDRINT ins_addr,
 
 inline void log_input(ADDRINT ins_addr, bool br_taken)
 {
-  std::map<UINT32, ptr_branch>::iterator order_ptr_branch_iter;
+  std::map<UINT32, ptr_branch_t>::iterator order_ptr_branch_iter;
   
   order_ptr_branch_iter = order_tainted_ptr_branch_map.find(explored_trace.size());
   if (order_ptr_branch_iter != order_tainted_ptr_branch_map.end()) 
@@ -889,7 +889,7 @@ VOID resolving_cond_branch_analyzer(ADDRINT ins_addr, bool br_taken)
 
   log_input(ins_addr, br_taken);
   
-  std::map<UINT32, ptr_branch>::iterator order_ptr_branch_iter;
+  std::map<UINT32, ptr_branch_t>::iterator order_ptr_branch_iter;
   
   // search in the list of input dependent branches
   order_ptr_branch_iter = order_input_dep_ptr_branch_map.find(explored_trace.size());

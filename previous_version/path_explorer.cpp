@@ -40,74 +40,72 @@ extern "C"
 /* ---------------------------------------------------------------------------------------------- */
 /*                                             global variables                                   */
 /* ---------------------------------------------------------------------------------------------- */
-std::map<ADDRINT, ptr_instruction_t>          addr_ins_static_map;    // statically examined instructions
-std::map<UINT32, ptr_instruction_t>           order_ins_dynamic_map;  // dynamically examined instructions
+std::map<ADDRINT, ptr_instruction_t>            addr_ins_static_map;    // statically examined instructions
+std::map<UINT32, ptr_instruction_t>             order_ins_dynamic_map;  // dynamically examined instructions
 
-ADDRINT                                       logged_syscall_index;   // logged syscall index
-ADDRINT                                       logged_syscall_args[6]; // logged syscall arguments
+ADDRINT                                         logged_syscall_index;   // logged syscall index
+ADDRINT                                         logged_syscall_args[6]; // logged syscall arguments
 
-UINT32                                        total_rollback_times;
-UINT32                                        local_rollback_times;
-UINT32                                        trace_size;
-UINT32                                        used_checkpoint_number;
+UINT32                                          total_rollback_times;
+UINT32                                          local_rollback_times;
+UINT32                                          trace_size;
+UINT32                                          used_checkpoint_number;
 
-UINT32                                        max_total_rollback_times;
-UINT32                                        max_local_rollback_times;
-UINT32                                        max_trace_size;
+UINT32                                          max_total_rollback_times;
+UINT32                                          max_local_rollback_times;
+UINT32                                          max_trace_size;
 
+bool                                            in_tainting;
 
-bool                                          in_tainting;
-
-df_diagram                                dta_graph;
-map_ins_io                                    dta_inss_io;
-df_vertex_desc_set                          dta_outer_vertices;
+df_diagram                                      dta_graph;
+df_vertex_desc_set                              dta_outer_vertices;
 
 std::vector<ptr_checkpoint_t>                   saved_ptr_checkpoints;
 ptr_checkpoint_t                                master_ptr_checkpoint;
 ptr_checkpoint_t                                last_active_ptr_checkpoint;
 
-std::set<ADDRINT>                             active_input_dep_addrs;
+std::set<ADDRINT>                               active_input_dep_addrs;
 
 std::pair< ptr_checkpoint_t, 
-           std::set<ADDRINT> >                active_nearest_checkpoint;
+           std::set<ADDRINT> >                  active_nearest_checkpoint;
 
 std::map< UINT32,
           std::vector<ptr_checkpoint_t> >       exepoint_checkpoints_map;
 
-std::map<UINT32, ptr_branch>                  order_input_dep_ptr_branch_map;
-std::map<UINT32, ptr_branch>                  order_input_indep_ptr_branch_map;
-std::map<UINT32, ptr_branch>                  order_tainted_ptr_branch_map;
+std::map<UINT32, ptr_branch_t>                  order_input_dep_ptr_branch_map;
+std::map<UINT32, ptr_branch_t>                  order_input_indep_ptr_branch_map;
+std::map<UINT32, ptr_branch_t>                  order_tainted_ptr_branch_map;
 
-std::vector<ptr_branch>                       found_new_ptr_branches;
-std::vector<ptr_branch>                       total_resolved_ptr_branches;
-std::vector<ptr_branch>                       total_input_dep_ptr_branches;
+std::vector<ptr_branch_t>                       found_new_ptr_branches;
+std::vector<ptr_branch_t>                       total_resolved_ptr_branches;
+std::vector<ptr_branch_t>                       total_input_dep_ptr_branches;
 
-ptr_branch                                    active_ptr_branch;
-ptr_branch                                    last_active_ptr_branch;
-ptr_branch                                    exploring_ptr_branch;
+ptr_branch_t                                    active_ptr_branch;
+ptr_branch_t                                    last_active_ptr_branch;
+ptr_branch_t                                    exploring_ptr_branch;
 
-std::vector<ADDRINT>                          explored_trace;
+std::vector<ADDRINT>                            explored_trace;
 
-UINT32                                        received_msg_num;
-ADDRINT                                       received_msg_addr;
-UINT32                                        received_msg_size;
-ADDRINT																				received_msg_struct_addr;
+UINT32                                          received_msg_num;
+ADDRINT                                         received_msg_addr;
+UINT32                                          received_msg_size;
+ADDRINT                                         received_msg_struct_addr;
 
-UINT64                                        executed_ins_number;
-UINT64                                        econed_ins_number;
+UINT64                                          executed_ins_number;
+UINT64                                          econed_ins_number;
 
-boost::shared_ptr<boost::posix_time::ptime>   start_ptr_time;
-boost::shared_ptr<boost::posix_time::ptime>   stop_ptr_time;
+boost::shared_ptr<boost::posix_time::ptime>     start_ptr_time;
+boost::shared_ptr<boost::posix_time::ptime>     stop_ptr_time;
 
 namespace logging = boost::log;
 namespace sinks   = boost::log::sinks;
 namespace sources = boost::log::sources;
 typedef sinks::text_file_backend text_backend;
-typedef sinks::synchronous_sink<text_backend> sink_file_backend;
-typedef logging::trivial::severity_level      log_level;
+typedef sinks::synchronous_sink<text_backend>   sink_file_backend;
+typedef logging::trivial::severity_level        log_level;
 
-sources::severity_logger<log_level>           log_instance;
-boost::shared_ptr<sink_file_backend>          log_sink;
+sources::severity_logger<log_level>             log_instance;
+boost::shared_ptr<sink_file_backend>            log_sink;
 
 
 /* ---------------------------------------------------------------------------------------------- */
@@ -158,7 +156,7 @@ VOID start_tracing(VOID *data)
   return;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 VOID stop_tracing(INT32 code, VOID *data)
 {
@@ -188,7 +186,7 @@ VOID stop_tracing(INT32 code, VOID *data)
   return;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 inline static void initialize_logging(std::string log_filename)
 {
@@ -209,9 +207,9 @@ inline static void initialize_logging(std::string log_filename)
   return;
 }
 
-/* ------------------------------------------------------------------------------------------------------------------ */
-/*                                                        main function                                               */
-/* ------------------------------------------------------------------------------------------------------------------ */
+/* ---------------------------------------------------------------------------------------------- */
+/*                                          main function                                         */
+/* ---------------------------------------------------------------------------------------------- */
 int main(int argc, char *argv[])
 {
   initialize_logging("path_explorer.log");
