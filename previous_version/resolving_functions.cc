@@ -260,7 +260,7 @@ inline ptr_branch next_unexplored_branch()
   return unexplored_ptr_branch;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 inline void accept_branch(ptr_branch& accepted_ptr_branch)
 {
@@ -272,7 +272,7 @@ inline void accept_branch(ptr_branch& accepted_ptr_branch)
   return;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 inline void bypass_branch(ptr_branch& bypassed_ptr_branch)
 {
@@ -282,7 +282,7 @@ inline void bypass_branch(ptr_branch& bypassed_ptr_branch)
   return;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 /**
  * @brief set the active_nearest_checkpoint.
@@ -651,7 +651,6 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
             BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
               << boost::format("the branch at %d is unresolved but the nearest checkpoint is empty.") 
                   % active_ptr_branch->trace.size();
-            log_sink->flush();
 
             PIN_ExitApplication(5);
           }

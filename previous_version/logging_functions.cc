@@ -61,13 +61,19 @@ extern KNOB<UINT32>                             max_trace_length;
 
 extern UINT32                                   max_trace_size;
 
-extern boost::log::sources::severity_logger<boost::log::trivial::severity_level> log_instance;
-extern boost::shared_ptr< boost::log::sinks::synchronous_sink<boost::log::sinks::text_file_backend> > log_sink;
+namespace logging = boost::log;
+namespace sinks   = boost::log::sinks;
+namespace sources = boost::log::sources;
+typedef sinks::text_file_backend text_backend;
+typedef sinks::synchronous_sink<text_backend>   sink_file_backend;
+typedef logging::trivial::severity_level        log_level;
+
+extern sources::severity_logger<log_level>      log_instance;
+extern boost::shared_ptr<sink_file_backend>     log_sink;
 
 /*================================================================================================*/
 
-static std::map<df_vertex_desc,
-                df_vertex_desc>               prec_vertex_desc;
+static std::map<df_vertex_desc, df_vertex_desc> prec_vertex_desc;
 
 /*================================================================================================*/
 
@@ -339,7 +345,6 @@ inline void prepare_new_rollbacking_phase()
   BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
     << boost::format("stop exploring, %d instructions analyzed; start detecting checkpoints")
         % explored_trace.size();
-  //log_sink->flush();
   
 //   journal_tainting_graph("tainting_graph.dot");
 //   PIN_ExitApplication(0);
@@ -400,19 +405,11 @@ VOID logging_syscall_instruction_analyzer(ADDRINT ins_addr)
 }
 
 /*================================================================================================*/
-//VOID instruction_execution_simple_logger(ADDRINT ins_addr)
-//{
-//  BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << boost::format("%d (%s %s) %s")
-//    % remove_leading_zeros(StringFromAddrint(ins_addr))
-//    % addr_ins_static_map[ins_addr].disassembled_name
-//    % addr_ins_static_map[ins_addr].contained_function;
-//  return;
-//}
 
 VOID logging_general_instruction_analyzer(ADDRINT ins_addr)
 {
   if ((explored_trace.size() < max_trace_size) && 
-      (!addr_ins_static_map[ins_addr]->is_mapped_from_kernel))
+      !addr_ins_static_map[ins_addr]->is_mapped_from_kernel)
   {
     explored_trace.push_back(ins_addr);
     order_ins_dynamic_map[explored_trace.size()] = addr_ins_static_map[ins_addr];
@@ -423,7 +420,6 @@ VOID logging_general_instruction_analyzer(ADDRINT ins_addr)
       % addr_ins_static_map[ins_addr]->disassembled_name
       % addr_ins_static_map[ins_addr]->contained_image
       % addr_ins_static_map[ins_addr]->contained_function;
-    log_sink->flush();
   }
   else // trace length limit reached
   {
