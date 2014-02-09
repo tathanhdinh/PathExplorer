@@ -88,18 +88,23 @@ instruction::instruction(const INS& ins)
   for (register_id = 0; register_id < register_num; ++register_id) 
   {
     curr_register = INS_RegW(ins, register_id);
-    // see the same explication above
-    if (curr_register != REG_INST_PTR) 
+    if ((curr_register != REG_INST_PTR) ||
+        INS_IsBranchOrCall(ins) || INS_IsRet(ins) || INS_HasRealRep(ins))
     {
-      if (INS_IsRet(ins) && (curr_register == REG_STACK_PTR)) 
+      if ((curr_register == REG_STACK_PTR) && INS_IsRet(ins))
       {
-        // do nothing
+        // do nothing: see above
       }
-      else 
+      else
       {
         new_operand.reset(new operand(curr_register));
         this->dst_operands.insert(new_operand);
       }
+    }
+    else
+    {
+      // do nothing if the register is the instruction pointer and the instruction is not a kind
+      // that can change the ip then the register is not considered
     }
   }
 }

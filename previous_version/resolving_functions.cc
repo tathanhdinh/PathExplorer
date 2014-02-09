@@ -27,6 +27,7 @@ extern std::map<UINT32,  ptr_instruction_t>       order_ins_dynamic_map;
 extern bool                                       in_tainting;
 
 extern df_diagram                                 dta_graph;
+extern df_vertex_desc_set                         dta_outer_vertices;
 
 extern std::vector<ADDRINT>                       explored_trace;
 
@@ -229,6 +230,7 @@ inline void prepare_new_tainting_phase(ptr_branch_t& unexplored_ptr_branch)
   order_ins_dynamic_map.erase(order_ins_map_iter, order_ins_dynamic_map.end());
     
   dta_graph.clear();
+  dta_outer_vertices.clear();
 //   order_ins_dynamic_map.clear();
   order_tainted_ptr_branch_map.clear();
   order_input_dep_ptr_branch_map.clear();
@@ -245,6 +247,7 @@ inline void prepare_new_tainting_phase(ptr_branch_t& unexplored_ptr_branch)
   
   local_rollback_times = 0; 
   
+//  std::cout << "hahahah\n";
   return;
 }
 
@@ -374,14 +377,12 @@ inline void exploring_new_branch_or_stop()
   ptr_branch_t unexplored_ptr_branch = next_unexplored_branch();
   if (unexplored_ptr_branch) 
   {
-    //BOOST_LOG_TRIVIAL(info) 
     BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
     << boost::format("economized/total executed instruction number %d/%d") 
         % econed_ins_number % executed_ins_number;
         
-    //std::cout 
     BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-      << boost::format("exploring the branch at %d (%s) by start tainting a new path.\n") 
+      << boost::format("exploring the branch at %d (%s) by start tainting a new path")
           % unexplored_ptr_branch->trace.size() 
           % addr_ins_static_map[unexplored_ptr_branch->addr]->disassembled_name;
     log_sink->flush();
