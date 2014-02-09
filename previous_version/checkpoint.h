@@ -13,26 +13,14 @@
 
 #include "instruction.h"
 
-/*====================================================================================================================*/
-
-class checkpoint;
-
-typedef boost::shared_ptr<CONTEXT>            ptr_context;
-typedef boost::shared_ptr<checkpoint>         ptr_checkpoint;
-
-void replace_input                            (UINT8* backup_input_addr);
-
-void rollback_with_input_replacement          (ptr_checkpoint& ptr_chkpnt, UINT8* backup_input_addr);
-
-void rollback_with_input_random_modification  (ptr_checkpoint& ptr_chkpnt, std::set<ADDRINT>& dep_mems);
-
-/*====================================================================================================================*/
+/*================================================================================================*/
                 
 class checkpoint
 {
 public:
   ADDRINT                   addr;
-  ptr_context               ptr_ctxt;
+//  ptr_context               ptr_ctxt;
+  boost::shared_ptr<CONTEXT>  ptr_ctxt;
   
   std::map<ADDRINT, UINT8>  mem_read_log;     // map between a read address and the original value at this address
   std::map<ADDRINT, UINT8>  mem_written_log;  // map between a written address and the original value at this address
@@ -57,6 +45,12 @@ public:
   
 };
 
+/*================================================================================================*/
+
+typedef boost::shared_ptr<checkpoint>         ptr_checkpoint;
+
+/*================================================================================================*/
+
 class ptr_checkpoint_less 
 {
 public:
@@ -65,6 +59,16 @@ public:
     return (a->trace.size() < b->trace.size());
   }
 };
+
+/*================================================================================================*/
+
+//typedef boost::shared_ptr<CONTEXT>            ptr_context;
+
+void replace_input(UINT8* backup_input_addr);
+
+void rollback_with_input_replacement(ptr_checkpoint& ptr_chkpnt, UINT8* backup_input_addr);
+
+void rollback_with_input_random_modification(ptr_checkpoint& ptr_chkpnt, std::set<ADDRINT>& dep_mems);
 
 #endif // CHECKPOINT_H
 

@@ -13,10 +13,10 @@
 extern ADDRINT                  received_msg_addr;
 extern UINT32                   received_msg_size;
 extern std::vector<ADDRINT>     explored_trace;
-extern std::map< ADDRINT, 
-                 instruction >  addr_ins_static_map;
+//extern std::map< ADDRINT,
+//                 instruction >  addr_ins_static_map;
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 checkpoint::checkpoint()
 {
@@ -28,7 +28,7 @@ checkpoint::checkpoint()
   this->rollback_times = 0;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 checkpoint::checkpoint(ADDRINT ip_addr, CONTEXT* p_ctxt, 
                        const std::vector<ADDRINT>& current_trace,
@@ -61,7 +61,7 @@ checkpoint::checkpoint(ADDRINT ip_addr, CONTEXT* p_ctxt,
                reinterpret_cast<UINT8*>(received_msg_addr), received_msg_size);
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 checkpoint& checkpoint::operator=(checkpoint const& other_chkpnt)
 {
@@ -79,7 +79,7 @@ checkpoint& checkpoint::operator=(checkpoint const& other_chkpnt)
   return *this;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 // void checkpoint::mem_read_logging(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_size)
 // {
