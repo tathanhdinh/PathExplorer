@@ -19,7 +19,7 @@
 #include "branch.h"
 #include "stuffs.h"
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 extern std::map<ADDRINT, ptr_instruction_t>       addr_ins_static_map;
 extern std::map<UINT32,  ptr_instruction_t>       order_ins_dynamic_map;
@@ -65,18 +65,26 @@ extern std::set<ADDRINT>                          active_input_dep_addrs;
 
 extern UINT64                                     executed_ins_number;
 extern UINT64                                     econed_ins_number;
-// extern UINT32                                     input_dep_branch_num;
-// extern UINT32                                     resolved_branch_num;
 
-extern boost::log::sources::severity_logger<boost::log::trivial::severity_level> log_instance;
-extern boost::shared_ptr< boost::log::sinks::synchronous_sink<boost::log::sinks::text_file_backend> > log_sink;
+namespace logging = boost::log;
+namespace sinks   = boost::log::sinks;
+namespace sources = boost::log::sources;
+typedef sinks::text_file_backend text_backend;
+typedef sinks::synchronous_sink<text_backend>     sink_file_backend;
+typedef logging::trivial::severity_level          log_level;
+
+extern sources::severity_logger<log_level>        log_instance;
+extern boost::shared_ptr<sink_file_backend>       log_sink;
+
+//extern boost::log::sources::severity_logger<boost::log::trivial::severity_level> log_instance;
+//extern boost::shared_ptr< boost::log::sinks::synchronous_sink<boost::log::sinks::text_file_backend> > log_sink;
 
 extern KNOB<UINT32>                               max_total_rollback;
 extern KNOB<UINT32>                               max_local_rollback;
 extern KNOB<UINT32>                               max_trace_length;
 extern KNOB<BOOL>                                 print_debug_text;
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 VOID resolving_ins_count_analyzer(ADDRINT ins_addr)
 {
