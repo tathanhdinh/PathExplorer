@@ -5,9 +5,10 @@
 #include <map>
 #include <set>
 
-#include <boost/format.hpp>
+#include <boost/timer.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/filesystem.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/format.hpp>
 #include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/log/expressions.hpp>
@@ -24,28 +25,30 @@
 #include "tainting_functions.h"
 #include "resolving_functions.h"
 #include "logging_functions.h"
-#include "path_explorer.h"
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
-// extern std::map< ADDRINT,
-//        instruction >                                addr_ins_static_map;
-// 
-// extern std::vector<ADDRINT>                         explored_trace;
-// 
-// extern bool                                         in_tainting;
-// 
-// extern map_ins_io                                   dta_inss_io;
-// 
-// extern UINT32                                       received_msg_num;
-// 
-// extern boost::shared_ptr<boost::posix_time::ptime>  start_ptr_time;
-// extern boost::shared_ptr<boost::posix_time::ptime>  stop_ptr_time;
-// 
-// extern boost::log::sources::severity_logger<boost::log::trivial::severity_level> log_instance;
-// extern boost::shared_ptr< boost::log::sinks::synchronous_sink<boost::log::sinks::text_file_backend> > log_sink;
+extern std::map<ADDRINT, ptr_instruction_t>     addr_ins_static_map;
+extern std::vector<ADDRINT>                     explored_trace;
+extern bool                                     in_tainting;
+extern map_ins_io                               dta_inss_io;
+extern UINT32                                   received_msg_num;
 
-/*====================================================================================================================*/
+namespace btime = boost::posix_time;
+extern boost::shared_ptr<btime::ptime>          start_ptr_time;
+extern boost::shared_ptr<btime::ptime>          stop_ptr_time;
+
+namespace logging = boost::log;
+namespace sinks   = boost::log::sinks;
+namespace sources = boost::log::sources;
+typedef sinks::text_file_backend                text_backend;
+typedef sinks::synchronous_sink<text_backend>   sink_file_backend;
+typedef logging::trivial::severity_level        log_level;
+
+extern sources::severity_logger<log_level>      log_instance;
+extern boost::shared_ptr<sink_file_backend>     log_sink;
+
+/*================================================================================================*/
 
 /**
  * @brief instrumentation function.
@@ -58,7 +61,8 @@ VOID ins_instrumenter(INS ins, VOID *data)
 {
   // logging the parsed instructions statically
   ADDRINT ins_addr = INS_Address(ins);
-  addr_ins_static_map[ins_addr] = instruction(ins);
+  ptr_instruction_t new_instruction(new instruction(ins));
+  addr_ins_static_map[ins_addr] = new_instruction;
 
   /*BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << boost::format("%-15s %-35s %s")
     % remove_leading_zeros(StringFromAddrint(ins_addr)) 
@@ -120,7 +124,7 @@ VOID ins_instrumenter(INS ins, VOID *data)
                                    IARG_INST_PTR,
                                    IARG_END);
 
-          if (addr_ins_static_map[ins_addr].is_cbranch/* == XED_CATEGORY_COND_BR*/) 
+          if (addr_ins_static_map[ins_addr]->is_cbranch/* == XED_CATEGORY_COND_BR*/)
           {
             // conditional branch logging
             INS_InsertPredicatedCall(ins, IPOINT_BEFORE, 
@@ -199,7 +203,7 @@ VOID ins_instrumenter(INS ins, VOID *data)
         }
         
         // note that conditional branches are always direct
-        if (addr_ins_static_map[ins_addr].is_cbranch/*.category == XED_CATEGORY_COND_BR*/) 
+        if (addr_ins_static_map[ins_addr]->is_cbranch/*.category == XED_CATEGORY_COND_BR*/)
         {
           INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
                                    (AFUNPTR)resolving_cond_branch_analyzer,

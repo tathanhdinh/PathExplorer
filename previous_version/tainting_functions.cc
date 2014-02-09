@@ -13,8 +13,7 @@ extern df_diagram           dta_graph;
 extern map_ins_io               dta_inss_io;
 extern df_vertex_desc_set     dta_outer_vertices;
 
-extern std::map< UINT32,
-                 instruction >  order_ins_dynamic_map;
+extern std::map<UINT32, ptr_instruction_t>  order_ins_dynamic_map;
 
 extern std::vector<ADDRINT>     explored_trace;
 
@@ -70,16 +69,17 @@ inline std::set<df_vertex_desc> source_variables(UINT32 idx)
 //  }
 
   std::set<df_vertex_desc> src_vertex_descs;
-
+  df_vertex_desc new_vertex_desc;
   std::set<ptr_operand_t>::iterator src_operand_iter;
-  for (src_operand_iter = order_ins_dynamic_map[idx].src_operands.begin();
-       src_operand_iter != order_ins_dynamic_map[idx].src_operands.end(); ++src_operand_iter)
+  for (src_operand_iter = order_ins_dynamic_map[idx]->src_operands.begin();
+       src_operand_iter != order_ins_dynamic_map[idx]->src_operands.end(); ++src_operand_iter)
   {
     df_vertex_desc_set::iterator outer_vertex_iter;
+    // verify if the current source operand is
     for (outer_vertex_iter = dta_outer_vertices.begin();
          outer_vertex_iter != dta_outer_vertices.end(); ++outer_vertex_iter)
     {
-      // the current source operand is found in the outer interface
+      // found in the outer interface
       if (((*src_operand_iter)->value.type() == dta_graph[*outer_vertex_iter]->value.type()) &&
           ((*src_operand_iter)->name == dta_graph[*outer_vertex_iter]->name))
       {
@@ -90,7 +90,7 @@ inline std::set<df_vertex_desc> source_variables(UINT32 idx)
       // not found
       if (outer_vertex_iter == dta_outer_vertices.end())
       {
-        df_vertex_desc new_vertex_desc = boost::add_vertex(*src_operand_iter, dta_graph);
+        new_vertex_desc = boost::add_vertex(*src_operand_iter, dta_graph);
         dta_outer_vertices.insert(new_vertex_desc);
         src_vertex_descs.insert(new_vertex_desc);
       }
@@ -104,47 +104,89 @@ inline std::set<df_vertex_desc> source_variables(UINT32 idx)
 // destination variable construction
 inline std::set<df_vertex_desc> destination_variables(UINT32 idx)
 {
-  std::set<REG>::iterator      reg_iter;
-  std::set<ADDRINT>::iterator  mem_iter;
+//  std::set<REG>::iterator      reg_iter;
+//  std::set<ADDRINT>::iterator  mem_iter;
 
-  var_set dst_vars;
+//  var_set dst_vars;
+//  std::set<df_vertex_desc> dst_vertex_descs;
+
+//  for (reg_iter = order_ins_dynamic_map[idx].dst_regs.begin();
+//       reg_iter != order_ins_dynamic_map[idx].dst_regs.end(); ++reg_iter)
+//  {
+//    dst_vars.insert(variable(*reg_iter));
+//  }
+
+//  for (mem_iter = order_ins_dynamic_map[idx].dst_mems.begin();
+//       mem_iter != order_ins_dynamic_map[idx].dst_mems.end(); ++mem_iter)
+//  {
+//    dst_vars.insert(variable(*mem_iter));
+//  }
+
+//  // insert the destination variables into the tainting graph and its outer interface
+//  df_vertex_desc_set::iterator vertex_iter;
+//  df_vertex_desc_set::iterator last_vertex_iter;
+//  df_vertex_desc_set::iterator next_vertex_iter;
+
+//  df_vertex_desc new_vertex_desc;
+
+//  for (var_set::iterator dst_iter = dst_vars.begin(); dst_iter != dst_vars.end(); ++dst_iter)
+//  {
+//    vertex_iter = dta_outer_vertices.begin();
+//    for (next_vertex_iter = vertex_iter; vertex_iter != dta_outer_vertices.end();
+//         vertex_iter = next_vertex_iter )
+//    {
+//      ++next_vertex_iter;
+
+//      // the current destination operand is found in the outer interface
+//      if (*dst_iter == dta_graph[*vertex_iter])
+//      {
+//        // first, insert a new vertex into the dependency graph
+//        new_vertex_desc = boost::add_vertex(*dst_iter, dta_graph);
+
+//        // then modify the outer interface
+//        dta_outer_vertices.erase(vertex_iter);
+//        dta_outer_vertices.insert(new_vertex_desc);
+
+//        dst_vertex_descs.insert(new_vertex_desc);
+//        break;
+//      }
+//    }
+
+//    // not found
+//    if (vertex_iter == dta_outer_vertices.end())
+//    {
+//      new_vertex_desc = boost::add_vertex(*dst_iter, dta_graph);
+
+//      // modify the outer interface
+//      dta_outer_vertices.insert(new_vertex_desc);
+
+//      dst_vertex_descs.insert(new_vertex_desc);
+//    }
+//  }
+
   std::set<df_vertex_desc> dst_vertex_descs;
-
-  for (reg_iter = order_ins_dynamic_map[idx].dst_regs.begin();
-       reg_iter != order_ins_dynamic_map[idx].dst_regs.end(); ++reg_iter) 
-  {
-    dst_vars.insert(variable(*reg_iter));
-  }
-
-  for (mem_iter = order_ins_dynamic_map[idx].dst_mems.begin();
-       mem_iter != order_ins_dynamic_map[idx].dst_mems.end(); ++mem_iter) 
-  {
-    dst_vars.insert(variable(*mem_iter));
-  }
-
-  // insert the destination variables into the tainting graph and its outer interface
-  df_vertex_desc_set::iterator vertex_iter;
-  df_vertex_desc_set::iterator last_vertex_iter;
-  df_vertex_desc_set::iterator next_vertex_iter;
-
   df_vertex_desc new_vertex_desc;
-
-  for (var_set::iterator dst_iter = dst_vars.begin(); dst_iter != dst_vars.end(); ++dst_iter) 
+  std::set<ptr_operand_t>::iterator trg_operand_iter;
+  for (trg_operand_iter = order_ins_dynamic_map[idx]->trg_operands.begin();
+       trg_operand_iter != order_ins_dynamic_map[idx]->trg_operands.end(); ++trg_operand_iter)
   {
-    vertex_iter = dta_outer_vertices.begin();
-    for (next_vertex_iter = vertex_iter; vertex_iter != dta_outer_vertices.end(); 
-         vertex_iter = next_vertex_iter ) 
+    df_vertex_desc_set::iterator outer_vertex_iter = dta_outer_vertices.begin();
+    df_vertex_desc_set::iterator next_vertex_iter;
+
+    // verify if the current target operand is
+    for (next_vertex_iter = outer_vertex_iter;
+         outer_vertex_iter != dta_outer_vertices.end(); outer_vertex_iter = next_vertex_iter)
     {
       ++next_vertex_iter;
 
-      // the current destination operand is found in the outer interface
-      if (*dst_iter == dta_graph[*vertex_iter]) 
+      // found in the outer interface
+      if (((*trg_operand_iter)->value.type() == dta_graph[*outer_vertex_iter]->value.type())
+          && ((*trg_operand_iter)->name == dta_graph[*outer_vertex_iter]->name))
       {
-        // first, insert a new vertex into the dependency graph
-        new_vertex_desc = boost::add_vertex(*dst_iter, dta_graph);
-
-        // then modify the outer interface
-        dta_outer_vertices.erase(vertex_iter);
+        // then insert the current target operand into the graph
+        new_vertex_desc = boost::add_vertex(*trg_operand_iter, dta_graph);
+        // and modify the outer interface by replacing the old vertex with the new vertex
+        dta_outer_vertices.erase(outer_vertex_iter);
         dta_outer_vertices.insert(new_vertex_desc);
 
         dst_vertex_descs.insert(new_vertex_desc);
@@ -153,17 +195,16 @@ inline std::set<df_vertex_desc> destination_variables(UINT32 idx)
     }
 
     // not found
-    if (vertex_iter == dta_outer_vertices.end()) 
+    if (outer_vertex_iter == dta_outer_vertices.end())
     {
-      new_vertex_desc = boost::add_vertex(*dst_iter, dta_graph);
-
-      // modify the outer interface
+      // then insert the current target operand into the graph
+      new_vertex_desc = boost::add_vertex(*trg_operand_iter, dta_graph);
+      // and modify the outer interface by insert the new vertex
       dta_outer_vertices.insert(new_vertex_desc);
 
       dst_vertex_descs.insert(new_vertex_desc);
     }
   }
-
 
   return dst_vertex_descs;
 }
@@ -187,8 +228,9 @@ VOID tainting_general_instruction_analyzer(ADDRINT ins_addr)
     for (dst_vertex_desc_iter = dst_vertex_descs.begin();
          dst_vertex_desc_iter != dst_vertex_descs.end(); ++dst_vertex_desc_iter) 
     {
-      boost::add_edge(*src_vertex_desc_iter, *dst_vertex_desc_iter,
-                      std::make_pair(ins_addr, current_ins_order), dta_graph);
+//      boost::add_edge(*src_vertex_desc_iter, *dst_vertex_desc_iter,
+//                      std::make_pair(ins_addr, current_ins_order), dta_graph);
+      boost::add_edge(*src_vertex_desc_iter, *dst_vertex_desc_iter, current_ins_order, dta_graph);
     }
   }
 

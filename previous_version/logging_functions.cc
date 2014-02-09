@@ -27,8 +27,8 @@
 
 extern bool                                     in_tainting;
 
-extern std::map<ADDRINT, instruction>           addr_ins_static_map;
-extern std::map<UINT32, instruction>            order_ins_dynamic_map;
+extern std::map<ADDRINT, ptr_instruction_t>     addr_ins_static_map;
+extern std::map<UINT32, ptr_instruction_t>      order_ins_dynamic_map;
 
 extern UINT32                                   total_rollback_times;
 
@@ -311,7 +311,7 @@ inline static void compute_branch_min_checkpoint()
               % current_ptr_branch->trace.size()
               % current_ptr_branch->br_taken
               % remove_leading_zeros(StringFromAddrint(current_ptr_branch->addr))
-              % order_ins_dynamic_map[current_ptr_branch->trace.size()].disassembled_name
+              % order_ins_dynamic_map[current_ptr_branch->trace.size()]->disassembled_name
               % current_ptr_branch->nearest_checkpoints.size();
               
         current_ptr_branch->checkpoint = current_ptr_branch->nearest_checkpoints.rbegin()->first;
@@ -400,19 +400,19 @@ VOID logging_syscall_instruction_analyzer(ADDRINT ins_addr)
 }
 
 /*================================================================================================*/
-VOID instruction_execution_simple_logger(ADDRINT ins_addr)
-{
-  BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << boost::format("%d (%s %s) %s")
-    % remove_leading_zeros(StringFromAddrint(ins_addr))
-    % addr_ins_static_map[ins_addr].disassembled_name
-    % addr_ins_static_map[ins_addr].contained_function;
-  return;
-}
+//VOID instruction_execution_simple_logger(ADDRINT ins_addr)
+//{
+//  BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << boost::format("%d (%s %s) %s")
+//    % remove_leading_zeros(StringFromAddrint(ins_addr))
+//    % addr_ins_static_map[ins_addr].disassembled_name
+//    % addr_ins_static_map[ins_addr].contained_function;
+//  return;
+//}
 
 VOID logging_general_instruction_analyzer(ADDRINT ins_addr)
 {
   if ((explored_trace.size() < max_trace_size) && 
-    (!addr_ins_static_map[ins_addr].contained_image.empty()))
+      (!addr_ins_static_map[ins_addr]->is_mapped_from_kernel))
   {
     explored_trace.push_back(ins_addr);
     order_ins_dynamic_map[explored_trace.size()] = addr_ins_static_map[ins_addr];
@@ -420,9 +420,9 @@ VOID logging_general_instruction_analyzer(ADDRINT ins_addr)
     BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << boost::format("%-3d (%-10s %s) %s %s")
       % explored_trace.size()
       % remove_leading_zeros(StringFromAddrint(ins_addr))
-      % addr_ins_static_map[ins_addr].disassembled_name
-      % addr_ins_static_map[ins_addr].contained_image
-      % addr_ins_static_map[ins_addr].contained_function;
+      % addr_ins_static_map[ins_addr]->disassembled_name
+      % addr_ins_static_map[ins_addr]->contained_image
+      % addr_ins_static_map[ins_addr]->contained_function;
     log_sink->flush();
   }
   else // trace length limit reached
@@ -452,7 +452,7 @@ VOID logging_mem_read_instruction_analyzer(ADDRINT ins_addr,
       << boost::format("checkpoint detected at %d (%s: %s) because memory is read (%s: %d)")
       % new_ptr_checkpoint->trace.size()
       % remove_leading_zeros(StringFromAddrint(ins_addr))
-      % addr_ins_static_map[ins_addr].disassembled_name 
+      % addr_ins_static_map[ins_addr]->disassembled_name
       % remove_leading_zeros(StringFromAddrint(mem_read_addr)) % mem_read_size;
   }
 
@@ -461,7 +461,7 @@ VOID logging_mem_read_instruction_analyzer(ADDRINT ins_addr,
   {
 //     order_ins_dynamic_map[explored_trace.size()].src_mems.insert(mem_read_addr + idx);
     mem_operand.reset(new operand(mem_read_addr + idx));
-    order_ins_dynamic_map[explored_trace.size()].src_operands.insert(mem_operand);
+    order_ins_dynamic_map[explored_trace.size()]->src_operands.insert(mem_operand);
   }
 
   return;
@@ -504,7 +504,7 @@ VOID logging_mem_write_instruction_analyzer(ADDRINT ins_addr,
   {
     mem_operand.reset(new operand(mem_written_addr + idx));
 //    order_ins_dynamic_map[explored_trace.size()].dst_mems.insert(mem_written_addr + idx);
-    order_ins_dynamic_map[explored_trace.size()].src_operands.insert(mem_operand);
+    order_ins_dynamic_map[explored_trace.size()]->src_operands.insert(mem_operand);
   }
 
   return;

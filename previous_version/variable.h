@@ -18,9 +18,7 @@
 #include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
 
-#include "operand.h"
 #include "instruction.h"
-//#include "path_explorer.h"
 
 /*================================================================================================*/
 
@@ -98,8 +96,8 @@ typedef std::set<df_vertex_desc>                            df_vertex_desc_set;
 
 /*================================================================================================*/
 
-extern std::map<ADDRINT, instruction> addr_ins_static_map;
-extern std::map<UINT32, instruction>  order_ins_dynamic_map;
+extern std::map<ADDRINT, ptr_instruction_t> addr_ins_static_map;
+extern std::map<UINT32, ptr_instruction_t>  order_ins_dynamic_map;
 
 extern ADDRINT                        received_msg_addr;
 extern UINT32                         received_msg_size;
@@ -165,7 +163,7 @@ public:
   {
     df_edge current_edge = graph[edge];
     out << boost::format("[label=\"%s: %s\"]")
-           % current_edge % order_ins_dynamic_map[current_edge].disassembled_name;
+           % current_edge % order_ins_dynamic_map[current_edge]->disassembled_name;
     
 //    out << "[label=\"(" << decstr(ve.second) << ") " << addr_ins_static_map[ve.first].disassembled_name << "\"]";
   }

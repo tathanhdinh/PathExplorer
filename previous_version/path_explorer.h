@@ -2,6 +2,7 @@
 #define PATH_EXPLORER_H
 
 #include <pin.H>
+
 #include <map>
 
 #include <boost/timer.hpp>
@@ -42,9 +43,9 @@ extern UINT32                                        max_trace_size;
 
 extern bool                                          in_tainting;
 
-extern df_diagram                                dta_graph;
+extern df_diagram                                    dta_graph;
 extern map_ins_io                                    dta_inss_io;
-extern df_vertex_desc_set                          dta_outer_vertices;
+extern df_vertex_desc_set                            dta_outer_vertices;
 
 extern std::vector<ptr_checkpoint>                   saved_ptr_checkpoints;
 extern ptr_checkpoint                                master_ptr_checkpoint;
