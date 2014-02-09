@@ -45,11 +45,11 @@ extern ptr_branch                               exploring_ptr_branch;
 
 extern std::vector<ptr_branch>                  total_input_dep_ptr_branches;
 
-extern std::vector<ptr_checkpoint>              saved_ptr_checkpoints;
-extern ptr_checkpoint                           master_ptr_checkpoint;
+extern std::vector<ptr_checkpoint_t>              saved_ptr_checkpoints;
+extern ptr_checkpoint_t                           master_ptr_checkpoint;
 
 extern std::map< UINT32,
-                 std::vector<ptr_checkpoint> >  exepoint_checkpoints_map;
+                 std::vector<ptr_checkpoint_t> >  exepoint_checkpoints_map;
 
 extern UINT32																		received_msg_num;
 extern ADDRINT                                  received_msg_addr;
@@ -244,13 +244,13 @@ inline void compute_branch_mem_dependency()
 
 inline static void compute_branch_min_checkpoint()
 {
-  std::vector<ptr_checkpoint>::iterator   ptr_checkpoint_iter;
-  std::vector<ptr_checkpoint>::reverse_iterator ptr_checkpoint_reverse_iter;
+  std::vector<ptr_checkpoint_t>::iterator   ptr_checkpoint_iter;
+  std::vector<ptr_checkpoint_t>::reverse_iterator ptr_checkpoint_reverse_iter;
   std::set<ADDRINT>::iterator             addr_iter;
   std::map<UINT32, ptr_branch>::iterator  order_ptr_branch_iter;
 
   ptr_branch      current_ptr_branch;
-  ptr_checkpoint  nearest_ptr_checkpoint;
+  ptr_checkpoint_t  nearest_ptr_checkpoint;
   
   bool nearest_checkpoint_found;
   std::set<ADDRINT> intersec_mems;
@@ -368,7 +368,7 @@ inline void prepare_new_rollbacking_phase()
   {
     journal_explored_trace("last_explored_trace.log");
 
-    rollback_with_input_replacement(saved_ptr_checkpoints[0],
+    rollback_and_restore(saved_ptr_checkpoints[0],
                                     exploring_ptr_branch->inputs[!exploring_ptr_branch->br_taken][0].get());
   }
   else
@@ -381,7 +381,7 @@ inline void prepare_new_rollbacking_phase()
     if (!order_input_dep_ptr_branch_map.empty())
     { 
       ptr_branch first_ptr_branch = order_input_dep_ptr_branch_map.begin()->second;
-      rollback_with_input_replacement(saved_ptr_checkpoints[0], 
+      rollback_and_restore(saved_ptr_checkpoints[0],
                                       first_ptr_branch->inputs[first_ptr_branch->br_taken][0].get());
     }
     else
@@ -439,7 +439,7 @@ VOID logging_mem_read_instruction_analyzer(ADDRINT ins_addr,
   if (std::max(mem_read_addr, received_msg_addr) <
       std::min(mem_read_addr + mem_read_size, received_msg_addr + received_msg_size))
   {
-    ptr_checkpoint new_ptr_checkpoint(new checkpoint(ins_addr, p_ctxt, explored_trace, 
+    ptr_checkpoint_t new_ptr_checkpoint(new checkpoint(ins_addr, p_ctxt, /*explored_trace,*/
                                                      mem_read_addr, mem_read_size));
     saved_ptr_checkpoints.push_back(new_ptr_checkpoint);
     

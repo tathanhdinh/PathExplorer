@@ -53,13 +53,13 @@ public:
             std::vector< boost::shared_ptr<UINT8> > 
           >             inputs;
     
-  ptr_checkpoint        checkpoint;
-  std::map< ptr_checkpoint, 
+  ptr_checkpoint_t        checkpoint;
+  std::map< ptr_checkpoint_t,
             std::set<ADDRINT>, 
             ptr_checkpoint_less
           >             nearest_checkpoints;
           
-  std::map< ptr_checkpoint, 
+  std::map< ptr_checkpoint_t,
             UINT32, 
             ptr_checkpoint_less 
           >             econ_execution_length;

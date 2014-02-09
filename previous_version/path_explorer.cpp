@@ -62,17 +62,17 @@ df_diagram                                dta_graph;
 map_ins_io                                    dta_inss_io;
 df_vertex_desc_set                          dta_outer_vertices;
 
-std::vector<ptr_checkpoint>                   saved_ptr_checkpoints;
-ptr_checkpoint                                master_ptr_checkpoint;
-ptr_checkpoint                                last_active_ptr_checkpoint;
+std::vector<ptr_checkpoint_t>                   saved_ptr_checkpoints;
+ptr_checkpoint_t                                master_ptr_checkpoint;
+ptr_checkpoint_t                                last_active_ptr_checkpoint;
 
 std::set<ADDRINT>                             active_input_dep_addrs;
 
-std::pair< ptr_checkpoint, 
+std::pair< ptr_checkpoint_t, 
            std::set<ADDRINT> >                active_nearest_checkpoint;
 
 std::map< UINT32,
-          std::vector<ptr_checkpoint> >       exepoint_checkpoints_map;
+          std::vector<ptr_checkpoint_t> >       exepoint_checkpoints_map;
 
 std::map<UINT32, ptr_branch>                  order_input_dep_ptr_branch_map;
 std::map<UINT32, ptr_branch>                  order_input_indep_ptr_branch_map;

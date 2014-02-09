@@ -30,15 +30,15 @@ extern df_diagram                                 dta_graph;
 
 extern std::vector<ADDRINT>                       explored_trace;
 
-extern ptr_checkpoint                             master_ptr_checkpoint;
-extern ptr_checkpoint                             last_active_ptr_checkpoint;
-extern std::vector<ptr_checkpoint>                saved_ptr_checkpoints;
+extern ptr_checkpoint_t                             master_ptr_checkpoint;
+extern ptr_checkpoint_t                             last_active_ptr_checkpoint;
+extern std::vector<ptr_checkpoint_t>                saved_ptr_checkpoints;
 
-extern std::pair< ptr_checkpoint, 
+extern std::pair< ptr_checkpoint_t, 
                   std::set<ADDRINT> >             active_nearest_checkpoint;
 
 extern std::map< UINT32,
-       std::vector<ptr_checkpoint> >              exepoint_checkpoints_map;
+       std::vector<ptr_checkpoint_t> >              exepoint_checkpoints_map;
 
 extern UINT32                                     total_rollback_times;
 extern UINT32                                     local_rollback_times;
@@ -128,7 +128,7 @@ VOID resolving_ins_count_analyzer(ADDRINT ins_addr)
       // the original trace will be lost if go further, so rollback
       total_rollback_times++;
       local_rollback_times++;
-      rollback_with_input_random_modification(active_nearest_checkpoint.first, 
+      rollback_and_modify(active_nearest_checkpoint.first, 
                                               active_nearest_checkpoint.second);
     }
     else
@@ -153,7 +153,7 @@ VOID resolving_ins_count_analyzer(ADDRINT ins_addr)
       local_rollback_times++;
       /*std::cerr << "first value of the stored buffer at branch " << active_ptr_branch->trace.size() << " : "
         << active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get()[0] << "\n";*/
-      rollback_with_input_replacement(active_nearest_checkpoint.first, 
+      rollback_and_restore(active_nearest_checkpoint.first, 
                                       active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());
       /*rollback_with_input_replacement(saved_ptr_checkpoints[0], 
                                       active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());*/
@@ -197,7 +197,7 @@ VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr,
   }
   else // in forwarding
   {
-    std::vector<ptr_checkpoint>::iterator 
+    std::vector<ptr_checkpoint_t>::iterator 
       ptr_checkpoint_iter = exepoint_checkpoints_map[explored_trace.size()].begin();
     for (; ptr_checkpoint_iter != exepoint_checkpoints_map[explored_trace.size()].end(); 
          ++ptr_checkpoint_iter)
@@ -300,11 +300,11 @@ inline void bypass_branch(ptr_branch& bypassed_ptr_branch)
  */
 inline void set_next_active_nearest_checkpoint(ptr_branch& current_ptr_branch) 
 {
-  std::map<ptr_checkpoint, 
+  std::map<ptr_checkpoint_t, 
            std::set<ADDRINT>, 
            ptr_checkpoint_less>::iterator nearest_checkpoint_iter;
   
-  std::map<ptr_checkpoint, 
+  std::map<ptr_checkpoint_t, 
            std::set<ADDRINT>, 
            ptr_checkpoint_less>::iterator next_nearest_checkpoint_iter;
   
@@ -395,7 +395,7 @@ inline void exploring_new_branch_or_stop()
     
     // explore new branch
     local_rollback_times++;
-    rollback_with_input_replacement(master_ptr_checkpoint,
+    rollback_and_restore(master_ptr_checkpoint,
                                     exploring_ptr_branch->inputs[!exploring_ptr_branch->br_taken][0].get());
   }
   else 
@@ -479,7 +479,7 @@ inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr,
           // the original trace will be lost if go further, so rollback
           total_rollback_times++;
           local_rollback_times++;
-          rollback_with_input_random_modification(active_nearest_checkpoint.first, 
+          rollback_and_modify(active_nearest_checkpoint.first, 
                                                   active_nearest_checkpoint.second);
         }
         else
@@ -489,7 +489,7 @@ inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr,
           
           // back to the original trace
           local_rollback_times++;
-          rollback_with_input_replacement(active_nearest_checkpoint.first,
+          rollback_and_restore(active_nearest_checkpoint.first,
                                           active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());
         }
       }
@@ -532,7 +532,7 @@ inline void unresolved_branch_takes_new_decision(ADDRINT ins_addr,
 //     std::cout << econed_ins_number << "  " << executed_ins_number << std::endl;
     
     local_rollback_times++;
-    rollback_with_input_replacement(active_nearest_checkpoint.first, 
+    rollback_and_restore(active_nearest_checkpoint.first, 
                                     active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());
   }
   else // active_ptr_branch is disabled, namely in some forward
@@ -585,7 +585,7 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
         
         total_rollback_times++;
         local_rollback_times++;
-        rollback_with_input_random_modification(active_nearest_checkpoint.first, 
+        rollback_and_modify(active_nearest_checkpoint.first, 
                                                 active_nearest_checkpoint.second);
       }
       else 
@@ -598,7 +598,7 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
 //           std::cout << econed_ins_number << "  " << executed_ins_number << std::endl;
           
           local_rollback_times++;
-          rollback_with_input_replacement(active_nearest_checkpoint.first, 
+          rollback_and_restore(active_nearest_checkpoint.first, 
                                           active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());
         }
         else 
@@ -628,7 +628,7 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
               
               total_rollback_times++;
               local_rollback_times++;
-              rollback_with_input_random_modification(active_nearest_checkpoint.first, 
+              rollback_and_modify(active_nearest_checkpoint.first, 
                                                       active_nearest_checkpoint.second);
             }
             else // cannot get any new nearest checkpoint
@@ -647,7 +647,7 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
               
               // and back to the original trace
               local_rollback_times++;
-              rollback_with_input_replacement(last_active_ptr_checkpoint, 
+              rollback_and_restore(last_active_ptr_checkpoint, 
                                               active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());
             }
           }
@@ -691,7 +691,7 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
     
     total_rollback_times++;
     local_rollback_times++;
-    rollback_with_input_random_modification(active_nearest_checkpoint.first, 
+    rollback_and_modify(active_nearest_checkpoint.first, 
                                             active_nearest_checkpoint.second);
   }
   
@@ -819,7 +819,7 @@ inline void process_input_independent_branch(ADDRINT ins_addr,
         // the original trace will lost if go further, so rollback
         total_rollback_times++;
         local_rollback_times++;
-        rollback_with_input_random_modification(active_nearest_checkpoint.first, 
+        rollback_and_modify(active_nearest_checkpoint.first, 
                                                 active_nearest_checkpoint.second);
       }
       else // in a re-execution from rollback_with_input_replacement
@@ -943,7 +943,7 @@ VOID resolving_indirect_branch_call_analyzer(ADDRINT ins_addr, ADDRINT target_ad
       // the original trace will lost if go further, so rollback
       total_rollback_times++;
       local_rollback_times++;
-      rollback_with_input_random_modification(active_nearest_checkpoint.first, 
+      rollback_and_modify(active_nearest_checkpoint.first, 
                                               active_nearest_checkpoint.second);
     }
     else // active_ptr_branch is empty, namely in forwarding, but new target found

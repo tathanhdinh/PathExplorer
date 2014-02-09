@@ -26,7 +26,7 @@
 
 extern df_diagram                   dta_graph;
 extern std::vector<ADDRINT>         explored_trace;
-extern std::vector<ptr_checkpoint>  saved_ptr_checkpoints;
+extern std::vector<ptr_checkpoint_t>  saved_ptr_checkpoints;
 
 /*====================================================================================================================*/
 

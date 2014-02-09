@@ -18,20 +18,20 @@ extern std::vector<ADDRINT>     explored_trace;
 
 /*================================================================================================*/
 
-checkpoint::checkpoint()
-{
-  std::map<ADDRINT, UINT8>().swap(this->mem_read_log);
-  std::map<ADDRINT, UINT8>().swap(this->mem_written_log);
+//checkpoint::checkpoint()
+//{
+//  std::map<ADDRINT, UINT8>().swap(this->mem_read_log);
+//  std::map<ADDRINT, UINT8>().swap(this->mem_written_log);
 
-  std::set<ADDRINT>().swap(this->dep_mems);
+//  std::set<ADDRINT>().swap(this->dep_mems);
 
-  this->rollback_times = 0;
-}
+//  this->rollback_times = 0;
+//}
 
 /*================================================================================================*/
 
 checkpoint::checkpoint(ADDRINT ip_addr, CONTEXT* p_ctxt, 
-                       const std::vector<ADDRINT>& current_trace,
+//                       const std::vector<ADDRINT>& current_trace,
                        ADDRINT mem_read_addr, UINT32 mem_read_size)
 {
   this->addr = ip_addr;
@@ -43,7 +43,8 @@ checkpoint::checkpoint(ADDRINT ip_addr, CONTEXT* p_ctxt,
 //   std::map<ADDRINT, UINT8>().swap(this->mem_read_log);
 //   std::map<ADDRINT, UINT8>().swap(this->mem_written_log);
 
-  this->trace = current_trace;
+//  this->trace = current_trace;
+  this->trace = explored_trace;
 
   for (UINT32 idx = 0; idx < mem_read_size; ++idx)
   {
@@ -63,21 +64,21 @@ checkpoint::checkpoint(ADDRINT ip_addr, CONTEXT* p_ctxt,
 
 /*================================================================================================*/
 
-checkpoint& checkpoint::operator=(checkpoint const& other_chkpnt)
-{
-  this->addr            = other_chkpnt.addr;
-  this->ptr_ctxt        = other_chkpnt.ptr_ctxt;
+//checkpoint& checkpoint::operator=(checkpoint const& other_chkpnt)
+//{
+//  this->addr            = other_chkpnt.addr;
+//  this->ptr_ctxt        = other_chkpnt.ptr_ctxt;
 
-  this->mem_read_log    = other_chkpnt.mem_read_log;
-  this->mem_written_log = other_chkpnt.mem_written_log;
+//  this->mem_read_log    = other_chkpnt.mem_read_log;
+//  this->mem_written_log = other_chkpnt.mem_written_log;
 
-  this->dep_mems        = other_chkpnt.dep_mems;
-  this->trace           = other_chkpnt.trace;
+//  this->dep_mems        = other_chkpnt.dep_mems;
+//  this->trace           = other_chkpnt.trace;
 
-  this->rollback_times  = other_chkpnt.rollback_times;
+//  this->rollback_times  = other_chkpnt.rollback_times;
 
-  return *this;
-}
+//  return *this;
+//}
 
 /*================================================================================================*/
 
@@ -119,7 +120,7 @@ void checkpoint::mem_written_logging(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 
 
 /*================================================================================================*/
 
-void rollback_with_input_replacement(ptr_checkpoint& dest_ptr_checkpoint, UINT8* backup_input_addr)
+void rollback_and_restore(ptr_checkpoint_t& dest_ptr_checkpoint, UINT8* backup_input_addr)
 {
   // restore the input
   PIN_SafeCopy(reinterpret_cast<UINT8*>(received_msg_addr), 
@@ -160,7 +161,7 @@ void rollback_with_input_replacement(ptr_checkpoint& dest_ptr_checkpoint, UINT8*
 
 /*====================================================================================================================*/
 
-void rollback_with_input_random_modification(ptr_checkpoint& current_ptr_checkpoint, 
+void rollback_and_modify(ptr_checkpoint_t& current_ptr_checkpoint,
                                              std::set<ADDRINT>& dep_mems)
 {
   // restore the current trace
