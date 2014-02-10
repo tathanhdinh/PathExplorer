@@ -139,6 +139,8 @@ VOID start_tracing(VOID *data)
   local_rollback_times      = 0;
   used_checkpoint_number    = 0;
   
+  current_execution_order   = 0;
+
   max_total_rollback_times  = max_total_rollback.Value();
   total_rollback_times      = 0;
   

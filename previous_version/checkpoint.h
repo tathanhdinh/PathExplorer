@@ -26,7 +26,7 @@ public:
   
   std::set<ADDRINT>           dep_mems;
   
-  std::vector<ADDRINT>        trace;
+//  std::vector<ADDRINT>        trace;
   UINT32                      execution_order;
   
   UINT32                      rollback_times;
@@ -52,7 +52,8 @@ class ptr_checkpoint_less
 public:
   bool operator()(ptr_checkpoint_t const& a, ptr_checkpoint_t const& b)
   {
-    return (a->trace.size() < b->trace.size());
+//    return (a->trace.size() < b->trace.size());
+    return (a->execution_order < b->execution_order);
   }
 };
 

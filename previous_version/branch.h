@@ -16,7 +16,7 @@ class branch
 {
 public:
   ADDRINT               addr;
-  std::vector<ADDRINT>  trace;
+//  std::vector<ADDRINT>  trace;
   UINT32                execution_order;
   bool                  br_taken;
   

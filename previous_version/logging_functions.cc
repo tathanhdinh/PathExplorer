@@ -178,7 +178,7 @@ inline void compute_branch_mem_dependency()
           {
             current_ptr_branch = order_ptr_branch_iter->second;
 //            if (dta_graph[edge_desc].second == current_ptr_branch->trace.size())
-            if (dta_graph[edge_desc] == current_ptr_branch->trace.size())
+            if (dta_graph[edge_desc] == current_ptr_branch->execution_order)
             {
 //              current_addr = dta_graph[*vertex_iter].mem;
               current_addr = boost::get<ADDRINT>(dta_graph[*vertex_iter]->value);
@@ -216,12 +216,12 @@ inline void compute_branch_mem_dependency()
     current_ptr_branch = order_ptr_branch_iter->second;
     if (!current_ptr_branch->dep_input_addrs.empty()) 
     {
-      order_input_dep_ptr_branch_map[current_ptr_branch->trace.size()] 
+      order_input_dep_ptr_branch_map[current_ptr_branch->execution_order]
         = current_ptr_branch;
       
       if (exploring_ptr_branch) 
       {
-        if (current_ptr_branch->trace.size() > exploring_ptr_branch->trace.size()) 
+        if (current_ptr_branch->execution_order > exploring_ptr_branch->execution_order)
         {
           total_input_dep_ptr_branches.push_back(current_ptr_branch);
         }
@@ -233,7 +233,7 @@ inline void compute_branch_mem_dependency()
     }
     else 
     {
-      order_input_indep_ptr_branch_map[current_ptr_branch->trace.size()] 
+      order_input_indep_ptr_branch_map[current_ptr_branch->execution_order]
         = current_ptr_branch;
     }
   }
@@ -293,14 +293,14 @@ inline static void compute_branch_min_checkpoint()
           for (; ptr_checkpoint_reverse_iter != saved_ptr_checkpoints.rend(); 
                ++ptr_checkpoint_reverse_iter) 
           {
-            if ((*ptr_checkpoint_reverse_iter)->trace.size() < current_ptr_branch->trace.size()) 
+            if ((*ptr_checkpoint_reverse_iter)->execution_order < current_ptr_branch->execution_order)
             {
               if (std::find((*ptr_checkpoint_reverse_iter)->dep_mems.begin(), 
                             (*ptr_checkpoint_reverse_iter)->dep_mems.end(), *addr_iter) 
                   != (*ptr_checkpoint_reverse_iter)->dep_mems.end()) 
               {
                 current_ptr_branch->econ_execution_length[*ptr_checkpoint_iter] = 
-                (*ptr_checkpoint_reverse_iter)->trace.size() - (*ptr_checkpoint_iter)->trace.size();
+                (*ptr_checkpoint_reverse_iter)->execution_order - (*ptr_checkpoint_iter)->execution_order;
 //                 std::cout << current_ptr_branch->econ_execution_length[*ptr_checkpoint_iter] << std::endl;
                 break;
               }
@@ -315,10 +315,10 @@ inline static void compute_branch_min_checkpoint()
         //BOOST_LOG_TRIVIAL(info) 
         BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
           << boost::format("the branch at %d:%d (%s: %s) has %d nearest checkpoints.") 
-              % current_ptr_branch->trace.size()
+              % current_ptr_branch->execution_order
               % current_ptr_branch->br_taken
               % remove_leading_zeros(StringFromAddrint(current_ptr_branch->addr))
-              % order_ins_dynamic_map[current_ptr_branch->trace.size()]->disassembled_name
+              % order_ins_dynamic_map[current_ptr_branch->execution_order]->disassembled_name
               % current_ptr_branch->nearest_checkpoints.size();
               
         current_ptr_branch->checkpoint = current_ptr_branch->nearest_checkpoints.rbegin()->first;
@@ -328,7 +328,7 @@ inline static void compute_branch_min_checkpoint()
         //BOOST_LOG_TRIVIAL(fatal)
         BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
           << boost::format("cannot found any nearest checkpoint for the branch at %d.!") 
-              % current_ptr_branch->trace.size();
+              % current_ptr_branch->execution_order;
               
         PIN_ExitApplication(0);
       }
@@ -344,8 +344,8 @@ inline void prepare_new_rollbacking_phase()
 {
   //BOOST_LOG_TRIVIAL(info) 
   BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-    << boost::format("stop exploring, %d(%d) instructions analyzed; start detecting checkpoints")
-        % explored_trace.size() % current_execution_order;
+    << boost::format("stop exploring, %d instructions analyzed; start detecting checkpoints")
+        /*% explored_trace.size()*/ % current_execution_order;
   
 //   journal_tainting_graph("tainting_graph.dot");
 //   PIN_ExitApplication(0);
@@ -409,19 +409,19 @@ VOID logging_syscall_instruction_analyzer(ADDRINT ins_addr)
 
 VOID logging_general_instruction_analyzer(ADDRINT ins_addr)
 {
-  if ((explored_trace.size() < max_trace_size) &&
+  if (/*(explored_trace.size() < max_trace_size) &&*/
       (current_execution_order < max_trace_size) &&
       !addr_ins_static_map[ins_addr]->is_mapped_from_kernel)
   {
-    explored_trace.push_back(ins_addr);
-    order_ins_dynamic_map[explored_trace.size()] = addr_ins_static_map[ins_addr];
+//    explored_trace.push_back(ins_addr);
+//    order_ins_dynamic_map[explored_trace.size()] = addr_ins_static_map[ins_addr];
 
     current_execution_order++;
     order_ins_dynamic_map[current_execution_order] = addr_ins_static_map[ins_addr];
 
     BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-        << boost::format("%-3d(%-3d) %-15s %-50s %-25s %-25s")
-           % explored_trace.size() % current_execution_order
+        << boost::format("%-3d %-15s %-50s %-25s %-25s")
+           /*% explored_trace.size()*/ % current_execution_order
            % remove_leading_zeros(StringFromAddrint(ins_addr))
            % addr_ins_static_map[ins_addr]->disassembled_name
            % addr_ins_static_map[ins_addr]->contained_image
@@ -452,7 +452,8 @@ VOID logging_mem_read_instruction_analyzer(ADDRINT ins_addr,
     //BOOST_LOG_TRIVIAL(trace) 
     BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
       << boost::format("checkpoint detected at %d (%s: %s) because memory is read (%s: %d)")
-      % new_ptr_checkpoint->trace.size()
+//      % new_ptr_checkpoint->trace.size()
+         % new_ptr_checkpoint->execution_order
       % remove_leading_zeros(StringFromAddrint(ins_addr))
       % addr_ins_static_map[ins_addr]->disassembled_name
       % remove_leading_zeros(StringFromAddrint(mem_read_addr)) % mem_read_size;
@@ -463,7 +464,7 @@ VOID logging_mem_read_instruction_analyzer(ADDRINT ins_addr,
   {
 //     order_ins_dynamic_map[explored_trace.size()].src_mems.insert(mem_read_addr + idx);
     mem_operand.reset(new operand(mem_read_addr + idx));
-    order_ins_dynamic_map[explored_trace.size()]->src_operands.insert(mem_operand);
+//    order_ins_dynamic_map[explored_trace.size()]->src_operands.insert(mem_operand);
     order_ins_dynamic_map[current_execution_order]->src_operands.insert(mem_operand);
   }
 
@@ -500,7 +501,7 @@ VOID logging_mem_write_instruction_analyzer(ADDRINT ins_addr,
                                                   mem_written_addr, mem_written_size);
   }
 
-  exepoint_checkpoints_map[explored_trace.size()] = saved_ptr_checkpoints;
+//  exepoint_checkpoints_map[explored_trace.size()] = saved_ptr_checkpoints;
   exepoint_checkpoints_map[current_execution_order] = saved_ptr_checkpoints;
 
   ptr_operand_t mem_operand;
@@ -508,7 +509,7 @@ VOID logging_mem_write_instruction_analyzer(ADDRINT ins_addr,
   {
     mem_operand.reset(new operand(mem_written_addr + idx));
 //    order_ins_dynamic_map[explored_trace.size()].dst_mems.insert(mem_written_addr + idx);
-    order_ins_dynamic_map[explored_trace.size()]->dst_operands.insert(mem_operand);
+//    order_ins_dynamic_map[explored_trace.size()]->dst_operands.insert(mem_operand);
     order_ins_dynamic_map[current_execution_order]->dst_operands.insert(mem_operand);
   }
 
@@ -526,13 +527,13 @@ VOID logging_cond_br_analyzer(ADDRINT ins_addr, bool br_taken)
 
   // verify if the branch is a new tainted branch
   if (exploring_ptr_branch && 
-      (new_ptr_branch->trace.size() <= exploring_ptr_branch->trace.size()))
+      (new_ptr_branch->execution_order <= exploring_ptr_branch->execution_order))
   {
     // mark it as resolved
     mark_resolved(new_ptr_branch); 
   }
   
-  order_tainted_ptr_branch_map[explored_trace.size()] = new_ptr_branch;
+//  order_tainted_ptr_branch_map[explored_trace.size()] = new_ptr_branch;
   order_tainted_ptr_branch_map[current_execution_order] = new_ptr_branch;
   /*std::cout << "first value of the stored buffer at branch "
     << new_ptr_branch->trace.size() << new_ptr_branch->inputs[br_taken][0].get()[0] << "\n";*/

@@ -230,7 +230,7 @@ inline std::set<df_vertex_desc> destination_variables(UINT32 idx)
 
 VOID tainting_general_instruction_analyzer(ADDRINT ins_addr)
 {
-  UINT32 current_ins_order = explored_trace.size();
+  UINT32 /*current_ins_order = explored_trace.size();*/
   current_ins_order = current_execution_order;
 
   std::set<df_vertex_desc> src_vertex_descs = source_variables(current_ins_order);

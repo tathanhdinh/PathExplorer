@@ -66,7 +66,7 @@ extern std::vector<ptr_checkpoint_t>  saved_ptr_checkpoints;
 branch::branch(ADDRINT ins_addr, bool br_taken)
 {
   this->addr              = ins_addr;
-  this->trace             = explored_trace;
+//  this->trace             = explored_trace;
   this->execution_order   = current_execution_order;
   this->br_taken          = br_taken;
   this->is_resolved       = false;
@@ -80,7 +80,8 @@ branch::branch(ADDRINT ins_addr, bool br_taken)
 branch::branch(const branch& other)
 {
   this->addr              = other.addr;
-  this->trace             = other.trace;
+//  this->trace             = other.trace;
+  this->execution_order   = other.execution_order;
   this->br_taken          = other.br_taken;
 
   this->dep_input_addrs   = other.dep_input_addrs;
@@ -105,7 +106,8 @@ branch::branch(const branch& other)
 branch& branch::operator=(const branch& other)
 {
   this->addr              = other.addr;
-  this->trace             = other.trace;
+//  this->trace             = other.trace;
+  this->execution_order   = other.execution_order;
   this->br_taken          = other.br_taken;
 
   this->dep_input_addrs   = other.dep_input_addrs;
@@ -133,7 +135,7 @@ bool branch::operator==(const branch& other)
 {
   return (
           (this->addr = other.addr) && 
-          (this->trace.size() == other.trace.size()) && 
+          (this->execution_order == other.execution_order) &&
           (this->br_taken == other.br_taken)
          );
 }

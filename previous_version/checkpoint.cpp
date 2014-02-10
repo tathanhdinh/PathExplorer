@@ -45,7 +45,7 @@ checkpoint::checkpoint(ADDRINT ip_addr, CONTEXT* p_ctxt,
 //   std::map<ADDRINT, UINT8>().swap(this->mem_written_log);
 
 //  this->trace = current_trace;
-  this->trace = explored_trace;
+//  this->trace = explored_trace;
   this->execution_order = current_execution_order;
 
   for (UINT32 idx = 0; idx < mem_read_size; ++idx)
@@ -129,8 +129,8 @@ void rollback_and_restore(ptr_checkpoint_t& dest_ptr_checkpoint, UINT8* backup_i
                dest_ptr_checkpoint->curr_input.get(), received_msg_size);
 
   // restore the current trace
-  explored_trace = dest_ptr_checkpoint->trace;
-  explored_trace.pop_back();
+//  explored_trace = dest_ptr_checkpoint->trace;
+//  explored_trace.pop_back();
 
   current_execution_order = dest_ptr_checkpoint->execution_order;
   current_execution_order--;
@@ -171,8 +171,8 @@ void rollback_and_modify(ptr_checkpoint_t& current_ptr_checkpoint,
                                              std::set<ADDRINT>& dep_mems)
 {
   // restore the current trace
-  explored_trace = current_ptr_checkpoint->trace;
-  explored_trace.pop_back();
+//  explored_trace = current_ptr_checkpoint->trace;
+//  explored_trace.pop_back();
 
   current_execution_order = current_ptr_checkpoint->execution_order;
   current_execution_order--;

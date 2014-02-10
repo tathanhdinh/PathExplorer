@@ -104,18 +104,13 @@ void journal_explored_trace(const std::string& filename)
   std::ofstream out_file(filename.c_str(), 
                          std::ofstream::out | std::ofstream::trunc);
 
-  std::vector<ADDRINT>::iterator trace_iter = explored_trace.begin();
-  for (; trace_iter != explored_trace.end(); ++trace_iter) 
-  {
-    out_file << boost::format("%-15s %-50s\n")
-                  % remove_leading_zeros(StringFromAddrint(*trace_iter)) 
-                      % addr_ins_static_map[*trace_iter]->disassembled_name;
-
-//    std::map<ADDRINT, UINT8>::iterator mem_access_iter;
-//    out_file << boost::format("(R: %i   W: %i)\n")
-//                  % addr_ins_static_map[*trace_iter].mem_read_size
-//                  % addr_ins_static_map[*trace_iter].mem_written_size;
-  }
+//  std::vector<ADDRINT>::iterator trace_iter = explored_trace.begin();
+//  for (; trace_iter != explored_trace.end(); ++trace_iter)
+//  {
+//    out_file << boost::format("%-15s %-50s\n")
+//                  % remove_leading_zeros(StringFromAddrint(*trace_iter))
+//                      % addr_ins_static_map[*trace_iter]->disassembled_name;
+//  }
   out_file.close();
 
   return;
