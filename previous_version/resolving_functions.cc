@@ -489,7 +489,7 @@ inline void unresolved_branch_takes_new_decision(ADDRINT ins_addr,
   {
     BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
       << boost::format("the branch at %d takes a different decision in forwarding.") 
-          % /*explored_trace.size()*/current_execution_order;
+          % current_execution_order;
 
     PIN_ExitApplication(2);
   }
@@ -517,7 +517,6 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
     // so the unresolved examined_ptr_branch must be the active branch
     if (active_ptr_branch != examined_ptr_branch) 
     {
-      //BOOST_LOG_TRIVIAL(fatal) 
       BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
         << boost::format("in rollback but the tainted (at %d) and the active branch (at %d) are not matched.") 
             % examined_ptr_branch->execution_order % active_ptr_branch->execution_order;
@@ -534,8 +533,7 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
         
         total_rollback_times++;
         local_rollback_times++;
-        rollback_and_modify(active_nearest_checkpoint.first, 
-                                                active_nearest_checkpoint.second);
+        rollback_and_modify(active_nearest_checkpoint.first, active_nearest_checkpoint.second);
       }
       else 
       {
@@ -566,7 +564,6 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
               local_rollback_times = 0;
               
               // then rollback to it
-              //BOOST_LOG_TRIVIAL(trace) 
               BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
                 << boost::format("rollback to the next checkpoint at %d (%s).") 
                     % active_nearest_checkpoint.first->execution_order
@@ -583,7 +580,6 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
             else // cannot get any new nearest checkpoint
             {
               // so bypass this branch
-              //BOOST_LOG_TRIVIAL(trace) 
               BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
               << boost::format("cannot resolve the branch at %d, bypass it") 
                   % active_ptr_branch->execution_order;
@@ -744,11 +740,6 @@ inline void process_input_independent_branch(ADDRINT ins_addr,
     // a re-execution from rollback_with_input_replacement
     if (active_ptr_branch) 
     {
-//       BOOST_LOG_TRIVIAL(warning) 
-//         << boost::format("\033[35mThe branch at %d (%s) is input independent, but takes a new decision.\033[0m") 
-//             % examined_ptr_branch->trace.size() 
-//             % order_ins_dynamic_map[examined_ptr_branch->trace.size()].disass ;
-              
       if (!examined_ptr_branch->is_resolved)
       {
         accept_branch(examined_ptr_branch);
@@ -769,21 +760,17 @@ inline void process_input_independent_branch(ADDRINT ins_addr,
       }
       else // in a re-execution from rollback_with_input_replacement
       {
-        //BOOST_LOG_TRIVIAL(fatal) 
         BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
           << boost::format("the branch at %d takes a new decision in a clean re-execution") 
               % examined_ptr_branch->execution_order;
-        log_sink->flush();
       }
     }
     else // active_ptr_branch is disabled, namely in forwarding
     {
       // but new taken found
-      //BOOST_LOG_TRIVIAL(fatal) 
       BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
         << boost::format("the branch at %d takes a new decision in forwarding.") 
             % examined_ptr_branch->execution_order;
-      log_sink->flush();
 
       PIN_ExitApplication(0);
     }
@@ -798,7 +785,6 @@ inline void log_input(ADDRINT ins_addr, bool br_taken)
 {
   std::map<UINT32, ptr_branch_t>::iterator order_ptr_branch_iter;
   
-//  order_ptr_branch_iter = order_tainted_ptr_branch_map.find(explored_trace.size());
   order_ptr_branch_iter = order_tainted_ptr_branch_map.find(current_execution_order);
   if (order_ptr_branch_iter != order_tainted_ptr_branch_map.end()) 
   {
@@ -809,13 +795,11 @@ inline void log_input(ADDRINT ins_addr, bool br_taken)
   }
   else 
   {
-    //BOOST_LOG_TRIVIAL(fatal)
     BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
-      << boost::format("%s: the branch at %d (%s: %s) cannot found")
-          % __FUNCTION__ /*% explored_trace.size()*/ % current_execution_order
+      << boost::format("the branch at %d (%s: %s) cannot found")
+          % current_execution_order
           % remove_leading_zeros(StringFromAddrint(ins_addr)) 
           % addr_ins_static_map[ins_addr]->disassembled_name;
-    log_sink->flush();
 
     PIN_ExitApplication(0);
   }
@@ -827,18 +811,11 @@ inline void log_input(ADDRINT ins_addr, bool br_taken)
 
 VOID resolving_cond_branch_analyzer(ADDRINT ins_addr, bool br_taken)
 {
-  /*BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-    << boost::format("met a branch at %d (%s: %s)")
-        % explored_trace.size()
-        % remove_leading_zeros(StringFromAddrint(ins_addr))
-        % addr_ins_static_map[ins_addr].disass;*/
-
   log_input(ins_addr, br_taken);
   
   std::map<UINT32, ptr_branch_t>::iterator order_ptr_branch_iter;
   
   // search in the list of input dependent branches
-//  order_ptr_branch_iter = order_input_dep_ptr_branch_map.find(explored_trace.size());
   order_ptr_branch_iter = order_input_dep_ptr_branch_map.find(current_execution_order);
   if (order_ptr_branch_iter != order_input_dep_ptr_branch_map.end()) 
   {
@@ -848,7 +825,6 @@ VOID resolving_cond_branch_analyzer(ADDRINT ins_addr, bool br_taken)
   else 
   {
     // search in the list of input independent branches
-//    order_ptr_branch_iter = order_input_indep_ptr_branch_map.find(explored_trace.size());
     order_ptr_branch_iter = order_input_indep_ptr_branch_map.find(current_execution_order);
     if (order_ptr_branch_iter != order_input_indep_ptr_branch_map.end()) 
     {
@@ -860,7 +836,7 @@ VOID resolving_cond_branch_analyzer(ADDRINT ins_addr, bool br_taken)
       //BOOST_LOG_TRIVIAL(fatal) 
       BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
         << boost::format("the branch at %d (%s: %s) cannot found")
-           /*% explored_trace.size()*/ % current_execution_order
+           % current_execution_order
            % remove_leading_zeros(StringFromAddrint(ins_addr))
            % addr_ins_static_map[ins_addr]->disassembled_name;
 
