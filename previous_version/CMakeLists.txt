@@ -21,7 +21,6 @@ ADD_PINTOOL(path_explorer
   resolving_functions.cc 
   logging_functions.cc 
   tainting_functions.cc 
-  analysis_functions.cc 
   instrumentation_functions.cc 
   stuffs.cc)
 

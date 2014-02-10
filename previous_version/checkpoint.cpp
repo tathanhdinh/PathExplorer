@@ -1,51 +1,35 @@
 #include "checkpoint.h"
 
-#include <boost/format.hpp>
-#include <boost/log/trivial.hpp>
+//#include <boost/format.hpp>
+//#include <boost/log/trivial.hpp>
 
 #include <limits>
 #include <cstdlib>
 #include <ctime>
 #include <map>
 
+#include <boost/random.hpp>
+
 #include "stuffs.h"
 
-extern ADDRINT                  received_msg_addr;
-extern UINT32                   received_msg_size;
-extern std::vector<ADDRINT>     explored_trace;
-extern UINT32                   current_execution_order;
-//extern std::map< ADDRINT,
-//                 instruction >  addr_ins_static_map;
+extern ADDRINT                                received_msg_addr;
+extern UINT32                                 received_msg_size;
+//extern std::vector<ADDRINT>                   explored_trace;
+extern UINT32                                 current_execution_order;
+
+namespace bran = boost::random;
+extern bran::taus88                           rgen;
+extern bran::uniform_int_distribution<UINT8>  uint8_uniform;
 
 /*================================================================================================*/
 
-//checkpoint::checkpoint()
-//{
-//  std::map<ADDRINT, UINT8>().swap(this->mem_read_log);
-//  std::map<ADDRINT, UINT8>().swap(this->mem_written_log);
-
-//  std::set<ADDRINT>().swap(this->dep_mems);
-
-//  this->rollback_times = 0;
-//}
-
-/*================================================================================================*/
-
-checkpoint::checkpoint(ADDRINT ip_addr, CONTEXT* p_ctxt, 
-//                       const std::vector<ADDRINT>& current_trace,
+checkpoint::checkpoint(ADDRINT ip_addr, CONTEXT* p_ctxt,
                        ADDRINT mem_read_addr, UINT32 mem_read_size)
 {
   this->addr = ip_addr;
   this->ptr_ctxt.reset(new CONTEXT);
   PIN_SaveContext(p_ctxt, this->ptr_ctxt.get());
 
-//   this->ptr_ctxt.reset(new_ptr_ctxt);
-
-//   std::map<ADDRINT, UINT8>().swap(this->mem_read_log);
-//   std::map<ADDRINT, UINT8>().swap(this->mem_written_log);
-
-//  this->trace = current_trace;
-//  this->trace = explored_trace;
   this->execution_order = current_execution_order;
 
   for (UINT32 idx = 0; idx < mem_read_size; ++idx)
@@ -63,24 +47,6 @@ checkpoint::checkpoint(ADDRINT ip_addr, CONTEXT* p_ctxt,
   PIN_SafeCopy(this->curr_input.get(), 
                reinterpret_cast<UINT8*>(received_msg_addr), received_msg_size);
 }
-
-/*================================================================================================*/
-
-//checkpoint& checkpoint::operator=(checkpoint const& other_chkpnt)
-//{
-//  this->addr            = other_chkpnt.addr;
-//  this->ptr_ctxt        = other_chkpnt.ptr_ctxt;
-
-//  this->mem_read_log    = other_chkpnt.mem_read_log;
-//  this->mem_written_log = other_chkpnt.mem_written_log;
-
-//  this->dep_mems        = other_chkpnt.dep_mems;
-//  this->trace           = other_chkpnt.trace;
-
-//  this->rollback_times  = other_chkpnt.rollback_times;
-
-//  return *this;
-//}
 
 /*================================================================================================*/
 
@@ -165,7 +131,7 @@ void rollback_and_restore(ptr_checkpoint_t& dest_ptr_checkpoint, UINT8* backup_i
   return;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 void rollback_and_modify(ptr_checkpoint_t& current_ptr_checkpoint,
                                              std::set<ADDRINT>& dep_mems)
@@ -179,8 +145,9 @@ void rollback_and_modify(ptr_checkpoint_t& current_ptr_checkpoint,
 
   // restore written memories
   UINT8 single_byte;
-  std::map<ADDRINT, UINT8>::iterator mem_map_iter = current_ptr_checkpoint->mem_written_log.begin();
-  for (; mem_map_iter != current_ptr_checkpoint->mem_written_log.end(); ++mem_map_iter)
+  std::map<ADDRINT, UINT8>::iterator mem_map_iter;
+  for (mem_map_iter = current_ptr_checkpoint->mem_written_log.begin();
+       mem_map_iter != current_ptr_checkpoint->mem_written_log.end(); ++mem_map_iter)
   {
      single_byte = mem_map_iter->second;
      PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_map_iter->first), &single_byte, 1);
@@ -192,8 +159,9 @@ void rollback_and_modify(ptr_checkpoint_t& current_ptr_checkpoint,
   std::set<ADDRINT>::iterator mem_set_iter = dep_mems.begin();
   for (; mem_set_iter != dep_mems.end(); ++mem_set_iter)
   {
-     single_byte = rand() % std::numeric_limits<UINT8>::max();
-     PIN_SafeCopy(reinterpret_cast<UINT8*>(*mem_set_iter), &single_byte, 1);
+//     single_byte = rand() % std::numeric_limits<UINT8>::max();
+    single_byte = uint8_uniform(rgen);
+    PIN_SafeCopy(reinterpret_cast<UINT8*>(*mem_set_iter), &single_byte, 1);
     //*(reinterpret_cast<UINT8*>(*mem_set_iter)) = rand() % std::numeric_limits<UINT8>::max();
   }
 

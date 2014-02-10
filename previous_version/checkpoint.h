@@ -3,13 +3,12 @@
 
 #include <pin.H>
 
-#include <vector>
+//#include <vector>
 #include <map>
 #include <set>
 
 #include <boost/shared_ptr.hpp>
 
-//#include "instruction.h"
 
 /*================================================================================================*/
                 
@@ -26,18 +25,14 @@ public:
   
   std::set<ADDRINT>           dep_mems;
   
-//  std::vector<ADDRINT>        trace;
   UINT32                      execution_order;
   
   UINT32                      rollback_times;
     
 public:
-//  checkpoint();
-  checkpoint(ADDRINT ip_addr, CONTEXT* new_ptr_ctxt, /*const std::vector<ADDRINT>& current_trace,*/
+  checkpoint(ADDRINT ip_addr, CONTEXT* new_ptr_ctxt,
              ADDRINT msg_read_addr, UINT32 msg_read_size); 
-  
-//  checkpoint& operator=(checkpoint const& other_chkpnt);
-  
+    
   void mem_written_logging(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length);
 //   void mem_read_logging(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length);
   
@@ -52,7 +47,6 @@ class ptr_checkpoint_less
 public:
   bool operator()(ptr_checkpoint_t const& a, ptr_checkpoint_t const& b)
   {
-//    return (a->trace.size() < b->trace.size());
     return (a->execution_order < b->execution_order);
   }
 };

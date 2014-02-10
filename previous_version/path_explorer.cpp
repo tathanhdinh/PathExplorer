@@ -13,6 +13,7 @@
 
 #include <boost/predef.h>
 #include <boost/timer.hpp>
+#include <boost/random.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/format.hpp>
@@ -31,7 +32,8 @@
 #include "variable.h"
 #include "branch.h"
 #include "instrumentation_functions.h"
-#include "analysis_functions.h"
+#include "logging_functions.h"
+//#include "analysis_functions.h"
 
 extern "C" 
 {
@@ -109,6 +111,9 @@ typedef logging::trivial::severity_level        log_level;
 sources::severity_logger<log_level>             log_instance;
 boost::shared_ptr<sink_file_backend>            log_sink;
 
+namespace bran = boost::random;
+bran::taus88                                    rgen(static_cast<unsigned int>(std::time(0)));
+bran::uniform_int_distribution<UINT8>           uint8_uniform;
 
 /* ---------------------------------------------------------------------------------------------- */
 /*                                         input handler functions                                */
