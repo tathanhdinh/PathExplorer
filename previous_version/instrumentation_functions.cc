@@ -22,7 +22,6 @@
 #include "stuffs.h"
 #include "branch.h"
 #include "instruction.h"
-#include "analysis_functions.h"
 #include "tainting_functions.h"
 #include "resolving_functions.h"
 #include "logging_functions.h"
@@ -60,23 +59,9 @@ extern boost::shared_ptr<sink_file_backend>     log_sink;
 VOID ins_instrumenter(INS ins, VOID *data)
 {
   // logging the parsed instructions statically
-  ADDRINT ins_addr = INS_Address(ins);
+//  ADDRINT ins_addr = INS_Address(ins);
   ptr_instruction_t new_instruction(new instruction(ins));
-  addr_ins_static_map[ins_addr] = new_instruction;
-
-  /*BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << boost::format("%-15s %-35s %s")
-    % remove_leading_zeros(StringFromAddrint(ins_addr)) 
-    % addr_ins_static_map[ins_addr].disass 
-    % addr_ins_static_map[ins_addr].contained_function;*/
-  //log_sink->flush();
-
-  /*INS_InsertPredicatedCall(ins, IPOINT_BEFORE, 
-                           (AFUNPTR)instruction_execution_simple_logger,
-                           IARG_INST_PTR,
-                           IARG_END);*/
-
-//   addr_ins_static_map[ins_addr].contained_image = contained_image_name(ins_addr);
-
+  addr_ins_static_map[new_instruction->address] = new_instruction;
   if (
       false
 //       || INS_IsCall(ins)
@@ -89,12 +74,6 @@ VOID ins_instrumenter(INS ins, VOID *data)
   } 
   else 
   {
-    /*BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << boost::format("%-15s %-35s %s %d")
-      % remove_leading_zeros(StringFromAddrint(ins_addr))
-      % addr_ins_static_map[ins_addr].disass
-      % addr_ins_static_map[ins_addr].contained_function % received_msg_num;
-    log_sink->flush();*/
-
     if (received_msg_num == 1) 
     {
       if (!start_ptr_time) 
@@ -105,11 +84,7 @@ VOID ins_instrumenter(INS ins, VOID *data)
       if (in_tainting) 
       {
         /* START LOGGING */
-        /*BOOST_LOG_SEV(log_instance, boost::log::trivial::info) 
-          << "instruction tainting activated";
-        log_sink->flush();*/
-
-        if (INS_IsSyscall(ins))
+        if (/*INS_IsSyscall(ins)*/new_instruction->is_syscall)
         {
           INS_InsertPredicatedCall(ins, IPOINT_BEFORE, 
                                    (AFUNPTR)logging_syscall_instruction_analyzer,
@@ -124,7 +99,7 @@ VOID ins_instrumenter(INS ins, VOID *data)
                                    IARG_INST_PTR,
                                    IARG_END);
 
-          if (addr_ins_static_map[ins_addr]->is_cbranch/* == XED_CATEGORY_COND_BR*/)
+          if (new_instruction->is_cbranch)
           {
             // conditional branch logging
             INS_InsertPredicatedCall(ins, IPOINT_BEFORE, 
@@ -203,7 +178,7 @@ VOID ins_instrumenter(INS ins, VOID *data)
         }
         
         // note that conditional branches are always direct
-        if (addr_ins_static_map[ins_addr]->is_cbranch/*.category == XED_CATEGORY_COND_BR*/)
+        if (/*addr_ins_static_map[ins_addr]*/new_instruction->is_cbranch/*.category == XED_CATEGORY_COND_BR*/)
         {
           INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
                                    (AFUNPTR)resolving_cond_branch_analyzer,
