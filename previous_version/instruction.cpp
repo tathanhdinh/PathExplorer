@@ -55,6 +55,8 @@ instruction::instruction(const INS& ins)
   this->is_mem_read           = INS_IsMemoryRead(ins);
   this->is_mem_write          = INS_IsMemoryWrite(ins);
   this->is_cbranch            = (INS_Category(ins) == XED_CATEGORY_COND_BR);
+  this->is_indirect_cf        = INS_IsIndirectBranchOrCall(ins);
+
   this->has_mem_read2         = INS_HasMemoryRead2(ins);
 
   UINT32        register_id, register_num;

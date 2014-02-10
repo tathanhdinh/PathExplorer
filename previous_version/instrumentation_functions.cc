@@ -30,7 +30,6 @@
 
 extern std::map<ADDRINT, ptr_instruction_t>     addr_ins_static_map;
 extern bool                                     in_tainting;
-//extern map_ins_io                               dta_inss_io;
 extern UINT32                                   received_msg_num;
 
 namespace btime = boost::posix_time;
@@ -58,144 +57,146 @@ extern boost::shared_ptr<sink_file_backend>     log_sink;
  */
 VOID ins_instrumenter(INS ins, VOID *data)
 {
-  // logging the parsed instructions statically
-//  ADDRINT ins_addr = INS_Address(ins);
-  ptr_instruction_t new_instruction(new instruction(ins));
-  addr_ins_static_map[new_instruction->address] = new_instruction;
-  if (
-      false
-//       || INS_IsCall(ins)
-//       || INS_IsSyscall(ins)
-//       || INS_IsSysret(ins)
-//       || INS_IsNop(ins)
-    ) 
+//  if (
+//      false
+////       || INS_IsCall(ins)
+////       || INS_IsSyscall(ins)
+////       || INS_IsSysret(ins)
+////       || INS_IsNop(ins)
+//    )
+//  {
+//    // omit these instructions
+//  }
+//  else
+//  {
+//    //
+//  }
+
+  if (received_msg_num == 1)
   {
-    // omit these instructions
-  } 
-  else 
-  {
-    if (received_msg_num == 1) 
+    // logging the parsed instructions statically
+    ptr_instruction_t examined_ins(new instruction(ins));
+    addr_ins_static_map[examined_ins->address] = examined_ins;
+
+    if (!start_ptr_time)
     {
-      if (!start_ptr_time) 
+      start_ptr_time.reset(new btime::ptime(btime::microsec_clock::local_time()));
+    }
+
+    if (in_tainting)
+    {
+      /* START LOGGING */
+      if (examined_ins->is_syscall)
       {
-        start_ptr_time.reset(new btime::ptime(btime::microsec_clock::local_time()));
+        INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
+                                 (AFUNPTR)logging_syscall_instruction_analyzer,
+                                 IARG_INST_PTR,
+                                 IARG_END);
       }
-
-      if (in_tainting) 
+      else
       {
-        /* START LOGGING */
-        if (/*INS_IsSyscall(ins)*/new_instruction->is_syscall)
-        {
-          INS_InsertPredicatedCall(ins, IPOINT_BEFORE, 
-                                   (AFUNPTR)logging_syscall_instruction_analyzer,
-                                   IARG_INST_PTR,
-                                   IARG_END);
-        } 
-        else 
-        {
-          // general logging
-          INS_InsertPredicatedCall(ins, IPOINT_BEFORE, 
-                                   (AFUNPTR)logging_general_instruction_analyzer,
-                                   IARG_INST_PTR,
-                                   IARG_END);
-
-          if (new_instruction->is_cbranch)
-          {
-            // conditional branch logging
-            INS_InsertPredicatedCall(ins, IPOINT_BEFORE, 
-                                     (AFUNPTR)logging_cond_br_analyzer,
-                                     IARG_INST_PTR,
-                                     IARG_BRANCH_TAKEN,
-                                     IARG_END);
-          } 
-          else 
-          {
-            if (INS_IsMemoryRead(ins)) 
-            {
-              // memory read logging
-              INS_InsertPredicatedCall(ins, IPOINT_BEFORE, 
-                                       (AFUNPTR)logging_mem_read_instruction_analyzer,
-                                       IARG_INST_PTR,
-                                       IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE,
-                                       IARG_CONTEXT,
-                                       IARG_END);
-
-              if (INS_HasMemoryRead2(ins))
-              {
-                // memory read2 (e.g. cmpsb instruction)
-                INS_InsertPredicatedCall(ins, IPOINT_BEFORE, 
-                                         (AFUNPTR)logging_mem_read2_instruction_analyzer, 
-                                         IARG_INST_PTR, 
-                                         IARG_MEMORYREAD2_EA, IARG_MEMORYREAD_SIZE, 
-                                         IARG_CONTEXT, 
-                                         IARG_END);
-              }
-            }
-
-            if (INS_IsMemoryWrite(ins)) 
-            {
-              // memory written logging
-              INS_InsertPredicatedCall(ins, IPOINT_BEFORE, 
-                                       (AFUNPTR)logging_mem_write_instruction_analyzer,
-                                       IARG_INST_PTR,
-                                       IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE,
-                                       IARG_END );
-            }
-          }
-        }
-
-        /* START TAINTING */
-        INS_InsertPredicatedCall(ins, IPOINT_BEFORE, 
-                                 (AFUNPTR)tainting_general_instruction_analyzer,
+        // general logging
+        INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
+                                 (AFUNPTR)logging_general_instruction_analyzer,
                                  IARG_INST_PTR,
-                                 IARG_END );
-      } 
-      else // in rollbacking 
-      { 
-        /* START RESOLVING */
-        INS_InsertPredicatedCall(ins, IPOINT_BEFORE, 
-                                 (AFUNPTR)resolving_ins_count_analyzer,
-                                 IARG_INST_PTR,
-                                 IARG_END );
+                                 IARG_END);
 
-        if (INS_IsMemoryRead(ins)) 
+        if (examined_ins->is_cbranch)
         {
-  //           INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)resolving_mem_to_st_analyzer,
-  //                                    IARG_INST_PTR,
-  //                                    IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE,
-  //                                    IARG_END);
-        } 
-        else 
-        {
-          if (INS_IsMemoryWrite(ins)) 
-          {
-            INS_InsertPredicatedCall(ins, IPOINT_BEFORE, 
-                                     (AFUNPTR)resolving_st_to_mem_analyzer,
-                                     IARG_INST_PTR,
-                                     IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE,
-                                     IARG_END);
-          }
-        }
-        
-        // note that conditional branches are always direct
-        if (/*addr_ins_static_map[ins_addr]*/new_instruction->is_cbranch/*.category == XED_CATEGORY_COND_BR*/)
-        {
+          // conditional branch logging
           INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
-                                   (AFUNPTR)resolving_cond_branch_analyzer,
+                                   (AFUNPTR)logging_cond_br_analyzer,
                                    IARG_INST_PTR,
                                    IARG_BRANCH_TAKEN,
                                    IARG_END);
         }
-        else 
+        else
         {
-          if (INS_IsIndirectBranchOrCall(ins)) 
+          if (examined_ins->is_mem_read)
           {
-            INS_InsertPredicatedCall(ins, IPOINT_BEFORE, 
-                                     (AFUNPTR)resolving_indirect_branch_call_analyzer, 
-                                     IARG_INST_PTR, 
-                                     IARG_BRANCH_TARGET_ADDR, 
+            // memory read logging
+            INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
+                                     (AFUNPTR)logging_mem_read_instruction_analyzer,
+                                     IARG_INST_PTR,
+                                     IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE,
+                                     IARG_CONTEXT,
                                      IARG_END);
+
+            if (examined_ins->has_mem_read2)
+            {
+              // memory read2 (e.g. rep cmpsb instruction)
+              INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
+                                       (AFUNPTR)logging_mem_read2_instruction_analyzer,
+                                       IARG_INST_PTR,
+                                       IARG_MEMORYREAD2_EA, IARG_MEMORYREAD_SIZE,
+                                       IARG_CONTEXT,
+                                       IARG_END);
+            }
           }
+
+          if (examined_ins->is_mem_write)
+          {
+            // memory written logging
+            INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
+                                     (AFUNPTR)logging_mem_write_instruction_analyzer,
+                                     IARG_INST_PTR,
+                                     IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE,
+                                     IARG_END );
+          }
+        }
+      }
+
+      /* START TAINTING */
+      INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
+                               (AFUNPTR)tainting_general_instruction_analyzer,
+                               IARG_INST_PTR,
+                               IARG_END );
+    }
+    else // in rollbacking
+    {
+      /* START RESOLVING */
+      INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
+                               (AFUNPTR)resolving_ins_count_analyzer,
+                               IARG_INST_PTR,
+                               IARG_END );
+
+      if (examined_ins->is_mem_read)
+      {
+//           INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)resolving_mem_to_st_analyzer,
+//                                    IARG_INST_PTR,
+//                                    IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE,
+//                                    IARG_END);
+      }
+      else
+      {
+        if (examined_ins->is_mem_write)
+        {
+          INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
+                                   (AFUNPTR)resolving_st_to_mem_analyzer,
+                                   IARG_INST_PTR,
+                                   IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE,
+                                   IARG_END);
+        }
+      }
+
+      // note that conditional branches are always direct
+      if (examined_ins->is_cbranch)
+      {
+        INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
+                                 (AFUNPTR)resolving_cond_branch_analyzer,
+                                 IARG_INST_PTR,
+                                 IARG_BRANCH_TAKEN,
+                                 IARG_END);
+      }
+      else
+      {
+        if (INS_IsIndirectBranchOrCall(ins))
+        {
+          INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
+                                   (AFUNPTR)resolving_indirect_branch_call_analyzer,
+                                   IARG_INST_PTR,
+                                   IARG_BRANCH_TARGET_ADDR,
+                                   IARG_END);
         }
       }
     }

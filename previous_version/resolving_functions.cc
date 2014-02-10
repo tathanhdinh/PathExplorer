@@ -95,82 +95,38 @@ VOID resolving_ins_count_analyzer(ADDRINT ins_addr)
 
   executed_ins_number++;
 
-  if (addr_ins_static_map[ins_addr]->has_mem_read2)
+  if (order_ins_dynamic_map[current_execution_order]->address == ins_addr)
   {
-//     std::set<ADDRINT>::iterator addr_iter;
-//     for (addr_iter = order_ins_dynamic_map[explored_trace.size()].src_mems.begin();
-//       addr_iter != order_ins_dynamic_map[explored_trace.size()].src_mems.end(); ++addr_iter)
-//     {
-//       BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-//         << boost::format("%s %d")
-//         % remove_leading_zeros(StringFromAddrint(*addr_iter)) 
-//         % *(reinterpret_cast<UINT8*>(*addr_iter));
-//     }
-  }
-
-  if (/*(order_ins_dynamic_map[explored_trace.size()]->address == ins_addr) &&*/
-      order_ins_dynamic_map[current_execution_order]->address == ins_addr)
-  {
-    /*BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-      << boost::format("instruction at %d (%s: %s) will be executed")
-      % explored_trace.size()
-      % remove_leading_zeros(StringFromAddrint(ins_addr))
-      % addr_ins_static_map[ins_addr].disass;*/
+    // do nothing
   }
   else
   {
     if (local_rollback_times < max_local_rollback)
     {
-      /*BOOST_LOG_SEV(log_instance, boost::log::trivial::info) 
-        << boost::format("random-rollback from %d (%s: %s) to %d (%s: %s)")
-        % explored_trace.size()
-        % remove_leading_zeros(StringFromAddrint(ins_addr))
-        % addr_ins_static_map[ins_addr].disass
-        % active_nearest_checkpoint.first->trace.size()
-        % remove_leading_zeros(StringFromAddrint(active_nearest_checkpoint.first->addr))
-        % addr_ins_static_map[active_nearest_checkpoint.first->addr].disass;*/
-
       // the original trace will be lost if go further, so rollback
       total_rollback_times++;
       local_rollback_times++;
-      rollback_and_modify(active_nearest_checkpoint.first, 
-                                              active_nearest_checkpoint.second);
+      rollback_and_modify(active_nearest_checkpoint.first, active_nearest_checkpoint.second);
     }
     else
     {
       if (local_rollback_times > max_local_rollback + 1)
       {
-        BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-          << "stop because of unknow bug";
+        BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "stop because of unknow bug";
         PIN_ExitApplication(0);
       }
 
-      /*BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-        << boost::format("replace-rollback from %d (%s: %s) to %d (%s: %s)")
-        % explored_trace.size()
-        % remove_leading_zeros(StringFromAddrint(ins_addr))
-        % addr_ins_static_map[ins_addr].disass
-        % active_nearest_checkpoint.first->trace.size()
-        % remove_leading_zeros(StringFromAddrint(active_nearest_checkpoint.first->addr))
-        % addr_ins_static_map[active_nearest_checkpoint.first->addr].disass;*/
-
       // back to the original trace
       local_rollback_times++;
-      /*std::cerr << "first value of the stored buffer at branch " << active_ptr_branch->trace.size() << " : "
-        << active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get()[0] << "\n";*/
-      rollback_and_restore(active_nearest_checkpoint.first, 
-                                      active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());
-      /*rollback_with_input_replacement(saved_ptr_checkpoints[0], 
-                                      active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());*/
+      rollback_and_restore(active_nearest_checkpoint.first,
+                           active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());
     }
   }
-
   
-  //log_sink->flush();
   return;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 // memory read
 VOID resolving_mem_to_st_analyzer(ADDRINT ins_addr, 
                                   ADDRINT mem_read_addr, 
@@ -179,7 +135,7 @@ VOID resolving_mem_to_st_analyzer(ADDRINT ins_addr,
   return;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 // memory written
 VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr, 
                                   ADDRINT mem_written_addr, 
@@ -202,10 +158,9 @@ VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr,
   }
   else // in forwarding
   {
-    std::vector<ptr_checkpoint_t>::iterator 
-//      ptr_checkpoint_iter = exepoint_checkpoints_map[explored_trace.size()].begin();
-    ptr_checkpoint_iter = exepoint_checkpoints_map[current_execution_order].begin();
-    for (; ptr_checkpoint_iter != exepoint_checkpoints_map[current_execution_order/*explored_trace.size()*/].end();
+    std::vector<ptr_checkpoint_t>::iterator
+        ptr_checkpoint_iter = exepoint_checkpoints_map[current_execution_order].begin();
+    for (; ptr_checkpoint_iter != exepoint_checkpoints_map[current_execution_order].end();
          ++ptr_checkpoint_iter)
     {
       (*ptr_checkpoint_iter)->mem_written_logging(ins_addr, mem_written_addr, mem_written_size);
@@ -221,12 +176,6 @@ inline void prepare_new_tainting_phase(ptr_branch_t& unexplored_ptr_branch)
 {
   in_tainting = true;
   exploring_ptr_branch = unexplored_ptr_branch;
-
-//   vdep_graph().swap(dta_graph);
-//   std::vector<ptr_branch>().swap(input_dep_ptr_branches);
-//   std::vector<ptr_branch>().swap(input_indep_ptr_branches);
-//   std::vector<ptr_checkpoint>().swap(saved_ptr_checkpoints);
-//   std::map< UINT32, std::vector<ptr_checkpoint> >().swap(exepoint_checkpoints_map);
   
   master_ptr_checkpoint = *saved_ptr_checkpoints.begin();
 
@@ -252,7 +201,6 @@ inline void prepare_new_tainting_phase(ptr_branch_t& unexplored_ptr_branch)
   
   local_rollback_times = 0; 
   
-//  std::cout << "hahahah\n";
   return;
 }
 
@@ -933,8 +881,7 @@ VOID resolving_cond_branch_analyzer(ADDRINT ins_addr, bool br_taken)
  */
 VOID resolving_indirect_branch_call_analyzer(ADDRINT ins_addr, ADDRINT target_addr)
 {
-  if (/*(order_ins_dynamic_map[explored_trace.size() + 1]->address != target_addr) &&*/
-      (order_ins_dynamic_map[current_execution_order + 1]->address != target_addr))
+  if (order_ins_dynamic_map[current_execution_order + 1]->address != target_addr)
   {
     // active_ptr_branch is enabled, namely in some rollback
     if (active_ptr_branch) 
@@ -945,15 +892,13 @@ VOID resolving_indirect_branch_call_analyzer(ADDRINT ins_addr, ADDRINT target_ad
       // the original trace will lost if go further, so rollback
       total_rollback_times++;
       local_rollback_times++;
-      rollback_and_modify(active_nearest_checkpoint.first, 
-                                              active_nearest_checkpoint.second);
+      rollback_and_modify(active_nearest_checkpoint.first, active_nearest_checkpoint.second);
     }
     else // active_ptr_branch is empty, namely in forwarding, but new target found
     {
-      //BOOST_LOG_TRIVIAL(fatal) 
       BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
-        << boost::format("the indirect branch at %d takes a different decision in forwarding.")
-            /*% explored_trace.size()*/ % current_execution_order;
+        << boost::format("the indirect branch at %d takes a different decision in forwarding")
+           % current_execution_order;
       PIN_ExitApplication(0);
     }    
   }

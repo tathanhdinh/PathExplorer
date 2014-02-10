@@ -38,6 +38,7 @@ public:
   bool                is_mem_write;
   bool                is_mapped_from_kernel;
   bool                is_cbranch;
+  bool                is_indirect_cf;
   bool                has_mem_read2;
 
   std::set<ptr_operand_t> src_operands;
