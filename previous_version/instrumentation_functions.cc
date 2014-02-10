@@ -5,6 +5,7 @@
 #include <map>
 #include <set>
 
+#include <boost/predef.h>
 #include <boost/timer.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/shared_ptr.hpp>
@@ -237,7 +238,7 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
   BOOST_LOG_SEV(log_instance, logging::trivial::info) 
     << boost::format("module %s loaded") % loaded_image_path.filename();
 
-#if defined(_WIN32) || defined(_WIN64)
+#if BOOST_OS_WINDOWS
   // verify whether the winsock2 module is loaded
   const static std::string winsock_dll_name("WS2_32.dll");
   if (loaded_image_path.filename() == winsock_dll_name)

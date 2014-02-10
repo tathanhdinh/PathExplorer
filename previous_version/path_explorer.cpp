@@ -11,6 +11,7 @@
 #include <iostream>
 #include <limits>
 
+#include <boost/predef.h>
 #include <boost/timer.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/shared_ptr.hpp>
@@ -242,7 +243,7 @@ int main(int argc, char *argv[])
     BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "activate instruction instrumenters";
     INS_AddInstrumentFunction(ins_instrumenter, 0);
 
-#if defined(__linux__)
+#if BOOST_OS_LINUX
     PIN_AddSyscallEntryFunction(syscall_entry_analyzer, 0);
     PIN_AddSyscallExitFunction(syscall_exit_analyzer, 0);
 #elif

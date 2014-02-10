@@ -3,6 +3,7 @@
 #include <iostream>
 #include <map>
 
+#include <boost/predef.h>
 #include <boost/format.hpp>
 #include <boost/log/trivial.hpp>
 
@@ -24,20 +25,11 @@ extern KNOB<BOOL>   print_debug_text;
 
 extern UINT32       max_trace_size;
 
-/*====================================================================================================================*/
+#if defined(BOOST_OS_LINUX)
+/*================================================================================================*/
 
-//VOID unhandled_analyzer(ADDRINT ins_addr, UINT32 dst_opr_id, UINT32 src_opr_id)
-//{
-//  std::cerr << addr_ins_static_map[ins_addr].disass;
-//
-//  std::cerr << "\t\e[1;31m(unhandled instruction).";
-//  std::cerr << "\n\e[0m";
-//  return;
-//}
-
-/*====================================================================================================================*/
-
-VOID syscall_entry_analyzer(THREADID thread_id, CONTEXT* p_ctxt, SYSCALL_STANDARD syscall_std, VOID *data)
+VOID syscall_entry_analyzer(THREADID thread_id,
+                            CONTEXT* p_ctxt, SYSCALL_STANDARD syscall_std, VOID *data)
 {
   if (received_msg_num == 0) 
   {
@@ -83,3 +75,4 @@ VOID syscall_exit_analyzer(THREADID thread_id,
 
   return;
 }
+#endif

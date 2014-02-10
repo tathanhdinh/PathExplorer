@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <set>
+#include <map>
 
 #include <boost/shared_ptr.hpp>
 
@@ -50,8 +51,8 @@ public:
   
 public:
   branch(ADDRINT ins_addr, bool br_taken);
-  branch(const branch& other);
-  branch& operator=(const branch& other);
+//  branch(const branch& other);
+//  branch& operator=(const branch& other);
   bool operator==(const branch& other);
 };
 

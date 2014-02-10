@@ -542,7 +542,7 @@ VOID logging_cond_br_analyzer(ADDRINT ins_addr, bool br_taken)
 }
 
 /*================================================================================================*/
-#if defined(_WIN32) || defined(_WIN64)
+#if BOOST_OS_WINDOWS
 static bool function_has_been_called = false;
 VOID logging_before_recv_functions_analyzer(ADDRINT msg_addr)
 {
