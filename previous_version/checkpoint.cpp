@@ -13,6 +13,7 @@
 extern ADDRINT                  received_msg_addr;
 extern UINT32                   received_msg_size;
 extern std::vector<ADDRINT>     explored_trace;
+extern UINT32                   current_execution_order;
 //extern std::map< ADDRINT,
 //                 instruction >  addr_ins_static_map;
 
@@ -45,6 +46,7 @@ checkpoint::checkpoint(ADDRINT ip_addr, CONTEXT* p_ctxt,
 
 //  this->trace = current_trace;
   this->trace = explored_trace;
+  this->execution_order = current_execution_order;
 
   for (UINT32 idx = 0; idx < mem_read_size; ++idx)
   {
@@ -123,12 +125,15 @@ void checkpoint::mem_written_logging(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 
 void rollback_and_restore(ptr_checkpoint_t& dest_ptr_checkpoint, UINT8* backup_input_addr)
 {
   // restore the input
-  PIN_SafeCopy(reinterpret_cast<UINT8*>(received_msg_addr), 
+  PIN_SafeCopy(reinterpret_cast<UINT8*>(received_msg_addr),
                dest_ptr_checkpoint->curr_input.get(), received_msg_size);
 
   // restore the current trace
   explored_trace = dest_ptr_checkpoint->trace;
   explored_trace.pop_back();
+
+  current_execution_order = dest_ptr_checkpoint->execution_order;
+  current_execution_order--;
 
   // restore written memories
    UINT8 single_byte;
@@ -144,7 +149,8 @@ void rollback_and_restore(ptr_checkpoint_t& dest_ptr_checkpoint, UINT8* backup_i
 //   std::map<ADDRINT, UINT8>().swap(dest_ptr_checkpoint->mem_written_log);
 
   // replace input and go back
-  //PIN_SafeCopy(reinterpret_cast<UINT8*>(received_msg_addr), backup_input_addr, received_msg_size);
+  PIN_SafeCopy(reinterpret_cast<UINT8*>(received_msg_addr), backup_input_addr, received_msg_size);
+
   /*std::cout << remove_leading_zeros(StringFromAddrint(received_msg_addr))
     << reinterpret_cast<UINT8*>(backup_input_addr)[0] << std::endl;;*/
 
@@ -167,6 +173,9 @@ void rollback_and_modify(ptr_checkpoint_t& current_ptr_checkpoint,
   // restore the current trace
   explored_trace = current_ptr_checkpoint->trace;
   explored_trace.pop_back();
+
+  current_execution_order = current_ptr_checkpoint->execution_order;
+  current_execution_order--;
 
   // restore written memories
   UINT8 single_byte;

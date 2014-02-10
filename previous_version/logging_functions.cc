@@ -35,6 +35,7 @@ extern UINT32                                   total_rollback_times;
 extern df_diagram                               dta_graph;
 
 extern std::vector<ADDRINT>                     explored_trace;
+extern UINT32                                   current_execution_order;
 
 extern std::map<UINT32, ptr_branch_t>             order_input_dep_ptr_branch_map;
 extern std::map<UINT32, ptr_branch_t>             order_input_indep_ptr_branch_map;
@@ -343,8 +344,8 @@ inline void prepare_new_rollbacking_phase()
 {
   //BOOST_LOG_TRIVIAL(info) 
   BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-    << boost::format("stop exploring, %d instructions analyzed; start detecting checkpoints")
-        % explored_trace.size();
+    << boost::format("stop exploring, %d(%d) instructions analyzed; start detecting checkpoints")
+        % explored_trace.size() % current_execution_order;
   
 //   journal_tainting_graph("tainting_graph.dot");
 //   PIN_ExitApplication(0);
@@ -408,15 +409,19 @@ VOID logging_syscall_instruction_analyzer(ADDRINT ins_addr)
 
 VOID logging_general_instruction_analyzer(ADDRINT ins_addr)
 {
-  if ((explored_trace.size() < max_trace_size) && 
+  if ((explored_trace.size() < max_trace_size) &&
+      (current_execution_order < max_trace_size) &&
       !addr_ins_static_map[ins_addr]->is_mapped_from_kernel)
   {
     explored_trace.push_back(ins_addr);
     order_ins_dynamic_map[explored_trace.size()] = addr_ins_static_map[ins_addr];
 
+    current_execution_order++;
+    order_ins_dynamic_map[current_execution_order] = addr_ins_static_map[ins_addr];
+
     BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-        << boost::format("%-3d %-15s %-50s %-25s %-25s")
-           % explored_trace.size()
+        << boost::format("%-3d(%-3d) %-15s %-50s %-25s %-25s")
+           % explored_trace.size() % current_execution_order
            % remove_leading_zeros(StringFromAddrint(ins_addr))
            % addr_ins_static_map[ins_addr]->disassembled_name
            % addr_ins_static_map[ins_addr]->contained_image
@@ -459,6 +464,7 @@ VOID logging_mem_read_instruction_analyzer(ADDRINT ins_addr,
 //     order_ins_dynamic_map[explored_trace.size()].src_mems.insert(mem_read_addr + idx);
     mem_operand.reset(new operand(mem_read_addr + idx));
     order_ins_dynamic_map[explored_trace.size()]->src_operands.insert(mem_operand);
+    order_ins_dynamic_map[current_execution_order]->src_operands.insert(mem_operand);
   }
 
   return;
@@ -495,6 +501,7 @@ VOID logging_mem_write_instruction_analyzer(ADDRINT ins_addr,
   }
 
   exepoint_checkpoints_map[explored_trace.size()] = saved_ptr_checkpoints;
+  exepoint_checkpoints_map[current_execution_order] = saved_ptr_checkpoints;
 
   ptr_operand_t mem_operand;
   for (UINT32 idx = 0; idx < mem_written_size; ++idx)
@@ -502,6 +509,7 @@ VOID logging_mem_write_instruction_analyzer(ADDRINT ins_addr,
     mem_operand.reset(new operand(mem_written_addr + idx));
 //    order_ins_dynamic_map[explored_trace.size()].dst_mems.insert(mem_written_addr + idx);
     order_ins_dynamic_map[explored_trace.size()]->dst_operands.insert(mem_operand);
+    order_ins_dynamic_map[current_execution_order]->dst_operands.insert(mem_operand);
   }
 
   return;
@@ -525,6 +533,7 @@ VOID logging_cond_br_analyzer(ADDRINT ins_addr, bool br_taken)
   }
   
   order_tainted_ptr_branch_map[explored_trace.size()] = new_ptr_branch;
+  order_tainted_ptr_branch_map[current_execution_order] = new_ptr_branch;
   /*std::cout << "first value of the stored buffer at branch "
     << new_ptr_branch->trace.size() << new_ptr_branch->inputs[br_taken][0].get()[0] << "\n";*/
 

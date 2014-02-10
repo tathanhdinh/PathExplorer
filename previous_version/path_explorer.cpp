@@ -85,6 +85,7 @@ ptr_branch_t                                    last_active_ptr_branch;
 ptr_branch_t                                    exploring_ptr_branch;
 
 std::vector<ADDRINT>                            explored_trace;
+UINT32                                          current_execution_order;
 
 UINT32                                          received_msg_num;
 ADDRINT                                         received_msg_addr;

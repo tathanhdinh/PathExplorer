@@ -22,13 +22,14 @@
 //   }
 // };
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
-extern df_diagram                   dta_graph;
-extern std::vector<ADDRINT>         explored_trace;
+extern df_diagram                     dta_graph;
+extern std::vector<ADDRINT>           explored_trace;
+extern UINT32                         current_execution_order;
 extern std::vector<ptr_checkpoint_t>  saved_ptr_checkpoints;
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
 // void dependent_mem_addrs(std::set<ADDRINT>& dep_mem_addrs)
 // {
@@ -66,6 +67,7 @@ branch::branch(ADDRINT ins_addr, bool br_taken)
 {
   this->addr              = ins_addr;
   this->trace             = explored_trace;
+  this->execution_order   = current_execution_order;
   this->br_taken          = br_taken;
   this->is_resolved       = false;
   this->is_just_resolved  = false;

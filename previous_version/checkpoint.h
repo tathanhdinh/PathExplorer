@@ -27,6 +27,7 @@ public:
   std::set<ADDRINT>           dep_mems;
   
   std::vector<ADDRINT>        trace;
+  UINT32                      execution_order;
   
   UINT32                      rollback_times;
     

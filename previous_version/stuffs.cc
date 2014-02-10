@@ -26,8 +26,9 @@
 
 /*================================================================================================*/
 
-extern std::vector<ADDRINT>  explored_trace;
-extern df_diagram            dta_graph;
+extern std::vector<ADDRINT> explored_trace;
+extern UINT32               current_execution_order;
+extern df_diagram           dta_graph;
 
 /*================================================================================================*/
 

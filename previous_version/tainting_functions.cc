@@ -16,6 +16,7 @@ extern df_vertex_desc_set     dta_outer_vertices;
 extern std::map<UINT32, ptr_instruction_t>  order_ins_dynamic_map;
 
 extern std::vector<ADDRINT>     explored_trace;
+extern UINT32                   current_execution_order;
 
 /*================================================================================================*/
 // source variables construction
@@ -230,6 +231,7 @@ inline std::set<df_vertex_desc> destination_variables(UINT32 idx)
 VOID tainting_general_instruction_analyzer(ADDRINT ins_addr)
 {
   UINT32 current_ins_order = explored_trace.size();
+  current_ins_order = current_execution_order;
 
   std::set<df_vertex_desc> src_vertex_descs = source_variables(current_ins_order);
   std::set<df_vertex_desc> dst_vertex_descs = destination_variables(current_ins_order);

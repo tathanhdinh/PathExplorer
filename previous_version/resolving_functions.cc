@@ -30,6 +30,7 @@ extern df_diagram                                 dta_graph;
 extern df_vertex_desc_set                         dta_outer_vertices;
 
 extern std::vector<ADDRINT>                       explored_trace;
+extern UINT32                                     current_execution_order;
 
 extern ptr_checkpoint_t                             master_ptr_checkpoint;
 extern ptr_checkpoint_t                             last_active_ptr_checkpoint;
@@ -90,6 +91,8 @@ extern KNOB<BOOL>                                 print_debug_text;
 VOID resolving_ins_count_analyzer(ADDRINT ins_addr)
 {
   explored_trace.push_back(ins_addr);
+  current_execution_order++;
+
   executed_ins_number++;
 
   if (addr_ins_static_map[ins_addr]->has_mem_read2)
@@ -105,7 +108,8 @@ VOID resolving_ins_count_analyzer(ADDRINT ins_addr)
 //     }
   }
 
-  if (order_ins_dynamic_map[explored_trace.size()]->address == ins_addr)
+  if ((order_ins_dynamic_map[explored_trace.size()]->address == ins_addr) &&
+      (order_ins_dynamic_map[current_execution_order]->address == ins_addr))
   {
     /*BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
       << boost::format("instruction at %d (%s: %s) will be executed")
@@ -200,6 +204,7 @@ VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr,
   {
     std::vector<ptr_checkpoint_t>::iterator 
       ptr_checkpoint_iter = exepoint_checkpoints_map[explored_trace.size()].begin();
+    ptr_checkpoint_iter = exepoint_checkpoints_map[current_execution_order].begin();
     for (; ptr_checkpoint_iter != exepoint_checkpoints_map[explored_trace.size()].end(); 
          ++ptr_checkpoint_iter)
     {
@@ -351,7 +356,6 @@ inline void set_next_active_nearest_checkpoint(ptr_branch_t& current_ptr_branch)
       BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
         << boost::format("%s: nearest checkpoint for the branch at %d cannot found") 
             % __FUNCTION__ % current_ptr_branch->trace.size();
-      log_sink->flush();
 
       PIN_ExitApplication(4);
     }
@@ -385,7 +389,6 @@ inline void exploring_new_branch_or_stop()
       << boost::format("exploring the branch at %d (%s) by start tainting a new path")
           % unexplored_ptr_branch->trace.size() 
           % addr_ins_static_map[unexplored_ptr_branch->addr]->disassembled_name;
-    log_sink->flush();
     
     // the MASTER checkpoint is the first element of saved_ptr_checkpoints, 
     // it will be update here because the prepare_new_tainting_phase will 
@@ -397,14 +400,13 @@ inline void exploring_new_branch_or_stop()
     // explore new branch
     local_rollback_times++;
     rollback_and_restore(master_ptr_checkpoint,
-                                    exploring_ptr_branch->inputs[!exploring_ptr_branch->br_taken][0].get());
+                         exploring_ptr_branch->inputs[!exploring_ptr_branch->br_taken][0].get());
   }
   else 
   {
     //BOOST_LOG_TRIVIAL(info) 
     BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
       << "stop exploring, all branches are explored.";
-    log_sink->flush();
 
     PIN_ExitApplication(0);
   }
@@ -465,7 +467,6 @@ inline void process_input_dependent_and_resolved_branch(ADDRINT ins_addr,
           BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
             << boost::format("the branch at %d is resolved accidentally in resolving the branch at %d") 
                 % examined_ptr_branch->trace.size() % active_ptr_branch->trace.size();
-          log_sink->flush();
                 
           // the branch has been marked as bypassed before, 
           // then it is resolved accidentally
@@ -572,7 +573,6 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
       BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
         << boost::format("in rollback but the tainted (at %d) and the active branch (at %d) are not matched.") 
             % examined_ptr_branch->trace.size() % active_ptr_branch->trace.size();
-      log_sink->flush();
 
       PIN_ExitApplication(3);
     }
@@ -685,15 +685,13 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
           % order_ins_dynamic_map[active_ptr_branch->trace.size()]->disassembled_name
           % active_nearest_checkpoint.first->trace.size() 
           % order_ins_dynamic_map[active_nearest_checkpoint.first->trace.size()]->disassembled_name;
-    log_sink->flush();
    
     econed_ins_number += active_ptr_branch->econ_execution_length[active_nearest_checkpoint.first];
 //     std::cout << econed_ins_number << "  " << executed_ins_number << std::endl;
     
     total_rollback_times++;
     local_rollback_times++;
-    rollback_and_modify(active_nearest_checkpoint.first, 
-                                            active_nearest_checkpoint.second);
+    rollback_and_modify(active_nearest_checkpoint.first, active_nearest_checkpoint.second);
   }
   
   return;
@@ -757,9 +755,8 @@ inline void process_input_dependent_branch(ADDRINT ins_addr,
         << boost::format("stop rollbacking, %d/%d branches resolved\n") 
             % total_resolved_ptr_branches.size() 
             % total_input_dep_ptr_branches.size()
-//             % order_input_dep_ptr_branch_map.size()
-        << "-------------------------------------------------------------------------------------------------";
-      log_sink->flush();
+//          % order_input_dep_ptr_branch_map.size()
+        << "--------------------------------------------------------------------------------------";
         
       exploring_new_branch_or_stop();
     }
@@ -855,6 +852,7 @@ inline void log_input(ADDRINT ins_addr, bool br_taken)
   std::map<UINT32, ptr_branch_t>::iterator order_ptr_branch_iter;
   
   order_ptr_branch_iter = order_tainted_ptr_branch_map.find(explored_trace.size());
+  order_ptr_branch_iter = order_tainted_ptr_branch_map.find(current_execution_order);
   if (order_ptr_branch_iter != order_tainted_ptr_branch_map.end()) 
   {
     if (order_ptr_branch_iter->second->inputs[br_taken].empty()) 
@@ -866,8 +864,8 @@ inline void log_input(ADDRINT ins_addr, bool br_taken)
   {
     //BOOST_LOG_TRIVIAL(fatal)
     BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
-      << boost::format("%s: the branch at %d (%s: %s) cannot found") 
-          % __FUNCTION__ % explored_trace.size() 
+      << boost::format("%s: the branch at %d(%d) (%s: %s) cannot found")
+          % __FUNCTION__ % explored_trace.size() % current_execution_order
           % remove_leading_zeros(StringFromAddrint(ins_addr)) 
           % addr_ins_static_map[ins_addr]->disassembled_name;
     log_sink->flush();
@@ -894,6 +892,7 @@ VOID resolving_cond_branch_analyzer(ADDRINT ins_addr, bool br_taken)
   
   // search in the list of input dependent branches
   order_ptr_branch_iter = order_input_dep_ptr_branch_map.find(explored_trace.size());
+  order_ptr_branch_iter = order_input_dep_ptr_branch_map.find(current_execution_order);
   if (order_ptr_branch_iter != order_input_dep_ptr_branch_map.end()) 
   {
     process_input_dependent_branch(ins_addr, br_taken, 
@@ -903,6 +902,7 @@ VOID resolving_cond_branch_analyzer(ADDRINT ins_addr, bool br_taken)
   {
     // search in the list of input independent branches
     order_ptr_branch_iter = order_input_indep_ptr_branch_map.find(explored_trace.size());
+    order_ptr_branch_iter = order_input_indep_ptr_branch_map.find(current_execution_order);
     if (order_ptr_branch_iter != order_input_indep_ptr_branch_map.end()) 
     {
       process_input_independent_branch(ins_addr, br_taken, 
@@ -912,9 +912,10 @@ VOID resolving_cond_branch_analyzer(ADDRINT ins_addr, bool br_taken)
     {
       //BOOST_LOG_TRIVIAL(fatal) 
       BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
-        << boost::format("the branch at %d (%s: %s) cannot found")
-        % explored_trace.size() % remove_leading_zeros(StringFromAddrint(ins_addr)) 
-        % addr_ins_static_map[ins_addr]->disassembled_name;
+        << boost::format("the branch at %d(%d) (%s: %s) cannot found")
+           % explored_trace.size() % current_execution_order
+           % remove_leading_zeros(StringFromAddrint(ins_addr))
+           % addr_ins_static_map[ins_addr]->disassembled_name;
 
       PIN_ExitApplication(0);
     }
@@ -933,7 +934,8 @@ VOID resolving_cond_branch_analyzer(ADDRINT ins_addr, bool br_taken)
  */
 VOID resolving_indirect_branch_call_analyzer(ADDRINT ins_addr, ADDRINT target_addr)
 {
-  if (order_ins_dynamic_map[explored_trace.size() + 1]->address != target_addr)
+  if ((order_ins_dynamic_map[explored_trace.size() + 1]->address != target_addr) &&
+      (order_ins_dynamic_map[current_execution_order + 1]->address != target_addr))
   {
     // active_ptr_branch is enabled, namely in some rollback
     if (active_ptr_branch) 
@@ -951,8 +953,8 @@ VOID resolving_indirect_branch_call_analyzer(ADDRINT ins_addr, ADDRINT target_ad
     {
       //BOOST_LOG_TRIVIAL(fatal) 
       BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
-        << boost::format("the indirect branch at %d takes a different decision in forwarding.") 
-            % explored_trace.size();
+        << boost::format("the indirect branch at %d(%d) takes a different decision in forwarding.")
+            % explored_trace.size() % current_execution_order;
       PIN_ExitApplication(0);
     }    
   }
