@@ -160,43 +160,54 @@ VOID ins_instrumenter(INS ins, VOID *data)
                                IARG_INST_PTR,
                                IARG_END );
 
-      if (examined_ins->is_mem_read)
-      {
-//           INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)resolving_mem_to_st_analyzer,
-//                                    IARG_INST_PTR,
-//                                    IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE,
-//                                    IARG_END);
-      }
-      else
-      {
-        if (examined_ins->is_mem_write)
-        {
-          INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
-                                   (AFUNPTR)resolving_st_to_mem_analyzer,
-                                   IARG_INST_PTR,
-                                   IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE,
-                                   IARG_END);
-        }
-      }
-
-      // note that conditional branches are always direct
-      if (examined_ins->is_cbranch)
+      if (examined_ins->is_mem_write)
       {
         INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
-                                 (AFUNPTR)resolving_cond_branch_analyzer,
+                                 (AFUNPTR)resolving_st_to_mem_analyzer,
                                  IARG_INST_PTR,
-                                 IARG_BRANCH_TAKEN,
+                                 IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE,
                                  IARG_END);
       }
       else
       {
-        if (INS_IsIndirectBranchOrCall(ins))
+
+//      if (examined_ins->is_mem_read)
+//      {
+//           INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)resolving_mem_to_st_analyzer,
+//                                    IARG_INST_PTR,
+//                                    IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE,
+//                                    IARG_END);
+//      }
+//      else
+//      {
+//      }
+
+        // note that conditional branches are always direct
+        if (examined_ins->is_cbranch)
         {
           INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
-                                   (AFUNPTR)resolving_indirect_branch_call_analyzer,
+                                   (AFUNPTR)resolving_cond_branch_analyzer,
                                    IARG_INST_PTR,
-                                   IARG_BRANCH_TARGET_ADDR,
+                                   IARG_BRANCH_TAKEN,
                                    IARG_END);
+        }
+        else
+        {
+          if (examined_ins->has_real_rep)
+          {
+//            INS_InsertPredicatedCall(ins, IPOINT_BEFORE, IARG_END);
+          }
+          else
+          {
+            if (examined_ins->is_indirect_cf/*INS_IsIndirectBranchOrCall(ins)*/)
+            {
+              INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
+                                       (AFUNPTR)resolving_indirect_branch_call_analyzer,
+                                       IARG_INST_PTR,
+                                       IARG_BRANCH_TARGET_ADDR,
+                                       IARG_END);
+            }
+          }
         }
       }
     }

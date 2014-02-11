@@ -78,9 +78,6 @@ typedef logging::trivial::severity_level          log_level;
 extern sources::severity_logger<log_level>        log_instance;
 extern boost::shared_ptr<sink_file_backend>       log_sink;
 
-//extern boost::log::sources::severity_logger<boost::log::trivial::severity_level> log_instance;
-//extern boost::shared_ptr< boost::log::sinks::synchronous_sink<boost::log::sinks::text_file_backend> > log_sink;
-
 extern KNOB<UINT32>                               max_total_rollback;
 extern KNOB<UINT32>                               max_local_rollback;
 extern KNOB<UINT32>                               max_trace_length;
@@ -90,9 +87,7 @@ extern KNOB<BOOL>                                 print_debug_text;
 
 VOID resolving_ins_count_analyzer(ADDRINT ins_addr)
 {
-//  explored_trace.push_back(ins_addr);
   current_execution_order++;
-
   executed_ins_number++;
 
   if (order_ins_dynamic_map[current_execution_order]->address == ins_addr)

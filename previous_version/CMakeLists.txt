@@ -13,7 +13,6 @@ set(PINTOOL_LINK_LIBS boost_log pthread)
 
 ADD_PINTOOL(path_explorer   
   branch.cpp 
-  variable.cpp
   path_explorer.cpp 
   operand.cpp 
   instruction.cpp 

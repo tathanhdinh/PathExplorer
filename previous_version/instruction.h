@@ -21,9 +21,6 @@ typedef enum
   syscall_recvfrom = 45
 } syscall_id;
 
-/* ---------------------------------------------------------------------------------------------- */
-/*                                            class declaration                                   */
-/* ---------------------------------------------------------------------------------------------- */
 class instruction
 {
 public:
@@ -37,9 +34,10 @@ public:
   bool                is_mem_read;
   bool                is_mem_write;
   bool                is_mapped_from_kernel;
-  bool                is_cbranch;
-  bool                is_indirect_cf;
+  bool                is_cbranch;     // conditional control-flow instructions are always direct
+  bool                is_indirect_cf; // inconditional control-flow instructions are always indirect
   bool                has_mem_read2;
+  bool                has_real_rep;
 
   std::set<ptr_operand_t> src_operands;
   std::set<ptr_operand_t> dst_operands;
@@ -47,8 +45,8 @@ public:
 public:
   instruction();
   instruction(INS const& ins);
-  instruction(instruction const& other_ins);
-  instruction& operator=(instruction const& other_ins);
+//  instruction(instruction const& other_ins);
+//  instruction& operator=(instruction const& other_ins);
 };
 
 typedef boost::shared_ptr<instruction> ptr_instruction_t;

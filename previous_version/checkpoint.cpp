@@ -94,10 +94,8 @@ void rollback_and_restore(ptr_checkpoint_t& dest_ptr_checkpoint, UINT8* backup_i
   PIN_SafeCopy(reinterpret_cast<UINT8*>(received_msg_addr),
                dest_ptr_checkpoint->curr_input.get(), received_msg_size);
 
-  // restore the current trace
-//  explored_trace = dest_ptr_checkpoint->trace;
-//  explored_trace.pop_back();
-
+  // restore the current execution order (-1 again because the instruction at the checkpoint will
+  // be re-executed)
   current_execution_order = dest_ptr_checkpoint->execution_order;
   current_execution_order--;
 

@@ -26,7 +26,6 @@
 
 /*================================================================================================*/
 
-extern std::vector<ADDRINT> explored_trace;
 extern UINT32               current_execution_order;
 extern df_diagram           dta_graph;
 
@@ -54,7 +53,7 @@ std::string remove_leading_zeros(std::string input)
 
 /*================================================================================================*/
 
-void journal_buffer (const std::string& filename, UINT8* buffer_addr, UINT32 buffer_size)
+void journal_buffer(const std::string& filename, UINT8* buffer_addr, UINT32 buffer_size)
 {
   std::ofstream file(filename.c_str(),
                      std::ofstream::binary | std::ofstream::out | std::ofstream::trunc );
@@ -74,25 +73,13 @@ void journal_static_trace(const std::string& filename)
   std::map<ADDRINT, ptr_instruction_t>::iterator addr_ins_iter = addr_ins_static_map.begin();
   for (; addr_ins_iter != addr_ins_static_map.end(); ++addr_ins_iter) 
   {
-//     out_file << boost::format("%-15s %-35s (r: %-i, w: %-i) %-25s %-25s\n")
     out_file << boost::format("%-15s %-50s %-25s %-25s\n")
                 % remove_leading_zeros(StringFromAddrint(addr_ins_iter->first))
                 % addr_ins_iter->second->disassembled_name
-//                 % addr_ins_iter->second.mem_read_size % addr_ins_iter->second.mem_written_size
                 % addr_ins_iter->second->contained_image
                 % addr_ins_iter->second->contained_function;
   }
   out_file.close();
-
-//   std::string filename_wf = filename + "_wf";
-//   out_file.open(filename_wf.c_str(), std::ofstream::out | std::ofstream::trunc);
-//
-//   addr_ins_iter = addr_ins_static_map.begin();
-//   for (; addr_ins_iter != addr_ins_static_map.end(); ++addr_ins_iter)
-//   {
-//     out_file << boost::format("%-s\t%-s\n") % StringFromAddrint(addr_ins_iter->first) % addr_ins_iter->second.disass;
-//   }
-//   out_file.close();
 
   return;
 }
@@ -118,6 +105,57 @@ void journal_explored_trace(const std::string& filename)
 
 /*================================================================================================*/
 
+class vertex_label_writer
+{
+public:
+  vertex_label_writer(df_diagram& g) : graph(g)
+  {
+  }
+
+  template <typename Vertex>
+  void operator()(std::ostream& vertex_label, Vertex v)
+  {
+    df_vertex current_vertex = graph[v];
+    if ((current_vertex->value.type() == typeid(ADDRINT)) &&
+        (received_msg_addr <= boost::get<ADDRINT>(current_vertex->value)) &&
+        (boost::get<ADDRINT>(current_vertex->value) < received_msg_addr + received_msg_size))
+    {
+      vertex_label << boost::format("[color=blue,style=filled,label=\"%s\"]")
+                      % current_vertex->name;
+    }
+    else
+    {
+      vertex_label << boost::format("[color=black,label=\"%s\"]") % current_vertex->name;
+    }
+  }
+
+private:
+  df_diagram graph;
+};
+
+/*================================================================================================*/
+
+class edge_label_writer
+{
+public:
+  edge_label_writer(df_diagram& g) : graph(g)
+  {
+  }
+
+  template <typename Edge>
+  void operator()(std::ostream& edge_label, Edge edge)
+  {
+    df_edge current_edge = graph[edge];
+    edge_label << boost::format("[label=\"%s: %s\"]")
+                  % current_edge % order_ins_dynamic_map[current_edge]->disassembled_name;
+  }
+
+private:
+  df_diagram graph;
+};
+
+/*================================================================================================*/
+
 void journal_tainting_graph(const std::string& filename)
 {
   std::ofstream out_file(filename.c_str(), 
@@ -139,40 +177,6 @@ void store_input(ptr_branch_t& ptr_br, bool br_taken)
 
   return;
 }
-
-/*================================================================================================*/
-
-// void print_debug_message_received()
-// {
-//   if (print_debug_text) 
-//   {
-//     std::cout << "\033[33mThe first message saved at " << remove_leading_zeros(StringFromAddrint(received_msg_addr))
-//               << " with size " << received_msg_size << ".\033[0m\n";
-//     std::cout << "-------------------------------------------------------------------------------------------------\n";
-//     std::cout << "\033[33mStart tainting phase with maximum trace size "
-//               << max_trace_length.Value() << ".\033[0m\n";
-//   }
-//   return;
-// }
-
-/*================================================================================================*/
-
-// void print_debug_start_rollbacking()
-// {
-//   if (print_debug_text) 
-//   {
-//     std::string tainted_trace_filename("tainted_trace");
-//     if (exploring_ptr_branch) 
-//     {
-//       std::stringstream ss;
-//       ss << exploring_ptr_branch->trace.size();
-//       tainted_trace_filename = tainted_trace_filename + "_" + ss.str();
-//     }
-//     journal_explored_trace(tainted_trace_filename.c_str(), explored_trace);
-//   }
-// 
-//   return;
-// }
 
 /*================================================================================================*/
 

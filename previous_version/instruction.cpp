@@ -35,6 +35,7 @@ extern "C" {
 
 instruction::instruction(const INS& ins)
 {
+  // collect some informations
   this->address               = INS_Address(ins);
   this->disassembled_name     = INS_Disassemble(ins);
   
@@ -56,9 +57,10 @@ instruction::instruction(const INS& ins)
   this->is_mem_write          = INS_IsMemoryWrite(ins);
   this->is_cbranch            = (INS_Category(ins) == XED_CATEGORY_COND_BR);
   this->is_indirect_cf        = INS_IsIndirectBranchOrCall(ins);
-
   this->has_mem_read2         = INS_HasMemoryRead2(ins);
+  this->has_real_rep          = INS_HasRealRep(ins);
 
+  // collect read/write registers
   UINT32        register_id, register_num;
   REG           curr_register;
   ptr_operand_t new_operand;
@@ -112,44 +114,44 @@ instruction::instruction(const INS& ins)
 
 /*================================================================================================*/
 
-instruction::instruction(const instruction& other)
-{
-  this->address               = other.address;
-  this->disassembled_name     = other.disassembled_name;
+//instruction::instruction(const instruction& other)
+//{
+//  this->address               = other.address;
+//  this->disassembled_name     = other.disassembled_name;
 
-  this->contained_image       = other.contained_image;
-  this->contained_function    = other.contained_function;
+//  this->contained_image       = other.contained_image;
+//  this->contained_function    = other.contained_function;
   
-  this->is_syscall            = other.is_syscall;
-  this->is_mem_read           = other.is_mem_read;
-  this->is_mem_write          = other.is_mem_write;
-  this->is_mapped_from_kernel = other.is_mapped_from_kernel;
-  this->is_cbranch            = other.is_cbranch;
-  this->has_mem_read2         = other.has_mem_read2;
+//  this->is_syscall            = other.is_syscall;
+//  this->is_mem_read           = other.is_mem_read;
+//  this->is_mem_write          = other.is_mem_write;
+//  this->is_mapped_from_kernel = other.is_mapped_from_kernel;
+//  this->is_cbranch            = other.is_cbranch;
+//  this->has_mem_read2         = other.has_mem_read2;
   
-  this->src_operands          = other.src_operands;
-  this->dst_operands          = other.dst_operands;
-}
+//  this->src_operands          = other.src_operands;
+//  this->dst_operands          = other.dst_operands;
+//}
 
 /*================================================================================================*/
 // there is not dynamically initialized variables, so copy constructor and assignment are the same
-instruction& instruction::operator=(const instruction& other)
-{
-  this->address               = other.address;
-  this->disassembled_name     = other.disassembled_name;
+//instruction& instruction::operator=(const instruction& other)
+//{
+//  this->address               = other.address;
+//  this->disassembled_name     = other.disassembled_name;
 
-  this->contained_image       = other.contained_image;
-  this->contained_function    = other.contained_function;
+//  this->contained_image       = other.contained_image;
+//  this->contained_function    = other.contained_function;
   
-  this->is_syscall            = other.is_syscall;
-  this->is_mem_read           = other.is_mem_read;
-  this->is_mem_write          = other.is_mem_write;
-  this->is_mapped_from_kernel = other.is_mapped_from_kernel;
-  this->is_cbranch            = other.is_cbranch;
-  this->has_mem_read2         = other.has_mem_read2;
+//  this->is_syscall            = other.is_syscall;
+//  this->is_mem_read           = other.is_mem_read;
+//  this->is_mem_write          = other.is_mem_write;
+//  this->is_mapped_from_kernel = other.is_mapped_from_kernel;
+//  this->is_cbranch            = other.is_cbranch;
+//  this->has_mem_read2         = other.has_mem_read2;
   
-  this->src_operands          = other.src_operands;
-  this->dst_operands          = other.dst_operands;
+//  this->src_operands          = other.src_operands;
+//  this->dst_operands          = other.dst_operands;
 
-  return *this;
-}
+//  return *this;
+//}
