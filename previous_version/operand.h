@@ -19,7 +19,7 @@ public:
   operand(REG reg);
 };
 
-typedef boost::shared_ptr<operand> ptr_operand_t;
+typedef boost::shared_ptr<operand>                          ptr_operand_t;
 typedef ptr_operand_t                                       df_vertex;
 typedef UINT32                                              df_edge;
 typedef boost::adjacency_list<boost::listS, boost::vecS,

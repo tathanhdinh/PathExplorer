@@ -21,7 +21,6 @@
 #include "instruction.h"
 #include "checkpoint.h"
 #include "branch.h"
-#include "variable.h"
 
 /*================================================================================================*/
 

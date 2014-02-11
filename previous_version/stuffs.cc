@@ -18,7 +18,6 @@
 
 
 #include "instruction.h"
-#include "variable.h"
 #include "checkpoint.h"
 #include "branch.h"
 

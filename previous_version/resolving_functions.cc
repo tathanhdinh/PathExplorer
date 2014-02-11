@@ -13,7 +13,6 @@
 
 #include <algorithm>
 
-#include "variable.h"
 #include "instruction.h"
 #include "checkpoint.h"
 #include "branch.h"
@@ -32,15 +31,15 @@ extern df_vertex_desc_set                         dta_outer_vertices;
 extern std::vector<ADDRINT>                       explored_trace;
 extern UINT32                                     current_execution_order;
 
-extern ptr_checkpoint_t                             master_ptr_checkpoint;
-extern ptr_checkpoint_t                             last_active_ptr_checkpoint;
-extern std::vector<ptr_checkpoint_t>                saved_ptr_checkpoints;
+extern ptr_checkpoint_t                           master_ptr_checkpoint;
+extern ptr_checkpoint_t                           last_active_ptr_checkpoint;
+extern std::vector<ptr_checkpoint_t>              saved_ptr_checkpoints;
 
 extern std::pair< ptr_checkpoint_t, 
                   std::set<ADDRINT> >             active_nearest_checkpoint;
 
 extern std::map< UINT32,
-       std::vector<ptr_checkpoint_t> >              exepoint_checkpoints_map;
+       std::vector<ptr_checkpoint_t> >            exepoint_checkpoints_map;
 
 extern UINT32                                     total_rollback_times;
 extern UINT32                                     local_rollback_times;
@@ -51,17 +50,17 @@ extern UINT32                                     used_checkpoint_number;
 extern ADDRINT                                    received_msg_addr;
 extern UINT32                                     received_msg_size;
 
-extern std::map<UINT32, ptr_branch_t>               order_input_dep_ptr_branch_map;
-extern std::map<UINT32, ptr_branch_t>               order_input_indep_ptr_branch_map;
-extern std::map<UINT32, ptr_branch_t>               order_tainted_ptr_branch_map;
+extern std::map<UINT32, ptr_branch_t>             order_input_dep_ptr_branch_map;
+extern std::map<UINT32, ptr_branch_t>             order_input_indep_ptr_branch_map;
+extern std::map<UINT32, ptr_branch_t>             order_tainted_ptr_branch_map;
 
-extern std::vector<ptr_branch_t>                    found_new_ptr_branches;
-extern std::vector<ptr_branch_t>                    total_resolved_ptr_branches;
-extern std::vector<ptr_branch_t>                    total_input_dep_ptr_branches;
+extern std::vector<ptr_branch_t>                  found_new_ptr_branches;
+extern std::vector<ptr_branch_t>                  total_resolved_ptr_branches;
+extern std::vector<ptr_branch_t>                  total_input_dep_ptr_branches;
 
-extern ptr_branch_t                                 active_ptr_branch;
-extern ptr_branch_t                                 last_active_ptr_branch;
-extern ptr_branch_t                                 exploring_ptr_branch;
+extern ptr_branch_t                               active_ptr_branch;
+extern ptr_branch_t                               last_active_ptr_branch;
+extern ptr_branch_t                               exploring_ptr_branch;
 
 extern std::set<ADDRINT>                          active_input_dep_addrs;
 
@@ -124,31 +123,27 @@ VOID resolving_ins_count_analyzer(ADDRINT ins_addr)
 /*================================================================================================*/
 // memory read
 VOID resolving_mem_to_st_analyzer(ADDRINT ins_addr, 
-                                  ADDRINT mem_read_addr, 
-                                  UINT32 mem_read_size) 
+                                  ADDRINT mem_read_addr, UINT32 mem_read_size) 
 {
   return;
 }
 
 /*================================================================================================*/
 // memory written
-VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr, 
-                                  ADDRINT mem_written_addr, 
-                                  UINT32 mem_written_size) 
+VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr,
+                                  ADDRINT mem_written_addr, UINT32 mem_written_size)
 {
   if (active_ptr_branch) // in rollbacking
   {
     if (active_nearest_checkpoint.first) 
     {
       active_nearest_checkpoint.first->mem_written_logging(ins_addr, 
-                                                           mem_written_addr, 
-                                                           mem_written_size);
+                                                           mem_written_addr, mem_written_size);
     }
     else 
     {
       last_active_ptr_checkpoint->mem_written_logging(ins_addr, 
-                                                      mem_written_addr, 
-                                                      mem_written_size);
+                                                      mem_written_addr, mem_written_size);
     }
   }
   else // in forwarding
@@ -478,7 +473,7 @@ inline void unresolved_branch_takes_new_decision(ADDRINT ins_addr,
     
     local_rollback_times++;
     rollback_and_restore(active_nearest_checkpoint.first, 
-                                    active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());
+                         active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());
   }
   else // active_ptr_branch is disabled, namely in some forward
   {
@@ -541,7 +536,7 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
           
           local_rollback_times++;
           rollback_and_restore(active_nearest_checkpoint.first, 
-                                          active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());
+                               active_ptr_branch->inputs[active_ptr_branch->br_taken][0].get());
         }
         else 
         {
@@ -569,8 +564,8 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
               
               total_rollback_times++;
               local_rollback_times++;
-              rollback_and_modify(active_nearest_checkpoint.first, 
-                                                      active_nearest_checkpoint.second);
+              rollback_and_modify(active_nearest_checkpoint.first,
+                                  active_nearest_checkpoint.second);
             }
             else // cannot get any new nearest checkpoint
             {

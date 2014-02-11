@@ -29,7 +29,6 @@
 #include "instruction.h"
 #include "checkpoint.h"
 #include "stuffs.h"
-#include "variable.h"
 #include "branch.h"
 #include "instrumentation_functions.h"
 #include "logging_functions.h"

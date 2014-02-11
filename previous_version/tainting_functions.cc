@@ -4,8 +4,9 @@
 #include <boost/graph/graphviz.hpp>
 #include <boost/format.hpp>
 
-#include "variable.h"
 #include "branch.h"
+#include "operand.h"
+#include "instruction.h"
 
 /*================================================================================================*/
 
