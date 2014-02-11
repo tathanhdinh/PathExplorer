@@ -26,8 +26,12 @@
 
 /*================================================================================================*/
 
-extern UINT32               current_execution_order;
-extern df_diagram           dta_graph;
+extern std::map<ADDRINT, ptr_instruction_t> addr_ins_static_map;
+extern std::map<UINT32, ptr_instruction_t>  order_ins_dynamic_map;
+extern UINT32                               current_execution_order;
+extern df_diagram                           dta_graph;
+extern ADDRINT                              received_msg_addr;
+extern UINT32                               received_msg_size;
 
 /*================================================================================================*/
 
