@@ -1,11 +1,15 @@
 #include "operand.h"
 #include "stuffs.h"
 
+/*================================================================================================*/
+
 operand::operand(ADDRINT mem_addr)
 {
   this->value = mem_addr;
   this->name = addrint_to_hexstring(mem_addr);
 }
+
+/*================================================================================================*/
 
 operand::operand(REG reg)
 {
