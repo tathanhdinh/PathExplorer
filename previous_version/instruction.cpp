@@ -8,28 +8,6 @@ extern "C" {
 }
 
 #include "stuffs.h"
-//#include "path_explorer.h"
-
-/*================================================================================================*/
-
-// inline static std::string contained_image_name(ADDRINT ins_addr)
-// {
-//   IMG ins_img = IMG_FindByAddress(ins_addr);
-//   std::string img_name = "";
-//   
-//   if (IMG_Valid(ins_img)) 
-//   {
-//     img_name = IMG_Name(ins_img);
-//   }
-// 
-//   return img_name;
-// }
-
-/*================================================================================================*/
-
-// instruction::instruction()
-// {
-// }
 
 /*================================================================================================*/
 
@@ -55,8 +33,14 @@ instruction::instruction(const INS& ins)
   this->is_mapped_from_kernel = this->contained_image.empty();
   this->is_mem_read           = INS_IsMemoryRead(ins);
   this->is_mem_write          = INS_IsMemoryWrite(ins);
-  this->is_cbranch            = (INS_Category(ins) == XED_CATEGORY_COND_BR);
-  this->is_indirect_cf        = INS_IsIndirectBranchOrCall(ins);
+
+  OPCODE ins_opcode = INS_Opcode(ins);
+  this->is_cond_direct_cf     = ((INS_Category(ins) == XED_CATEGORY_COND_BR) ||
+                                 (INS_HasRealRep(ins) &&
+                                  ((ins_opcode == XED_ICLASS_CMPSB) ||
+                                   (ins_opcode == XED_ICLASS_CMPSD) ||
+                                   (ins_opcode == XED_ICLASS_CMPSW))));
+  this->is_uncond_indirect_cf = INS_IsIndirectBranchOrCall(ins);
   this->has_mem_read2         = INS_HasMemoryRead2(ins);
   this->has_real_rep          = INS_HasRealRep(ins);
 

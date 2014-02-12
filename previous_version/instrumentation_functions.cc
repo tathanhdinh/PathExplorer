@@ -101,7 +101,7 @@ VOID ins_instrumenter(INS ins, VOID *data)
                                  IARG_INST_PTR,
                                  IARG_END);
 
-        if (examined_ins->is_cbranch)
+        if (examined_ins->is_cond_direct_cf)
         {
           // conditional branch logging
           INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
@@ -183,7 +183,7 @@ VOID ins_instrumenter(INS ins, VOID *data)
 //      }
 
         // note that conditional branches are always direct
-        if (examined_ins->is_cbranch)
+        if (examined_ins->is_cond_direct_cf)
         {
           INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
                                    (AFUNPTR)resolving_cond_branch_analyzer,
@@ -193,7 +193,7 @@ VOID ins_instrumenter(INS ins, VOID *data)
         }
         else
         {
-          if (examined_ins->is_indirect_cf)
+          if (examined_ins->is_uncond_indirect_cf)
           {
             INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
                                      (AFUNPTR)resolving_indirect_branch_call_analyzer,
