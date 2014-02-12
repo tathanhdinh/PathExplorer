@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-project(PathExplorer)
+project(PathExplorer_V1)
 
 include(FindPin.cmake)
 include(UsePin.cmake)
