@@ -480,7 +480,7 @@ VOID logging_mem_read2_instruction_analyzer(ADDRINT ins_addr,
                                             CONTEXT* p_ctxt)
 {
   logging_mem_read_instruction_analyzer(ins_addr, mem_read_addr, mem_read_size, p_ctxt);
-  std::set<ADDRINT>::iterator addr_iter;
+//  std::set<ADDRINT>::iterator addr_iter;
 //  for (addr_iter = order_ins_dynamic_map[explored_trace.size()].src_mems.begin();
 //       addr_iter != order_ins_dynamic_map[explored_trace.size()].src_mems.end(); ++addr_iter)
 //  {

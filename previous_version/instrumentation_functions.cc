@@ -126,7 +126,7 @@ VOID ins_instrumenter(INS ins, VOID *data)
             {
               // memory read2 (e.g. rep cmpsb instruction)
               INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
-                                       (AFUNPTR)logging_mem_read2_instruction_analyzer,
+                                       (AFUNPTR)logging_mem_read_instruction_analyzer,
                                        IARG_INST_PTR,
                                        IARG_MEMORYREAD2_EA, IARG_MEMORYREAD_SIZE,
                                        IARG_CONTEXT,
@@ -193,20 +193,13 @@ VOID ins_instrumenter(INS ins, VOID *data)
         }
         else
         {
-          if (examined_ins->has_real_rep)
+          if (examined_ins->is_indirect_cf)
           {
-//            INS_InsertPredicatedCall(ins, IPOINT_BEFORE, IARG_END);
-          }
-          else
-          {
-            if (examined_ins->is_indirect_cf/*INS_IsIndirectBranchOrCall(ins)*/)
-            {
-              INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
-                                       (AFUNPTR)resolving_indirect_branch_call_analyzer,
-                                       IARG_INST_PTR,
-                                       IARG_BRANCH_TARGET_ADDR,
-                                       IARG_END);
-            }
+            INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
+                                     (AFUNPTR)resolving_indirect_branch_call_analyzer,
+                                     IARG_INST_PTR,
+                                     IARG_BRANCH_TARGET_ADDR,
+                                     IARG_END);
           }
         }
       }
@@ -230,7 +223,7 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
   const static std::string winsock_dll_name("WS2_32.dll");
   if (loaded_image_path.filename() == winsock_dll_name)
   {
-    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) 
+    BOOST_LOG_SEV(log_instance, logging::trivial::info)
       << "winsock module found";
 
     RTN recv_function = RTN_FindByName(loaded_img, "recv");
