@@ -12,17 +12,17 @@ link_directories(/home/monads/.local/lib)
 set(PINTOOL_LINK_LIBS boost_log pthread)
 
 ADD_PINTOOL(path_explorer   
-  branch.cpp 
-  path_explorer.cpp 
-  operand.cpp 
-  instruction.cpp 
-  cond_direct_instruction.cpp
-  checkpoint.cpp 
-  resolving_functions.cc 
-  logging_functions.cc 
-  tainting_functions.cc 
-  instrumentation_functions.cc 
-  stuffs.cc)
+  src/branch.cpp 
+  src/path_explorer.cpp 
+  src/operand.cpp 
+  src/instruction.cpp 
+  src/cond_direct_instruction.cpp
+  src/checkpoint.cpp 
+  src/resolving_functions.cc 
+  src/logging_functions.cc 
+  src/tainting_functions.cc 
+  src/instrumentation_functions.cc 
+  src/stuffs.cc)
 
 # add_executable(path_explorer.so instruction.cpp path_explorer.cpp)
 
