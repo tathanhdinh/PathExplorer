@@ -42,8 +42,8 @@ extern "C"
 /* ---------------------------------------------------------------------------------------------- */
 /*                                             global variables                                   */
 /* ---------------------------------------------------------------------------------------------- */
-std::map<ADDRINT, ptr_instruction_t>            addr_ins_static_map;    // statically examined instructions
-std::map<UINT32, ptr_instruction_t>             order_ins_dynamic_map;  // dynamically examined instructions
+std::map<ADDRINT, ptr_instruction_t>            ins_at_addr;   // statically examined instructions
+std::map<UINT32, ptr_instruction_t>             ins_at_order;  // dynamically examined instructions
 
 ADDRINT                                         logged_syscall_index;   // logged syscall index
 ADDRINT                                         logged_syscall_args[6]; // logged syscall arguments
@@ -65,8 +65,6 @@ df_vertex_desc_set                              dta_outer_vertices;
 std::vector<ptr_checkpoint_t>                   saved_ptr_checkpoints;
 ptr_checkpoint_t                                master_ptr_checkpoint;
 ptr_checkpoint_t                                last_active_ptr_checkpoint;
-
-std::set<ADDRINT>                               active_input_dep_addrs;
 
 std::pair< ptr_checkpoint_t, 
            std::set<ADDRINT> >                  active_nearest_checkpoint;

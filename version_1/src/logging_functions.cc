@@ -29,8 +29,8 @@ extern ADDRINT logged_syscall_args[6];
 
 extern bool                                     in_tainting;
 
-extern std::map<ADDRINT, ptr_instruction_t>     addr_ins_static_map;
-extern std::map<UINT32, ptr_instruction_t>      order_ins_dynamic_map;
+extern std::map<ADDRINT, ptr_instruction_t>     ins_at_addr;
+extern std::map<UINT32, ptr_instruction_t>      ins_at_order;
 
 extern UINT32                                   total_rollback_times;
 
@@ -320,7 +320,7 @@ inline static void compute_branch_min_checkpoint()
               % current_ptr_branch->execution_order
               % current_ptr_branch->br_taken
               % remove_leading_zeros(StringFromAddrint(current_ptr_branch->addr))
-              % order_ins_dynamic_map[current_ptr_branch->execution_order]->disassembled_name
+              % ins_at_order[current_ptr_branch->execution_order]->disassembled_name
               % current_ptr_branch->nearest_checkpoints.size();
               
         current_ptr_branch->checkpoint = current_ptr_branch->nearest_checkpoints.rbegin()->first;
@@ -347,7 +347,7 @@ inline void prepare_new_rollbacking_phase()
   //BOOST_LOG_TRIVIAL(info) 
   BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
     << boost::format("stop exploring, %d instructions analyzed; start detecting checkpoints")
-        /*% explored_trace.size()*/ % current_execution_order;
+        % current_execution_order;
   
 //   journal_tainting_graph("tainting_graph.dot");
 //   PIN_ExitApplication(0);
@@ -372,7 +372,7 @@ inline void prepare_new_rollbacking_phase()
     journal_explored_trace("last_explored_trace.log");
 
     rollback_and_restore(saved_ptr_checkpoints[0],
-                                    exploring_ptr_branch->inputs[!exploring_ptr_branch->br_taken][0].get());
+                         exploring_ptr_branch->inputs[!exploring_ptr_branch->br_taken][0].get());
   }
   else
   {
@@ -385,7 +385,7 @@ inline void prepare_new_rollbacking_phase()
     { 
       ptr_branch_t first_ptr_branch = order_input_dep_ptr_branch_map.begin()->second;
       rollback_and_restore(saved_ptr_checkpoints[0],
-                                      first_ptr_branch->inputs[first_ptr_branch->br_taken][0].get());
+                           first_ptr_branch->inputs[first_ptr_branch->br_taken][0].get());
     }
     else
     {
@@ -411,23 +411,22 @@ VOID logging_syscall_instruction_analyzer(ADDRINT ins_addr)
 
 VOID logging_general_instruction_analyzer(ADDRINT ins_addr)
 {
-  if (/*(explored_trace.size() < max_trace_size) &&*/
-      (current_execution_order < max_trace_size) &&
-      !addr_ins_static_map[ins_addr]->is_mapped_from_kernel)
+  if ((current_execution_order < max_trace_size) &&
+      !ins_at_addr[ins_addr]->is_mapped_from_kernel)
   {
 //    explored_trace.push_back(ins_addr);
 //    order_ins_dynamic_map[explored_trace.size()] = addr_ins_static_map[ins_addr];
 
     current_execution_order++;
-    order_ins_dynamic_map[current_execution_order] = addr_ins_static_map[ins_addr];
+    ins_at_order[current_execution_order] = ins_at_addr[ins_addr];
 
     BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
         << boost::format("%-3d %-15s %-50s %-25s %-25s")
-           /*% explored_trace.size()*/ % current_execution_order
-           % remove_leading_zeros(StringFromAddrint(ins_addr))
-           % addr_ins_static_map[ins_addr]->disassembled_name
-           % addr_ins_static_map[ins_addr]->contained_image
-           % addr_ins_static_map[ins_addr]->contained_function;
+           % current_execution_order
+           % addrint_to_hexstring(ins_addr)
+           % ins_at_addr[ins_addr]->disassembled_name
+           % ins_at_addr[ins_addr]->contained_image
+           % ins_at_addr[ins_addr]->contained_function;
   }
   else // trace length limit reached
   {
@@ -447,27 +446,24 @@ VOID logging_mem_read_instruction_analyzer(ADDRINT ins_addr,
   if (std::max(mem_read_addr, received_msg_addr) <
       std::min(mem_read_addr + mem_read_size, received_msg_addr + received_msg_size))
   {
-    ptr_checkpoint_t new_ptr_checkpoint(new checkpoint(ins_addr, p_ctxt, /*explored_trace,*/
-                                                     mem_read_addr, mem_read_size));
+    ptr_checkpoint_t new_ptr_checkpoint(new checkpoint(ins_addr, p_ctxt,
+                                                       mem_read_addr, mem_read_size));
     saved_ptr_checkpoints.push_back(new_ptr_checkpoint);
     
     //BOOST_LOG_TRIVIAL(trace) 
     BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
       << boost::format("checkpoint detected at %d (%s: %s) because memory is read (%s: %d)")
-//      % new_ptr_checkpoint->trace.size()
          % new_ptr_checkpoint->execution_order
-      % remove_leading_zeros(StringFromAddrint(ins_addr))
-      % addr_ins_static_map[ins_addr]->disassembled_name
-      % remove_leading_zeros(StringFromAddrint(mem_read_addr)) % mem_read_size;
+         % remove_leading_zeros(StringFromAddrint(ins_addr))
+         % ins_at_addr[ins_addr]->disassembled_name
+         % remove_leading_zeros(StringFromAddrint(mem_read_addr)) % mem_read_size;
   }
 
   ptr_operand_t mem_operand;
   for (UINT32 idx = 0; idx < mem_read_size; ++idx)
   {
-//     order_ins_dynamic_map[explored_trace.size()].src_mems.insert(mem_read_addr + idx);
     mem_operand.reset(new operand(mem_read_addr + idx));
-//    order_ins_dynamic_map[explored_trace.size()]->src_operands.insert(mem_operand);
-    order_ins_dynamic_map[current_execution_order]->src_operands.insert(mem_operand);
+    ins_at_order[current_execution_order]->src_operands.insert(mem_operand);
   }
 
   return;
@@ -480,15 +476,6 @@ VOID logging_mem_read2_instruction_analyzer(ADDRINT ins_addr,
                                             CONTEXT* p_ctxt)
 {
   logging_mem_read_instruction_analyzer(ins_addr, mem_read_addr, mem_read_size, p_ctxt);
-//  std::set<ADDRINT>::iterator addr_iter;
-//  for (addr_iter = order_ins_dynamic_map[explored_trace.size()].src_mems.begin();
-//       addr_iter != order_ins_dynamic_map[explored_trace.size()].src_mems.end(); ++addr_iter)
-//  {
-//    BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-//      << boost::format("%s %d")
-//         % remove_leading_zeros(StringFromAddrint(*addr_iter))
-//         % *(reinterpret_cast<UINT8*>(*addr_iter));
-//  }
   return;
 }
 
@@ -503,16 +490,13 @@ VOID logging_mem_write_instruction_analyzer(ADDRINT ins_addr,
                                                   mem_written_addr, mem_written_size);
   }
 
-//  exepoint_checkpoints_map[explored_trace.size()] = saved_ptr_checkpoints;
   exepoint_checkpoints_map[current_execution_order] = saved_ptr_checkpoints;
 
   ptr_operand_t mem_operand;
   for (UINT32 idx = 0; idx < mem_written_size; ++idx)
   {
     mem_operand.reset(new operand(mem_written_addr + idx));
-//    order_ins_dynamic_map[explored_trace.size()].dst_mems.insert(mem_written_addr + idx);
-//    order_ins_dynamic_map[explored_trace.size()]->dst_operands.insert(mem_operand);
-    order_ins_dynamic_map[current_execution_order]->dst_operands.insert(mem_operand);
+    ins_at_order[current_execution_order]->dst_operands.insert(mem_operand);
   }
 
   return;
@@ -535,7 +519,6 @@ VOID logging_cond_br_analyzer(ADDRINT ins_addr, bool br_taken)
     mark_resolved(new_ptr_branch); 
   }
   
-//  order_tainted_ptr_branch_map[explored_trace.size()] = new_ptr_branch;
   order_tainted_ptr_branch_map[current_execution_order] = new_ptr_branch;
   /*std::cout << "first value of the stored buffer at branch "
     << new_ptr_branch->trace.size() << new_ptr_branch->inputs[br_taken][0].get()[0] << "\n";*/

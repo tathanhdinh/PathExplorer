@@ -2,8 +2,10 @@
 #define OPERAND_H
 
 #include <pin.H>
+
 #include <string>
 #include <list>
+
 #include <boost/variant.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/graph/adjacency_list.hpp>

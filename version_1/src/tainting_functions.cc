@@ -13,7 +13,7 @@
 extern df_diagram           dta_graph;
 extern df_vertex_desc_set     dta_outer_vertices;
 
-extern std::map<UINT32, ptr_instruction_t>  order_ins_dynamic_map;
+extern std::map<UINT32, ptr_instruction_t>  ins_at_order;
 
 extern std::vector<ADDRINT>     explored_trace;
 extern UINT32                   current_execution_order;
@@ -26,8 +26,8 @@ inline std::set<df_vertex_desc> source_variables(UINT32 idx)
   df_vertex_desc_set::iterator outer_vertex_iter;
   df_vertex_desc new_vertex_desc;
   std::set<ptr_operand_t>::iterator src_operand_iter;
-  for (src_operand_iter = order_ins_dynamic_map[idx]->src_operands.begin();
-       src_operand_iter != order_ins_dynamic_map[idx]->src_operands.end(); ++src_operand_iter)
+  for (src_operand_iter = ins_at_order[idx]->src_operands.begin();
+       src_operand_iter != ins_at_order[idx]->src_operands.end(); ++src_operand_iter)
   {
     // verify if the current source operand is
     for (outer_vertex_iter = dta_outer_vertices.begin();
@@ -64,8 +64,8 @@ inline std::set<df_vertex_desc> destination_variables(UINT32 idx)
   df_vertex_desc_set::iterator next_vertex_iter;
   std::set<ptr_operand_t>::iterator dst_operand_iter;
 
-  for (dst_operand_iter = order_ins_dynamic_map[idx]->dst_operands.begin();
-       dst_operand_iter != order_ins_dynamic_map[idx]->dst_operands.end(); ++dst_operand_iter)
+  for (dst_operand_iter = ins_at_order[idx]->dst_operands.begin();
+       dst_operand_iter != ins_at_order[idx]->dst_operands.end(); ++dst_operand_iter)
   {
     // verify if the current target operand is
     outer_vertex_iter = dta_outer_vertices.begin();

@@ -25,10 +25,11 @@
 #include "tainting_functions.h"
 #include "resolving_functions.h"
 #include "logging_functions.h"
+#include "cond_direct_instruction.h"
 
 /*================================================================================================*/
 
-extern std::map<ADDRINT, ptr_instruction_t>     addr_ins_static_map;
+extern std::map<ADDRINT, ptr_instruction_t>     ins_at_addr;
 extern bool                                     in_tainting;
 extern UINT32                                   received_msg_num;
 
@@ -76,7 +77,11 @@ VOID ins_instrumenter(INS ins, VOID *data)
   {
     // logging the parsed instructions statically
     ptr_instruction_t examined_ins(new instruction(ins));
-    addr_ins_static_map[examined_ins->address] = examined_ins;
+    ins_at_addr[examined_ins->address] = examined_ins;
+    if (examined_ins->is_cond_direct_cf)
+    {
+      ins_at_addr[examined_ins->address].reset(new cond_direct_instruction(*examined_ins));
+    }
 
     if (!start_ptr_time)
     {

@@ -22,6 +22,7 @@ public:
 
 public:
   cond_direct_instruction(const INS& ins);
+  cond_direct_instruction(instruction& ins);
 };
 
 typedef boost::shared_ptr<cond_direct_instruction> ptr_cond_direct_instruction_t;

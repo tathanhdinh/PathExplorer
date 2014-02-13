@@ -20,8 +20,8 @@
 
 /*================================================================================================*/
 
-extern std::map<ADDRINT, ptr_instruction_t>       addr_ins_static_map;
-extern std::map<UINT32,  ptr_instruction_t>       order_ins_dynamic_map;
+extern std::map<ADDRINT, ptr_instruction_t>       ins_at_addr;
+extern std::map<UINT32,  ptr_instruction_t>       ins_at_order;
 
 extern bool                                       in_tainting;
 
@@ -62,7 +62,7 @@ extern ptr_branch_t                               active_ptr_branch;
 extern ptr_branch_t                               last_active_ptr_branch;
 extern ptr_branch_t                               exploring_ptr_branch;
 
-extern std::set<ADDRINT>                          active_input_dep_addrs;
+//extern std::set<ADDRINT>                          active_input_dep_addrs;
 
 extern UINT64                                     executed_ins_number;
 extern UINT64                                     econed_ins_number;
@@ -89,7 +89,7 @@ VOID resolving_ins_count_analyzer(ADDRINT ins_addr)
   current_execution_order++;
   executed_ins_number++;
 
-  if (order_ins_dynamic_map[current_execution_order]->address == ins_addr)
+  if (ins_at_order[current_execution_order]->address == ins_addr)
   {
     // do nothing
   }
@@ -170,8 +170,8 @@ inline void prepare_new_tainting_phase(ptr_branch_t& unexplored_ptr_branch)
   master_ptr_checkpoint = *saved_ptr_checkpoints.begin();
 
   std::map<UINT32, ptr_instruction_t>::iterator order_ins_map_iter;
-  order_ins_map_iter = order_ins_dynamic_map.find(master_ptr_checkpoint->execution_order);
-  order_ins_dynamic_map.erase(order_ins_map_iter, order_ins_dynamic_map.end());
+  order_ins_map_iter = ins_at_order.find(master_ptr_checkpoint->execution_order);
+  ins_at_order.erase(order_ins_map_iter, ins_at_order.end());
     
   dta_graph.clear();
   dta_outer_vertices.clear();
@@ -326,7 +326,7 @@ inline void exploring_new_branch_or_stop()
     BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
       << boost::format("exploring the branch at %d (%s) by start tainting a new path")
           % unexplored_ptr_branch->execution_order
-          % addr_ins_static_map[unexplored_ptr_branch->addr]->disassembled_name;
+          % ins_at_addr[unexplored_ptr_branch->addr]->disassembled_name;
     
     // the MASTER checkpoint is the first element of saved_ptr_checkpoints, 
     // it will be update here because the prepare_new_tainting_phase will 
@@ -462,7 +462,7 @@ inline void unresolved_branch_takes_new_decision(ADDRINT ins_addr,
       << boost::format("the branch at %d (%s: %s) is successfully resolved after %d rollbacks") 
           % examined_ptr_branch->execution_order
           % remove_leading_zeros(StringFromAddrint(ins_addr))
-          % addr_ins_static_map[ins_addr]->disassembled_name
+          % ins_at_addr[ins_addr]->disassembled_name
           % (local_rollback_times + (used_checkpoint_number - 1) * max_local_rollback_times);
     
     accept_branch(active_ptr_branch);
@@ -557,7 +557,7 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
               BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
                 << boost::format("rollback to the next checkpoint at %d (%s).") 
                     % active_nearest_checkpoint.first->execution_order
-                    % order_ins_dynamic_map[active_nearest_checkpoint.first->execution_order]->disassembled_name;
+                    % ins_at_order[active_nearest_checkpoint.first->execution_order]->disassembled_name;
           
               econed_ins_number += active_ptr_branch->econ_execution_length[active_nearest_checkpoint.first];
 //               std::cout << econed_ins_number << "  " << executed_ins_number << std::endl;
@@ -615,9 +615,9 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
           % active_ptr_branch->execution_order
           % active_ptr_branch->br_taken
           % remove_leading_zeros(StringFromAddrint(active_ptr_branch->addr))
-          % order_ins_dynamic_map[active_ptr_branch->execution_order]->disassembled_name
+          % ins_at_order[active_ptr_branch->execution_order]->disassembled_name
           % active_nearest_checkpoint.first->execution_order
-          % order_ins_dynamic_map[active_nearest_checkpoint.first->execution_order]->disassembled_name;
+          % ins_at_order[active_nearest_checkpoint.first->execution_order]->disassembled_name;
    
     econed_ins_number += active_ptr_branch->econ_execution_length[active_nearest_checkpoint.first];
 //     std::cout << econed_ins_number << "  " << executed_ins_number << std::endl;
@@ -789,7 +789,7 @@ inline void log_input(ADDRINT ins_addr, bool br_taken)
       << boost::format("the branch at %d (%s: %s) cannot found")
           % current_execution_order
           % remove_leading_zeros(StringFromAddrint(ins_addr)) 
-          % addr_ins_static_map[ins_addr]->disassembled_name;
+          % ins_at_addr[ins_addr]->disassembled_name;
 
     PIN_ExitApplication(0);
   }
@@ -828,7 +828,7 @@ VOID resolving_cond_branch_analyzer(ADDRINT ins_addr, bool br_taken)
         << boost::format("the branch at %d (%s: %s) cannot found")
            % current_execution_order
            % remove_leading_zeros(StringFromAddrint(ins_addr))
-           % addr_ins_static_map[ins_addr]->disassembled_name;
+           % ins_at_addr[ins_addr]->disassembled_name;
 
       PIN_ExitApplication(0);
     }
@@ -847,7 +847,7 @@ VOID resolving_cond_branch_analyzer(ADDRINT ins_addr, bool br_taken)
  */
 VOID resolving_indirect_branch_call_analyzer(ADDRINT ins_addr, ADDRINT target_addr)
 {
-  if (order_ins_dynamic_map[current_execution_order + 1]->address != target_addr)
+  if (ins_at_order[current_execution_order + 1]->address != target_addr)
   {
     // active_ptr_branch is enabled, namely in some rollback
     if (active_ptr_branch) 

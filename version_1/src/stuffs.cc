@@ -25,8 +25,8 @@
 
 /*================================================================================================*/
 
-extern std::map<ADDRINT, ptr_instruction_t> addr_ins_static_map;
-extern std::map<UINT32, ptr_instruction_t>  order_ins_dynamic_map;
+extern std::map<ADDRINT, ptr_instruction_t> ins_at_addr;
+extern std::map<UINT32, ptr_instruction_t>  ins_at_order;
 extern UINT32                               current_execution_order;
 extern df_diagram                           dta_graph;
 extern ADDRINT                              received_msg_addr;
@@ -73,8 +73,8 @@ void journal_static_trace(const std::string& filename)
 {
   std::ofstream out_file(filename.c_str(), std::ofstream::out | std::ofstream::trunc);
 
-  std::map<ADDRINT, ptr_instruction_t>::iterator addr_ins_iter = addr_ins_static_map.begin();
-  for (; addr_ins_iter != addr_ins_static_map.end(); ++addr_ins_iter) 
+  std::map<ADDRINT, ptr_instruction_t>::iterator addr_ins_iter = ins_at_addr.begin();
+  for (; addr_ins_iter != ins_at_addr.end(); ++addr_ins_iter) 
   {
     out_file << boost::format("%-15s %-50s %-25s %-25s\n")
                 % remove_leading_zeros(StringFromAddrint(addr_ins_iter->first))
@@ -150,7 +150,7 @@ public:
   {
     df_edge current_edge = graph[edge];
     edge_label << boost::format("[label=\"%s: %s\"]")
-                  % current_edge % order_ins_dynamic_map[current_edge]->disassembled_name;
+                  % current_edge % ins_at_order[current_edge]->disassembled_name;
   }
 
 private:
