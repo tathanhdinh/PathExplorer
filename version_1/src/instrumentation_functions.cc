@@ -49,8 +49,8 @@ extern boost::shared_ptr<sink_file_backend>     log_sink;
 /*================================================================================================*/
 
 /**
- * @brief instrumentation function: all analysis functions are inserted by predicate verification to
- * make sure that the instruction is examined iff it is executed.
+ * @brief instrumentation function: all analysis functions are inserted using
+ * INS_InsertPredicatedCall to make sure that the instruction is examined iff it is executed.
  * 
  * @param ins current examined instruction.
  * @param data not used.

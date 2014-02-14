@@ -12,9 +12,9 @@ VOID logging_mem_read_instruction_analyzer(ADDRINT ins_addr,
                                            ADDRINT mem_read_addr, UINT32 mem_read_size, 
                                            CONTEXT* p_ctxt);
 
-VOID logging_mem_read2_instruction_analyzer(ADDRINT ins_addr, 
-                                            ADDRINT mem_read_addr, UINT32 mem_read_size, 
-                                            CONTEXT* p_ctxt);
+// VOID logging_mem_read2_instruction_analyzer(ADDRINT ins_addr, 
+//                                             ADDRINT mem_read_addr, UINT32 mem_read_size, 
+//                                             CONTEXT* p_ctxt);
 
 VOID logging_mem_write_instruction_analyzer(ADDRINT ins_addr, 
                                             ADDRINT mem_written_addr, UINT32 mem_written_size);

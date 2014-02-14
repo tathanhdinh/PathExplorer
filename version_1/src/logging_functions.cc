@@ -471,13 +471,13 @@ VOID logging_mem_read_instruction_analyzer(ADDRINT ins_addr,
 
 /*================================================================================================*/
 // memmory read 2
-VOID logging_mem_read2_instruction_analyzer(ADDRINT ins_addr, 
-                                            ADDRINT mem_read_addr, UINT32 mem_read_size, 
-                                            CONTEXT* p_ctxt)
-{
-  logging_mem_read_instruction_analyzer(ins_addr, mem_read_addr, mem_read_size, p_ctxt);
-  return;
-}
+// VOID logging_mem_read2_instruction_analyzer(ADDRINT ins_addr, 
+//                                             ADDRINT mem_read_addr, UINT32 mem_read_size, 
+//                                             CONTEXT* p_ctxt)
+// {
+//   logging_mem_read_instruction_analyzer(ins_addr, mem_read_addr, mem_read_size, p_ctxt);
+//   return;
+// }
 
 /*================================================================================================*/
 // memory written
