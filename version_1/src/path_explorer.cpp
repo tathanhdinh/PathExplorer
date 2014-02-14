@@ -32,7 +32,6 @@
 #include "branch.h"
 #include "instrumentation_functions.h"
 #include "logging_functions.h"
-//#include "analysis_functions.h"
 
 extern "C" 
 {
@@ -220,29 +219,29 @@ int main(int argc, char *argv[])
 {
   initialize_logging("path_explorer.log");
 
-  BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "initialize image symbol tables";
+  BOOST_LOG_SEV(log_instance, logging::trivial::info) << "initialize image symbol tables";
   PIN_InitSymbols();
 
-  BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "initialize Pin";
+  BOOST_LOG_SEV(log_instance, logging::trivial::info) << "initialize Pin";
   if (PIN_Init(argc, argv))
   {
-    BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal) << "Pin initialization failed";
+    BOOST_LOG_SEV(log_instance, logging::trivial::fatal) << "Pin initialization failed";
     log_sink->flush();
   }
   else
   {
-    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "Pin initialization success";
+    BOOST_LOG_SEV(log_instance, logging::trivial::info) << "Pin initialization success";
 
-    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "activate Pintool data-initialization";
+    BOOST_LOG_SEV(log_instance, logging::trivial::info) << "activate Pintool data-initialization";
     PIN_AddApplicationStartFunction(start_tracing, 0);  // 0 is the (unused) input data
 
-    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "activate image-load instrumenter";
+    BOOST_LOG_SEV(log_instance, logging::trivial::info) << "activate image-load instrumenter";
     IMG_AddInstrumentFunction(image_load_instrumenter, 0);
     
-    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "activate process-fork instrumenter";
+    BOOST_LOG_SEV(log_instance, logging::trivial::info) << "activate process-fork instrumenter";
     PIN_AddFollowChildProcessFunction(process_create_instrumenter, 0);
 
-    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "activate instruction instrumenters";
+    BOOST_LOG_SEV(log_instance, logging::trivial::info) << "activate instruction instrumenters";
     INS_AddInstrumentFunction(ins_instrumenter, 0);
 
 #if BOOST_OS_LINUX

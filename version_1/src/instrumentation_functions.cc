@@ -43,14 +43,14 @@ namespace sources = boost::log::sources;
 typedef sinks::text_file_backend                text_backend;
 typedef sinks::synchronous_sink<text_backend>   sink_file_backend;
 typedef logging::trivial::severity_level        log_level;
-
 extern sources::severity_logger<log_level>      log_instance;
 extern boost::shared_ptr<sink_file_backend>     log_sink;
 
 /*================================================================================================*/
 
 /**
- * @brief instrumentation function.
+ * @brief instrumentation function: all analysis functions are inserted by predicate verification to
+ * make sure that the instruction is examined iff it is executed.
  * 
  * @param ins current examined instruction.
  * @param data not used.
