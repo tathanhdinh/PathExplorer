@@ -16,7 +16,7 @@ ADD_PINTOOL(path_explorer
   src/path_explorer.cpp 
   src/operand.cpp 
   src/instruction.cpp 
-#  src/cond_direct_instruction.cpp
+  src/cond_direct_instruction.cpp
   src/checkpoint.cpp 
   src/resolving_functions.cc 
   src/logging_functions.cc 

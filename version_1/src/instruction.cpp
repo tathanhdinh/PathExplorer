@@ -39,7 +39,12 @@ instruction::instruction(const INS& ins)
                                  (INS_HasRealRep(ins) &&
                                   ((ins_opcode == XED_ICLASS_CMPSB) ||
                                    (ins_opcode == XED_ICLASS_CMPSD) ||
-                                   (ins_opcode == XED_ICLASS_CMPSW))));
+                                   (ins_opcode == XED_ICLASS_CMPSW) ||
+                                   (ins_opcode == XED_ICLASS_CMPSQ) ||
+                                   (ins_opcode == XED_ICLASS_SCASB) ||
+                                   (ins_opcode == XED_ICLASS_SCASW) ||
+                                   (ins_opcode == XED_ICLASS_SCASD) ||
+                                   (ins_opcode == XED_ICLASS_SCASW))));
   this->is_uncond_indirect_cf = INS_IsIndirectBranchOrCall(ins);
   this->has_mem_read2         = INS_HasMemoryRead2(ins);
   this->has_real_rep          = INS_HasRealRep(ins);
