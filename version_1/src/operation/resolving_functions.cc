@@ -13,10 +13,10 @@
 
 #include <algorithm>
 
-#include "instruction.h"
-#include "checkpoint.h"
-#include "branch.h"
-#include "stuffs.h"
+#include "../base/instruction.h"
+#include "../base/checkpoint.h"
+#include "../base/branch.h"
+#include "../util/stuffs.h"
 
 /*================================================================================================*/
 

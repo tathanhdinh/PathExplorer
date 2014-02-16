@@ -17,9 +17,9 @@
 #include <boost/graph/lookup_edge.hpp>
 
 
-#include "instruction.h"
-#include "checkpoint.h"
-#include "branch.h"
+#include "../base/instruction.h"
+#include "../base/checkpoint.h"
+#include "../base/branch.h"
 
 #include <pin.H>
 

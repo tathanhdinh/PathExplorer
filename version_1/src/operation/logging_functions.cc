@@ -17,10 +17,10 @@
 #include <boost/log/sources/severity_logger.hpp>
 #include <boost/log/sources/record_ostream.hpp>
 
-#include "stuffs.h"
-#include "instruction.h"
-#include "checkpoint.h"
-#include "branch.h"
+#include "../util/stuffs.h"
+#include "../base/instruction.h"
+#include "../base/checkpoint.h"
+#include "../base/branch.h"
 
 /*================================================================================================*/
 

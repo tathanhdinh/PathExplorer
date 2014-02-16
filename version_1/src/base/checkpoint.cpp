@@ -10,7 +10,7 @@
 
 #include <boost/random.hpp>
 
-#include "stuffs.h"
+#include "../util/stuffs.h"
 
 extern ADDRINT                                received_msg_addr;
 extern UINT32                                 received_msg_size;

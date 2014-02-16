@@ -19,13 +19,13 @@
 #include <boost/log/sources/severity_logger.hpp>
 #include <boost/log/sources/record_ostream.hpp>
 
-#include "stuffs.h"
-#include "branch.h"
-#include "instruction.h"
+#include "../util/stuffs.h"
+#include "../base/branch.h"
+#include "../base/instruction.h"
 #include "tainting_functions.h"
 #include "resolving_functions.h"
 #include "logging_functions.h"
-#include "cond_direct_instruction.h"
+#include "../base/cond_direct_instruction.h"
 
 /*================================================================================================*/
 

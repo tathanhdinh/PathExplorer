@@ -26,12 +26,12 @@
 #include <boost/log/sources/severity_logger.hpp>
 #include <boost/log/sources/record_ostream.hpp>
 
-#include "instruction.h"
-#include "checkpoint.h"
-#include "stuffs.h"
-#include "branch.h"
-#include "instrumentation_functions.h"
-#include "logging_functions.h"
+#include "base/instruction.h"
+#include "base/checkpoint.h"
+#include "base/branch.h"
+#include "operation/instrumentation_functions.h"
+#include "operation/logging_functions.h"
+#include "util/stuffs.h"
 
 extern "C" 
 {

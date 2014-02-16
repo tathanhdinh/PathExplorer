@@ -7,7 +7,7 @@ extern "C" {
 #include <xed-interface.h>
 }
 
-#include "stuffs.h"
+#include "../util/stuffs.h"
 
 /*================================================================================================*/
 
