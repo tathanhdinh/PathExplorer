@@ -11,6 +11,8 @@ cond_direct_instruction::cond_direct_instruction(const INS& ins) : instruction(i
   this->checkpoints.clear();  
 }
 
+/*================================================================================================*/
+
 cond_direct_instruction::cond_direct_instruction(instruction& ins) : instruction(ins)
 {
   this->is_resolved = false;
@@ -19,5 +21,5 @@ cond_direct_instruction::cond_direct_instruction(instruction& ins) : instruction
 
   this->input_dep_addrs.clear();
   this->inputs.clear();
-  this->checkpoints.clear();
+  this->checkpoints.clear();  
 }
