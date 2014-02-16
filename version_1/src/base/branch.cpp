@@ -5,7 +5,7 @@
 
 /*================================================================================================*/
 
-extern UINT32                         current_execution_order;
+extern UINT32                         current_exec_order;
 extern std::vector<ptr_checkpoint_t>  saved_ptr_checkpoints;
 
 /*================================================================================================*/
@@ -13,7 +13,7 @@ extern std::vector<ptr_checkpoint_t>  saved_ptr_checkpoints;
 branch::branch(ADDRINT ins_addr, bool br_taken)
 {
   this->addr              = ins_addr;
-  this->execution_order   = current_execution_order;
+  this->execution_order   = current_exec_order;
   this->br_taken          = br_taken;
 
   this->is_resolved       = false;

@@ -15,7 +15,7 @@
 extern ADDRINT                                received_msg_addr;
 extern UINT32                                 received_msg_size;
 //extern std::vector<ADDRINT>                   explored_trace;
-extern UINT32                                 current_execution_order;
+extern UINT32                                 current_exec_order;
 
 namespace bran = boost::random;
 extern bran::taus88                           rgen;
@@ -30,7 +30,7 @@ checkpoint::checkpoint(ADDRINT ip_addr, CONTEXT* p_ctxt,
   this->ptr_ctxt.reset(new CONTEXT);
   PIN_SaveContext(p_ctxt, this->ptr_ctxt.get());
 
-  this->execution_order = current_execution_order;
+  this->execution_order = current_exec_order;
 
   for (UINT32 idx = 0; idx < mem_read_size; ++idx)
   {
@@ -96,8 +96,8 @@ void rollback_and_restore(ptr_checkpoint_t& dest_ptr_checkpoint, UINT8* backup_i
 
   // restore the current execution order (-1 again because the instruction at the checkpoint will
   // be re-executed)
-  current_execution_order = dest_ptr_checkpoint->execution_order;
-  current_execution_order--;
+  current_exec_order = dest_ptr_checkpoint->execution_order;
+  current_exec_order--;
 
   // restore written memories
    UINT8 single_byte;
@@ -131,6 +131,13 @@ void rollback_and_restore(ptr_checkpoint_t& dest_ptr_checkpoint, UINT8* backup_i
 
 /*================================================================================================*/
 
+void rollback_and_restore(ptr_checkpoint_t& current_chkpt, std::set<ADDRINT>& mem_addrs)
+{
+  return;
+}
+
+/*================================================================================================*/
+
 void rollback_and_modify(ptr_checkpoint_t& current_ptr_checkpoint,
                                              std::set<ADDRINT>& dep_mems)
 {
@@ -138,8 +145,8 @@ void rollback_and_modify(ptr_checkpoint_t& current_ptr_checkpoint,
 //  explored_trace = current_ptr_checkpoint->trace;
 //  explored_trace.pop_back();
 
-  current_execution_order = current_ptr_checkpoint->execution_order;
-  current_execution_order--;
+  current_exec_order = current_ptr_checkpoint->execution_order;
+  current_exec_order--;
 
   // restore written memories
   UINT8 single_byte;

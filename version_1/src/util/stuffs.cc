@@ -27,7 +27,7 @@
 
 extern std::map<ADDRINT, ptr_instruction_t> ins_at_addr;
 extern std::map<UINT32, ptr_instruction_t>  ins_at_order;
-extern UINT32                               current_execution_order;
+extern UINT32                               current_exec_order;
 extern df_diagram                           dta_graph;
 extern ADDRINT                              received_msg_addr;
 extern UINT32                               received_msg_size;

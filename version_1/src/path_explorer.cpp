@@ -84,7 +84,7 @@ ptr_branch_t                                    last_active_ptr_branch;
 ptr_branch_t                                    exploring_ptr_branch;
 
 std::vector<ADDRINT>                            explored_trace;
-UINT32                                          current_execution_order;
+UINT32                                          current_exec_order;
 
 UINT32                                          received_msg_num;
 ADDRINT                                         received_msg_addr;
@@ -141,7 +141,7 @@ VOID start_tracing(VOID *data)
   local_rollback_times      = 0;
   used_checkpoint_number    = 0;
   
-  current_execution_order   = 0;
+  current_exec_order   = 0;
 
   max_total_rollback_times  = max_total_rollback.Value();
   total_rollback_times      = 0;

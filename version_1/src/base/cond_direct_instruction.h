@@ -20,6 +20,9 @@ public:
   std::map<bool, addrint_value_set>           inputs;
   std::vector<checkpoint_with_modified_addrs> checkpoints;
 
+  UINT32 used_rollback_num;
+  UINT32 max_rollback_num;
+
 public:
   cond_direct_instruction(const INS& ins);
   cond_direct_instruction(instruction& ins);

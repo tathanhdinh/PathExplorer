@@ -29,7 +29,7 @@ extern df_diagram                                 dta_graph;
 extern df_vertex_desc_set                         dta_outer_vertices;
 
 extern std::vector<ADDRINT>                       explored_trace;
-extern UINT32                                     current_execution_order;
+extern UINT32                                     current_exec_order;
 
 extern ptr_checkpoint_t                           master_ptr_checkpoint;
 extern ptr_checkpoint_t                           last_active_ptr_checkpoint;
@@ -86,10 +86,10 @@ extern KNOB<BOOL>                                 print_debug_text;
 
 VOID resolving_ins_count_analyzer(ADDRINT ins_addr)
 {
-  current_execution_order++;
+  current_exec_order++;
   executed_ins_number++;
 
-  if (ins_at_order[current_execution_order]->address == ins_addr)
+  if (ins_at_order[current_exec_order]->address == ins_addr)
   {
     // do nothing
   }
@@ -149,8 +149,8 @@ VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr,
   else // in forwarding
   {
     std::vector<ptr_checkpoint_t>::iterator
-        ptr_checkpoint_iter = exepoint_checkpoints_map[current_execution_order].begin();
-    for (; ptr_checkpoint_iter != exepoint_checkpoints_map[current_execution_order].end();
+        ptr_checkpoint_iter = exepoint_checkpoints_map[current_exec_order].begin();
+    for (; ptr_checkpoint_iter != exepoint_checkpoints_map[current_exec_order].end();
          ++ptr_checkpoint_iter)
     {
       (*ptr_checkpoint_iter)->mem_written_logging(ins_addr, mem_written_addr, mem_written_size);
@@ -479,7 +479,7 @@ inline void unresolved_branch_takes_new_decision(ADDRINT ins_addr,
   {
     BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
       << boost::format("the branch at %d takes a different decision in forwarding.") 
-          % current_execution_order;
+          % current_exec_order;
 
     PIN_ExitApplication(2);
   }
@@ -775,7 +775,7 @@ inline void log_input(ADDRINT ins_addr, bool br_taken)
 {
   std::map<UINT32, ptr_branch_t>::iterator order_ptr_branch_iter;
   
-  order_ptr_branch_iter = order_tainted_ptr_branch_map.find(current_execution_order);
+  order_ptr_branch_iter = order_tainted_ptr_branch_map.find(current_exec_order);
   if (order_ptr_branch_iter != order_tainted_ptr_branch_map.end()) 
   {
     if (order_ptr_branch_iter->second->inputs[br_taken].empty()) 
@@ -787,7 +787,7 @@ inline void log_input(ADDRINT ins_addr, bool br_taken)
   {
     BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
       << boost::format("the branch at %d (%s: %s) cannot found")
-          % current_execution_order
+          % current_exec_order
           % remove_leading_zeros(StringFromAddrint(ins_addr)) 
           % ins_at_addr[ins_addr]->disassembled_name;
 
@@ -806,7 +806,7 @@ VOID resolving_cond_branch_analyzer(ADDRINT ins_addr, bool br_taken)
   std::map<UINT32, ptr_branch_t>::iterator order_ptr_branch_iter;
   
   // search in the list of input dependent branches
-  order_ptr_branch_iter = order_input_dep_ptr_branch_map.find(current_execution_order);
+  order_ptr_branch_iter = order_input_dep_ptr_branch_map.find(current_exec_order);
   if (order_ptr_branch_iter != order_input_dep_ptr_branch_map.end()) 
   {
     process_input_dependent_branch(ins_addr, br_taken, 
@@ -815,7 +815,7 @@ VOID resolving_cond_branch_analyzer(ADDRINT ins_addr, bool br_taken)
   else 
   {
     // search in the list of input independent branches
-    order_ptr_branch_iter = order_input_indep_ptr_branch_map.find(current_execution_order);
+    order_ptr_branch_iter = order_input_indep_ptr_branch_map.find(current_exec_order);
     if (order_ptr_branch_iter != order_input_indep_ptr_branch_map.end()) 
     {
       process_input_independent_branch(ins_addr, br_taken, 
@@ -826,7 +826,7 @@ VOID resolving_cond_branch_analyzer(ADDRINT ins_addr, bool br_taken)
       //BOOST_LOG_TRIVIAL(fatal) 
       BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
         << boost::format("the branch at %d (%s: %s) cannot found")
-           % current_execution_order
+           % current_exec_order
            % remove_leading_zeros(StringFromAddrint(ins_addr))
            % ins_at_addr[ins_addr]->disassembled_name;
 
@@ -847,7 +847,7 @@ VOID resolving_cond_branch_analyzer(ADDRINT ins_addr, bool br_taken)
  */
 VOID resolving_indirect_branch_call_analyzer(ADDRINT ins_addr, ADDRINT target_addr)
 {
-  if (ins_at_order[current_execution_order + 1]->address != target_addr)
+  if (ins_at_order[current_exec_order + 1]->address != target_addr)
   {
     // active_ptr_branch is enabled, namely in some rollback
     if (active_ptr_branch) 
@@ -864,7 +864,7 @@ VOID resolving_indirect_branch_call_analyzer(ADDRINT ins_addr, ADDRINT target_ad
     {
       BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
         << boost::format("the indirect branch at %d takes a different decision in forwarding")
-           % current_execution_order;
+           % current_exec_order;
       PIN_ExitApplication(0);
     }    
   }
