@@ -26,7 +26,6 @@
 #include "instrumentation_functions.h"
 #include "tainting_functions.h"
 #include "resolving_functions.h"
-#include "logging_functions.h"
 
 /*================================================================================================*/
 
@@ -50,15 +49,13 @@ extern boost::shared_ptr<sink_file_backend>     log_sink;
 
 /*================================================================================================*/
 
-/*================================================================================================*/
-
 inline static void exec_tainting_phase(INS& ins, ptr_instruction_t examined_ins)
 {
   /* START LOGGING */
   if (examined_ins->is_syscall)
   {
     INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
-                             (AFUNPTR)logging_syscall_instruction_analyzer,
+                             (AFUNPTR)tainting::syscall_instruction,
                              IARG_INST_PTR,
                              IARG_END);
   }
@@ -66,7 +63,7 @@ inline static void exec_tainting_phase(INS& ins, ptr_instruction_t examined_ins)
   {
     // general logging
     INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
-                             (AFUNPTR)logging_general_instruction_analyzer,
+                             (AFUNPTR)tainting::general_instruction,
                              IARG_INST_PTR,
                              IARG_END);
 
@@ -74,7 +71,7 @@ inline static void exec_tainting_phase(INS& ins, ptr_instruction_t examined_ins)
     {
       // conditional branch logging
       INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
-                               (AFUNPTR)logging_cond_br_analyzer,
+                               (AFUNPTR)tainting::cond_branch_instruction,
                                IARG_INST_PTR,
                                IARG_BRANCH_TAKEN,
                                IARG_END);
@@ -85,7 +82,7 @@ inline static void exec_tainting_phase(INS& ins, ptr_instruction_t examined_ins)
       {
         // memory read logging
         INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
-                                 (AFUNPTR)logging_mem_read_instruction_analyzer,
+                                 (AFUNPTR)tainting::mem_read_instruction,
                                  IARG_INST_PTR,
                                  IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE,
                                  IARG_CONTEXT,
@@ -94,7 +91,7 @@ inline static void exec_tainting_phase(INS& ins, ptr_instruction_t examined_ins)
         {
           // memory read2 (e.g. rep cmpsb instruction)
           INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
-                                   (AFUNPTR)logging_mem_read_instruction_analyzer,
+                                   (AFUNPTR)tainting::mem_read_instruction,
                                    IARG_INST_PTR,
                                    IARG_MEMORYREAD2_EA, IARG_MEMORYREAD_SIZE,
                                    IARG_CONTEXT,
@@ -106,7 +103,7 @@ inline static void exec_tainting_phase(INS& ins, ptr_instruction_t examined_ins)
       {
         // memory written logging
         INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
-                                 (AFUNPTR)logging_mem_write_instruction_analyzer,
+                                 (AFUNPTR)tainting::mem_write_instruction,
                                  IARG_INST_PTR,
                                  IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE,
                                  IARG_END );
@@ -115,7 +112,7 @@ inline static void exec_tainting_phase(INS& ins, ptr_instruction_t examined_ins)
   }
   /* START TAINTING */
   INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
-                           (AFUNPTR)tainting_general_instruction_analyzer,
+                           (AFUNPTR)tainting::propagation,
                            IARG_INST_PTR,
                            IARG_END );
   return;

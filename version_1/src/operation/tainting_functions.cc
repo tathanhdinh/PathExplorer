@@ -64,6 +64,9 @@ typedef logging::trivial::severity_level        log_level;
 extern sources::severity_logger<log_level>      log_instance;
 extern boost::shared_ptr<sink_file_backend>     log_sink;
 
+namespace tainting
+{
+
 /*================================================================================================*/
 
 static std::map<df_vertex_desc, df_vertex_desc> prec_vertex_desc;
@@ -377,9 +380,8 @@ inline void prepare_new_rollbacking_phase()
     }
     else
     {
-      //BOOST_LOG_TRIVIAL(info) << "There is no branch needed to resolve.";
       BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-        << "there is no branch needed to resolve";
+          << "there is no branch needed to resolve";
       PIN_ExitApplication(0);
     }
   }
@@ -389,7 +391,7 @@ inline void prepare_new_rollbacking_phase()
 
 /*================================================================================================*/
 
-VOID logging_syscall_instruction_analyzer(ADDRINT ins_addr)
+VOID syscall_instruction(ADDRINT ins_addr)
 {
   prepare_new_rollbacking_phase();
   return;
@@ -397,7 +399,7 @@ VOID logging_syscall_instruction_analyzer(ADDRINT ins_addr)
 
 /*================================================================================================*/
 
-VOID logging_general_instruction_analyzer(ADDRINT ins_addr)
+VOID general_instruction(ADDRINT ins_addr)
 {
   if ((current_exec_order < max_trace_size) &&
       !ins_at_addr[ins_addr]->is_mapped_from_kernel)
@@ -423,7 +425,7 @@ VOID logging_general_instruction_analyzer(ADDRINT ins_addr)
 
 /*================================================================================================*/
 
-VOID logging_mem_read_instruction_analyzer(ADDRINT ins_addr,
+VOID mem_read_instruction(ADDRINT ins_addr,
                                            ADDRINT mem_read_addr, UINT32 mem_read_size,
                                            CONTEXT* p_ctxt)
 {
@@ -455,7 +457,7 @@ VOID logging_mem_read_instruction_analyzer(ADDRINT ins_addr,
 
 /*================================================================================================*/
 
-VOID logging_mem_write_instruction_analyzer(ADDRINT ins_addr,
+VOID mem_write_instruction(ADDRINT ins_addr,
                                             ADDRINT mem_written_addr, UINT32 mem_written_size)
 {
   if (!saved_checkpoints.empty())
@@ -478,7 +480,7 @@ VOID logging_mem_write_instruction_analyzer(ADDRINT ins_addr,
 
 /*================================================================================================*/
 
-VOID logging_cond_br_analyzer(ADDRINT ins_addr, bool br_taken)
+VOID cond_branch_instruction(ADDRINT ins_addr, bool br_taken)
 {
   ptr_branch_t new_ptr_branch(new branch(ins_addr, br_taken));
 
@@ -714,7 +716,7 @@ inline std::set<df_vertex_desc> destination_variables(UINT32 idx)
 
 /*================================================================================================*/
 
-VOID tainting_general_instruction_analyzer(ADDRINT ins_addr)
+VOID propagation(ADDRINT ins_addr)
 {
   std::set<df_vertex_desc> src_vertex_descs = source_variables(current_exec_order);
   std::set<df_vertex_desc> dst_vertex_descs = destination_variables(current_exec_order);
@@ -735,3 +737,5 @@ VOID tainting_general_instruction_analyzer(ADDRINT ins_addr)
 
   return;
 }
+
+} // end of tainting namespace

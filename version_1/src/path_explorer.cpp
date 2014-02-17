@@ -32,8 +32,6 @@
 #include "base/cond_direct_instruction.h"
 #include "operation/instrumentation_functions.h"
 #include "operation/tainting_functions.h"
-#include "operation/logging_functions.h"
-//#include "operation/logging_functions.h"
 #include "util/stuffs.h"
 
 extern "C" 
@@ -259,8 +257,8 @@ int main(int argc, char *argv[])
     INS_AddInstrumentFunction(ins_instrumenter, 0);
 
 #if BOOST_OS_LINUX
-    PIN_AddSyscallEntryFunction(syscall_entry_analyzer, 0);
-    PIN_AddSyscallExitFunction(syscall_exit_analyzer, 0);
+    PIN_AddSyscallEntryFunction(tainting::syscall_entry_analyzer, 0);
+    PIN_AddSyscallExitFunction(tainting::syscall_exit_analyzer, 0);
 #elif
     // In Windows environment, the input tracing is through socket api instead of system call
 #endif

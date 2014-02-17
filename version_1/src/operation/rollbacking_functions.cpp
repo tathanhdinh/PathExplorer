@@ -134,7 +134,8 @@ VOID generic_instruction(ADDRINT ins_addr)
   // verify if the execution order of the instruction exceeds the last CFI
   if (current_exec_order > last_cfi_exec_order)
   {
-    //
+    // exceeds, namely the rollbacking phase should stop
+
   }
   else
   {
@@ -291,7 +292,7 @@ VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length
 
 /*================================================================================================*/
 
-void prepare()
+void prepare_new_phase()
 {
   active_cfi.reset(); active_cfi_exec_order = 0;
   active_checkpoint.reset(); active_modified_addrs.clear();
