@@ -29,10 +29,9 @@ public:
   UINT32                      rollback_times;
     
 public:
-  checkpoint(ADDRINT ip_addr, CONTEXT* new_ptr_ctxt,
-             ADDRINT msg_read_addr, UINT32 msg_read_size); 
+  checkpoint(ADDRINT ip_addr, CONTEXT* new_ptr_ctxt, ADDRINT msg_read_addr, UINT32 msg_read_size);
     
-  void mem_written_logging(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length);
+  void mem_written_logging(ADDRINT mem_addr, UINT32 mem_length);
 //   void mem_read_logging(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length);
   
 };

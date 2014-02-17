@@ -6,7 +6,7 @@
 /*================================================================================================*/
 
 extern UINT32                         current_exec_order;
-extern std::vector<ptr_checkpoint_t>  saved_ptr_checkpoints;
+extern std::vector<ptr_checkpoint_t>  saved_checkpoints;
 
 /*================================================================================================*/
 

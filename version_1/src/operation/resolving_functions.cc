@@ -33,7 +33,7 @@ extern UINT32                                     current_exec_order;
 
 extern ptr_checkpoint_t                           master_ptr_checkpoint;
 extern ptr_checkpoint_t                           last_active_ptr_checkpoint;
-extern std::vector<ptr_checkpoint_t>              saved_ptr_checkpoints;
+extern std::vector<ptr_checkpoint_t>              saved_checkpoints;
 
 extern std::pair< ptr_checkpoint_t, 
                   std::set<ADDRINT> >             active_nearest_checkpoint;
@@ -137,13 +137,11 @@ VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr,
   {
     if (active_nearest_checkpoint.first) 
     {
-      active_nearest_checkpoint.first->mem_written_logging(ins_addr, 
-                                                           mem_written_addr, mem_written_size);
+      active_nearest_checkpoint.first->mem_written_logging(mem_written_addr, mem_written_size);
     }
     else 
     {
-      last_active_ptr_checkpoint->mem_written_logging(ins_addr, 
-                                                      mem_written_addr, mem_written_size);
+      last_active_ptr_checkpoint->mem_written_logging(mem_written_addr, mem_written_size);
     }
   }
   else // in forwarding
@@ -153,7 +151,7 @@ VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr,
     for (; ptr_checkpoint_iter != exepoint_checkpoints_map[current_exec_order].end();
          ++ptr_checkpoint_iter)
     {
-      (*ptr_checkpoint_iter)->mem_written_logging(ins_addr, mem_written_addr, mem_written_size);
+      (*ptr_checkpoint_iter)->mem_written_logging(mem_written_addr, mem_written_size);
     }
   }
 
@@ -167,7 +165,7 @@ inline void prepare_new_tainting_phase(ptr_branch_t& unexplored_ptr_branch)
   in_tainting = true;
   exploring_ptr_branch = unexplored_ptr_branch;
   
-  master_ptr_checkpoint = *saved_ptr_checkpoints.begin();
+  master_ptr_checkpoint = *saved_checkpoints.begin();
 
   std::map<UINT32, ptr_instruction_t>::iterator order_ins_map_iter;
   order_ins_map_iter = ins_at_order.find(master_ptr_checkpoint->execution_order);
@@ -179,7 +177,7 @@ inline void prepare_new_tainting_phase(ptr_branch_t& unexplored_ptr_branch)
   order_tainted_ptr_branch_map.clear();
   order_input_dep_ptr_branch_map.clear();
   order_input_indep_ptr_branch_map.clear();
-  saved_ptr_checkpoints.clear();
+  saved_checkpoints.clear();
   exepoint_checkpoints_map.clear();
   
   unexplored_ptr_branch->is_explored = true;

@@ -68,7 +68,7 @@ checkpoint::checkpoint(ADDRINT ip_addr, CONTEXT* p_ctxt,
 
 /*================================================================================================*/
 
-void checkpoint::mem_written_logging(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_size)
+void checkpoint::mem_written_logging(ADDRINT mem_addr, UINT32 mem_size)
 {
   UINT8 single_byte;
   for (UINT32 offset = 0; offset < mem_size; ++offset)

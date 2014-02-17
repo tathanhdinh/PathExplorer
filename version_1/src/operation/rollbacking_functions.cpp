@@ -23,6 +23,8 @@ extern std::map<UINT32, ptr_instruction_t>      ins_at_order;
 
 extern UINT32                                   current_exec_order;
 
+extern std::vector<ptr_checkpoint_t>            saved_checkpoints;
+
 namespace logging = boost::log;
 namespace sinks   = boost::log::sinks;
 namespace sources = boost::log::sources;
@@ -246,6 +248,20 @@ VOID control_flow_instruction(ADDRINT ins_addr)
 
 VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_size)
 {
+  std::vector<ptr_checkpoint_t>::iterator chkpnt_iter = saved_checkpoints.begin();
+  if (active_checkpoint)
+  {
+  }
+  else
+  {
+    for (; chkpnt_iter != saved_checkpoints.end(); ++chkpnt_iter)
+    {
+      if ((*chkpnt_iter)->execution_order <= current_exec_order)
+      {
+        (*chkpnt_iter)->mem_written_logging(mem_addr, mem_size);
+      }
+    }
+  }
   return;
 }
 

@@ -61,7 +61,7 @@ bool                                            in_tainting;
 df_diagram                                      dta_graph;
 df_vertex_desc_set                              dta_outer_vertices;
 
-std::vector<ptr_checkpoint_t>                   saved_ptr_checkpoints;
+std::vector<ptr_checkpoint_t>                   saved_checkpoints;
 ptr_checkpoint_t                                master_ptr_checkpoint;
 ptr_checkpoint_t                                last_active_ptr_checkpoint;
 
@@ -203,10 +203,10 @@ inline static void initialize_logging(std::string log_filename)
 //   );
 
   log_sink = logging::add_file_log(log_filename.c_str());
-  logging::core::get()->set_filter
-  (
-    logging::trivial::severity >= logging::trivial::info
-  );
+//  logging::core::get()->set_filter
+//  (
+//    logging::trivial::severity >= logging::trivial::info
+//  );
   logging::add_common_attributes();
 
   return;
