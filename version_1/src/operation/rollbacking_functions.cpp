@@ -90,8 +90,15 @@ static inline void get_next_active_checkpoint()
       {
         active_checkpoint = next_chkpnt_iter->first;
         active_modified_addrs = next_chkpnt_iter->second;
+        break;
       }
       chkpnt_iter = next_chkpnt_iter;
+    }
+
+    if (next_chkpnt_iter == active_cfi->checkpoints.end())
+    {
+      active_checkpoint.reset();
+      active_modified_addrs.clear();
     }
   }
   else
@@ -187,11 +194,17 @@ VOID control_flow_instruction(ADDRINT ins_addr)
 {
   ptr_cond_direct_instruction_t current_cfi =
       boost::static_pointer_cast<cond_direct_instruction>(ins_at_order[current_exec_order]);
-  if (!current_cfi->input_dep_addrs.empty() && !active_cfi)
+  if (!current_cfi->is_resolved && !current_cfi->is_bypassed)
   {
-    active_cfi = current_cfi;
+    if (!current_cfi->input_dep_addrs.empty() && !active_cfi)
+    {
+      active_cfi = current_cfi; active_checkpoint.reset();
+      get_next_active_checkpoint();
+    }
   }
   return;
 }
+
+/*================================================================================================*/
 
 } // end of rollbacking namespace
