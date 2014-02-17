@@ -38,6 +38,8 @@ extern boost::shared_ptr<sink_file_backend>     log_sink;
 static ptr_cond_direct_instruction_t            active_cfi;
 static UINT32                                   active_cfi_exec_order;
 static ptr_checkpoint_t                         active_checkpoint;
+static UINT32                                   max_rollback_num;
+static UINT32                                   used_rollback_num;
 static addrint_set                              active_modified_addrs;
 
 /*================================================================================================*/
@@ -47,22 +49,19 @@ namespace rollbacking
 
 inline static void rollback()
 {
-  // verify if the number of used rollbacks has reached limit
-  if (active_cfi->used_rollback_num < active_cfi->max_rollback_num - 1)
+  // verify if the number of used rollbacks has reached its bound
+  if (used_rollback_num < max_rollback_num - 1)
   {
     // not reached yet, then just rollback again with a new value of the input
-    active_cfi->used_rollback_num++;
+    active_cfi->used_rollback_num++; used_rollback_num++;
     rollback_and_modify(active_checkpoint, active_modified_addrs);
   }
   else
   {
     // already reached, then restore the orginal value of the input
-    if (active_cfi->used_rollback_num == active_cfi->max_rollback_num - 1)
+    if (used_rollback_num == max_rollback_num - 1)
     {
-      if (!active_cfi->is_resolved) active_cfi->is_bypassed = true;
-      active_cfi->used_rollback_num++;
-      active_cfi.reset(); active_cfi_exec_order = 0;
-      active_checkpoint.reset();
+      active_cfi->used_rollback_num++; used_rollback_num++;
       rollback_and_restore(active_checkpoint, active_modified_addrs);
     }
     else
@@ -138,7 +137,6 @@ VOID generic_instruction(ADDRINT ins_addr)
       {
         // it is, then it will be marked as resolved
         active_cfi->is_resolved = true;
-        active_cfi->is_bypassed = false;
       }
       else
       {
@@ -183,28 +181,72 @@ VOID generic_instruction(ADDRINT ins_addr)
 
 /*================================================================================================*/
 
-VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_size)
-{
-  return;
-}
-
-/*================================================================================================*/
-
 VOID control_flow_instruction(ADDRINT ins_addr)
 {
   ptr_cond_direct_instruction_t current_cfi =
       boost::static_pointer_cast<cond_direct_instruction>(ins_at_order[current_exec_order]);
-  if (!current_cfi->is_resolved && !current_cfi->is_bypassed)
+
+  // verify if the current CFI depends on the input
+  if (!current_cfi->input_dep_addrs.empty())
   {
-    if (!current_cfi->input_dep_addrs.empty() && !active_cfi)
+    // depends, then verify if it is resolved or bypassed
+    if (!current_cfi->is_resolved && !current_cfi->is_bypassed)
     {
-      active_cfi = current_cfi; active_checkpoint.reset();
-      get_next_active_checkpoint();
+      // neither resolved nor bypassed, then verify if there exist a active CFI needed to resolve
+      if (!active_cfi)
+      {
+        // does not exist, then set the current CFI as the active CFI
+        active_cfi = current_cfi; get_next_active_checkpoint();
+        // and rollback to resolve this new active CFI
+        used_rollback_num = 0; rollback();
+      }
+      else
+      {
+        // exists, then verify if the current CFI is the active CFI
+        if (current_exec_order == active_cfi_exec_order)
+        {
+          // yes, then verify if the current checkpoint of the CFI is in the last rollback try
+          if (used_rollback_num == max_rollback_num)
+          {
+            // yes, then verify if there exists another checkpoint
+            get_next_active_checkpoint();
+            if (active_checkpoint)
+            {
+              // exists, then rollback to the new active checkpoint
+              used_rollback_num = 0; rollback();
+            }
+            else
+            {
+              // does not exist, then set the CFI as bypassed if it has been not resolved yet, and
+              // disable it
+              active_cfi->is_bypassed = !active_cfi->is_resolved; active_cfi.reset();
+            }
+          }
+        }
+        else
+        {
+          // no, then do nothing
+        }
+      }
+    }
+    else
+    {
+      // either resolved or bypassed, then do nothing
     }
   }
+  else
+  {
+    // doest not depend, then do nothing
+  }
+
   return;
 }
 
 /*================================================================================================*/
+
+VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_size)
+{
+  return;
+}
 
 } // end of rollbacking namespace
