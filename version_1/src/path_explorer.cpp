@@ -29,6 +29,7 @@
 #include "base/instruction.h"
 #include "base/checkpoint.h"
 #include "base/branch.h"
+#include "base/cond_direct_instruction.h"
 #include "operation/instrumentation_functions.h"
 #include "operation/logging_functions.h"
 #include "util/stuffs.h"
@@ -82,6 +83,9 @@ std::vector<ptr_branch_t>                       total_input_dep_ptr_branches;
 ptr_branch_t                                    active_ptr_branch;
 ptr_branch_t                                    last_active_ptr_branch;
 ptr_branch_t                                    exploring_ptr_branch;
+
+ptr_cond_direct_instruction_t                   exploring_cfi;
+UINT32                                          exploring_cfi_exec_order;
 
 std::vector<ADDRINT>                            explored_trace;
 UINT32                                          current_exec_order;

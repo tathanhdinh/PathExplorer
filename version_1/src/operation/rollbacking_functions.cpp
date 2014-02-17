@@ -24,6 +24,9 @@ extern std::map<UINT32, ptr_instruction_t>      ins_at_order;
 extern UINT32                                   current_exec_order;
 
 extern std::vector<ptr_checkpoint_t>            saved_checkpoints;
+extern ptr_cond_direct_instruction_t            exploring_cfi;
+extern UINT32                                   exploring_cfi_exec_order;
+extern UINT32                                   last_cfi_exec_order;
 
 namespace logging = boost::log;
 namespace sinks   = boost::log::sinks;
@@ -127,57 +130,65 @@ static inline void get_next_active_checkpoint()
 VOID generic_instruction(ADDRINT ins_addr)
 {
   current_exec_order++;
-  // verify if the executed instruction is in the original trace
-  if (ins_at_order[current_exec_order]->address != ins_addr)
+
+  // verify if the execution order of the instruction exceeds the last CFI
+  if (current_exec_order > last_cfi_exec_order)
   {
-    // is not in, then verify if the current control-flow instruction (abbr. CFI) is activated
-    if (active_cfi)
-    {
-      // activated, that means the rollback from some checkpoint of this CFI will change the
-      // control-flow, then verify if the CFI is the just previous executed instruction
-      if (active_cfi_exec_order + 1 == current_exec_order)
-      {
-        // it is, then it will be marked as resolved
-        active_cfi->is_resolved = true;
-      }
-      else
-      {
-        // it is not, that means some other CFI (between the current CFI and the checkpoint) will
-        // change the control flow
-      }
-      // in both cases, we need rollback
-      rollback();
-    }
-    else
-    {
-      // not activated, then some errors have occurred
-      BOOST_LOG_SEV(log_instance, logging::trivial::fatal)
-          << boost::format("there is no active CFI but the original trace will change");
-      PIN_ExitApplication(1);
-    }
+    //
   }
   else
   {
-    // is in, then verify if there exists currently a CFI needed to resolve
-    if (active_cfi)
+    // verify if the executed instruction is in the original trace
+    if (ins_at_order[current_exec_order]->address != ins_addr)
     {
-      // exists, then verify if the executed instruction has exceeded this CFI
-      if (current_exec_order <= active_cfi_exec_order)
+      // is not in, then verify if the current control-flow instruction (abbr. CFI) is activated
+      if (active_cfi)
       {
-        // not exceeded yet, then do nothing
+        // activated, that means the rollback from some checkpoint of this CFI will change the
+        // control-flow, then verify if the CFI is the just previous executed instruction
+        if (active_cfi_exec_order + 1 == current_exec_order)
+        {
+          // it is, then it will be marked as resolved
+          active_cfi->is_resolved = true;
+        }
+        else
+        {
+          // it is not, that means some other CFI (between the current CFI and the checkpoint) will
+          // change the control flow
+        }
+        // in both cases, we need rollback
+        rollback();
       }
       else
       {
-        // just exceeded, then rollback
-        rollback();
+        // not activated, then some errors have occurred
+        BOOST_LOG_SEV(log_instance, logging::trivial::fatal)
+            << boost::format("there is no active CFI but the original trace will change");
+        PIN_ExitApplication(1);
       }
     }
     else
     {
-      // does not exist, then do nothing
+      // is in, then verify if there exists currently a CFI needed to resolve
+      if (active_cfi)
+      {
+        // exists, then verify if the executed instruction has exceeded this CFI
+        if (current_exec_order <= active_cfi_exec_order)
+        {
+          // not exceeded yet, then do nothing
+        }
+        else
+        {
+          // just exceeded, then rollback
+          rollback();
+        }
+      }
+      else
+      {
+        // does not exist, then do nothing
+      }
     }
   }
-
   return;
 }
 
@@ -185,60 +196,68 @@ VOID generic_instruction(ADDRINT ins_addr)
 
 VOID control_flow_instruction(ADDRINT ins_addr)
 {
-  ptr_cond_direct_instruction_t current_cfi =
-      boost::static_pointer_cast<cond_direct_instruction>(ins_at_order[current_exec_order]);
-
-  // verify if the current CFI depends on the input
-  if (!current_cfi->input_dep_addrs.empty())
+  if (current_exec_order <= exploring_cfi_exec_order)
   {
-    // depends, then verify if it is resolved or bypassed
-    if (!current_cfi->is_resolved && !current_cfi->is_bypassed)
+    // do nothing
+  }
+  else
+  {
+    ptr_cond_direct_instruction_t current_cfi =
+        boost::static_pointer_cast<cond_direct_instruction>(ins_at_order[current_exec_order]);
+
+    // verify if the current CFI depends on the input
+    if (!current_cfi->input_dep_addrs.empty())
     {
-      // neither resolved nor bypassed, then verify if there exist a active CFI needed to resolve
-      if (!active_cfi)
+      // depends, then verify if it is resolved or bypassed
+      if (!current_cfi->is_resolved && !current_cfi->is_bypassed)
       {
-        // does not exist, then set the current CFI as the active CFI
-        active_cfi = current_cfi; get_next_active_checkpoint();
-        // and rollback to resolve this new active CFI
-        used_rollback_num = 0; rollback();
-      }
-      else
-      {
-        // exists, then verify if the current CFI is the active CFI
-        if (current_exec_order == active_cfi_exec_order)
+        // neither resolved nor bypassed, then verify if there exist a active CFI needed to resolve
+        if (!active_cfi)
         {
-          // yes, then verify if the current checkpoint of the CFI is in the last rollback try
-          if (used_rollback_num == max_rollback_num)
-          {
-            // yes, then verify if there exists another checkpoint
-            get_next_active_checkpoint();
-            if (active_checkpoint)
-            {
-              // exists, then rollback to the new active checkpoint
-              used_rollback_num = 0; rollback();
-            }
-            else
-            {
-              // does not exist, then set the CFI as bypassed if it has been not resolved yet, and
-              // disable it
-              active_cfi->is_bypassed = !active_cfi->is_resolved; active_cfi.reset();
-            }
-          }
+          // does not exist, then set the current CFI as the active CFI
+          active_cfi = current_cfi; active_cfi_exec_order = current_exec_order;
+          get_next_active_checkpoint();
+          // and rollback to resolve this new active CFI
+          used_rollback_num = 0; rollback();
         }
         else
         {
-          // no, then do nothing
+          // exists, then verify if the current CFI is the active CFI
+          if (current_exec_order == active_cfi_exec_order)
+          {
+            // yes, then verify if the current checkpoint of the CFI is in the last rollback try
+            if (used_rollback_num == max_rollback_num)
+            {
+              // yes, then verify if there exists another checkpoint
+              get_next_active_checkpoint();
+              if (active_checkpoint)
+              {
+                // exists, then rollback to the new active checkpoint
+                used_rollback_num = 0; rollback();
+              }
+              else
+              {
+                // does not exist, then set the CFI as bypassed if it has been not resolved yet, and
+                // disable it
+                active_cfi->is_bypassed = !active_cfi->is_resolved; active_cfi.reset();
+              }
+            }
+          }
+          else
+          {
+            // no, then do nothing
+          }
         }
+      }
+      else
+      {
+        // either resolved or bypassed, then do nothing
       }
     }
     else
     {
-      // either resolved or bypassed, then do nothing
+      // doest not depend, then do nothing
     }
-  }
-  else
-  {
-    // doest not depend, then do nothing
   }
 
   return;
@@ -246,11 +265,12 @@ VOID control_flow_instruction(ADDRINT ins_addr)
 
 /*================================================================================================*/
 
-VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_size)
+VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length)
 {
   std::vector<ptr_checkpoint_t>::iterator chkpnt_iter = saved_checkpoints.begin();
   if (active_checkpoint)
   {
+    active_checkpoint->mem_written_logging(mem_addr, mem_length);
   }
   else
   {
@@ -258,10 +278,24 @@ VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_size)
     {
       if ((*chkpnt_iter)->execution_order <= current_exec_order)
       {
-        (*chkpnt_iter)->mem_written_logging(mem_addr, mem_size);
+        (*chkpnt_iter)->mem_written_logging(mem_addr, mem_length);
+      }
+      else
+      {
+        break;
       }
     }
   }
+  return;
+}
+
+/*================================================================================================*/
+
+void prepare()
+{
+  active_cfi.reset(); active_cfi_exec_order = 0;
+  active_checkpoint.reset(); active_modified_addrs.clear();
+  used_rollback_num = 0;
   return;
 }
 

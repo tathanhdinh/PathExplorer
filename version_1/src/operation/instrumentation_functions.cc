@@ -22,10 +22,10 @@
 #include "../util/stuffs.h"
 #include "../base/branch.h"
 #include "../base/instruction.h"
+#include "../base/cond_direct_instruction.h"
 #include "tainting_functions.h"
 #include "resolving_functions.h"
 #include "logging_functions.h"
-#include "../base/cond_direct_instruction.h"
 
 /*================================================================================================*/
 
@@ -45,6 +45,79 @@ typedef sinks::synchronous_sink<text_backend>   sink_file_backend;
 typedef logging::trivial::severity_level        log_level;
 extern sources::severity_logger<log_level>      log_instance;
 extern boost::shared_ptr<sink_file_backend>     log_sink;
+
+/*================================================================================================*/
+
+inline static void tainting_phase(INS& ins, ptr_instruction_t examined_ins)
+{
+  /* START LOGGING */
+  if (examined_ins->is_syscall)
+  {
+    INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
+                             (AFUNPTR)logging_syscall_instruction_analyzer,
+                             IARG_INST_PTR,
+                             IARG_END);
+  }
+  else
+  {
+    // general logging
+    INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
+                             (AFUNPTR)logging_general_instruction_analyzer,
+                             IARG_INST_PTR,
+                             IARG_END);
+
+    if (examined_ins->is_cond_direct_cf)
+    {
+      // conditional branch logging
+      INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
+                               (AFUNPTR)logging_cond_br_analyzer,
+                               IARG_INST_PTR,
+                               IARG_BRANCH_TAKEN,
+                               IARG_END);
+    }
+    else
+    {
+      if (examined_ins->is_mem_read)
+      {
+        // memory read logging
+        INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
+                                 (AFUNPTR)logging_mem_read_instruction_analyzer,
+                                 IARG_INST_PTR,
+                                 IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE,
+                                 IARG_CONTEXT,
+                                 IARG_END);
+
+        if (examined_ins->has_mem_read2)
+        {
+          // memory read2 (e.g. rep cmpsb instruction)
+          INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
+                                   (AFUNPTR)logging_mem_read_instruction_analyzer,
+                                   IARG_INST_PTR,
+                                   IARG_MEMORYREAD2_EA, IARG_MEMORYREAD_SIZE,
+                                   IARG_CONTEXT,
+                                   IARG_END);
+        }
+      }
+
+      if (examined_ins->is_mem_write)
+      {
+        // memory written logging
+        INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
+                                 (AFUNPTR)logging_mem_write_instruction_analyzer,
+                                 IARG_INST_PTR,
+                                 IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE,
+                                 IARG_END );
+      }
+    }
+  }
+
+  /* START TAINTING */
+  INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
+                           (AFUNPTR)tainting_general_instruction_analyzer,
+                           IARG_INST_PTR,
+                           IARG_END );
+  return;
+}
 
 /*================================================================================================*/
 
@@ -90,72 +163,7 @@ VOID ins_instrumenter(INS ins, VOID *data)
 
     if (in_tainting)
     {
-      /* START LOGGING */
-      if (examined_ins->is_syscall)
-      {
-        INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
-                                 (AFUNPTR)logging_syscall_instruction_analyzer,
-                                 IARG_INST_PTR,
-                                 IARG_END);
-      }
-      else
-      {
-        // general logging
-        INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
-                                 (AFUNPTR)logging_general_instruction_analyzer,
-                                 IARG_INST_PTR,
-                                 IARG_END);
-
-        if (examined_ins->is_cond_direct_cf)
-        {
-          // conditional branch logging
-          INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
-                                   (AFUNPTR)logging_cond_br_analyzer,
-                                   IARG_INST_PTR,
-                                   IARG_BRANCH_TAKEN,
-                                   IARG_END);
-        }
-        else
-        {
-          if (examined_ins->is_mem_read)
-          {
-            // memory read logging
-            INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
-                                     (AFUNPTR)logging_mem_read_instruction_analyzer,
-                                     IARG_INST_PTR,
-                                     IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE,
-                                     IARG_CONTEXT,
-                                     IARG_END);
-
-            if (examined_ins->has_mem_read2)
-            {
-              // memory read2 (e.g. rep cmpsb instruction)
-              INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
-                                       (AFUNPTR)logging_mem_read_instruction_analyzer,
-                                       IARG_INST_PTR,
-                                       IARG_MEMORYREAD2_EA, IARG_MEMORYREAD_SIZE,
-                                       IARG_CONTEXT,
-                                       IARG_END);
-            }
-          }
-
-          if (examined_ins->is_mem_write)
-          {
-            // memory written logging
-            INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
-                                     (AFUNPTR)logging_mem_write_instruction_analyzer,
-                                     IARG_INST_PTR,
-                                     IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE,
-                                     IARG_END );
-          }
-        }
-      }
-
-      /* START TAINTING */
-      INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
-                               (AFUNPTR)tainting_general_instruction_analyzer,
-                               IARG_INST_PTR,
-                               IARG_END );
+      tainting_phase(ins, examined_ins);
     }
     else // in rollbacking
     {

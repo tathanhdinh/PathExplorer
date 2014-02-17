@@ -10,13 +10,13 @@
 
 /*================================================================================================*/
 
-extern df_diagram           dta_graph;
-extern df_vertex_desc_set     dta_outer_vertices;
+extern df_diagram                           dta_graph;
+extern df_vertex_desc_set                   dta_outer_vertices;
 
 extern std::map<UINT32, ptr_instruction_t>  ins_at_order;
 
-extern std::vector<ADDRINT>     explored_trace;
-extern UINT32                   current_exec_order;
+//extern std::vector<ADDRINT>     explored_trace;
+extern UINT32                               current_exec_order;
 
 /*================================================================================================*/
 // source variables construction
@@ -110,11 +110,8 @@ inline std::set<df_vertex_desc> destination_variables(UINT32 idx)
 
 VOID tainting_general_instruction_analyzer(ADDRINT ins_addr)
 {
-  UINT32 /*current_ins_order = explored_trace.size();*/
-  current_ins_order = current_exec_order;
-
-  std::set<df_vertex_desc> src_vertex_descs = source_variables(current_ins_order);
-  std::set<df_vertex_desc> dst_vertex_descs = destination_variables(current_ins_order);
+  std::set<df_vertex_desc> src_vertex_descs = source_variables(current_exec_order);
+  std::set<df_vertex_desc> dst_vertex_descs = destination_variables(current_exec_order);
 
   std::set<df_vertex_desc>::iterator src_vertex_desc_iter;
   std::set<df_vertex_desc>::iterator dst_vertex_desc_iter;
@@ -126,9 +123,7 @@ VOID tainting_general_instruction_analyzer(ADDRINT ins_addr)
     for (dst_vertex_desc_iter = dst_vertex_descs.begin();
          dst_vertex_desc_iter != dst_vertex_descs.end(); ++dst_vertex_desc_iter) 
     {
-//      boost::add_edge(*src_vertex_desc_iter, *dst_vertex_desc_iter,
-//                      std::make_pair(ins_addr, current_ins_order), dta_graph);
-      boost::add_edge(*src_vertex_desc_iter, *dst_vertex_desc_iter, current_ins_order, dta_graph);
+      boost::add_edge(*src_vertex_desc_iter, *dst_vertex_desc_iter, current_exec_order, dta_graph);
     }
   }
 

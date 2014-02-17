@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 
 project(PathExplorer_V1)
 
+include(cotire.cmake)
 include(FindPin.cmake)
 include(UsePin.cmake)
 
@@ -24,6 +25,8 @@ ADD_PINTOOL(path_explorer
   src/operation/tainting_functions.cc
   src/operation/instrumentation_functions.cc
   src/util/stuffs.cc)
+set_target_properties(path_explorer PROPERTIES COTIRE_CXX_PREFIX_HEADER_INIT "pch.h")
+cotire(path_explorer)
 
 # add_executable(path_explorer.so instruction.cpp path_explorer.cpp)
 

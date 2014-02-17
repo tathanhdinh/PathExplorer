@@ -343,7 +343,6 @@ inline static void compute_branch_min_checkpoint()
 
 inline void prepare_new_rollbacking_phase()
 {
-  //BOOST_LOG_TRIVIAL(info) 
   BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
     << boost::format("stop exploring, %d instructions analyzed; start detecting checkpoints")
         % current_exec_order;
@@ -413,9 +412,6 @@ VOID logging_general_instruction_analyzer(ADDRINT ins_addr)
   if ((current_exec_order < max_trace_size) &&
       !ins_at_addr[ins_addr]->is_mapped_from_kernel)
   {
-//    explored_trace.push_back(ins_addr);
-//    order_ins_dynamic_map[explored_trace.size()] = addr_ins_static_map[ins_addr];
-
     current_exec_order++;
     ins_at_order[current_exec_order] = ins_at_addr[ins_addr];
 
@@ -468,17 +464,7 @@ VOID logging_mem_read_instruction_analyzer(ADDRINT ins_addr,
 }
 
 /*================================================================================================*/
-// memmory read 2
-// VOID logging_mem_read2_instruction_analyzer(ADDRINT ins_addr, 
-//                                             ADDRINT mem_read_addr, UINT32 mem_read_size, 
-//                                             CONTEXT* p_ctxt)
-// {
-//   logging_mem_read_instruction_analyzer(ins_addr, mem_read_addr, mem_read_size, p_ctxt);
-//   return;
-// }
 
-/*================================================================================================*/
-// memory written
 VOID logging_mem_write_instruction_analyzer(ADDRINT ins_addr, 
                                             ADDRINT mem_written_addr, UINT32 mem_written_size)
 {
