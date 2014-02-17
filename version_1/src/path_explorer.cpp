@@ -95,6 +95,8 @@ ADDRINT                                         received_msg_addr;
 UINT32                                          received_msg_size;
 ADDRINT                                         received_msg_struct_addr;
 
+running_state                                   current_running_state;
+
 UINT64                                          executed_ins_number;
 UINT64                                          econed_ins_number;
 
@@ -134,8 +136,8 @@ KNOB<UINT32>  max_trace_length    (KNOB_MODE_WRITEONCE, "pintool",
                                    "l", "100", "specify the length of the longest trace" );
 
 /* ---------------------------------------------------------------------------------------------- */
-/*                                                instrumental functions                          */
-/* -------------------------------------------------------+-------------------------------------- */
+/*                                  basic instrumentation functions                               */
+/* ---------------------------------------------------------------------------------------------- */
 VOID start_tracing(VOID *data)
 {
   max_trace_size            = max_trace_length.Value();
@@ -181,7 +183,7 @@ VOID stop_tracing(INT32 code, VOID *data)
   journal_static_trace("static_trace.log");
   
   BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-    << boost::format("stop examining, %d milli-seconds elapsed, %d rollbacks used, and %d/%d branches resolved") 
+    << boost::format("stop examining, %d milli-seconds elapsed, %d rollbacks used, %d/%d branches resolved")
         % elapsed_millisec % total_rollback_times
         % (total_resolved_ptr_branches.size() + found_new_ptr_branches.size()) 
         % total_input_dep_ptr_branches.size();

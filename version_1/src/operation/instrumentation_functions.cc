@@ -23,6 +23,7 @@
 #include "../base/branch.h"
 #include "../base/instruction.h"
 #include "../base/cond_direct_instruction.h"
+#include "instrumentation_functions.h"
 #include "tainting_functions.h"
 #include "resolving_functions.h"
 #include "logging_functions.h"
@@ -32,6 +33,7 @@
 extern std::map<ADDRINT, ptr_instruction_t>     ins_at_addr;
 extern bool                                     in_tainting;
 extern UINT32                                   received_msg_num;
+extern running_state                            current_running_state;
 
 namespace btime = boost::posix_time;
 extern boost::shared_ptr<btime::ptime>          start_ptr_time;
@@ -48,7 +50,9 @@ extern boost::shared_ptr<sink_file_backend>     log_sink;
 
 /*================================================================================================*/
 
-inline static void tainting_phase(INS& ins, ptr_instruction_t examined_ins)
+/*================================================================================================*/
+
+inline static void exec_tainting_phase(INS& ins, ptr_instruction_t examined_ins)
 {
   /* START LOGGING */
   if (examined_ins->is_syscall)
@@ -86,7 +90,6 @@ inline static void tainting_phase(INS& ins, ptr_instruction_t examined_ins)
                                  IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE,
                                  IARG_CONTEXT,
                                  IARG_END);
-
         if (examined_ins->has_mem_read2)
         {
           // memory read2 (e.g. rep cmpsb instruction)
@@ -110,12 +113,55 @@ inline static void tainting_phase(INS& ins, ptr_instruction_t examined_ins)
       }
     }
   }
-
   /* START TAINTING */
   INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
                            (AFUNPTR)tainting_general_instruction_analyzer,
                            IARG_INST_PTR,
                            IARG_END );
+  return;
+}
+
+/*================================================================================================*/
+
+inline static void exec_rollbacking_state(INS& ins, ptr_instruction_t examined_ins)
+{
+  /* START RESOLVING */
+  INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
+                           (AFUNPTR)resolving_ins_count_analyzer,
+                           IARG_INST_PTR,
+                           IARG_END );
+
+  if (examined_ins->is_mem_write)
+  {
+    INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
+                             (AFUNPTR)resolving_st_to_mem_analyzer,
+                             IARG_INST_PTR,
+                             IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE,
+                             IARG_END);
+  }
+  else
+  {
+    // note that conditional branches are always direct
+    if (examined_ins->is_cond_direct_cf)
+    {
+      INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
+                               (AFUNPTR)resolving_cond_branch_analyzer,
+                               IARG_INST_PTR,
+                               IARG_BRANCH_TAKEN,
+                               IARG_END);
+    }
+    else
+    {
+      if (examined_ins->is_uncond_indirect_cf)
+      {
+        INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
+                                 (AFUNPTR)resolving_indirect_branch_call_analyzer,
+                                 IARG_INST_PTR,
+                                 IARG_BRANCH_TARGET_ADDR,
+                                 IARG_END);
+      }
+    }
+  }
   return;
 }
 
@@ -146,9 +192,14 @@ VOID ins_instrumenter(INS ins, VOID *data)
 //    //
 //  }
 
+  if (current_running_state != capturing_state)
+  {
+
+  }
+
   if (received_msg_num == 1)
   {
-    // logging the parsed instructions statically
+    // examining statically instructions
     ptr_instruction_t examined_ins(new instruction(ins));
     ins_at_addr[examined_ins->address] = examined_ins;
     if (examined_ins->is_cond_direct_cf)
@@ -163,59 +214,11 @@ VOID ins_instrumenter(INS ins, VOID *data)
 
     if (in_tainting)
     {
-      tainting_phase(ins, examined_ins);
+      exec_tainting_phase(ins, examined_ins);
     }
     else // in rollbacking
     {
-      /* START RESOLVING */
-      INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
-                               (AFUNPTR)resolving_ins_count_analyzer,
-                               IARG_INST_PTR,
-                               IARG_END );
-
-      if (examined_ins->is_mem_write)
-      {
-        INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
-                                 (AFUNPTR)resolving_st_to_mem_analyzer,
-                                 IARG_INST_PTR,
-                                 IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE,
-                                 IARG_END);
-      }
-      else
-      {
-
-//      if (examined_ins->is_mem_read)
-//      {
-//           INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)resolving_mem_to_st_analyzer,
-//                                    IARG_INST_PTR,
-//                                    IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE,
-//                                    IARG_END);
-//      }
-//      else
-//      {
-//      }
-
-        // note that conditional branches are always direct
-        if (examined_ins->is_cond_direct_cf)
-        {
-          INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
-                                   (AFUNPTR)resolving_cond_branch_analyzer,
-                                   IARG_INST_PTR,
-                                   IARG_BRANCH_TAKEN,
-                                   IARG_END);
-        }
-        else
-        {
-          if (examined_ins->is_uncond_indirect_cf)
-          {
-            INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
-                                     (AFUNPTR)resolving_indirect_branch_call_analyzer,
-                                     IARG_INST_PTR,
-                                     IARG_BRANCH_TARGET_ADDR,
-                                     IARG_END);
-          }
-        }
-      }
+      exec_rollbacking_state(ins, examined_ins);
     }
   }
 
