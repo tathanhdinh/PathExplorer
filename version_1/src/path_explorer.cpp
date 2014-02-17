@@ -31,7 +31,9 @@
 #include "base/branch.h"
 #include "base/cond_direct_instruction.h"
 #include "operation/instrumentation_functions.h"
+#include "operation/tainting_functions.h"
 #include "operation/logging_functions.h"
+//#include "operation/logging_functions.h"
 #include "util/stuffs.h"
 
 extern "C" 
@@ -44,9 +46,6 @@ extern "C"
 /* ---------------------------------------------------------------------------------------------- */
 std::map<ADDRINT, ptr_instruction_t>            ins_at_addr;   // statically examined instructions
 std::map<UINT32, ptr_instruction_t>             ins_at_order;  // dynamically examined instructions
-
-ADDRINT                                         logged_syscall_index;   // logged syscall index
-ADDRINT                                         logged_syscall_args[6]; // logged syscall arguments
 
 UINT32                                          total_rollback_times;
 UINT32                                          local_rollback_times;
@@ -93,15 +92,21 @@ UINT32                                          current_exec_order;
 UINT32                                          received_msg_num;
 ADDRINT                                         received_msg_addr;
 UINT32                                          received_msg_size;
-ADDRINT                                         received_msg_struct_addr;
+//ADDRINT                                         received_msg_struct_addr;
+
+#if BOOST_OS_LINUX
+ADDRINT                                         logged_syscall_index;   // logged syscall index
+ADDRINT                                         logged_syscall_args[6]; // logged syscall arguments
+#endif
 
 running_state                                   current_running_state;
 
 UINT64                                          executed_ins_number;
 UINT64                                          econed_ins_number;
 
-boost::shared_ptr<boost::posix_time::ptime>     start_ptr_time;
-boost::shared_ptr<boost::posix_time::ptime>     stop_ptr_time;
+namespace btime = boost::posix_time;
+boost::shared_ptr<btime::ptime>                 start_ptr_time;
+boost::shared_ptr<btime::ptime>                 stop_ptr_time;
 
 namespace logging = boost::log;
 namespace sinks   = boost::log::sinks;
@@ -140,14 +145,18 @@ KNOB<UINT32>  max_trace_length    (KNOB_MODE_WRITEONCE, "pintool",
 /* ---------------------------------------------------------------------------------------------- */
 VOID start_tracing(VOID *data)
 {
+  if (!start_ptr_time)
+  {
+    start_ptr_time.reset(new btime::ptime(btime::microsec_clock::local_time()));
+  }
+
   max_trace_size            = max_trace_length.Value();
   trace_size                = 0;
+  current_exec_order        = 0;
 
   total_rollback_times      = 0;
   local_rollback_times      = 0;
   used_checkpoint_number    = 0;
-  
-  current_exec_order   = 0;
 
   max_total_rollback_times  = max_total_rollback.Value();
   total_rollback_times      = 0;
@@ -171,10 +180,9 @@ VOID start_tracing(VOID *data)
 
 VOID stop_tracing(INT32 code, VOID *data)
 {
-  using namespace boost::posix_time;
   if (!stop_ptr_time) 
   {
-    stop_ptr_time.reset(new ptime(microsec_clock::local_time()));
+    stop_ptr_time.reset(new btime::ptime(btime::microsec_clock::local_time()));
   }
 
   boost::posix_time::time_duration elapsed_time = *stop_ptr_time - *start_ptr_time;
@@ -183,7 +191,7 @@ VOID stop_tracing(INT32 code, VOID *data)
   journal_static_trace("static_trace.log");
   
   BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-    << boost::format("stop examining, %d milli-seconds elapsed, %d rollbacks used, %d/%d branches resolved")
+    << boost::format("stop %d milli-seconds elapsed, %d rollbacks used, %d/%d branches resolved")
         % elapsed_millisec % total_rollback_times
         % (total_resolved_ptr_branches.size() + found_new_ptr_branches.size()) 
         % total_input_dep_ptr_branches.size();

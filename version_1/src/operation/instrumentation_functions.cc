@@ -177,27 +177,7 @@ inline static void exec_rollbacking_state(INS& ins, ptr_instruction_t examined_i
  */
 VOID ins_instrumenter(INS ins, VOID *data)
 {
-//  if (
-//      false
-////       || INS_IsCall(ins)
-////       || INS_IsSyscall(ins)
-////       || INS_IsSysret(ins)
-////       || INS_IsNop(ins)
-//    )
-//  {
-//    // omit these instructions
-//  }
-//  else
-//  {
-//    //
-//  }
-
   if (current_running_state != capturing_state)
-  {
-
-  }
-
-  if (received_msg_num == 1)
   {
     // examining statically instructions
     ptr_instruction_t examined_ins(new instruction(ins));
@@ -207,18 +187,18 @@ VOID ins_instrumenter(INS ins, VOID *data)
       ins_at_addr[examined_ins->address].reset(new cond_direct_instruction(*examined_ins));
     }
 
-    if (!start_ptr_time)
+    switch (current_running_state)
     {
-      start_ptr_time.reset(new btime::ptime(btime::microsec_clock::local_time()));
-    }
-
-    if (in_tainting)
-    {
+    case tainting_state:
       exec_tainting_phase(ins, examined_ins);
-    }
-    else // in rollbacking
-    {
+      break;
+
+    case rollbacking_state:
       exec_rollbacking_state(ins, examined_ins);
+      break;
+
+    default:
+      break;
     }
   }
 

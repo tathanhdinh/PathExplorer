@@ -21,7 +21,6 @@ ADD_PINTOOL(path_explorer
   src/base/checkpoint.cpp
   src/operation/resolving_functions.cc
   src/operation/rollbacking_functions.cpp
-  src/operation/logging_functions.cc
   src/operation/tainting_functions.cc
   src/operation/instrumentation_functions.cc
   src/util/stuffs.cc)
