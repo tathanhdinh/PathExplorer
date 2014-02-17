@@ -36,7 +36,7 @@ extern boost::shared_ptr<sink_file_backend>     log_sink;
 /*================================================================================================*/
 
 static ptr_cond_direct_instruction_t            active_cfi;
-static UINT32                                   active_cfi_order;
+static UINT32                                   active_cfi_exec_order;
 static ptr_checkpoint_t                         active_checkpoint;
 static addrint_set                              active_modified_addrs;
 
@@ -61,7 +61,8 @@ inline static void rollback()
     {
       if (!active_cfi->is_resolved) active_cfi->is_bypassed = true;
       active_cfi->used_rollback_num++;
-      active_cfi.reset(); active_checkpoint.reset();
+      active_cfi.reset(); active_cfi_exec_order = 0;
+      active_checkpoint.reset();
       rollback_and_restore(active_checkpoint, active_modified_addrs);
     }
     else
@@ -71,6 +72,32 @@ inline static void rollback()
           << boost::format("the number of used rollback exceeds its bound value");
       PIN_ExitApplication(1);
     }
+  }
+  return;
+}
+
+/*================================================================================================*/
+
+static inline void get_next_active_checkpoint()
+{
+  std::vector<checkpoint_with_modified_addrs>::iterator chkpnt_iter, next_chkpnt_iter;
+  if (active_checkpoint)
+  {
+    next_chkpnt_iter = active_cfi->checkpoints.begin(); chkpnt_iter = next_chkpnt_iter;
+    while (++next_chkpnt_iter != active_cfi->checkpoints.end())
+    {
+      if (chkpnt_iter->first->execution_order == active_checkpoint->execution_order)
+      {
+        active_checkpoint = next_chkpnt_iter->first;
+        active_modified_addrs = next_chkpnt_iter->second;
+      }
+      chkpnt_iter = next_chkpnt_iter;
+    }
+  }
+  else
+  {
+    active_checkpoint = active_cfi->checkpoints[0].first;
+    active_modified_addrs = active_cfi->checkpoints[0].second;
   }
   return;
 }
@@ -100,7 +127,7 @@ VOID generic_instruction(ADDRINT ins_addr)
     {
       // activated, that means the rollback from some checkpoint of this CFI will change the
       // control-flow, then verify if the CFI is the just previous executed instruction
-      if (active_cfi_order + 1 == current_exec_order)
+      if (active_cfi_exec_order + 1 == current_exec_order)
       {
         // it is, then it will be marked as resolved
         active_cfi->is_resolved = true;
@@ -128,7 +155,7 @@ VOID generic_instruction(ADDRINT ins_addr)
     if (active_cfi)
     {
       // exists, then verify if the executed instruction has exceeded this CFI
-      if (current_exec_order <= active_cfi_order)
+      if (current_exec_order <= active_cfi_exec_order)
       {
         // not exceeded yet, then do nothing
       }
@@ -152,26 +179,6 @@ VOID generic_instruction(ADDRINT ins_addr)
 VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_size)
 {
   return;
-}
-
-/*================================================================================================*/
-
-static inline void get_next_active_checkpoint()
-{
-  std::vector<checkpoint_with_modified_addrs>::iterator chkpnt_iter;
-  if (active_checkpoint)
-  {
-    for (chkpnt_iter = active_cfi->checkpoints.begin();
-         chkpnt_iter != active_cfi->checkpoints.end(); ++chkpnt_iter)
-    {
-      //
-    }
-  }
-  else
-  {
-    active_checkpoint = active_cfi->checkpoints[0].first;
-    active_modified_addrs = active_cfi->checkpoints[0].second;
-  }
 }
 
 /*================================================================================================*/
