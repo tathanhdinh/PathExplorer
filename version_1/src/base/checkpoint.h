@@ -14,26 +14,22 @@
 class checkpoint
 {
 public:
-  ADDRINT                     addr;
-  boost::shared_ptr<CONTEXT>  ptr_ctxt;
+//  ADDRINT                     addr;
+  boost::shared_ptr<CONTEXT>  context;
   
-  std::map<ADDRINT, UINT8>    mem_read_log;     // map between a read address and the original value at this address
-  std::map<ADDRINT, UINT8>    mem_written_log;  // map between a written address and the original value at this address
+  // maps between a read/written memory address and original values at this address
+//  std::map<ADDRINT, UINT8>    mem_read_log;
+  std::map<ADDRINT, UINT8>    mem_written_log;
 
   boost::shared_ptr<UINT8>    curr_input;
   
   std::set<ADDRINT>           dep_mems;
-  
-  UINT32                      execution_order;
-  
+  UINT32                      exec_order;
   UINT32                      rollback_times;
     
 public:
-  checkpoint(ADDRINT ip_addr, CONTEXT* new_ptr_ctxt, ADDRINT msg_read_addr, UINT32 msg_read_size);
-    
-  void mem_written_logging(ADDRINT mem_addr, UINT32 mem_length);
-//   void mem_read_logging(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length);
-  
+  checkpoint(CONTEXT* ptr_context, ADDRINT input_mem_read_addr, UINT32 input_mem_read_size);
+  void mem_write_tracking(ADDRINT mem_addr, UINT32 mem_length);
 };
 
 typedef boost::shared_ptr<checkpoint> ptr_checkpoint_t;
@@ -45,7 +41,7 @@ class ptr_checkpoint_less
 public:
   bool operator()(ptr_checkpoint_t const& a, ptr_checkpoint_t const& b)
   {
-    return (a->execution_order < b->execution_order);
+    return (a->exec_order < b->exec_order);
   }
 };
 

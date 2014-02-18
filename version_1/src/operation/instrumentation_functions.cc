@@ -112,7 +112,7 @@ inline static void exec_tainting_phase(INS& ins, ptr_instruction_t examined_ins)
   }
   /* START TAINTING */
   INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
-                           (AFUNPTR)tainting::propagation,
+                           (AFUNPTR)tainting::graphical_propagation,
                            IARG_INST_PTR,
                            IARG_END );
   return;

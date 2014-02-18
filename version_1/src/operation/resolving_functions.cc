@@ -137,11 +137,11 @@ VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr,
   {
     if (active_nearest_checkpoint.first) 
     {
-      active_nearest_checkpoint.first->mem_written_logging(mem_written_addr, mem_written_size);
+      active_nearest_checkpoint.first->mem_write_tracking(mem_written_addr, mem_written_size);
     }
     else 
     {
-      last_active_ptr_checkpoint->mem_written_logging(mem_written_addr, mem_written_size);
+      last_active_ptr_checkpoint->mem_write_tracking(mem_written_addr, mem_written_size);
     }
   }
   else // in forwarding
@@ -151,7 +151,7 @@ VOID resolving_st_to_mem_analyzer(ADDRINT ins_addr,
     for (; ptr_checkpoint_iter != exepoint_checkpoints_map[current_exec_order].end();
          ++ptr_checkpoint_iter)
     {
-      (*ptr_checkpoint_iter)->mem_written_logging(mem_written_addr, mem_written_size);
+      (*ptr_checkpoint_iter)->mem_write_tracking(mem_written_addr, mem_written_size);
     }
   }
 
@@ -168,7 +168,7 @@ inline void prepare_new_tainting_phase(ptr_branch_t& unexplored_ptr_branch)
   master_ptr_checkpoint = *saved_checkpoints.begin();
 
   std::map<UINT32, ptr_instruction_t>::iterator order_ins_map_iter;
-  order_ins_map_iter = ins_at_order.find(master_ptr_checkpoint->execution_order);
+  order_ins_map_iter = ins_at_order.find(master_ptr_checkpoint->exec_order);
   ins_at_order.erase(order_ins_map_iter, ins_at_order.end());
     
   dta_graph.clear();
@@ -554,8 +554,8 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
               // then rollback to it
               BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
                 << boost::format("rollback to the next checkpoint at %d (%s).") 
-                    % active_nearest_checkpoint.first->execution_order
-                    % ins_at_order[active_nearest_checkpoint.first->execution_order]->disassembled_name;
+                    % active_nearest_checkpoint.first->exec_order
+                    % ins_at_order[active_nearest_checkpoint.first->exec_order]->disassembled_name;
           
               econed_ins_number += active_ptr_branch->econ_execution_length[active_nearest_checkpoint.first];
 //               std::cout << econed_ins_number << "  " << executed_ins_number << std::endl;
@@ -614,8 +614,8 @@ inline void unresolved_branch_takes_same_decision(ADDRINT ins_addr,
           % active_ptr_branch->br_taken
           % remove_leading_zeros(StringFromAddrint(active_ptr_branch->addr))
           % ins_at_order[active_ptr_branch->execution_order]->disassembled_name
-          % active_nearest_checkpoint.first->execution_order
-          % ins_at_order[active_nearest_checkpoint.first->execution_order]->disassembled_name;
+          % active_nearest_checkpoint.first->exec_order
+          % ins_at_order[active_nearest_checkpoint.first->exec_order]->disassembled_name;
    
     econed_ins_number += active_ptr_branch->econ_execution_length[active_nearest_checkpoint.first];
 //     std::cout << econed_ins_number << "  " << executed_ins_number << std::endl;

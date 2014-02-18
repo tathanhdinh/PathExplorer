@@ -21,8 +21,10 @@
 
 /*================================================================================================*/
 
+#if BOOST_OS_LINUX
 extern ADDRINT                                  logged_syscall_index;
 extern ADDRINT                                  logged_syscall_args[6];
+#endif
 
 extern bool                                     in_tainting;
 
@@ -39,8 +41,8 @@ extern std::map<UINT32, ptr_branch_t>           order_input_indep_ptr_branch_map
 extern std::map<UINT32, ptr_branch_t>           order_tainted_ptr_branch_map;
 extern std::vector<ptr_branch_t>                total_input_dep_ptr_branches;
 
-extern std::map< UINT32,
-                 std::vector<ptr_checkpoint_t> >  exepoint_checkpoints_map;
+typedef std::vector<ptr_checkpoint_t>           ptr_checkpoints_t;
+extern std::map<UINT32, ptr_checkpoints_t>      exepoint_checkpoints_map;
 
 extern std::vector<ptr_checkpoint_t>            saved_checkpoints;
 extern ptr_checkpoint_t                         master_ptr_checkpoint;
@@ -50,7 +52,6 @@ extern ptr_branch_t                             exploring_ptr_branch;
 extern UINT32                                   received_msg_num;
 extern ADDRINT                                  received_msg_addr;
 extern UINT32                                   received_msg_size;
-//extern ADDRINT                                  received_msg_struct_addr;
 
 extern UINT32                                   max_trace_size;
 
@@ -60,7 +61,6 @@ namespace sources = boost::log::sources;
 typedef sinks::text_file_backend text_backend;
 typedef sinks::synchronous_sink<text_backend>   sink_file_backend;
 typedef logging::trivial::severity_level        log_level;
-
 extern sources::severity_logger<log_level>      log_instance;
 extern boost::shared_ptr<sink_file_backend>     log_sink;
 
@@ -73,7 +73,10 @@ static std::map<df_vertex_desc, df_vertex_desc> prec_vertex_desc;
 
 /*================================================================================================*/
 
-class dep_bfs_visitor : public boost::default_bfs_visitor
+/**
+ * @brief The df_bfs_visitor class discovering all dependent edges from a vertex.
+ */
+class df_bfs_visitor : public boost::default_bfs_visitor
 {
 public:
   template <typename Edge, typename Graph>
@@ -96,7 +99,8 @@ inline void mark_resolved(ptr_branch_t& omitted_ptr_branch)
 
 /*================================================================================================*/
 
-std::vector<UINT32> backward_trace(df_vertex_desc root_vertex, df_vertex_desc last_vertex)
+inline static std::vector<UINT32> backward_trace(df_vertex_desc root_vertex,
+                                                 df_vertex_desc last_vertex)
 {
   std::vector<UINT32> backward_trace;
 
@@ -119,10 +123,9 @@ std::vector<UINT32> backward_trace(df_vertex_desc root_vertex, df_vertex_desc la
     }
     else
     {
-      //BOOST_LOG_TRIVIAL(fatal) << "Edge not found in backward trace construction.";
       BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
         << "edge not found in backward trace construction";
-      PIN_ExitApplication(0);
+      PIN_ExitApplication(1);
     }
 
     current_vertex = backward_vertex;
@@ -133,7 +136,7 @@ std::vector<UINT32> backward_trace(df_vertex_desc root_vertex, df_vertex_desc la
 
 /*================================================================================================*/
 
-inline void compute_branch_mem_dependency()
+inline static void compute_branch_mem_dependency()
 {
   df_vertex_iter vertex_iter;
   df_vertex_iter last_vertex_iter;
@@ -141,26 +144,28 @@ inline void compute_branch_mem_dependency()
   df_edge_desc edge_desc;
   bool edge_exist;
 
-  dep_bfs_visitor dep_vis;
+  df_bfs_visitor df_visitor;
 
   std::map<UINT32, ptr_branch_t>::iterator order_ptr_branch_iter;
   ptr_branch_t current_ptr_branch;
 
   std::map<df_vertex_desc, df_vertex_desc>::iterator prec_vertex_iter;
 
-  ADDRINT current_addr;
+  ADDRINT mem_addr;
 
   boost::tie(vertex_iter, last_vertex_iter) = boost::vertices(dta_graph);
+  // iterate over vertices in the dataflow graph
   for (; vertex_iter != last_vertex_iter; ++vertex_iter)
   {
+    // consider only vertices representing some memory address
     if (dta_graph[*vertex_iter]->value.type() == typeid(ADDRINT))
     {
       prec_vertex_desc.clear();
 
-      boost::breadth_first_search(dta_graph, *vertex_iter, boost::visitor(dep_vis));
+      boost::breadth_first_search(dta_graph, *vertex_iter, boost::visitor(df_visitor));
 
       for (prec_vertex_iter = prec_vertex_desc.begin();
-              prec_vertex_iter != prec_vertex_desc.end(); ++prec_vertex_iter)
+           prec_vertex_iter != prec_vertex_desc.end(); ++prec_vertex_iter)
       {
         boost::tie(edge_desc, edge_exist) = boost::edge(prec_vertex_iter->second,
                                                         prec_vertex_iter->first,
@@ -172,33 +177,29 @@ inline void compute_branch_mem_dependency()
                ++order_ptr_branch_iter)
           {
             current_ptr_branch = order_ptr_branch_iter->second;
-//            if (dta_graph[edge_desc].second == current_ptr_branch->trace.size())
             if (dta_graph[edge_desc] == current_ptr_branch->execution_order)
             {
-//              current_addr = dta_graph[*vertex_iter].mem;
-              current_addr = boost::get<ADDRINT>(dta_graph[*vertex_iter]->value);
+              mem_addr = boost::get<ADDRINT>(dta_graph[*vertex_iter]->value);
 
-              if ((received_msg_addr <= current_addr) &&
-                  (current_addr < received_msg_addr + received_msg_size))
+              if ((received_msg_addr <= mem_addr) &&
+                  (mem_addr < received_msg_addr + received_msg_size))
               {
-                current_ptr_branch->dep_input_addrs.insert(current_addr);
+                current_ptr_branch->dep_input_addrs.insert(mem_addr);
               }
               else
               {
-                current_ptr_branch->dep_other_addrs.insert(current_addr);
+                current_ptr_branch->dep_other_addrs.insert(mem_addr);
               }
 
-              current_ptr_branch->dep_backward_traces[current_addr]
+              current_ptr_branch->dep_backward_traces[mem_addr]
                 = backward_trace(*vertex_iter, prec_vertex_iter->second);
             }
           }
         }
         else
         {
-          //BOOST_LOG_TRIVIAL(fatal) << "Backward edge not found in BFS.";
-          BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
-              << "backward edge not found in BFS";
-          PIN_ExitApplication(0);
+          BOOST_LOG_SEV(log_instance, logging::trivial::fatal) << "backward edge not found in BFS";
+          PIN_ExitApplication(1);
         }
       }
     }
@@ -288,14 +289,14 @@ inline static void compute_branch_min_checkpoint()
           for (; ptr_checkpoint_reverse_iter != saved_checkpoints.rend();
                ++ptr_checkpoint_reverse_iter)
           {
-            if ((*ptr_checkpoint_reverse_iter)->execution_order < current_ptr_branch->execution_order)
+            if ((*ptr_checkpoint_reverse_iter)->exec_order < current_ptr_branch->execution_order)
             {
               if (std::find((*ptr_checkpoint_reverse_iter)->dep_mems.begin(),
                             (*ptr_checkpoint_reverse_iter)->dep_mems.end(), *addr_iter)
                   != (*ptr_checkpoint_reverse_iter)->dep_mems.end())
               {
                 current_ptr_branch->econ_execution_length[*ptr_checkpoint_iter] =
-                (*ptr_checkpoint_reverse_iter)->execution_order - (*ptr_checkpoint_iter)->execution_order;
+                (*ptr_checkpoint_reverse_iter)->exec_order - (*ptr_checkpoint_iter)->exec_order;
 //                 std::cout << current_ptr_branch->econ_execution_length[*ptr_checkpoint_iter] << std::endl;
                 break;
               }
@@ -307,7 +308,6 @@ inline static void compute_branch_min_checkpoint()
 
       if (current_ptr_branch->nearest_checkpoints.size() != 0)
       {
-        //BOOST_LOG_TRIVIAL(info)
         BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
           << boost::format("the branch at %d:%d (%s: %s) has %d nearest checkpoints.")
               % current_ptr_branch->execution_order
@@ -320,7 +320,6 @@ inline static void compute_branch_min_checkpoint()
       }
       else
       {
-        //BOOST_LOG_TRIVIAL(fatal)
         BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
           << boost::format("cannot found any nearest checkpoint for the branch at %d.!")
               % current_ptr_branch->execution_order;
@@ -348,7 +347,7 @@ inline void prepare_new_rollbacking_phase()
   compute_branch_min_checkpoint();
 
   BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-    << boost::format("stop detecting, %d checkpoints and %d/%d branches detected; start rollbacking")
+    << boost::format("stop tainting, %d checkpoints and %d/%d branches detected; start rollbacking")
         % saved_checkpoints.size()
         % order_input_dep_ptr_branch_map.size()
         % order_tainted_ptr_branch_map.size();
@@ -433,16 +432,15 @@ VOID mem_read_instruction(ADDRINT ins_addr,
   if (std::max(mem_read_addr, received_msg_addr) <
       std::min(mem_read_addr + mem_read_size, received_msg_addr + received_msg_size))
   {
-    ptr_checkpoint_t new_ptr_checkpoint(new checkpoint(ins_addr, p_ctxt,
-                                                       mem_read_addr, mem_read_size));
+    ptr_checkpoint_t new_ptr_checkpoint(new checkpoint(p_ctxt, mem_read_addr, mem_read_size));
     saved_checkpoints.push_back(new_ptr_checkpoint);
 
     BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
       << boost::format("checkpoint detected at %d (%s: %s) because memory is read (%s: %d)")
-         % new_ptr_checkpoint->execution_order
+         % new_ptr_checkpoint->exec_order
          % remove_leading_zeros(StringFromAddrint(ins_addr))
          % ins_at_addr[ins_addr]->disassembled_name
-         % remove_leading_zeros(StringFromAddrint(mem_read_addr)) % mem_read_size;
+         % addrint_to_hexstring(mem_read_addr) % mem_read_size;
   }
 
   ptr_operand_t mem_operand;
@@ -457,13 +455,11 @@ VOID mem_read_instruction(ADDRINT ins_addr,
 
 /*================================================================================================*/
 
-VOID mem_write_instruction(ADDRINT ins_addr,
-                                            ADDRINT mem_written_addr, UINT32 mem_written_size)
+VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 mem_written_size)
 {
   if (!saved_checkpoints.empty())
   {
-    saved_checkpoints[0]->mem_written_logging(/*ins_addr,*/
-                                              mem_written_addr, mem_written_size);
+    saved_checkpoints[0]->mem_write_tracking(mem_written_addr, mem_written_size);
   }
 
   exepoint_checkpoints_map[current_exec_order] = saved_checkpoints;
@@ -716,7 +712,7 @@ inline std::set<df_vertex_desc> destination_variables(UINT32 idx)
 
 /*================================================================================================*/
 
-VOID propagation(ADDRINT ins_addr)
+VOID graphical_propagation(ADDRINT ins_addr)
 {
   std::set<df_vertex_desc> src_vertex_descs = source_variables(current_exec_order);
   std::set<df_vertex_desc> dst_vertex_descs = destination_variables(current_exec_order);

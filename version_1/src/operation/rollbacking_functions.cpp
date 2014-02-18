@@ -90,7 +90,7 @@ static inline void get_next_active_checkpoint()
     next_chkpnt_iter = active_cfi->checkpoints.begin(); chkpnt_iter = next_chkpnt_iter;
     while (++next_chkpnt_iter != active_cfi->checkpoints.end())
     {
-      if (chkpnt_iter->first->execution_order == active_checkpoint->execution_order)
+      if (chkpnt_iter->first->exec_order == active_checkpoint->exec_order)
       {
         active_checkpoint = next_chkpnt_iter->first;
         active_modified_addrs = next_chkpnt_iter->second;
@@ -268,18 +268,23 @@ VOID control_flow_instruction(ADDRINT ins_addr)
 
 VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length)
 {
-  std::vector<ptr_checkpoint_t>::iterator chkpnt_iter = saved_checkpoints.begin();
+  // verify if the active checkpoint is enabled
   if (active_checkpoint)
   {
-    active_checkpoint->mem_written_logging(mem_addr, mem_length);
+    // yes, namely we are now in some "reverse" execution from it to the active CFI, so this
+    // checkpoint needs to track memory write instructions
+    active_checkpoint->mem_write_tracking(mem_addr, mem_length);
   }
   else
   {
+    // no, namely we are now in normal "forward" execution, so all checkpoint until the current
+    // execution order need to track memory write instructions
+    std::vector<ptr_checkpoint_t>::iterator chkpnt_iter = saved_checkpoints.begin();
     for (; chkpnt_iter != saved_checkpoints.end(); ++chkpnt_iter)
     {
-      if ((*chkpnt_iter)->execution_order <= current_exec_order)
+      if ((*chkpnt_iter)->exec_order <= current_exec_order)
       {
-        (*chkpnt_iter)->mem_written_logging(mem_addr, mem_length);
+        (*chkpnt_iter)->mem_write_tracking(mem_addr, mem_length);
       }
       else
       {

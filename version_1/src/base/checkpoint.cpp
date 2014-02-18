@@ -23,52 +23,32 @@ extern bran::uniform_int_distribution<UINT8>  uint8_uniform;
 
 /*================================================================================================*/
 
-checkpoint::checkpoint(ADDRINT ip_addr, CONTEXT* p_ctxt,
-                       ADDRINT mem_read_addr, UINT32 mem_read_size)
+checkpoint::checkpoint(CONTEXT* p_ctxt, ADDRINT input_mem_read_addr, UINT32 input_mem_read_size)
 {
-  this->addr = ip_addr;
-  this->ptr_ctxt.reset(new CONTEXT);
-  PIN_SaveContext(p_ctxt, this->ptr_ctxt.get());
+  this->context.reset(new CONTEXT);
+  PIN_SaveContext(p_ctxt, this->context.get());
 
-  this->execution_order = current_exec_order;
+  this->exec_order = current_exec_order;
 
-  for (UINT32 idx = 0; idx < mem_read_size; ++idx)
+  for (UINT32 idx = 0; idx < input_mem_read_size; ++idx)
   {
-    if ((received_msg_addr <= mem_read_addr + idx) && 
-        (mem_read_addr + idx < received_msg_addr + received_msg_size))
+    if ((received_msg_addr <= input_mem_read_addr + idx) &&
+        (input_mem_read_addr + idx < received_msg_addr + received_msg_size))
     {
-      this->dep_mems.insert(mem_read_addr + idx);
+      this->dep_mems.insert(input_mem_read_addr + idx);
     }
   }
 
   this->rollback_times = 0;
 
   this->curr_input.reset(new UINT8[received_msg_size]);
-  PIN_SafeCopy(this->curr_input.get(), 
+  PIN_SafeCopy(this->curr_input.get(),
                reinterpret_cast<UINT8*>(received_msg_addr), received_msg_size);
 }
 
 /*================================================================================================*/
 
-// void checkpoint::mem_read_logging(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_size)
-// {
-//   for (UINT32 offset = 0; offset < mem_size; ++offset)
-//   {
-//     if (// this address is read for the first time,
-//         mem_read_log.find(mem_addr + offset) == mem_read_log.end()
-//        )
-//     {
-//       // then the original value is logged
-//       mem_read_log[mem_addr + offset] = *(reinterpret_cast<UINT8*>(mem_addr + offset));
-//     }
-//   }
-//
-//   return;
-// }
-
-/*================================================================================================*/
-
-void checkpoint::mem_written_logging(ADDRINT mem_addr, UINT32 mem_size)
+void checkpoint::mem_write_tracking(ADDRINT mem_addr, UINT32 mem_size)
 {
   UINT8 single_byte;
   for (UINT32 offset = 0; offset < mem_size; ++offset)
@@ -96,7 +76,7 @@ void rollback_and_restore(ptr_checkpoint_t& dest_ptr_checkpoint, UINT8* backup_i
 
   // restore the current execution order (-1 again because the instruction at the checkpoint will
   // be re-executed)
-  current_exec_order = dest_ptr_checkpoint->execution_order;
+  current_exec_order = dest_ptr_checkpoint->exec_order;
   current_exec_order--;
 
   // restore written memories
@@ -109,7 +89,7 @@ void rollback_and_restore(ptr_checkpoint_t& dest_ptr_checkpoint, UINT8* backup_i
      PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_map_iter->first), &single_byte, 1);
     //*(reinterpret_cast<UINT8*>(mem_map_iter->first)) = mem_map_iter->second;
   }
-  dest_ptr_checkpoint->mem_read_log.clear();
+//  dest_ptr_checkpoint->mem_read_log.clear();
 //   std::map<ADDRINT, UINT8>().swap(dest_ptr_checkpoint->mem_written_log);
 
   // replace input and go back
@@ -124,7 +104,7 @@ void rollback_and_restore(ptr_checkpoint_t& dest_ptr_checkpoint, UINT8* backup_i
   }*/
   
   // go back
-  PIN_ExecuteAt(dest_ptr_checkpoint->ptr_ctxt.get());
+  PIN_ExecuteAt(dest_ptr_checkpoint->context.get());
 
   return;
 }
@@ -138,14 +118,13 @@ void rollback_and_restore(ptr_checkpoint_t& current_chkpt, std::set<ADDRINT>& me
 
 /*================================================================================================*/
 
-void rollback_and_modify(ptr_checkpoint_t& current_ptr_checkpoint,
-                                             std::set<ADDRINT>& dep_mems)
+void rollback_and_modify(ptr_checkpoint_t& current_ptr_checkpoint, std::set<ADDRINT>& dep_mems)
 {
   // restore the current trace
 //  explored_trace = current_ptr_checkpoint->trace;
 //  explored_trace.pop_back();
 
-  current_exec_order = current_ptr_checkpoint->execution_order;
+  current_exec_order = current_ptr_checkpoint->exec_order;
   current_exec_order--;
 
   // restore written memories
@@ -171,7 +150,7 @@ void rollback_and_modify(ptr_checkpoint_t& current_ptr_checkpoint,
   }
 
   // go back
-  PIN_ExecuteAt(current_ptr_checkpoint->ptr_ctxt.get());
+  PIN_ExecuteAt(current_ptr_checkpoint->context.get());
 
   return;
 }

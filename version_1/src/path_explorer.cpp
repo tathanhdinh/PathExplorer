@@ -112,7 +112,6 @@ namespace sources = boost::log::sources;
 typedef sinks::text_file_backend text_backend;
 typedef sinks::synchronous_sink<text_backend>   sink_file_backend;
 typedef logging::trivial::severity_level        log_level;
-
 sources::severity_logger<log_level>             log_instance;
 boost::shared_ptr<sink_file_backend>            log_sink;
 
@@ -207,18 +206,7 @@ VOID stop_tracing(INT32 code, VOID *data)
 
 inline static void initialize_logging(std::string log_filename)
 {
-//   log_sink = logging::add_file_log
-//   (
-//     keywords::file_name = log_filename.c_str()
-//     keywords::format = expressions::format("<%1%> %2%") 
-//       % trivial::severity % expressions::smessage
-//   );
-
   log_sink = logging::add_file_log(log_filename.c_str());
-//  logging::core::get()->set_filter
-//  (
-//    logging::trivial::severity >= logging::trivial::info
-//  );
   logging::add_common_attributes();
 
   return;
@@ -266,12 +254,10 @@ int main(int argc, char *argv[])
     BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "activate Pintool data-finalization";
     PIN_AddFiniFunction(stop_tracing, 0);
 
-    log_sink->flush();
-
     // now the control is passed to pin, so the main function will never return
     PIN_StartProgram();
   }
 
-  // in fact, it is never reached
+  // in fact, it is reached only if the Pin initialization fails
   return 0;
 }
