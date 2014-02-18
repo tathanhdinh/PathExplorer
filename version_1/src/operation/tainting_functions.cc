@@ -284,100 +284,6 @@ inline static void save_tainted_cfis()
   return;
 }
 
-/*================================================================================================*/
-
-inline static void compute_branch_min_checkpoint()
-{
-  std::vector<ptr_checkpoint_t>::iterator   ptr_checkpoint_iter;
-  std::vector<ptr_checkpoint_t>::reverse_iterator ptr_checkpoint_reverse_iter;
-  std::set<ADDRINT>::iterator             addr_iter;
-  std::map<UINT32, ptr_branch_t>::iterator  order_ptr_branch_iter;
-
-  ptr_branch_t      current_ptr_branch;
-  ptr_checkpoint_t  nearest_ptr_checkpoint;
-
-  bool nearest_checkpoint_found;
-  std::set<ADDRINT> intersec_mems;
-
-  order_ptr_branch_iter = order_tainted_ptr_branch_map.begin();
-  for (; order_ptr_branch_iter != order_tainted_ptr_branch_map.end(); ++order_ptr_branch_iter)
-  {
-    current_ptr_branch = order_ptr_branch_iter->second;
-    if (current_ptr_branch->dep_input_addrs.empty())
-    {
-      current_ptr_branch->checkpoint.reset();
-    }
-    else // compute the nearest checkpoint for current_ptr_branch
-    {
-      // for each *addr_iter in current_ptr_branch->dep_input_addrs,
-      // find the earliest checkpoint that uses it
-      addr_iter = current_ptr_branch->dep_input_addrs.begin();
-      for (; addr_iter != current_ptr_branch->dep_input_addrs.end(); ++addr_iter)
-      {
-        ptr_checkpoint_iter = saved_checkpoints.begin();
-        for (; ptr_checkpoint_iter != saved_checkpoints.end(); ++ptr_checkpoint_iter)
-        {
-          nearest_checkpoint_found = false;
-          // *addr_iter is found in (*ptr_checkpoint_iter)->dep_mems
-          if (std::find((*ptr_checkpoint_iter)->input_dep_addrs.begin(),
-                        (*ptr_checkpoint_iter)->input_dep_addrs.end(), *addr_iter)
-              != (*ptr_checkpoint_iter)->input_dep_addrs.end())
-          {
-            nearest_checkpoint_found = true;
-            current_ptr_branch->nearest_checkpoints[*ptr_checkpoint_iter].insert(*addr_iter);
-            break;
-          }
-        }
-
-        // find the ideal checkpoint by finding reversely the checkpoint list
-        if (nearest_checkpoint_found)
-        {
-          ptr_checkpoint_reverse_iter = saved_checkpoints.rbegin();
-          for (; ptr_checkpoint_reverse_iter != saved_checkpoints.rend();
-               ++ptr_checkpoint_reverse_iter)
-          {
-            if ((*ptr_checkpoint_reverse_iter)->exec_order < current_ptr_branch->execution_order)
-            {
-              if (std::find((*ptr_checkpoint_reverse_iter)->input_dep_addrs.begin(),
-                            (*ptr_checkpoint_reverse_iter)->input_dep_addrs.end(), *addr_iter)
-                  != (*ptr_checkpoint_reverse_iter)->input_dep_addrs.end())
-              {
-                current_ptr_branch->econ_execution_length[*ptr_checkpoint_iter] =
-                (*ptr_checkpoint_reverse_iter)->exec_order - (*ptr_checkpoint_iter)->exec_order;
-//                 std::cout << current_ptr_branch->econ_execution_length[*ptr_checkpoint_iter] << std::endl;
-                break;
-              }
-            }
-          }
-
-        }
-      }
-
-      if (current_ptr_branch->nearest_checkpoints.size() != 0)
-      {
-        BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-          << boost::format("the branch at %d:%d (%s: %s) has %d nearest checkpoints.")
-              % current_ptr_branch->execution_order
-              % current_ptr_branch->br_taken
-              % addrint_to_hexstring(current_ptr_branch->addr)
-              % ins_at_order[current_ptr_branch->execution_order]->disassembled_name
-              % current_ptr_branch->nearest_checkpoints.size();
-
-        current_ptr_branch->checkpoint = current_ptr_branch->nearest_checkpoints.rbegin()->first;
-      }
-      else
-      {
-        BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
-          << boost::format("cannot found any nearest checkpoint for the branch at %d.!")
-              % current_ptr_branch->execution_order;
-
-        PIN_ExitApplication(0);
-      }
-    }
-  }
-
-  return;
-}
 
 /*================================================================================================*/
 
@@ -388,15 +294,12 @@ inline void prepare_new_rollbacking_phase()
         % current_exec_order;
 
   determine_cfi_input_dependency();
-//  compute_branch_min_checkpoint();
 
   BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
     << boost::format("stop tainting, %d checkpoints and %d/%d branches detected; start rollbacking")
         % saved_checkpoints.size()
         % order_input_dep_ptr_branch_map.size()
         % order_tainted_ptr_branch_map.size();
-
-//   journal_tainting_log();
 
   in_tainting = false;
   PIN_RemoveInstrumentation();
