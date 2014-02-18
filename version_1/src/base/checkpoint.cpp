@@ -35,7 +35,7 @@ checkpoint::checkpoint(CONTEXT* p_ctxt, ADDRINT input_mem_read_addr, UINT32 inpu
     if ((received_msg_addr <= input_mem_read_addr + idx) &&
         (input_mem_read_addr + idx < received_msg_addr + received_msg_size))
     {
-      this->dep_mems.insert(input_mem_read_addr + idx);
+      this->input_dep_addrs.insert(input_mem_read_addr + idx);
     }
   }
 

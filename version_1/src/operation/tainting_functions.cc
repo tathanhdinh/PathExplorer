@@ -1,5 +1,8 @@
 #include <pin.H>
 
+#include <algorithm>
+#include <iterator>
+
 #include <boost/predef.h>
 #include <boost/format.hpp>
 #include <boost/graph/breadth_first_search.hpp>
@@ -204,7 +207,41 @@ inline static void determine_cfi_input_dependency()
  */
 inline static void determine_checkpoints_for_cfi(ptr_cond_direct_instruction_t cfi)
 {
+  addrint_set dep_addrs = cfi->input_dep_addrs;
+  addrint_set new_dep_addrs;
+  addrint_set intersected_addrs;
+  checkpoint_with_modified_addrs checkpoint_with_input_addrs;
 
+      ptr_checkpoints_t::iterator chkpnt_iter;
+  for (chkpnt_iter = saved_checkpoints.begin();
+       chkpnt_iter != saved_checkpoints.end(); ++chkpnt_iter)
+  {
+    // find the intersection between the input addresses of the checkpoint and the affecting input
+    // addresses of the CFI
+    intersected_addrs.clear();
+    std::set_intersection((*chkpnt_iter)->input_dep_addrs.begin(),
+                          (*chkpnt_iter)->input_dep_addrs.end(),
+                          dep_addrs.begin(), dep_addrs.end(),
+                          std::inserter(intersected_addrs, intersected_addrs.begin()));
+    // verify if the intersection is not empty
+    if (!intersected_addrs.empty())
+    {
+      // not empty, then the checkpoint and the intersected addrs make a pair, namely when we need
+      // to change the decision of the CFI then we should rollback to the checkpoint and modify some
+      // value at the address of the intersected addrs
+      checkpoint_with_input_addrs = std::make_pair(*chkpnt_iter, intersected_addrs);
+      cfi->checkpoints.push_back(checkpoint_with_input_addrs);
+
+      // the addrs in the intersected set are subtracted from the original dep_addrs
+      new_dep_addrs.clear();
+      std::set_difference(dep_addrs.begin(), dep_addrs.end(),
+                          intersected_addrs.begin(), intersected_addrs.end(),
+                          std::inserter(new_dep_addrs, new_dep_addrs.begin()));
+      // if the rest is empty then we have finished
+      if (new_dep_addrs.empty()) break;
+      else dep_addrs = new_dep_addrs;
+    }
+  }
   return;
 }
 
@@ -278,9 +315,9 @@ inline static void compute_branch_min_checkpoint()
         {
           nearest_checkpoint_found = false;
           // *addr_iter is found in (*ptr_checkpoint_iter)->dep_mems
-          if (std::find((*ptr_checkpoint_iter)->dep_mems.begin(),
-                        (*ptr_checkpoint_iter)->dep_mems.end(), *addr_iter)
-              != (*ptr_checkpoint_iter)->dep_mems.end())
+          if (std::find((*ptr_checkpoint_iter)->input_dep_addrs.begin(),
+                        (*ptr_checkpoint_iter)->input_dep_addrs.end(), *addr_iter)
+              != (*ptr_checkpoint_iter)->input_dep_addrs.end())
           {
             nearest_checkpoint_found = true;
             current_ptr_branch->nearest_checkpoints[*ptr_checkpoint_iter].insert(*addr_iter);
@@ -297,9 +334,9 @@ inline static void compute_branch_min_checkpoint()
           {
             if ((*ptr_checkpoint_reverse_iter)->exec_order < current_ptr_branch->execution_order)
             {
-              if (std::find((*ptr_checkpoint_reverse_iter)->dep_mems.begin(),
-                            (*ptr_checkpoint_reverse_iter)->dep_mems.end(), *addr_iter)
-                  != (*ptr_checkpoint_reverse_iter)->dep_mems.end())
+              if (std::find((*ptr_checkpoint_reverse_iter)->input_dep_addrs.begin(),
+                            (*ptr_checkpoint_reverse_iter)->input_dep_addrs.end(), *addr_iter)
+                  != (*ptr_checkpoint_reverse_iter)->input_dep_addrs.end())
               {
                 current_ptr_branch->econ_execution_length[*ptr_checkpoint_iter] =
                 (*ptr_checkpoint_reverse_iter)->exec_order - (*ptr_checkpoint_iter)->exec_order;

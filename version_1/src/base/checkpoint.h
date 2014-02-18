@@ -24,7 +24,7 @@ public:
 
   boost::shared_ptr<UINT8>    curr_input;
   
-  std::set<ADDRINT>           dep_mems;
+  std::set<ADDRINT>           input_dep_addrs;
   UINT32                      exec_order;
   UINT32                      rollback_times;
     
