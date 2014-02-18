@@ -203,9 +203,11 @@ inline static void determine_cfi_input_dependency()
 
 
 /**
- * @brief determine_checkpoints_for_cfi
+ * @brief for each CFI, determine pairs of <checkpoint, affecting input addresses> so that a
+ * rollback from the checkpoint with the modification on the affecting input addresses may change
+ * the CFI's decision.
  */
-inline static void determine_checkpoints_for_cfi(ptr_cond_direct_instruction_t cfi)
+inline static void set_checkpoints_for_cfi(ptr_cond_direct_instruction_t cfi)
 {
   addrint_set dep_addrs = cfi->input_dep_addrs;
   addrint_set new_dep_addrs;
@@ -239,20 +241,24 @@ inline static void determine_checkpoints_for_cfi(ptr_cond_direct_instruction_t c
                           std::inserter(new_dep_addrs, new_dep_addrs.begin()));
       // if the rest is empty then we have finished
       if (new_dep_addrs.empty()) break;
+      // but if it is not empty then we continue to the next checkpoint
       else dep_addrs = new_dep_addrs;
     }
   }
   return;
 }
 
+
 /**
  * @brief save new tainted CFI in this tainting phase
  */
 inline static void save_tainted_cfis()
 {
-  ptr_cond_direct_instruction_t tainted_cfi;
+  determine_cfi_input_dependency();
 
+  ptr_cond_direct_instruction_t tainted_cfi;
   std::map<UINT32, ptr_instruction_t>::iterator tainted_ins_iter;
+
   // iterate over executed instructions in this tainting phase
   for (tainted_ins_iter = ins_at_order.begin();
        tainted_ins_iter != ins_at_order.end(); ++tainted_ins_iter)
@@ -267,7 +273,9 @@ inline static void save_tainted_cfis()
         // and depends on the input
         if (!tainted_cfi->input_dep_addrs.empty())
         {
-          // then save it
+          // then set its checkpoints
+          set_checkpoints_for_cfi(tainted_cfi);
+          // and save it
           examined_input_dep_cfis.push_back(tainted_cfi);
         }
       }
@@ -275,10 +283,6 @@ inline static void save_tainted_cfis()
   }
   return;
 }
-
-/*================================================================================================*/
-
-
 
 /*================================================================================================*/
 
@@ -383,11 +387,8 @@ inline void prepare_new_rollbacking_phase()
     << boost::format("stop exploring, %d instructions analyzed; start detecting checkpoints")
         % current_exec_order;
 
-//   journal_tainting_graph("tainting_graph.dot");
-//   PIN_ExitApplication(0);
-
   determine_cfi_input_dependency();
-  compute_branch_min_checkpoint();
+//  compute_branch_min_checkpoint();
 
   BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
     << boost::format("stop tainting, %d checkpoints and %d/%d branches detected; start rollbacking")
