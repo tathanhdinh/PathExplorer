@@ -1,8 +1,5 @@
 #include "checkpoint.h"
 
-//#include <boost/format.hpp>
-//#include <boost/log/trivial.hpp>
-
 #include <limits>
 #include <cstdlib>
 #include <ctime>
@@ -14,7 +11,6 @@
 
 extern ADDRINT                                received_msg_addr;
 extern UINT32                                 received_msg_size;
-//extern std::vector<ADDRINT>                   explored_trace;
 extern UINT32                                 current_exec_order;
 
 namespace bran = boost::random;
@@ -39,8 +35,6 @@ checkpoint::checkpoint(CONTEXT* p_ctxt, ADDRINT input_mem_read_addr, UINT32 inpu
     }
   }
 
-  this->rollback_times = 0;
-
   this->curr_input.reset(new UINT8[received_msg_size]);
   PIN_SafeCopy(this->curr_input.get(),
                reinterpret_cast<UINT8*>(received_msg_addr), received_msg_size);
@@ -63,6 +57,21 @@ void checkpoint::mem_write_tracking(ADDRINT mem_addr, UINT32 mem_size)
     }
   }
 
+  return;
+}
+
+/*================================================================================================*/
+
+void checkpoint::rollback()
+{
+  // restore values of written memory addresses
+  std::map<ADDRINT, UINT8>::iterator mem_iter = this->mem_written_log.begin();
+  for (; mem_iter != this->mem_written_log.end(); ++mem_iter)
+  {
+    PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_iter->first), &mem_iter->second, sizeof(UINT8));
+  }
+  // retore values of register
+  PIN_ExecuteAt(this->context.get());
   return;
 }
 

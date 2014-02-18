@@ -17,38 +17,11 @@
 #include "../base/checkpoint.h"
 #include "../base/branch.h"
 #include "../util/stuffs.h"
+#include "common.h"
 
 /*================================================================================================*/
 
-extern std::map<ADDRINT, ptr_instruction_t>       ins_at_addr;
-extern std::map<UINT32,  ptr_instruction_t>       ins_at_order;
-
-extern bool                                       in_tainting;
-
-extern df_diagram                                 dta_graph;
-extern df_vertex_desc_set                         dta_outer_vertices;
-
-extern std::vector<ADDRINT>                       explored_trace;
-extern UINT32                                     current_exec_order;
-
-extern ptr_checkpoint_t                           master_ptr_checkpoint;
-extern ptr_checkpoint_t                           last_active_ptr_checkpoint;
-extern std::vector<ptr_checkpoint_t>              saved_checkpoints;
-
-extern std::pair< ptr_checkpoint_t, 
-                  std::set<ADDRINT> >             active_nearest_checkpoint;
-
-extern std::map< UINT32,
-       std::vector<ptr_checkpoint_t> >            exepoint_checkpoints_map;
-
-extern UINT32                                     total_rollback_times;
-extern UINT32                                     local_rollback_times;
-extern UINT32                                     max_total_rollback_times;
 extern UINT32                                     max_local_rollback_times;
-extern UINT32                                     used_checkpoint_number;
-
-extern ADDRINT                                    received_msg_addr;
-extern UINT32                                     received_msg_size;
 
 extern std::map<UINT32, ptr_branch_t>             order_input_dep_ptr_branch_map;
 extern std::map<UINT32, ptr_branch_t>             order_input_indep_ptr_branch_map;
@@ -61,26 +34,6 @@ extern std::vector<ptr_branch_t>                  total_input_dep_ptr_branches;
 extern ptr_branch_t                               active_ptr_branch;
 extern ptr_branch_t                               last_active_ptr_branch;
 extern ptr_branch_t                               exploring_ptr_branch;
-
-//extern std::set<ADDRINT>                          active_input_dep_addrs;
-
-extern UINT64                                     executed_ins_number;
-extern UINT64                                     econed_ins_number;
-
-namespace logging = boost::log;
-namespace sinks   = boost::log::sinks;
-namespace sources = boost::log::sources;
-typedef sinks::text_file_backend text_backend;
-typedef sinks::synchronous_sink<text_backend>     sink_file_backend;
-typedef logging::trivial::severity_level          log_level;
-
-extern sources::severity_logger<log_level>        log_instance;
-extern boost::shared_ptr<sink_file_backend>       log_sink;
-
-extern KNOB<UINT32>                               max_total_rollback;
-extern KNOB<UINT32>                               max_local_rollback;
-extern KNOB<UINT32>                               max_trace_length;
-extern KNOB<BOOL>                                 print_debug_text;
 
 /*================================================================================================*/
 
@@ -288,7 +241,6 @@ inline void set_next_active_nearest_checkpoint(ptr_branch_t& current_ptr_branch)
     }
     else 
     {
-      //BOOST_LOG_TRIVIAL(fatal) 
       BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
         << boost::format("%s: nearest checkpoint for the branch at %d cannot found") 
             % __FUNCTION__ % current_ptr_branch->execution_order;

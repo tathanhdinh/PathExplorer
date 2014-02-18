@@ -3,40 +3,12 @@
 #include "../base/instruction.h"
 #include "../base/checkpoint.h"
 #include "../base/cond_direct_instruction.h"
+#include "common.h"
 
-#include <boost/predef.h>
-#include <boost/format.hpp>
-#include <boost/graph/breadth_first_search.hpp>
-#include <boost/log/core.hpp>
-#include <boost/log/trivial.hpp>
-#include <boost/log/expressions.hpp>
-#include <boost/log/sinks/text_file_backend.hpp>
-#include <boost/log/utility/setup/file.hpp>
-#include <boost/log/utility/setup/common_attributes.hpp>
-#include <boost/log/sources/severity_logger.hpp>
-#include <boost/log/sources/record_ostream.hpp>
 
 /*================================================================================================*/
 
-extern std::map<ADDRINT, ptr_instruction_t>     ins_at_addr;
-extern std::map<UINT32, ptr_instruction_t>      ins_at_order;
-
-extern UINT32                                   current_exec_order;
-
-extern std::vector<ptr_checkpoint_t>            saved_checkpoints;
-extern ptr_cond_direct_instruction_t            exploring_cfi;
-extern UINT32                                   exploring_cfi_exec_order;
 extern UINT32                                   last_cfi_exec_order;
-
-namespace logging = boost::log;
-namespace sinks   = boost::log::sinks;
-namespace sources = boost::log::sources;
-typedef sinks::text_file_backend text_backend;
-typedef sinks::synchronous_sink<text_backend>   sink_file_backend;
-typedef logging::trivial::severity_level        log_level;
-
-extern sources::severity_logger<log_level>      log_instance;
-extern boost::shared_ptr<sink_file_backend>     log_sink;
 
 /*================================================================================================*/
 

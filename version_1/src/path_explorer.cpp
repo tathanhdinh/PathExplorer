@@ -32,6 +32,7 @@
 #include "base/cond_direct_instruction.h"
 #include "operation/instrumentation_functions.h"
 #include "operation/tainting_functions.h"
+#include "operation/common.h"
 #include "util/stuffs.h"
 
 extern "C" 

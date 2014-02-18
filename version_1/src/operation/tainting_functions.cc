@@ -3,79 +3,23 @@
 #include <algorithm>
 #include <iterator>
 
-#include <boost/predef.h>
-#include <boost/format.hpp>
-#include <boost/graph/breadth_first_search.hpp>
-#include <boost/graph/lookup_edge.hpp>
-#include <boost/graph/graphviz.hpp>
-#include <boost/log/core.hpp>
-#include <boost/log/trivial.hpp>
-#include <boost/log/expressions.hpp>
-#include <boost/log/sinks/text_file_backend.hpp>
-#include <boost/log/utility/setup/file.hpp>
-#include <boost/log/utility/setup/common_attributes.hpp>
-#include <boost/log/sources/severity_logger.hpp>
-#include <boost/log/sources/record_ostream.hpp>
-
-#include "../base/branch.h"
-#include "../base/operand.h"
-#include "../base/instruction.h"
-#include "../base/cond_direct_instruction.h"
+#include "common.h"
 #include "../util/stuffs.h"
 
 /*================================================================================================*/
 
-#if BOOST_OS_LINUX
-extern ADDRINT                                  logged_syscall_index;
-extern ADDRINT                                  logged_syscall_args[6];
-#endif
-
-extern bool                                     in_tainting;
-
-extern df_diagram                               dta_graph;
-extern df_vertex_desc_set                       dta_outer_vertices;
-
-extern std::map<ADDRINT, ptr_instruction_t>     ins_at_addr;
-extern std::map<UINT32, ptr_instruction_t>      ins_at_order;
-
-extern UINT32                                   current_exec_order;
-
 extern std::map<UINT32, ptr_branch_t>           order_input_dep_ptr_branch_map;
 extern std::map<UINT32, ptr_branch_t>           order_input_indep_ptr_branch_map;
 extern std::map<UINT32, ptr_branch_t>           order_tainted_ptr_branch_map;
-extern std::vector<ptr_branch_t>                total_input_dep_ptr_branches;
-extern ptr_cond_direct_instructions_t           examined_input_dep_cfis;
 
-typedef std::vector<ptr_checkpoint_t>           ptr_checkpoints_t;
-extern std::map<UINT32, ptr_checkpoints_t>      exepoint_checkpoints_map;
-
-extern std::vector<ptr_checkpoint_t>            saved_checkpoints;
-extern ptr_checkpoint_t                         master_ptr_checkpoint;
-
-extern ptr_cond_direct_instruction_t            exploring_cfi;
 extern ptr_branch_t                             exploring_ptr_branch;
-
-extern UINT32                                   received_msg_num;
-extern ADDRINT                                  received_msg_addr;
-extern UINT32                                   received_msg_size;
-
-extern UINT32                                   max_trace_size;
-
-namespace logging = boost::log;
-namespace sinks   = boost::log::sinks;
-namespace sources = boost::log::sources;
-typedef sinks::text_file_backend text_backend;
-typedef sinks::synchronous_sink<text_backend>   sink_file_backend;
-typedef logging::trivial::severity_level        log_level;
-extern sources::severity_logger<log_level>      log_instance;
-extern boost::shared_ptr<sink_file_backend>     log_sink;
 
 namespace tainting
 {
 
 /*================================================================================================*/
 
-static std::map<df_vertex_desc, df_vertex_desc> prec_vertex_desc;
+//static std::map<df_vertex_desc, df_vertex_desc> prec_vertex_desc;
 static std::set<df_edge_desc> visited_edges;
 
 /*================================================================================================*/
@@ -89,7 +33,7 @@ public:
   template <typename Edge, typename Graph>
   void tree_edge(Edge e, const Graph& g)
   {
-    prec_vertex_desc[boost::target(e, g)] = boost::source(e, g);
+//    prec_vertex_desc[boost::target(e, g)] = boost::source(e, g);
     visited_edges.insert(e);
   }
 };
@@ -104,44 +48,6 @@ inline void mark_resolved(ptr_branch_t& omitted_ptr_branch)
 
   return;
 }
-
-/*================================================================================================*/
-
-inline static std::vector<UINT32> backward_trace(df_vertex_desc root_vertex,
-                                                 df_vertex_desc last_vertex)
-{
-  std::vector<UINT32> backward_trace;
-
-  df_vertex_desc current_vertex = last_vertex;
-  df_vertex_desc backward_vertex;
-
-  df_edge_desc current_edge;
-  bool edge_exist;
-
-  while (current_vertex != root_vertex)
-  {
-    backward_vertex = prec_vertex_desc[current_vertex];
-
-    boost::tie(current_edge, edge_exist) = boost::edge(backward_vertex,
-                                                       current_vertex, dta_graph);
-    if (edge_exist)
-    {
-//      backward_trace.push_back(dta_graph[current_edge].second);
-      backward_trace.push_back(dta_graph[current_edge]);
-    }
-    else
-    {
-      BOOST_LOG_SEV(log_instance, boost::log::trivial::fatal)
-        << "edge not found in backward trace construction";
-      PIN_ExitApplication(1);
-    }
-
-    current_vertex = backward_vertex;
-  }
-
-  return backward_trace;
-}
-
 
 /**
  * @brief for each executed instruction in this tainting phase, determine the set of input memory
@@ -172,7 +78,8 @@ inline static void determine_cfi_input_dependency()
       if ((received_msg_addr <= mem_addr) && (mem_addr < received_msg_addr + received_msg_size))
       {
         // take a BFS from this vertice
-        prec_vertex_desc.clear(); visited_edges.clear();
+//        prec_vertex_desc.clear();
+        visited_edges.clear();
         boost::breadth_first_search(dta_graph, *vertex_iter, boost::visitor(df_visitor));
 
         // for each visited edge
@@ -254,8 +161,6 @@ inline static void set_checkpoints_for_cfi(ptr_cond_direct_instruction_t cfi)
  */
 inline static void save_tainted_cfis()
 {
-  determine_cfi_input_dependency();
-
   ptr_cond_direct_instruction_t tainted_cfi;
   std::map<UINT32, ptr_instruction_t>::iterator tainted_ins_iter;
 
@@ -285,6 +190,14 @@ inline static void save_tainted_cfis()
 }
 
 
+inline static void analyze_tainted_cfis()
+{
+  determine_cfi_input_dependency();
+  save_tainted_cfis();
+  return;
+}
+
+
 /*================================================================================================*/
 
 inline void prepare_new_rollbacking_phase()
@@ -293,7 +206,7 @@ inline void prepare_new_rollbacking_phase()
     << boost::format("stop exploring, %d instructions analyzed; start detecting checkpoints")
         % current_exec_order;
 
-  determine_cfi_input_dependency();
+  analyze_tainted_cfis();
 
   BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
     << boost::format("stop tainting, %d checkpoints and %d/%d branches detected; start rollbacking")
@@ -384,8 +297,7 @@ VOID general_instruction(ADDRINT ins_addr)
 /*================================================================================================*/
 
 VOID mem_read_instruction(ADDRINT ins_addr,
-                                           ADDRINT mem_read_addr, UINT32 mem_read_size,
-                                           CONTEXT* p_ctxt)
+                          ADDRINT mem_read_addr, UINT32 mem_read_size, CONTEXT* p_ctxt)
 {
   // a new checkpoint found
   if (std::max(mem_read_addr, received_msg_addr) <
@@ -435,25 +347,25 @@ VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 me
 
 /*================================================================================================*/
 
-VOID cond_branch_instruction(ADDRINT ins_addr, bool br_taken)
-{
-  ptr_branch_t new_ptr_branch(new branch(ins_addr, br_taken));
+//VOID cond_branch_instruction(ADDRINT ins_addr, bool br_taken)
+//{
+//  ptr_branch_t new_ptr_branch(new branch(ins_addr, br_taken));
 
-  // save the first input
-  store_input(new_ptr_branch, br_taken);
+//  // save the first input
+//  store_input(new_ptr_branch, br_taken);
 
-  // verify if the branch is a new tainted branch
-  if (exploring_ptr_branch &&
-      (new_ptr_branch->execution_order <= exploring_ptr_branch->execution_order))
-  {
-    // mark it as resolved
-    mark_resolved(new_ptr_branch);
-  }
+//  // verify if the branch is a new tainted branch
+//  if (exploring_ptr_branch &&
+//      (new_ptr_branch->execution_order <= exploring_ptr_branch->execution_order))
+//  {
+//    // mark it as resolved
+//    mark_resolved(new_ptr_branch);
+//  }
 
-  order_tainted_ptr_branch_map[current_exec_order] = new_ptr_branch;
+//  order_tainted_ptr_branch_map[current_exec_order] = new_ptr_branch;
 
-  return;
-}
+//  return;
+//}
 
 /*================================================================================================*/
 #if BOOST_OS_WINDOWS

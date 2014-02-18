@@ -5,53 +5,20 @@
 #include <map>
 #include <set>
 
-#include <boost/predef.h>
-#include <boost/timer.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/format.hpp>
-#include <boost/log/core.hpp>
-#include <boost/log/trivial.hpp>
-#include <boost/log/expressions.hpp>
-#include <boost/log/sinks/text_file_backend.hpp>
-#include <boost/log/utility/setup/file.hpp>
-#include <boost/log/utility/setup/common_attributes.hpp>
-#include <boost/log/sources/severity_logger.hpp>
-#include <boost/log/sources/record_ostream.hpp>
-
 #include "../util/stuffs.h"
 #include "../base/branch.h"
 #include "../base/instruction.h"
 #include "../base/cond_direct_instruction.h"
 #include "instrumentation_functions.h"
+#include "common.h"
 #include "tainting_functions.h"
 #include "resolving_functions.h"
 
 /*================================================================================================*/
 
-extern std::map<ADDRINT, ptr_instruction_t>     ins_at_addr;
-extern bool                                     in_tainting;
-extern UINT32                                   received_msg_num;
-extern running_state                            current_running_state;
-
-namespace btime = boost::posix_time;
-extern boost::shared_ptr<btime::ptime>          start_ptr_time;
-extern boost::shared_ptr<btime::ptime>          stop_ptr_time;
-
-namespace logging = boost::log;
-namespace sinks   = boost::log::sinks;
-namespace sources = boost::log::sources;
-typedef sinks::text_file_backend                text_backend;
-typedef sinks::synchronous_sink<text_backend>   sink_file_backend;
-typedef logging::trivial::severity_level        log_level;
-extern sources::severity_logger<log_level>      log_instance;
-extern boost::shared_ptr<sink_file_backend>     log_sink;
-
-/*================================================================================================*/
-
 inline static void exec_tainting_phase(INS& ins, ptr_instruction_t examined_ins)
 {
-  /* START LOGGING */
+  /* logging */
   if (examined_ins->is_syscall)
   {
     INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
@@ -67,50 +34,52 @@ inline static void exec_tainting_phase(INS& ins, ptr_instruction_t examined_ins)
                              IARG_INST_PTR,
                              IARG_END);
 
-    if (examined_ins->is_cond_direct_cf)
+    if (examined_ins->is_mem_read)
     {
-      // conditional branch logging
+      // memory read logging
       INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
-                               (AFUNPTR)tainting::cond_branch_instruction,
+                               (AFUNPTR)tainting::mem_read_instruction,
                                IARG_INST_PTR,
-                               IARG_BRANCH_TAKEN,
+                               IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE,
+                               IARG_CONTEXT,
                                IARG_END);
-    }
-    else
-    {
-      if (examined_ins->is_mem_read)
+
+      if (examined_ins->has_mem_read2)
       {
-        // memory read logging
+        // memory read2 (e.g. rep cmpsb instruction)
         INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
                                  (AFUNPTR)tainting::mem_read_instruction,
                                  IARG_INST_PTR,
-                                 IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE,
+                                 IARG_MEMORYREAD2_EA, IARG_MEMORYREAD_SIZE,
                                  IARG_CONTEXT,
                                  IARG_END);
-        if (examined_ins->has_mem_read2)
-        {
-          // memory read2 (e.g. rep cmpsb instruction)
-          INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
-                                   (AFUNPTR)tainting::mem_read_instruction,
-                                   IARG_INST_PTR,
-                                   IARG_MEMORYREAD2_EA, IARG_MEMORYREAD_SIZE,
-                                   IARG_CONTEXT,
-                                   IARG_END);
-        }
-      }
-
-      if (examined_ins->is_mem_write)
-      {
-        // memory written logging
-        INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
-                                 (AFUNPTR)tainting::mem_write_instruction,
-                                 IARG_INST_PTR,
-                                 IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE,
-                                 IARG_END );
       }
     }
+
+    if (examined_ins->is_mem_write)
+    {
+      // memory written logging
+      INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
+                               (AFUNPTR)tainting::mem_write_instruction,
+                               IARG_INST_PTR,
+                               IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE,
+                               IARG_END );
+    }
+
+//    if (examined_ins->is_cond_direct_cf)
+//    {
+//      // conditional branch logging
+//      INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
+//                               (AFUNPTR)tainting::cond_branch_instruction,
+//                               IARG_INST_PTR,
+//                               IARG_BRANCH_TAKEN,
+//                               IARG_END);
+//    }
+//    else
+//    {
+//    }
   }
-  /* START TAINTING */
+  /* tainting */
   INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
                            (AFUNPTR)tainting::graphical_propagation,
                            IARG_INST_PTR,
