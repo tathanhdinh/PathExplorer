@@ -17,6 +17,7 @@
 #include "../base/branch.h"
 #include "../base/operand.h"
 #include "../base/instruction.h"
+#include "../base/cond_direct_instruction.h"
 #include "../util/stuffs.h"
 
 /*================================================================================================*/
@@ -40,6 +41,7 @@ extern std::map<UINT32, ptr_branch_t>           order_input_dep_ptr_branch_map;
 extern std::map<UINT32, ptr_branch_t>           order_input_indep_ptr_branch_map;
 extern std::map<UINT32, ptr_branch_t>           order_tainted_ptr_branch_map;
 extern std::vector<ptr_branch_t>                total_input_dep_ptr_branches;
+extern ptr_cond_direct_instructions_t           examined_input_dep_cfis;
 
 typedef std::vector<ptr_checkpoint_t>           ptr_checkpoints_t;
 extern std::map<UINT32, ptr_checkpoints_t>      exepoint_checkpoints_map;
@@ -47,6 +49,7 @@ extern std::map<UINT32, ptr_checkpoints_t>      exepoint_checkpoints_map;
 extern std::vector<ptr_checkpoint_t>            saved_checkpoints;
 extern ptr_checkpoint_t                         master_ptr_checkpoint;
 
+extern ptr_cond_direct_instruction_t            exploring_cfi;
 extern ptr_branch_t                             exploring_ptr_branch;
 
 extern UINT32                                   received_msg_num;
@@ -70,6 +73,7 @@ namespace tainting
 /*================================================================================================*/
 
 static std::map<df_vertex_desc, df_vertex_desc> prec_vertex_desc;
+static std::set<df_edge_desc> visited_edges;
 
 /*================================================================================================*/
 
@@ -83,6 +87,7 @@ public:
   void tree_edge(Edge e, const Graph& g)
   {
     prec_vertex_desc[boost::target(e, g)] = boost::source(e, g);
+    visited_edges.insert(e);
   }
 };
 
@@ -134,108 +139,109 @@ inline static std::vector<UINT32> backward_trace(df_vertex_desc root_vertex,
   return backward_trace;
 }
 
-/*================================================================================================*/
 
-inline static void compute_branch_mem_dependency()
+/**
+ * @brief for each executed instruction in this tainting phase, determine the set of input memory
+ * addresses that affect to the instruction.
+ */
+inline static void determine_cfi_input_dependency()
 {
-  df_vertex_iter vertex_iter;
-  df_vertex_iter last_vertex_iter;
-
-  df_edge_desc edge_desc;
-  bool edge_exist;
-
-  df_bfs_visitor df_visitor;
-
-  std::map<UINT32, ptr_branch_t>::iterator order_ptr_branch_iter;
-  ptr_branch_t current_ptr_branch;
-
-  std::map<df_vertex_desc, df_vertex_desc>::iterator prec_vertex_iter;
+  df_vertex_iter                    vertex_iter;
+  df_vertex_iter                    last_vertex_iter;
+  df_bfs_visitor                    df_visitor;
+  std::set<df_edge_desc>::iterator  visited_edge_iter;
 
   ADDRINT mem_addr;
 
+  UINT32 visited_edge_exec_order;
+  ptr_cond_direct_instruction_t visited_cfi;
+
+  // get the set of vertices in the tainting graph
   boost::tie(vertex_iter, last_vertex_iter) = boost::vertices(dta_graph);
-  // iterate over vertices in the dataflow graph
+  // for each vertice of the tainting graph
   for (; vertex_iter != last_vertex_iter; ++vertex_iter)
   {
-    // consider only vertices representing some memory address
+    // if it represents some memory address
     if (dta_graph[*vertex_iter]->value.type() == typeid(ADDRINT))
     {
-      prec_vertex_desc.clear();
-
-      boost::breadth_first_search(dta_graph, *vertex_iter, boost::visitor(df_visitor));
-
-      for (prec_vertex_iter = prec_vertex_desc.begin();
-           prec_vertex_iter != prec_vertex_desc.end(); ++prec_vertex_iter)
+      // and this memory address belongs to the input
+      mem_addr = boost::get<ADDRINT>(dta_graph[*vertex_iter]->value);
+      if ((received_msg_addr <= mem_addr) && (mem_addr < received_msg_addr + received_msg_size))
       {
-        boost::tie(edge_desc, edge_exist) = boost::edge(prec_vertex_iter->second,
-                                                        prec_vertex_iter->first,
-                                                        dta_graph);
-        if (edge_exist)
+        // take a BFS from this vertice
+        prec_vertex_desc.clear(); visited_edges.clear();
+        boost::breadth_first_search(dta_graph, *vertex_iter, boost::visitor(df_visitor));
+
+        // for each visited edge
+        for (visited_edge_iter = visited_edges.begin();
+             visited_edge_iter != visited_edges.end(); ++visited_edge_iter)
         {
-          order_ptr_branch_iter = order_tainted_ptr_branch_map.begin();
-          for (; order_ptr_branch_iter != order_tainted_ptr_branch_map.end();
-               ++order_ptr_branch_iter)
+          // the value of the edge is the execution order of the corresponding instruction
+          visited_edge_exec_order = dta_graph[*visited_edge_iter];
+          // consider the instruction which is a CFI
+          if (ins_at_order[visited_edge_exec_order]->is_cond_direct_cf)
           {
-            current_ptr_branch = order_ptr_branch_iter->second;
-            if (dta_graph[edge_desc] == current_ptr_branch->execution_order)
+            // then the instruction depends on the value of the memory address
+            visited_cfi = boost::static_pointer_cast<cond_direct_instruction>(
+                  ins_at_order[visited_edge_exec_order]);
+            if (!exploring_cfi ||
+                (exploring_cfi && (visited_cfi->exec_order > exploring_cfi->exec_order)))
             {
-              mem_addr = boost::get<ADDRINT>(dta_graph[*vertex_iter]->value);
-
-              if ((received_msg_addr <= mem_addr) &&
-                  (mem_addr < received_msg_addr + received_msg_size))
-              {
-                current_ptr_branch->dep_input_addrs.insert(mem_addr);
-              }
-              else
-              {
-                current_ptr_branch->dep_other_addrs.insert(mem_addr);
-              }
-
-              current_ptr_branch->dep_backward_traces[mem_addr]
-                = backward_trace(*vertex_iter, prec_vertex_iter->second);
+              visited_cfi->input_dep_addrs.insert(mem_addr);
             }
           }
         }
-        else
-        {
-          BOOST_LOG_SEV(log_instance, logging::trivial::fatal) << "backward edge not found in BFS";
-          PIN_ExitApplication(1);
-        }
       }
-    }
-  }
-
-  order_ptr_branch_iter = order_tainted_ptr_branch_map.begin();
-  for (; order_ptr_branch_iter != order_tainted_ptr_branch_map.end();
-       ++order_ptr_branch_iter)
-  {
-    current_ptr_branch = order_ptr_branch_iter->second;
-    if (!current_ptr_branch->dep_input_addrs.empty())
-    {
-      order_input_dep_ptr_branch_map[current_ptr_branch->execution_order]
-        = current_ptr_branch;
-
-      if (exploring_ptr_branch)
-      {
-        if (current_ptr_branch->execution_order > exploring_ptr_branch->execution_order)
-        {
-          total_input_dep_ptr_branches.push_back(current_ptr_branch);
-        }
-      }
-      else
-      {
-        total_input_dep_ptr_branches.push_back(current_ptr_branch);
-      }
-    }
-    else
-    {
-      order_input_indep_ptr_branch_map[current_ptr_branch->execution_order]
-        = current_ptr_branch;
     }
   }
 
   return;
 }
+
+
+/**
+ * @brief determine_checkpoints_for_cfi
+ */
+inline static void determine_checkpoints_for_cfi(ptr_cond_direct_instruction_t cfi)
+{
+
+  return;
+}
+
+/**
+ * @brief save new tainted CFI in this tainting phase
+ */
+inline static void save_tainted_cfis()
+{
+  ptr_cond_direct_instruction_t tainted_cfi;
+
+  std::map<UINT32, ptr_instruction_t>::iterator tainted_ins_iter;
+  // iterate over executed instructions in this tainting phase
+  for (tainted_ins_iter = ins_at_order.begin();
+       tainted_ins_iter != ins_at_order.end(); ++tainted_ins_iter)
+  {
+    // consider only the instruction that is not behind the exploring CFI
+    if (!exploring_cfi ||
+        (exploring_cfi && (tainted_ins_iter->first > exploring_cfi->exec_order)))
+    {
+      if (tainted_ins_iter->second->is_cond_direct_cf)
+      {
+        tainted_cfi = boost::static_pointer_cast<cond_direct_instruction>(tainted_ins_iter->second);
+        // and depends on the input
+        if (!tainted_cfi->input_dep_addrs.empty())
+        {
+          // then save it
+          examined_input_dep_cfis.push_back(tainted_cfi);
+        }
+      }
+    }
+  }
+  return;
+}
+
+/*================================================================================================*/
+
+
 
 /*================================================================================================*/
 
@@ -343,7 +349,7 @@ inline void prepare_new_rollbacking_phase()
 //   journal_tainting_graph("tainting_graph.dot");
 //   PIN_ExitApplication(0);
 
-  compute_branch_mem_dependency();
+  determine_cfi_input_dependency();
   compute_branch_min_checkpoint();
 
   BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
@@ -400,16 +406,28 @@ VOID syscall_instruction(ADDRINT ins_addr)
 
 VOID general_instruction(ADDRINT ins_addr)
 {
-  if ((current_exec_order < max_trace_size) &&
-      !ins_at_addr[ins_addr]->is_mapped_from_kernel)
+  ptr_cond_direct_instruction_t current_cfi, duplicated_cfi;
+
+  if ((current_exec_order < max_trace_size) && !ins_at_addr[ins_addr]->is_mapped_from_kernel)
   {
     current_exec_order++;
-    ins_at_order[current_exec_order] = ins_at_addr[ins_addr];
+    if (ins_at_addr[ins_addr]->is_cond_direct_cf)
+    {
+      // duplicate a CFI
+      current_cfi = boost::static_pointer_cast<cond_direct_instruction>(ins_at_addr[ins_addr]);
+      duplicated_cfi.reset(new cond_direct_instruction(*current_cfi));
+      duplicated_cfi->exec_order = current_exec_order;
+      ins_at_order[current_exec_order] = duplicated_cfi;
+    }
+    else
+    {
+      // duplicate an instruction
+      ins_at_order[current_exec_order].reset(new instruction(*ins_at_addr[ins_addr]));
+    }
 
     BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
         << boost::format("%-3d %-15s %-50s %-25s %-25s")
-           % current_exec_order
-           % addrint_to_hexstring(ins_addr)
+           % current_exec_order % addrint_to_hexstring(ins_addr)
            % ins_at_addr[ins_addr]->disassembled_name
            % ins_at_addr[ins_addr]->contained_image
            % ins_at_addr[ins_addr]->contained_function;

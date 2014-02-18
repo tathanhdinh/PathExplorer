@@ -40,7 +40,7 @@ public:
 
   std::set<ptr_operand_t> src_operands;
   std::set<ptr_operand_t> dst_operands;
-  
+
 public:
   instruction();
   instruction(const INS& ins);

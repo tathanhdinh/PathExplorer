@@ -76,6 +76,7 @@ std::map<UINT32, ptr_branch_t>                  order_tainted_ptr_branch_map;
 std::vector<ptr_branch_t>                       found_new_ptr_branches;
 std::vector<ptr_branch_t>                       total_resolved_ptr_branches;
 std::vector<ptr_branch_t>                       total_input_dep_ptr_branches;
+ptr_cond_direct_instructions_t                  examined_input_dep_cfis;
 
 ptr_branch_t                                    active_ptr_branch;
 ptr_branch_t                                    last_active_ptr_branch;

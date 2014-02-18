@@ -5,6 +5,7 @@
 
 #include <map>
 #include <set>
+#include <vector>
 
 #include <boost/shared_ptr.hpp>
 
@@ -33,6 +34,7 @@ public:
 };
 
 typedef boost::shared_ptr<checkpoint> ptr_checkpoint_t;
+typedef std::vector<ptr_checkpoint_t> ptr_checkpoints_t;
 
 /*================================================================================================*/
 
