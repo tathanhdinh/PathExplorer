@@ -98,14 +98,13 @@ inline static void determine_cfi_input_dependency()
  */
 inline static void set_checkpoints_for_cfi(ptr_cond_direct_instruction_t cfi)
 {
-  addrint_set dep_addrs = cfi->input_dep_addrs;
-  addrint_set new_dep_addrs;
-  addrint_set intersected_addrs;
+  addrint_set_t dep_addrs = cfi->input_dep_addrs;
+  addrint_set_t new_dep_addrs;
+  addrint_set_t intersected_addrs;
   checkpoint_with_modified_addrs checkpoint_with_input_addrs;
 
-      ptr_checkpoints_t::iterator chkpnt_iter;
-  for (chkpnt_iter = saved_checkpoints.begin();
-       chkpnt_iter != saved_checkpoints.end(); ++chkpnt_iter)
+  ptr_checkpoints_t::iterator chkpnt_iter = saved_checkpoints.begin();
+  for (; chkpnt_iter != saved_checkpoints.end(); ++chkpnt_iter)
   {
     // find the intersection between the input addresses of the checkpoint and the affecting input
     // addresses of the CFI
@@ -164,7 +163,7 @@ inline static void save_detected_cfis()
           // then set its checkpoints
           set_checkpoints_for_cfi(newly_detected_cfi);
           // and save it
-          examined_input_dep_cfis.push_back(newly_detected_cfi);
+          detected_input_dep_cfis.push_back(newly_detected_cfi);
 #if !defined(NDEBUG)
           newly_detected_input_dep_cfis.push_back(newly_detected_cfi);
 #endif
@@ -358,7 +357,7 @@ VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 me
     saved_checkpoints[0]->mem_write_tracking(mem_written_addr, mem_written_size);
   }
 
-  exepoint_checkpoints_map[current_exec_order] = saved_checkpoints;
+//  exepoint_checkpoints_map[current_exec_order] = saved_checkpoints;
 
   ptr_operand_t mem_operand;
   for (UINT32 idx = 0; idx < mem_written_size; ++idx)

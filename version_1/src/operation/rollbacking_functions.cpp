@@ -4,12 +4,12 @@
 
 /*================================================================================================*/
 
-static ptr_cond_direct_instruction_t            active_cfi;
-static UINT32                                   active_cfi_exec_order;
-static ptr_checkpoint_t                         active_checkpoint;
-static UINT32                                   max_rollback_num;
-static UINT32                                   used_rollback_num;
-static addrint_set                              active_modified_addrs;
+static ptr_cond_direct_instruction_t  active_cfi;
+static UINT32                         active_cfi_exec_order;
+static ptr_checkpoint_t               active_checkpoint;
+static UINT32                         max_rollback_num;
+static UINT32                         used_rollback_num;
+static addrint_set_t                  active_modified_addrs;
 
 /*================================================================================================*/
 
@@ -86,6 +86,16 @@ inline static void get_next_active_checkpoint()
  */
 inline static void prepare_new_tainting_phase()
 {
+  // verify if there exists unexplored CFI
+  ptr_cond_direct_instructions_t::iterator cfi_iter = detected_input_dep_cfis.begin();
+  for (; cfi_iter != detected_input_dep_cfis.end(); ++cfi_iter)
+  {
+    if (!(*cfi_iter)->is_explored) break;
+  }
+  if (cfi_iter != detected_input_dep_cfis.end())
+  {
+    // exists, then
+  }
   return;
 }
 

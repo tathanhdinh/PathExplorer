@@ -6,10 +6,10 @@
 
 #include <vector>
 
-typedef std::set<ADDRINT>                         addrint_set;
-typedef std::map<ADDRINT, UINT8>                  addrint_value;
-typedef std::set<addrint_value>                   addrint_value_set;
-typedef std::pair<ptr_checkpoint_t, addrint_set>  checkpoint_with_modified_addrs;
+typedef std::set<ADDRINT>                           addrint_set_t;
+typedef std::map<ADDRINT, UINT8>                    addrint_value_map_t;
+typedef std::vector<addrint_value_map_t>            vector_of_addrint_value_map_t;
+typedef std::pair<ptr_checkpoint_t, addrint_set_t>  checkpoint_with_modified_addrs;
 
 class cond_direct_instruction : public instruction
 {
@@ -18,9 +18,9 @@ public:
   bool is_bypassed;
   bool is_explored;
 
-  addrint_set                                 input_dep_addrs;
-  std::map<bool, addrint_value_set>           inputs;
-  std::vector<checkpoint_with_modified_addrs> checkpoints;
+  addrint_set_t                                   input_dep_addrs;
+  std::map<bool, vector_of_addrint_value_map_t>   inputs;
+  std::vector<checkpoint_with_modified_addrs>     checkpoints;
 
   UINT32 used_rollback_num;
   UINT32 max_rollback_num;

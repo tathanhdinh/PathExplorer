@@ -55,34 +55,9 @@ UINT32                                          max_total_rollback_times;
 UINT32                                          max_local_rollback_times;
 UINT32                                          max_trace_size;
 
-bool                                            in_tainting;
-
-df_diagram                                      dta_graph;
-df_vertex_desc_set                              dta_outer_vertices;
-
 std::vector<ptr_checkpoint_t>                   saved_checkpoints;
-ptr_checkpoint_t                                master_ptr_checkpoint;
-ptr_checkpoint_t                                last_active_ptr_checkpoint;
 
-std::pair< ptr_checkpoint_t, 
-           std::set<ADDRINT> >                  active_nearest_checkpoint;
-
-std::map< UINT32,
-          std::vector<ptr_checkpoint_t> >       exepoint_checkpoints_map;
-
-std::map<UINT32, ptr_branch_t>                  order_input_dep_ptr_branch_map;
-std::map<UINT32, ptr_branch_t>                  order_input_indep_ptr_branch_map;
-std::map<UINT32, ptr_branch_t>                  order_tainted_ptr_branch_map;
-
-std::vector<ptr_branch_t>                       found_new_ptr_branches;
-std::vector<ptr_branch_t>                       total_resolved_ptr_branches;
-std::vector<ptr_branch_t>                       total_input_dep_ptr_branches;
-ptr_cond_direct_instructions_t                  examined_input_dep_cfis;
-
-ptr_branch_t                                    active_ptr_branch;
-ptr_branch_t                                    last_active_ptr_branch;
-ptr_branch_t                                    exploring_ptr_branch;
-
+ptr_cond_direct_instructions_t                  detected_input_dep_cfis;
 ptr_cond_direct_instruction_t                   exploring_cfi;
 UINT32                                          exploring_cfi_exec_order;
 
@@ -92,7 +67,6 @@ UINT32                                          current_exec_order;
 UINT32                                          received_msg_num;
 ADDRINT                                         received_msg_addr;
 UINT32                                          received_msg_size;
-//ADDRINT                                         received_msg_struct_addr;
 
 #if BOOST_OS_LINUX
 ADDRINT                                         logged_syscall_index;   // logged syscall index
@@ -124,10 +98,6 @@ bran::uniform_int_distribution<UINT8>           uint8_uniform;
 /* ---------------------------------------------------------------------------------------------- */
 /*                                         input handler functions                                */
 /* ---------------------------------------------------------------------------------------------- */
-KNOB<BOOL>    print_debug_text    (KNOB_MODE_WRITEONCE, "pintool",
-                                   "d", "1",
-                                   "print debug text" );
-
 KNOB<UINT32>  max_local_rollback  (KNOB_MODE_WRITEONCE, "pintool",
                                    "r", "7000",
                                    "specify the maximum local number of rollback" );
@@ -144,10 +114,7 @@ KNOB<UINT32>  max_trace_length    (KNOB_MODE_WRITEONCE, "pintool",
 /* ---------------------------------------------------------------------------------------------- */
 VOID start_tracing(VOID *data)
 {
-  if (!start_ptr_time)
-  {
-    start_ptr_time.reset(new btime::ptime(btime::microsec_clock::local_time()));
-  }
+  start_ptr_time.reset(new btime::ptime(btime::microsec_clock::local_time()));
 
   max_trace_size            = max_trace_length.Value();
   trace_size                = 0;
@@ -166,7 +133,6 @@ VOID start_tracing(VOID *data)
   executed_ins_number       = 0;
   econed_ins_number         = 0;
   
-  in_tainting               = true;
   received_msg_num          = 0;
   logged_syscall_index      = syscall_inexist;
 
@@ -175,37 +141,49 @@ VOID start_tracing(VOID *data)
   return;
 }
 
-/*================================================================================================*/
 
+/**
+ * @brief stop_tracing
+ * @param code
+ * @param data
+ * @return
+ */
 VOID stop_tracing(INT32 code, VOID *data)
 {
-  if (!stop_ptr_time) 
-  {
-    stop_ptr_time.reset(new btime::ptime(btime::microsec_clock::local_time()));
-  }
+  stop_ptr_time.reset(new btime::ptime(btime::microsec_clock::local_time()));
 
   boost::posix_time::time_duration elapsed_time = *stop_ptr_time - *start_ptr_time;
   uint64_t elapsed_millisec = elapsed_time.total_milliseconds();
 
   journal_static_trace("static_trace.log");
   
-  BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-    << boost::format("stop %d milli-seconds elapsed, %d rollbacks used, %d/%d branches resolved")
-        % elapsed_millisec % total_rollback_times
-        % (total_resolved_ptr_branches.size() + found_new_ptr_branches.size()) 
-        % total_input_dep_ptr_branches.size();
+  UINT32 resolved_cfi_num = 0;
+  ptr_cond_direct_instructions_t::iterator cfi_iter = detected_input_dep_cfis.begin();
+  for (; cfi_iter != detected_input_dep_cfis.end(); ++cfi_iter)
+  {
+    if ((*cfi_iter)->is_resolved) resolved_cfi_num++;
+  }
+
+  BOOST_LOG_SEV(log_instance, logging::trivial::info)
+      << boost::format("stop %d milli-seconds elapsed, %d rollbacks used, %d/%d branches resolved")
+         % elapsed_millisec % total_rollback_times
+         % resolved_cfi_num % detected_input_dep_cfis.size();
+
         
-  BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-    << boost::format("economized/total executed instruction number %d/%d") 
-        % econed_ins_number % executed_ins_number;
+//  BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
+//    << boost::format("economized/total executed instruction number %d/%d")
+//        % econed_ins_number % executed_ins_number;
 
   log_sink->flush();
                               
   return;
 }
 
-/*================================================================================================*/
 
+/**
+ * @brief initialize_logging
+ * @param log_filename
+ */
 inline static void initialize_logging(std::string log_filename)
 {
   log_sink = logging::add_file_log(log_filename.c_str());

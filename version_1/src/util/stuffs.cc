@@ -172,14 +172,14 @@ void journal_tainting_graph(const std::string& filename)
 
 /*================================================================================================*/
 
-void store_input(ptr_branch_t& ptr_br, bool br_taken)
-{
-  boost::shared_ptr<UINT8> new_input(new UINT8[received_msg_size]);
-  PIN_SafeCopy(new_input.get(), reinterpret_cast<UINT8*>(received_msg_addr), received_msg_size);
-  ptr_br->inputs[br_taken].push_back(new_input);
+//void store_input(ptr_branch_t& ptr_br, bool br_taken)
+//{
+//  boost::shared_ptr<UINT8> new_input(new UINT8[received_msg_size]);
+//  PIN_SafeCopy(new_input.get(), reinterpret_cast<UINT8*>(received_msg_addr), received_msg_size);
+//  ptr_br->inputs[br_taken].push_back(new_input);
 
-  return;
-}
+//  return;
+//}
 
 /*================================================================================================*/
 
@@ -372,36 +372,36 @@ void journal_tainting_log()
 
 /*================================================================================================*/
 
-void journal_branch_messages(ptr_branch_t& ptr_resolved_branch)
-{
-  std::stringstream msg_number_name;
-  std::string msg_file_name;
-  std::string br_taken_name;
+//void journal_branch_messages(ptr_branch_t& ptr_resolved_branch)
+//{
+//  std::stringstream msg_number_name;
+//  std::string msg_file_name;
+//  std::string br_taken_name;
 
-  std::vector< boost::shared_ptr<UINT8> >::iterator msg_number_iter;
+//  std::vector< boost::shared_ptr<UINT8> >::iterator msg_number_iter;
   
-  std::map< bool, 
-            std::vector< boost::shared_ptr<UINT8> >
-          >::iterator msg_map_iter = ptr_resolved_branch->inputs.begin();
+//  std::map< bool,
+//            std::vector< boost::shared_ptr<UINT8> >
+//          >::iterator msg_map_iter = ptr_resolved_branch->inputs.begin();
           
-  for (; msg_map_iter != ptr_resolved_branch->inputs.end(); ++msg_map_iter) 
-  {
-    br_taken_name = msg_map_iter->first ? "taken" : "nottaken";
-    msg_file_name = "msg_" + br_taken_name + "_";
+//  for (; msg_map_iter != ptr_resolved_branch->inputs.end(); ++msg_map_iter)
+//  {
+//    br_taken_name = msg_map_iter->first ? "taken" : "nottaken";
+//    msg_file_name = "msg_" + br_taken_name + "_";
 
-    msg_number_iter = msg_map_iter->second.begin();
-    for (; msg_number_iter != msg_map_iter->second.end(); ++msg_number_iter) 
-    {
-      msg_number_name << (msg_number_iter - msg_map_iter->second.begin());
-      journal_buffer((msg_file_name + msg_number_name.str()).c_str(), 
-                     (*msg_number_iter).get(), received_msg_size);
-      msg_number_name.clear();
-      msg_number_name.str("");
-    }
-  }
+//    msg_number_iter = msg_map_iter->second.begin();
+//    for (; msg_number_iter != msg_map_iter->second.end(); ++msg_number_iter)
+//    {
+//      msg_number_name << (msg_number_iter - msg_map_iter->second.begin());
+//      journal_buffer((msg_file_name + msg_number_name.str()).c_str(),
+//                     (*msg_number_iter).get(), received_msg_size);
+//      msg_number_name.clear();
+//      msg_number_name.str("");
+//    }
+//  }
 
-  return;
-}
+//  return;
+//}
 
 /*================================================================================================*/
 

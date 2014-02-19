@@ -14,7 +14,6 @@ set(PINTOOL_LINK_LIBS boost_log pthread)
 
 ADD_PINTOOL(path_explorer
   src/path_explorer.cpp
-  src/base/branch.cpp
   src/base/operand.cpp
   src/base/operand.h
   src/base/instruction.cpp

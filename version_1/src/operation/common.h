@@ -43,23 +43,9 @@ extern UINT32                                       max_total_rollback_times;
 extern UINT32                                       max_local_rollback_times;
 extern UINT32                                       max_trace_size;
 
-extern bool                                         in_tainting;
-
-//extern df_diagram                                   dta_graph;
-//extern df_vertex_desc_set                           dta_outer_vertices;
-
 extern std::vector<ptr_checkpoint_t>                saved_checkpoints;
-extern ptr_checkpoint_t                             master_ptr_checkpoint;
-extern ptr_checkpoint_t                             last_active_ptr_checkpoint;
 
-extern std::pair< ptr_checkpoint_t,
-                  std::set<ADDRINT> >               active_nearest_checkpoint;
-
-extern std::map< UINT32,
-                 std::vector<ptr_checkpoint_t> >    exepoint_checkpoints_map;
-
-extern ptr_cond_direct_instructions_t               examined_input_dep_cfis;
-
+extern ptr_cond_direct_instructions_t               detected_input_dep_cfis;
 extern ptr_cond_direct_instruction_t                exploring_cfi;
 extern UINT32                                       exploring_cfi_exec_order;
 extern UINT32                                       last_input_dep_cfi_exec_order;
@@ -84,7 +70,6 @@ extern UINT64                                       econed_ins_number;
 extern KNOB<UINT32>                                 max_total_rollback;
 extern KNOB<UINT32>                                 max_local_rollback;
 extern KNOB<UINT32>                                 max_trace_length;
-extern KNOB<BOOL>                                   print_debug_text;
 
 namespace btime = boost::posix_time;
 extern boost::shared_ptr<btime::ptime>              start_ptr_time;

@@ -24,7 +24,7 @@ void journal_tainting_graph(const std::string& filename);
 
 void journal_tainting_log();
 
-void store_input(ptr_branch_t& ptr_br, bool br_taken);
+//void store_input(ptr_branch_t& ptr_br, bool br_taken);
 
 std::string remove_leading_zeros(std::string input);
 
