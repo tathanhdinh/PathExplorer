@@ -107,6 +107,7 @@ VOID generic_instruction(ADDRINT ins_addr)
   if (current_exec_order > last_input_dep_cfi_exec_order)
   {
     // exceeds, namely the rollbacking phase should stop
+    prepare_new_tainting_phase();
   }
   else
   {

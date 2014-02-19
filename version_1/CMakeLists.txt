@@ -16,15 +16,22 @@ ADD_PINTOOL(path_explorer
   src/path_explorer.cpp
   src/base/branch.cpp
   src/base/operand.cpp
+  src/base/operand.h
   src/base/instruction.cpp
+  src/base/instruction.h
   src/base/cond_direct_instruction.cpp
+  src/base/cond_direct_instruction.h
   src/base/checkpoint.cpp
-  src/operation/resolving_functions.cc
+  src/base/checkpoint.h
   src/operation/rollbacking_functions.cpp
-  src/operation/tainting_functions.cc
-  src/operation/instrumentation_functions.cc
-  src/util/stuffs.cc)
-set_target_properties(path_explorer PROPERTIES COTIRE_CXX_PREFIX_HEADER_INIT "pch.h")
+  src/operation/rollbacking_functions.h
+  src/operation/tainting_functions.cpp
+  src/operation/tainting_functions.h
+  src/operation/instrumentation_functions.cpp
+  src/operation/instrumentation_functions.h
+  src/operation/common.h
+  src/util/stuffs.cc
+  src/util/stuffs.h)
 cotire(path_explorer)
 
 # add_executable(path_explorer.so instruction.cpp path_explorer.cpp)
