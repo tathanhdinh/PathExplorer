@@ -11,8 +11,8 @@ static std::vector<df_edge_desc>  visited_edges;
 static df_diagram                 dta_graph;
 static df_vertex_desc_set         dta_outer_vertices;
 
-static ptr_cond_direct_instructions_t newly_detected_input_dep_cfis;
 #if !defined(NDEBUG)
+static ptr_cond_direct_instructions_t newly_detected_input_dep_cfis;
 static ptr_cond_direct_instructions_t newly_detected_cfis;
 #endif
 
@@ -165,7 +165,9 @@ inline static void save_detected_cfis()
           set_checkpoints_for_cfi(newly_detected_cfi);
           // and save it
           examined_input_dep_cfis.push_back(newly_detected_cfi);
+#if !defined(NDEBUG)
           newly_detected_input_dep_cfis.push_back(newly_detected_cfi);
+#endif
         }
 #if !defined(NDEBUG)
         newly_detected_cfis.push_back(newly_detected_cfi);
@@ -234,41 +236,57 @@ inline void prepare_new_rollbacking_phase()
        % newly_detected_input_dep_cfis.size() % newly_detected_cfis.size();
 #endif
 
-  // verify if there exists some newly added CFI
-  if (newly_detected_input_dep_cfis.empty())
-  {
-    // does not exist, then we should tainting again by exploring a unexplored CFI
-  }
-  else
-  {
-    // exists, then we should rollbacking to resolve newly detected CFI
-  }
+  // calculate the new limit trace length for the rollbacking phase: the limit does not exceed
+  // the execution order of the last input dependent CFI
+  calculate_last_input_dep_cfi_exec_order();
 
-  // verify if there exists some CFI which is neither resolved nor bypassed
-  ptr_cond_direct_instructions_t::reverse_iterator cfi_iter = examined_input_dep_cfis.rbegin();
-  for (; cfi_iter != examined_input_dep_cfis.rend(); ++cfi_iter)
-  {
-    if (!(*cfi_iter)->is_resolved && !(*cfi_iter)->is_bypassed) break;
-  }
-  if (cfi_iter != examined_input_dep_cfis.rend())
-  {
-    // exists, then calculate the new limit trace length for the rollbacking phase: the limit does
-    // not exceed the execution order of the last input dependent CFI
-    calculate_last_input_dep_cfi_exec_order();
+  // and rollback to the first checkpoint (tainting->rollbacking transition)
+  current_running_state = rollbacking_state; rollbacking::initialize_rollbacking_phase();
+  PIN_RemoveInstrumentation(); saved_checkpoints[0]->rollback();
 
-    // and rollback to the first checkpoint (tainting->rollbacking transition)
-    current_running_state = rollbacking_state; rollbacking::initialize_rollbacking_phase();
-    PIN_RemoveInstrumentation(); saved_checkpoints[0]->rollback();
-  }
-  else
-  {
-    // does not exist, then stop exploring
-#if !defined(NDEBUG)
-    BOOST_LOG_SEV(log_instance, logging::trivial::info)
-        << "stop exploring, all branches are explored.";
-#endif
-    PIN_ExitApplication(0);
-  }
+//  // verify if there exists some newly added CFI
+//  if (newly_detected_input_dep_cfis.empty())
+//  {
+//    // does not exist, then we should tainting again by exploring a unexplored CFI
+
+//  }
+//  else
+//  {
+//    // exists, then we should rollbacking to resolve newly detected CFI
+//    // calculate the new limit trace length for the rollbacking phase: the limit does not exceed
+//    // the execution order of the last input dependent CFI
+//    calculate_last_input_dep_cfi_exec_order();
+
+//    // and rollback to the first checkpoint (tainting->rollbacking transition)
+//    current_running_state = rollbacking_state; rollbacking::initialize_rollbacking_phase();
+//    PIN_RemoveInstrumentation(); saved_checkpoints[0]->rollback();
+//  }
+
+//  // verify if there exists some CFI which is neither resolved nor bypassed
+//  ptr_cond_direct_instructions_t::reverse_iterator cfi_iter = examined_input_dep_cfis.rbegin();
+//  for (; cfi_iter != examined_input_dep_cfis.rend(); ++cfi_iter)
+//  {
+//    if (!(*cfi_iter)->is_resolved && !(*cfi_iter)->is_bypassed) break;
+//  }
+//  if (cfi_iter != examined_input_dep_cfis.rend())
+//  {
+//    // exists, then calculate the new limit trace length for the rollbacking phase: the limit does
+//    // not exceed the execution order of the last input dependent CFI
+//    calculate_last_input_dep_cfi_exec_order();
+
+//    // and rollback to the first checkpoint (tainting->rollbacking transition)
+//    current_running_state = rollbacking_state; rollbacking::initialize_rollbacking_phase();
+//    PIN_RemoveInstrumentation(); saved_checkpoints[0]->rollback();
+//  }
+//  else
+//  {
+//    // does not exist, then stop exploring
+//#if !defined(NDEBUG)
+//    BOOST_LOG_SEV(log_instance, logging::trivial::info)
+//        << "stop exploring, all branches are explored.";
+//#endif
+//    PIN_ExitApplication(0);
+//  }
 
   return;
 }

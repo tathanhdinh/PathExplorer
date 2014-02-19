@@ -145,7 +145,8 @@ VOID generic_instruction(ADDRINT ins_addr)
     }
     else
     {
-      // is in, then verify if there exists currently a CFI needed to resolve
+      // the executed instruction is in the original trace, then verify if there exists currently
+      // some CFI needed to resolve
       if (active_cfi)
       {
         // exists, then verify if the executed instruction has exceeded this CFI
