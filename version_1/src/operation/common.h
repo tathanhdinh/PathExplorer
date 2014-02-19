@@ -45,8 +45,8 @@ extern UINT32                                       max_trace_size;
 
 extern bool                                         in_tainting;
 
-extern df_diagram                                   dta_graph;
-extern df_vertex_desc_set                           dta_outer_vertices;
+//extern df_diagram                                   dta_graph;
+//extern df_vertex_desc_set                           dta_outer_vertices;
 
 extern std::vector<ptr_checkpoint_t>                saved_checkpoints;
 extern ptr_checkpoint_t                             master_ptr_checkpoint;

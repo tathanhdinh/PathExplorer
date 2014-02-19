@@ -1,12 +1,20 @@
 #include <algorithm>
 
 #include "common.h"
+#include "rollbacking_functions.h"
 #include "../util/stuffs.h"
 
 namespace tainting
 {
 
-static std::set<df_edge_desc> visited_edges;
+static std::vector<df_edge_desc>  visited_edges;
+static df_diagram                 dta_graph;
+static df_vertex_desc_set         dta_outer_vertices;
+
+static ptr_cond_direct_instructions_t newly_detected_input_dep_cfis;
+#if !defined(NDEBUG)
+static ptr_cond_direct_instructions_t newly_detected_cfis;
+#endif
 
 
 /**
@@ -18,7 +26,7 @@ public:
   template <typename Edge, typename Graph>
   void tree_edge(Edge e, const Graph& g)
   {
-    visited_edges.insert(e);
+    visited_edges.push_back(e);
   }
 };
 
@@ -29,10 +37,10 @@ public:
  */
 inline static void determine_cfi_input_dependency()
 {
-  df_vertex_iter                    vertex_iter;
-  df_vertex_iter                    last_vertex_iter;
-  df_bfs_visitor                    df_visitor;
-  std::set<df_edge_desc>::iterator  visited_edge_iter;
+  df_vertex_iter vertex_iter;
+  df_vertex_iter last_vertex_iter;
+  df_bfs_visitor df_visitor;
+  std::vector<df_edge_desc>::iterator visited_edge_iter;
 
   ADDRINT mem_addr;
 
@@ -133,30 +141,35 @@ inline static void set_checkpoints_for_cfi(ptr_cond_direct_instruction_t cfi)
 /**
  * @brief save new tainted CFI in this tainting phase
  */
-inline static void save_tainted_cfis()
+inline static void save_detected_cfis()
 {
-  ptr_cond_direct_instruction_t tainted_cfi;
-  std::map<UINT32, ptr_instruction_t>::iterator tainted_ins_iter;
+  ptr_cond_direct_instruction_t newly_detected_cfi;
+  std::map<UINT32, ptr_instruction_t>::iterator executed_ins_iter;
 
   // iterate over executed instructions in this tainting phase
-  for (tainted_ins_iter = ins_at_order.begin();
-       tainted_ins_iter != ins_at_order.end(); ++tainted_ins_iter)
+  for (executed_ins_iter = ins_at_order.begin();
+       executed_ins_iter != ins_at_order.end(); ++executed_ins_iter)
   {
     // consider only the instruction that is not behind the exploring CFI
     if (!exploring_cfi ||
-        (exploring_cfi && (tainted_ins_iter->first > exploring_cfi->exec_order)))
+        (exploring_cfi && (executed_ins_iter->first > exploring_cfi->exec_order)))
     {
-      if (tainted_ins_iter->second->is_cond_direct_cf)
+      if (executed_ins_iter->second->is_cond_direct_cf)
       {
-        tainted_cfi = boost::static_pointer_cast<cond_direct_instruction>(tainted_ins_iter->second);
+        newly_detected_cfi = boost::static_pointer_cast<cond_direct_instruction>(
+              executed_ins_iter->second);
         // and depends on the input
-        if (!tainted_cfi->input_dep_addrs.empty())
+        if (!newly_detected_cfi->input_dep_addrs.empty())
         {
           // then set its checkpoints
-          set_checkpoints_for_cfi(tainted_cfi);
+          set_checkpoints_for_cfi(newly_detected_cfi);
           // and save it
-          examined_input_dep_cfis.push_back(tainted_cfi);
+          examined_input_dep_cfis.push_back(newly_detected_cfi);
+          newly_detected_input_dep_cfis.push_back(newly_detected_cfi);
         }
+#if !defined(NDEBUG)
+        newly_detected_cfis.push_back(newly_detected_cfi);
+#endif
       }
     }
   }
@@ -169,8 +182,7 @@ inline static void save_tainted_cfis()
  */
 inline static void analyze_executed_instructions()
 {
-  determine_cfi_input_dependency();
-  save_tainted_cfis();
+  determine_cfi_input_dependency(); save_detected_cfis();
   return;
 }
 
@@ -216,30 +228,21 @@ inline void prepare_new_rollbacking_phase()
   analyze_executed_instructions();
 
 #if !defined(NDEBUG)
-  ptr_cond_direct_instruction_t new_cfi;
-  std::map<UINT32, ptr_instruction_t>::iterator ins_iter;
-  UINT32 new_cfi_num = 0, new_input_dep_cfi_num = 0;
-  for (ins_iter = ins_at_order.begin(); ins_iter != ins_at_order.end(); ++ins_iter)
-  {
-    if (!exploring_cfi || (ins_iter->first > exploring_cfi->exec_order))
-    {
-      if (ins_iter->second->is_cond_direct_cf)
-      {
-        ++new_cfi_num;
-        new_cfi = boost::static_pointer_cast<cond_direct_instruction>(
-              ins_at_order[ins_iter->first]);
-        if (!new_cfi->input_dep_addrs.empty())
-        {
-          ++new_input_dep_cfi_num;
-        }
-      }
-    }
-  }
-
   BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
     << boost::format("stop analyzing, %d checkpoints, %d/%d branches detected; start rollbacking")
-        % saved_checkpoints.size() % new_input_dep_cfi_num % new_cfi_num;
+       % saved_checkpoints.size()
+       % newly_detected_input_dep_cfis.size() % newly_detected_cfis.size();
 #endif
+
+  // verify if there exists some newly added CFI
+  if (newly_detected_input_dep_cfis.empty())
+  {
+    // does not exist, then we should tainting again by exploring a unexplored CFI
+  }
+  else
+  {
+    // exists, then we should rollbacking to resolve newly detected CFI
+  }
 
   // verify if there exists some CFI which is neither resolved nor bypassed
   ptr_cond_direct_instructions_t::reverse_iterator cfi_iter = examined_input_dep_cfis.rbegin();
@@ -254,8 +257,8 @@ inline void prepare_new_rollbacking_phase()
     calculate_last_input_dep_cfi_exec_order();
 
     // and rollback to the first checkpoint (tainting->rollbacking transition)
-    current_running_state = rollbacking_state; PIN_RemoveInstrumentation();
-    saved_checkpoints[0]->rollback();
+    current_running_state = rollbacking_state; rollbacking::initialize_rollbacking_phase();
+    PIN_RemoveInstrumentation(); saved_checkpoints[0]->rollback();
   }
   else
   {
@@ -510,8 +513,15 @@ VOID syscall_entry_analyzer(THREADID thread_id,
   return;
 }
 
-/*================================================================================================*/
 
+/**
+ * @brief syscall_exit_analyzer
+ * @param thread_id
+ * @param p_ctxt
+ * @param syscall_std
+ * @param data
+ * @return
+ */
 VOID syscall_exit_analyzer(THREADID thread_id,
                            CONTEXT* p_ctxt, SYSCALL_STANDARD syscall_std, VOID *data)
 {
@@ -541,16 +551,20 @@ VOID syscall_exit_analyzer(THREADID thread_id,
 }
 #endif
 
-/*================================================================================================*/
 
-inline std::set<df_vertex_desc> source_variables(UINT32 idx)
+/**
+ * @brief source_variables
+ * @param idx
+ * @return
+ */
+inline std::set<df_vertex_desc> source_variables(UINT32 ins_exec_order)
 {
   df_vertex_desc_set src_vertex_descs;
   df_vertex_desc_set::iterator outer_vertex_iter;
   df_vertex_desc new_vertex_desc;
   std::set<ptr_operand_t>::iterator src_operand_iter;
-  for (src_operand_iter = ins_at_order[idx]->src_operands.begin();
-       src_operand_iter != ins_at_order[idx]->src_operands.end(); ++src_operand_iter)
+  for (src_operand_iter = ins_at_order[ins_exec_order]->src_operands.begin();
+       src_operand_iter != ins_at_order[ins_exec_order]->src_operands.end(); ++src_operand_iter)
   {
     // verify if the current source operand is
     for (outer_vertex_iter = dta_outer_vertices.begin();
@@ -577,8 +591,12 @@ inline std::set<df_vertex_desc> source_variables(UINT32 idx)
   return src_vertex_descs;
 }
 
-/*================================================================================================*/
 
+/**
+ * @brief destination_variables
+ * @param idx
+ * @return
+ */
 inline std::set<df_vertex_desc> destination_variables(UINT32 idx)
 {
   std::set<df_vertex_desc> dst_vertex_descs;
@@ -629,8 +647,12 @@ inline std::set<df_vertex_desc> destination_variables(UINT32 idx)
   return dst_vertex_descs;
 }
 
-/*================================================================================================*/
 
+/**
+ * @brief graphical_propagation
+ * @param ins_addr
+ * @return
+ */
 VOID graphical_propagation(ADDRINT ins_addr)
 {
   std::set<df_vertex_desc> src_vertex_descs = source_variables(current_exec_order);
@@ -650,6 +672,13 @@ VOID graphical_propagation(ADDRINT ins_addr)
     }
   }
 
+  return;
+}
+
+void initialize_tainting_phase()
+{
+  dta_graph.clear(); dta_outer_vertices.clear(); saved_checkpoints.clear();
+  newly_detected_input_dep_cfis.clear(); newly_detected_cfis.clear();
   return;
 }
 
