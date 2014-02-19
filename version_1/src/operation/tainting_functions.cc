@@ -19,7 +19,6 @@ namespace tainting
 
 /*================================================================================================*/
 
-//static std::map<df_vertex_desc, df_vertex_desc> prec_vertex_desc;
 static std::set<df_edge_desc> visited_edges;
 
 /*================================================================================================*/
@@ -33,7 +32,6 @@ public:
   template <typename Edge, typename Graph>
   void tree_edge(Edge e, const Graph& g)
   {
-//    prec_vertex_desc[boost::target(e, g)] = boost::source(e, g);
     visited_edges.insert(e);
   }
 };
@@ -214,8 +212,36 @@ inline void prepare_new_rollbacking_phase()
         % order_input_dep_ptr_branch_map.size()
         % order_tainted_ptr_branch_map.size();
 
-  in_tainting = false;
+  current_running_state = rollbacking_state;
   PIN_RemoveInstrumentation();
+
+  // verify if there exists some CFI needed to resolve
+  ptr_cond_direct_instructions_t::iterator cfi_iter = examined_input_dep_cfis.begin();
+  for (; cfi_iter != examined_input_dep_cfis.end(); ++cfi_iter)
+  {
+    // it is needed to resolve iff it is neither resolved nor bypassed
+    if (!(*cfi_iter)->is_resolved && !(*cfi_iter)->is_bypassed) break;
+  }
+  if (cfi_iter != examined_input_dep_cfis.begin())
+  {
+  }
+  else
+  {
+    BOOST_LOG_SEV(log_instance, logging::trivial::info)
+      << "stop exploring, all branches are explored.";
+    PIN_ExitApplication(0);
+  }
+
+  // verify if the exploring CFI is enabled
+  if (exploring_cfi)
+  {
+    // enabled
+  }
+  else
+  {
+    // disabled, namely this will be the first transition to the rollback phase
+
+  }
 
   if (exploring_ptr_branch)
   {
