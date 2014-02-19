@@ -1,14 +1,6 @@
 #include "rollbacking_functions.h"
 
-#include "../base/instruction.h"
-#include "../base/checkpoint.h"
-#include "../base/cond_direct_instruction.h"
 #include "common.h"
-
-
-/*================================================================================================*/
-
-extern UINT32                                   last_cfi_exec_order;
 
 /*================================================================================================*/
 
@@ -23,7 +15,6 @@ static addrint_set                              active_modified_addrs;
 
 namespace rollbacking
 {
-
 inline static void rollback()
 {
   // verify if the number of used rollbacks has reached its bound
@@ -41,6 +32,7 @@ inline static void rollback()
       active_cfi->used_rollback_num++; used_rollback_num++;
       rollback_and_restore(active_checkpoint, active_modified_addrs);
     }
+#if !defined(NDEBUG)
     else
     {
       // exceeds
@@ -48,13 +40,16 @@ inline static void rollback()
           << boost::format("the number of used rollback exceeds its bound value");
       PIN_ExitApplication(1);
     }
+#endif
   }
   return;
 }
 
-/*================================================================================================*/
 
-static inline void get_next_active_checkpoint()
+/**
+ * @brief get_next_active_checkpoint
+ */
+inline static void get_next_active_checkpoint()
 {
   std::vector<checkpoint_with_modified_addrs>::iterator chkpnt_iter, next_chkpnt_iter;
   if (active_checkpoint)
@@ -85,7 +80,6 @@ static inline void get_next_active_checkpoint()
   return;
 }
 
-/*================================================================================================*/
 
 /**
  * @brief This function aims to give a generic approach for solving control-flow instructions. The
@@ -93,24 +87,22 @@ static inline void get_next_active_checkpoint()
  * same as the original trace: if there exists an instruction that does not occur in the original
  * trace then that must be resulted from a control-flow instruction which has changed the control
  * flow, so the new instruction will not be executed and we take a rollback.
- * The semantics of the function is quite sophisticated because there are several conditions to
- * check, we give in the following the explanation in the type of "literate programming".
+ * Its semantics is quite sophisticated because there are several conditions to check.
  *
  * @param ins_addr: the address of the current examined instruction.
  * @return no return value.
  */
 VOID generic_instruction(ADDRINT ins_addr)
 {
-  current_exec_order++;
-
   // verify if the execution order of the instruction exceeds the last CFI
-  if (current_exec_order > last_cfi_exec_order)
+  if (current_exec_order > last_input_dep_cfi_exec_order)
   {
     // exceeds, namely the rollbacking phase should stop
-
   }
   else
   {
+    current_exec_order++;
+
     // verify if the executed instruction is in the original trace
     if (ins_at_order[current_exec_order]->address != ins_addr)
     {
@@ -132,6 +124,7 @@ VOID generic_instruction(ADDRINT ins_addr)
         // in both cases, we need rollback
         rollback();
       }
+#if !defined(NDEBUG)
       else
       {
         // not activated, then some errors have occurred
@@ -139,6 +132,7 @@ VOID generic_instruction(ADDRINT ins_addr)
             << boost::format("there is no active CFI but the original trace will change");
         PIN_ExitApplication(1);
       }
+#endif
     }
     else
     {
@@ -198,7 +192,7 @@ VOID control_flow_instruction(ADDRINT ins_addr)
           // exists, then verify if the current CFI is the active CFI
           if (current_exec_order == active_cfi_exec_order)
           {
-            // yes, then verify if the current checkpoint of the CFI is in the last rollback try
+            // is the active CFI, then verify if its current checkpoint is in the last rollback try
             if (used_rollback_num == max_rollback_num)
             {
               // yes, then verify if there exists another checkpoint
@@ -218,7 +212,7 @@ VOID control_flow_instruction(ADDRINT ins_addr)
           }
           else
           {
-            // no, then do nothing
+            // is not the active CFI, then do nothing
           }
         }
       }

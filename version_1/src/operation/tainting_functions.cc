@@ -1,27 +1,13 @@
-#include <pin.H>
-
 #include <algorithm>
-#include <iterator>
 
 #include "common.h"
 #include "../util/stuffs.h"
 
-/*================================================================================================*/
-
-extern std::map<UINT32, ptr_branch_t>           order_input_dep_ptr_branch_map;
-extern std::map<UINT32, ptr_branch_t>           order_input_indep_ptr_branch_map;
-extern std::map<UINT32, ptr_branch_t>           order_tainted_ptr_branch_map;
-
-extern ptr_branch_t                             exploring_ptr_branch;
-
 namespace tainting
 {
 
-/*================================================================================================*/
-
 static std::set<df_edge_desc> visited_edges;
 
-/*================================================================================================*/
 
 /**
  * @brief The df_bfs_visitor class discovering all dependent edges from a vertex.
@@ -36,16 +22,6 @@ public:
   }
 };
 
-/*================================================================================================*/
-
-inline void mark_resolved(ptr_branch_t& omitted_ptr_branch)
-{
-  omitted_ptr_branch->is_resolved = true;
-  omitted_ptr_branch->is_bypassed = false;
-  omitted_ptr_branch->is_just_resolved = false;
-
-  return;
-}
 
 /**
  * @brief for each executed instruction in this tainting phase, determine the set of input memory
@@ -76,7 +52,6 @@ inline static void determine_cfi_input_dependency()
       if ((received_msg_addr <= mem_addr) && (mem_addr < received_msg_addr + received_msg_size))
       {
         // take a BFS from this vertice
-//        prec_vertex_desc.clear();
         visited_edges.clear();
         boost::breadth_first_search(dta_graph, *vertex_iter, boost::visitor(df_visitor));
 
@@ -86,15 +61,16 @@ inline static void determine_cfi_input_dependency()
         {
           // the value of the edge is the execution order of the corresponding instruction
           visited_edge_exec_order = dta_graph[*visited_edge_iter];
-          // consider the instruction which is a CFI
-          if (ins_at_order[visited_edge_exec_order]->is_cond_direct_cf)
+          // consider only the instruction that is beyond the exploring CFI
+          if (!exploring_cfi ||
+              (exploring_cfi && (visited_edge_exec_order > exploring_cfi->exec_order)))
           {
-            // then the instruction depends on the value of the memory address
-            visited_cfi = boost::static_pointer_cast<cond_direct_instruction>(
-                  ins_at_order[visited_edge_exec_order]);
-            if (!exploring_cfi ||
-                (exploring_cfi && (visited_cfi->exec_order > exploring_cfi->exec_order)))
+            // and is some CFI
+            if (ins_at_order[visited_edge_exec_order]->is_cond_direct_cf)
             {
+              // then this CFI depends on the value of the memory address
+              visited_cfi = boost::static_pointer_cast<cond_direct_instruction>(
+                    ins_at_order[visited_edge_exec_order]);
               visited_cfi->input_dep_addrs.insert(mem_addr);
             }
           }
@@ -188,7 +164,10 @@ inline static void save_tainted_cfis()
 }
 
 
-inline static void analyze_tainted_cfis()
+/**
+ * @brief analyze_executed_instructions
+ */
+inline static void analyze_executed_instructions()
 {
   determine_cfi_input_dependency();
   save_tainted_cfis();
@@ -196,100 +175,129 @@ inline static void analyze_tainted_cfis()
 }
 
 
-/*================================================================================================*/
+/**
+ * @brief calculate_last_input_dep_cfi_exec_order
+ */
+inline static void calculate_last_input_dep_cfi_exec_order()
+{
+  last_input_dep_cfi_exec_order = 0;
+  std::map<UINT32, ptr_instruction_t>::reverse_iterator ins_iter;
+  ptr_cond_direct_instruction_t last_cfi;
+  // reverse iterate in the list of executed instructions
+  for (ins_iter = ins_at_order.rbegin(); ins_iter != ins_at_order.rend(); ++ins_iter)
+  {
+    // verif if the instruction is a CFI
+    if (ins_iter->second->is_cond_direct_cf)
+    {
+      // and this CFI depends on the input
+      last_cfi = boost::static_pointer_cast<cond_direct_instruction>(ins_iter->second);
+      if (!last_cfi->input_dep_addrs.empty())
+      {
+        last_input_dep_cfi_exec_order = last_cfi->exec_order;
+        break;
+      }
+    }
+  }
+  return;
+}
 
+
+/**
+ * @brief prepare_new_rollbacking_phase
+ */
 inline void prepare_new_rollbacking_phase()
 {
+#if !defined(NDEBUG)
   BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-    << boost::format("stop exploring, %d instructions analyzed; start detecting checkpoints")
+    << boost::format("stop tainting, %d instructions executed; start analyzing...")
         % current_exec_order;
+#endif
 
-  analyze_tainted_cfis();
+  analyze_executed_instructions();
+
+#if !defined(NDEBUG)
+  ptr_cond_direct_instruction_t new_cfi;
+  std::map<UINT32, ptr_instruction_t>::iterator ins_iter;
+  UINT32 new_cfi_num = 0, new_input_dep_cfi_num = 0;
+  for (ins_iter = ins_at_order.begin(); ins_iter != ins_at_order.end(); ++ins_iter)
+  {
+    if (!exploring_cfi || (ins_iter->first > exploring_cfi->exec_order))
+    {
+      if (ins_iter->second->is_cond_direct_cf)
+      {
+        ++new_cfi_num;
+        new_cfi = boost::static_pointer_cast<cond_direct_instruction>(
+              ins_at_order[ins_iter->first]);
+        if (!new_cfi->input_dep_addrs.empty())
+        {
+          ++new_input_dep_cfi_num;
+        }
+      }
+    }
+  }
 
   BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-    << boost::format("stop tainting, %d checkpoints and %d/%d branches detected; start rollbacking")
-        % saved_checkpoints.size()
-        % order_input_dep_ptr_branch_map.size()
-        % order_tainted_ptr_branch_map.size();
+    << boost::format("stop analyzing, %d checkpoints, %d/%d branches detected; start rollbacking")
+        % saved_checkpoints.size() % new_input_dep_cfi_num % new_cfi_num;
+#endif
 
-  current_running_state = rollbacking_state;
-  PIN_RemoveInstrumentation();
-
-  // verify if there exists some CFI needed to resolve
-  ptr_cond_direct_instructions_t::iterator cfi_iter = examined_input_dep_cfis.begin();
-  for (; cfi_iter != examined_input_dep_cfis.end(); ++cfi_iter)
+  // verify if there exists some CFI which is neither resolved nor bypassed
+  ptr_cond_direct_instructions_t::reverse_iterator cfi_iter = examined_input_dep_cfis.rbegin();
+  for (; cfi_iter != examined_input_dep_cfis.rend(); ++cfi_iter)
   {
-    // it is needed to resolve iff it is neither resolved nor bypassed
     if (!(*cfi_iter)->is_resolved && !(*cfi_iter)->is_bypassed) break;
   }
-  if (cfi_iter != examined_input_dep_cfis.begin())
+  if (cfi_iter != examined_input_dep_cfis.rend())
   {
+    // exists, then calculate the new limit trace length for the rollbacking phase: the limit does
+    // not exceed the execution order of the last input dependent CFI
+    calculate_last_input_dep_cfi_exec_order();
+
+    // and rollback to the first checkpoint (tainting->rollbacking transition)
+    current_running_state = rollbacking_state; PIN_RemoveInstrumentation();
+    saved_checkpoints[0]->rollback();
   }
   else
   {
+    // does not exist, then stop exploring
+#if !defined(NDEBUG)
     BOOST_LOG_SEV(log_instance, logging::trivial::info)
-      << "stop exploring, all branches are explored.";
+        << "stop exploring, all branches are explored.";
+#endif
     PIN_ExitApplication(0);
-  }
-
-  // verify if the exploring CFI is enabled
-  if (exploring_cfi)
-  {
-    // enabled
-  }
-  else
-  {
-    // disabled, namely this will be the first transition to the rollback phase
-
-  }
-
-  if (exploring_ptr_branch)
-  {
-    journal_explored_trace("last_explored_trace.log");
-
-    rollback_and_restore(saved_checkpoints[0],
-                         exploring_ptr_branch->inputs[!exploring_ptr_branch->br_taken][0].get());
-  }
-  else
-  {
-    journal_tainting_graph("tainting_graph.dot");
-    journal_explored_trace("first_explored_trace.log");
-//     journal_static_trace("static_trace");
-
-    // the first rollbacking phase
-    if (!order_input_dep_ptr_branch_map.empty())
-    {
-      ptr_branch_t first_ptr_branch = order_input_dep_ptr_branch_map.begin()->second;
-      rollback_and_restore(saved_checkpoints[0],
-                           first_ptr_branch->inputs[first_ptr_branch->br_taken][0].get());
-    }
-    else
-    {
-      BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-          << "there is no branch needed to resolve";
-      PIN_ExitApplication(0);
-    }
   }
 
   return;
 }
 
-/*================================================================================================*/
 
+/**
+ * @brief syscall_instruction
+ * @param ins_addr
+ * @return
+ */
 VOID syscall_instruction(ADDRINT ins_addr)
 {
+  // the tainting phase always finishes when a syscall is met
   prepare_new_rollbacking_phase();
   return;
 }
 
-/*================================================================================================*/
 
+/**
+ * @brief general_instruction
+ * @param ins_addr
+ * @return
+ */
 VOID general_instruction(ADDRINT ins_addr)
 {
   ptr_cond_direct_instruction_t current_cfi, duplicated_cfi;
 
+  // verify if the execution order are not beyond the limit trace length and the executed
+  // instruction is always in user-space
   if ((current_exec_order < max_trace_size) && !ins_at_addr[ins_addr]->is_mapped_from_kernel)
   {
+    // yes
     current_exec_order++;
     if (ins_at_addr[ins_addr]->is_cond_direct_cf)
     {
@@ -312,16 +320,24 @@ VOID general_instruction(ADDRINT ins_addr)
            % ins_at_addr[ins_addr]->contained_image
            % ins_at_addr[ins_addr]->contained_function;
   }
-  else // trace length limit reached
+  else
   {
+    // no
     prepare_new_rollbacking_phase();
   }
 
   return;
 }
 
-/*================================================================================================*/
 
+/**
+ * @brief mem_read_instruction
+ * @param ins_addr
+ * @param mem_read_addr
+ * @param mem_read_size
+ * @param p_ctxt
+ * @return
+ */
 VOID mem_read_instruction(ADDRINT ins_addr,
                           ADDRINT mem_read_addr, UINT32 mem_read_size, CONTEXT* p_ctxt)
 {
@@ -350,8 +366,14 @@ VOID mem_read_instruction(ADDRINT ins_addr,
   return;
 }
 
-/*================================================================================================*/
 
+/**
+ * @brief mem_write_instruction
+ * @param ins_addr
+ * @param mem_written_addr
+ * @param mem_written_size
+ * @return
+ */
 VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 mem_written_size)
 {
   if (!saved_checkpoints.empty())

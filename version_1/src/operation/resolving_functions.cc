@@ -292,10 +292,8 @@ inline void exploring_new_branch_or_stop()
   }
   else 
   {
-    //BOOST_LOG_TRIVIAL(info) 
     BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
       << "stop exploring, all branches are explored.";
-
     PIN_ExitApplication(0);
   }
   

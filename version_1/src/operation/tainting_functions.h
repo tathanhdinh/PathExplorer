@@ -16,10 +16,6 @@ extern VOID mem_read_instruction(ADDRINT ins_addr,
 extern VOID mem_write_instruction(ADDRINT ins_addr,
                                   ADDRINT mem_written_addr, UINT32 mem_written_size);
 
-//extern VOID cond_branch_instruction(ADDRINT ins_addr, bool br_taken);
-
-//extern VOID cf_instruction(ADDRINT ins_addr);
-
 #if BOOST_OS_WINDOWS
 // instrument recv and recvfrom functions
 extern VOID logging_before_recv_functions_analyzer(ADDRINT msg_addr);
