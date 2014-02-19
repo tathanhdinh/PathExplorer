@@ -5,7 +5,6 @@
 /*================================================================================================*/
 
 static ptr_cond_direct_instruction_t  active_cfi;
-static UINT32                         active_cfi_exec_order;
 static ptr_checkpoint_t               active_checkpoint;
 static UINT32                         max_rollback_num;
 static UINT32                         used_rollback_num;
@@ -131,7 +130,7 @@ VOID generic_instruction(ADDRINT ins_addr)
       {
         // activated, that means the rollback from some checkpoint of this CFI will change the
         // control-flow, then verify if the CFI is the just previous executed instruction
-        if (active_cfi_exec_order + 1 == current_exec_order)
+        if (active_cfi->exec_order + 1 == current_exec_order)
         {
           // it is, then it will be marked as resolved
           active_cfi->is_resolved = true;
@@ -161,7 +160,7 @@ VOID generic_instruction(ADDRINT ins_addr)
       if (active_cfi)
       {
         // exists, then verify if the executed instruction has exceeded this CFI
-        if (current_exec_order <= active_cfi_exec_order)
+        if (current_exec_order <= active_cfi->exec_order)
         {
           // not exceeded yet, then do nothing
         }
@@ -200,20 +199,12 @@ VOID control_flow_instruction(ADDRINT ins_addr)
       // depends, then verify if it is resolved or bypassed
       if (!current_cfi->is_resolved && !current_cfi->is_bypassed)
       {
-        // neither resolved nor bypassed, then verify if there exist a active CFI needed to resolve
-        // (i.e. the active CFI is enabled)
-        if (!active_cfi)
+        // neither resolved nor bypassed, then verify if there exist already an active CFI needed
+        // to resolve (i.e. the active CFI is already enabled)
+        if (active_cfi)
         {
-          // is disabled, then set the current CFI as the active CFI
-          active_cfi = current_cfi; active_cfi_exec_order = current_exec_order;
-          get_next_active_checkpoint();
-          // and rollback to resolve this new active CFI
-          used_rollback_num = 0; rollback();
-        }
-        else
-        {
-          // the active CFI is enabled, then verify if the current CFI is the active CFI
-          if (current_exec_order == active_cfi_exec_order)
+          // enabled, then verify if the current CFI is the active CFI
+          if (current_exec_order == active_cfi->exec_order)
           {
             // is the active CFI, then verify if its current checkpoint is in the last rollback try
             if (used_rollback_num == max_rollback_num)
@@ -237,6 +228,13 @@ VOID control_flow_instruction(ADDRINT ins_addr)
           {
             // the current CFI is not the active CFI, then do nothing
           }
+        }
+        else
+        {
+          // the active CFI is disabled, then set the current CFI as the active CFI
+          active_cfi = current_cfi; get_next_active_checkpoint();
+          // and rollback to resolve this new active CFI
+          used_rollback_num = 0; rollback();
         }
       }
       else
@@ -300,8 +298,8 @@ VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length
  */
 void initialize_rollbacking_phase()
 {
-  active_cfi.reset(); active_cfi_exec_order = 0; active_checkpoint.reset();
-  active_modified_addrs.clear(); used_rollback_num = 0;
+  active_cfi.reset(); active_checkpoint.reset(); active_modified_addrs.clear();
+  used_rollback_num = 0;
   return;
 }
 
