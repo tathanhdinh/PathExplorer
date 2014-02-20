@@ -1,60 +1,24 @@
-// #include <boost/cstdint.hpp>                                                    // for portable code
+//#include <map>
+//#include <set>
+//#include <string>
+//#include <vector>
+//#include <utility>
+//#include <algorithm>
+//#include <iostream>
+//#include <fstream>
+//#include <sstream>
+//#include <limits>
 
-#include <map>
-#include <set>
-#include <string>
-#include <vector>
-#include <utility>
-#include <algorithm>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <limits>
-
-#include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/graph/graphviz.hpp>
-#include <boost/graph/lookup_edge.hpp>
+#include "../operation/common.h"
 
 
-#include "../base/instruction.h"
-#include "../base/checkpoint.h"
-//#include "../base/branch.h"
-
-#include <pin.H>
-
-/*================================================================================================*/
-
-extern std::map<ADDRINT, ptr_instruction_t> ins_at_addr;
-extern std::map<UINT32, ptr_instruction_t>  ins_at_order;
-extern UINT32                               current_exec_order;
-extern df_diagram                           dta_graph;
-extern ADDRINT                              received_msg_addr;
-extern UINT32                               received_msg_size;
-
-/*================================================================================================*/
-
-std::string remove_leading_zeros(std::string input)
+std::string addrint_to_hexstring(ADDRINT input)
 {
-  std::string::iterator str_iter = input.begin();
-  std::string output ("0x");
-
-  while ((str_iter != input.end()) && 
-         ((*str_iter == '0') || (*str_iter == 'x'))) 
-  {
-    ++str_iter;
-  }
-
-  while (str_iter != input.end())
-  {
-    output.push_back(*str_iter);
-    ++str_iter;
-  }
-
-  return output;
+  std::stringstream num_stream;
+  num_stream << "0x" << std::hex << input;
+  return num_stream.str();
 }
 
-/*================================================================================================*/
 
 void journal_buffer(const std::string& filename, UINT8* buffer_addr, UINT32 buffer_size)
 {
@@ -67,29 +31,26 @@ void journal_buffer(const std::string& filename, UINT8* buffer_addr, UINT32 buff
   return;
 }
 
-/*================================================================================================*/
 
-void journal_static_trace(const std::string& filename)
+void save_static_trace(const std::string& filename)
 {
   std::ofstream out_file(filename.c_str(), std::ofstream::out | std::ofstream::trunc);
 
-  std::map<ADDRINT, ptr_instruction_t>::iterator addr_ins_iter = ins_at_addr.begin();
-  for (; addr_ins_iter != ins_at_addr.end(); ++addr_ins_iter) 
+  std::map<ADDRINT, ptr_instruction_t>::iterator ins_iter = ins_at_addr.begin();
+  for (; ins_iter != ins_at_addr.end(); ++ins_iter)
   {
     out_file << boost::format("%-15s %-50s %-25s %-25s\n")
-                % remove_leading_zeros(StringFromAddrint(addr_ins_iter->first))
-                % addr_ins_iter->second->disassembled_name
-                % addr_ins_iter->second->contained_image
-                % addr_ins_iter->second->contained_function;
+                % addrint_to_hexstring(ins_iter->first) % ins_iter->second->disassembled_name
+                % ins_iter->second->contained_image % ins_iter->second->contained_function;
   }
   out_file.close();
 
   return;
 }
 
-/*====================================================================================================================*/
+/*================================================================================================*/
 
-void journal_explored_trace(const std::string& filename)
+void save_explored_trace(const std::string& filename)
 {
   std::ofstream out_file(filename.c_str(), 
                          std::ofstream::out | std::ofstream::trunc);
@@ -106,19 +67,21 @@ void journal_explored_trace(const std::string& filename)
   return;
 }
 
-/*================================================================================================*/
 
+/**
+ * @brief label write for the tainting graph
+ */
 class vertex_label_writer
 {
 public:
-  vertex_label_writer(df_diagram& g) : graph(g)
+  vertex_label_writer(df_diagram& diagram) : tainting_graph(diagram)
   {
   }
 
   template <typename Vertex>
-  void operator()(std::ostream& vertex_label, Vertex v)
+  void operator()(std::ostream& vertex_label, Vertex vertex)
   {
-    df_vertex current_vertex = graph[v];
+    df_vertex current_vertex = tainting_graph[vertex];
     if ((current_vertex->value.type() == typeid(ADDRINT)) &&
         (received_msg_addr <= boost::get<ADDRINT>(current_vertex->value)) &&
         (boost::get<ADDRINT>(current_vertex->value) < received_msg_addr + received_msg_size))
@@ -133,36 +96,39 @@ public:
   }
 
 private:
-  df_diagram graph;
+  df_diagram tainting_graph;
 };
 
-/*================================================================================================*/
 
+/**
+ * @brief edge write for the tainting graph
+ */
 class edge_label_writer
 {
 public:
-  edge_label_writer(df_diagram& g) : graph(g)
+  edge_label_writer(df_diagram& diagram) : tainting_graph(diagram)
   {
   }
 
   template <typename Edge>
   void operator()(std::ostream& edge_label, Edge edge)
   {
-    df_edge current_edge = graph[edge];
+    df_edge current_edge = tainting_graph[edge];
     edge_label << boost::format("[label=\"%s: %s\"]")
                   % current_edge % ins_at_order[current_edge]->disassembled_name;
   }
 
 private:
-  df_diagram graph;
+  df_diagram tainting_graph;
 };
 
-/*================================================================================================*/
 
-void journal_tainting_graph(const std::string& filename)
+/**
+ * @brief save the tainting graph
+ */
+void save_tainting_graph(df_diagram& dta_graph, const std::string& filename)
 {
-  std::ofstream out_file(filename.c_str(), 
-                         std::ofstream::out | std::ofstream::trunc );
+  std::ofstream out_file(filename.c_str(), std::ofstream::out | std::ofstream::trunc );
   boost::write_graphviz(out_file, dta_graph, 
                         vertex_label_writer(dta_graph), edge_label_writer(dta_graph));
   out_file.close();
@@ -183,8 +149,8 @@ void journal_tainting_graph(const std::string& filename)
 
 /*================================================================================================*/
 
-void journal_tainting_log()
-{
+//void journal_tainting_log()
+//{
 //  static UINT32 exploring_times = 0;
   
 //  exploring_times++;
@@ -367,8 +333,8 @@ void journal_tainting_log()
 //    backward_log_file.close();
 //  }
 
-  return;
-}
+//  return;
+//}
 
 /*================================================================================================*/
 
@@ -405,9 +371,4 @@ void journal_tainting_log()
 
 /*================================================================================================*/
 
-std::string addrint_to_hexstring(ADDRINT input)
-{
-  std::stringstream num_stream;
-  num_stream << "0x" << std::hex << input;
-  return num_stream.str();
-}
+

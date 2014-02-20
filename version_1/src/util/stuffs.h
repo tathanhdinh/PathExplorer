@@ -1,33 +1,11 @@
 #ifndef STUFFS_H
 #define STUFFS_H
 
-#include <vector>
-#include <utility>
-#include <iostream>
+#include "../operation/common.h"
 
-#include <pin.H>
-
-#include "../base/instruction.h"
-//#include "../base/branch.h"
-
-// void        journal_buffer          (const std::string& filename,
-//                                      UINT8* buffer_addr, 
-//                                      UINT32 buffer_size );
-
-void journal_static_trace(const std::string& filename);
-
-void journal_explored_trace(const std::string& filename);
-
-void journal_tainting_graph(const std::string& filename);
-
-//void        journal_branch_messages (ptr_branch_t& ptr_resolved_branch);
-
-void journal_tainting_log();
-
-//void store_input(ptr_branch_t& ptr_br, bool br_taken);
-
-std::string remove_leading_zeros(std::string input);
-
+void save_static_trace(const std::string& filename);
+void save_explored_trace(const std::string& filename);
+void save_tainting_graph(df_diagram& dta_graph, const std::string& filename);
 std::string addrint_to_hexstring(ADDRINT input);
 
 #endif // STUFFS_H

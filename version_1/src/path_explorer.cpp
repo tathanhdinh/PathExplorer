@@ -34,7 +34,6 @@ ptr_cond_direct_instructions_t                  detected_input_dep_cfis;
 ptr_cond_direct_instruction_t                   exploring_cfi;
 UINT32                                          exploring_cfi_exec_order;
 
-std::vector<ADDRINT>                            explored_trace;
 UINT32                                          current_exec_order;
 
 UINT32                                          received_msg_num;
@@ -130,7 +129,7 @@ VOID stop_tracing(INT32 code, VOID *data)
   boost::posix_time::time_duration elapsed_time = *stop_ptr_time - *start_ptr_time;
   uint64_t elapsed_millisec = elapsed_time.total_milliseconds();
 
-  journal_static_trace("static_trace.log");
+  save_static_trace("static_trace.log");
   
   UINT32 resolved_cfi_num = 0;
   ptr_cond_direct_instructions_t::iterator cfi_iter = detected_input_dep_cfis.begin();

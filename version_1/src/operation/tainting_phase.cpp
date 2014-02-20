@@ -189,11 +189,13 @@ static inline void analyze_executed_instructions()
 
 
 /**
- * @brief calculate_last_input_dep_cfi_exec_order
+ * @brief calculate a new limit trace length for the next rollbacking phase, this limit is the
+ * execution order of the last input dependent CFI in the tainting phase.
  */
-static inline void calculate_last_input_dep_cfi_exec_order()
+static inline UINT32 new_limit_trace_length()
 {
-  last_input_dep_cfi_exec_order = 0;
+  UINT32 last_exec_order = 0;
+
   std::map<UINT32, ptr_instruction_t>::reverse_iterator ins_iter;
   ptr_cond_direct_instruction_t last_cfi;
   // reverse iterate in the list of executed instructions
@@ -206,12 +208,12 @@ static inline void calculate_last_input_dep_cfi_exec_order()
       last_cfi = boost::static_pointer_cast<cond_direct_instruction>(ins_iter->second);
       if (!last_cfi->input_dep_addrs.empty())
       {
-        last_input_dep_cfi_exec_order = last_cfi->exec_order;
+        last_exec_order = last_cfi->exec_order;
         break;
       }
     }
   }
-  return;
+  return last_exec_order;
 }
 
 
@@ -245,12 +247,11 @@ inline void prepare_new_rollbacking_phase()
            % newly_detected_input_dep_cfis.size() % newly_detected_cfis.size();
 #endif
 
-    // calculate the new limit trace length for the rollbacking phase: the limit does not exceed
-    // the execution order of the last input dependent CFI
-    calculate_last_input_dep_cfi_exec_order();
+    // initalize the next rollbacking phase
+    current_running_state = rollbacking_state;
+    rollbacking::initialize_rollbacking_phase(new_limit_trace_length());
 
     // and rollback to the first checkpoint (tainting->rollbacking transition)
-    current_running_state = rollbacking_state; rollbacking::initialize_rollbacking_phase();
     PIN_RemoveInstrumentation(); saved_checkpoints[0]->rollback();
   }
 
@@ -332,9 +333,9 @@ VOID mem_read_instruction(ADDRINT ins_addr,
 #if !defined(NDEBUG)
     BOOST_LOG_SEV(log_instance, logging::trivial::info)
       << boost::format("checkpoint detected at %d (%s: %s) because memory is read (%s: %d)")
-         % new_ptr_checkpoint->exec_order % remove_leading_zeros(StringFromAddrint(ins_addr))
-         % ins_at_addr[ins_addr]->disassembled_name
-         % addrint_to_hexstring(mem_read_addr) % mem_read_size;
+         % new_ptr_checkpoint->exec_order  % addrint_to_hexstring(ins_addr)
+         % ins_at_addr[ins_addr]->disassembled_name % addrint_to_hexstring(mem_read_addr)
+         % mem_read_size;
 #endif
   }
 
@@ -373,30 +374,6 @@ VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 me
 
   return;
 }
-
-/*================================================================================================*/
-
-//VOID cond_branch_instruction(ADDRINT ins_addr, bool br_taken)
-//{
-//  ptr_branch_t new_ptr_branch(new branch(ins_addr, br_taken));
-
-//  // save the first input
-//  store_input(new_ptr_branch, br_taken);
-
-//  // verify if the branch is a new tainted branch
-//  if (exploring_ptr_branch &&
-//      (new_ptr_branch->execution_order <= exploring_ptr_branch->execution_order))
-//  {
-//    // mark it as resolved
-//    mark_resolved(new_ptr_branch);
-//  }
-
-//  order_tainted_ptr_branch_map[current_exec_order] = new_ptr_branch;
-
-//  return;
-//}
-
-
 
 
 /**

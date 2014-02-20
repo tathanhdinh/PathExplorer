@@ -9,6 +9,7 @@ static ptr_cond_direct_instruction_t  active_cfi;
 static ptr_checkpoint_t               active_checkpoint;
 static UINT32                         max_rollback_num;
 static UINT32                         used_rollback_num;
+static UINT32                         tainted_trace_length;
 static addrint_set_t                  active_modified_addrs;
 static boost::shared_ptr<UINT8>       fresh_input;
 
@@ -166,7 +167,7 @@ static inline addrint_value_map_t input_on_active_modified_addrs()
 VOID generic_instruction(ADDRINT ins_addr)
 {
   // verify if the execution order of the instruction exceeds the last CFI
-  if (current_exec_order > last_input_dep_cfi_exec_order)
+  if (current_exec_order > tainted_trace_length)
   {
     // exceeds, namely the rollbacking phase should stop
     prepare_new_tainting_phase();
@@ -359,11 +360,12 @@ VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length
 /**
  * @brief initialize_rollbacking_phase
  */
-void initialize_rollbacking_phase()
+void initialize_rollbacking_phase(UINT32 trace_length_limit)
 {
   // reinitialize some local variables
-  active_cfi.reset(); active_checkpoint.reset();
-  active_modified_addrs.clear(); used_rollback_num = 0;
+  active_cfi.reset(); active_checkpoint.reset(); active_modified_addrs.clear();
+  used_rollback_num = 0; max_rollback_num = max_local_rollback.Value();
+  tainted_trace_length = trace_length_limit;
 
   // make a fresh input copy
   fresh_input = boost::make_shared<UINT8>(received_msg_size);
