@@ -1,34 +1,7 @@
-#include <pin.H>
+//#include <string>
+//#include <map>
+//#include <vector>
 
-#include <string>
-#include <map>
-#include <vector>
-#include <algorithm>
-#include <stack>
-#include <sstream>
-#include <fstream>
-#include <string>
-#include <iostream>
-#include <limits>
-
-//#include <boost/predef.h>
-//#include <boost/timer.hpp>
-//#include <boost/random.hpp>
-//#include <boost/date_time/posix_time/posix_time.hpp>
-//#include <boost/shared_ptr.hpp>
-//#include <boost/format.hpp>
-//#include <boost/log/core.hpp>
-//#include <boost/log/trivial.hpp>
-//#include <boost/log/expressions.hpp>
-//#include <boost/log/sinks/text_file_backend.hpp>
-//#include <boost/log/utility/setup/file.hpp>
-//#include <boost/log/utility/setup/common_attributes.hpp>
-//#include <boost/log/sources/severity_logger.hpp>
-//#include <boost/log/sources/record_ostream.hpp>
-
-//#include "base/instruction.h"
-//#include "base/checkpoint.h"
-//#include "base/cond_direct_instruction.h"
 #include "operation/instrumentation.h"
 #include "operation/tainting_phase.h"
 #include "operation/capturing_phase.h"

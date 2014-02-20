@@ -371,12 +371,6 @@ void initialize_rollbacking_phase()
   if (exploring_cfi) original_input = exploring_cfi->fresh_input;
   std::copy(original_input.get(), original_input.get() + received_msg_size, fresh_input.get());
 
-//  UINT8* buffer;
-//  if (exploring_cfi)
-//    buffer = exploring_cfi->fresh_input.get();
-//  else
-//    buffer = reinterpret_cast<UINT8*>(received_msg_addr);
-//  std::copy(buffer, buffer + received_msg_size, fresh_input.get());
   return;
 }
 

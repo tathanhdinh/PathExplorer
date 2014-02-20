@@ -2,7 +2,6 @@
 #define TAINTING_PHASE_H
 
 #include <pin.H>
-#include <boost/predef.h>
 
 namespace tainting
 {
