@@ -1,6 +1,7 @@
 #include "rollbacking_functions.h"
-
 #include "common.h"
+
+#include <algorithm>
 
 /*================================================================================================*/
 
@@ -9,6 +10,7 @@ static ptr_checkpoint_t               active_checkpoint;
 static UINT32                         max_rollback_num;
 static UINT32                         used_rollback_num;
 static addrint_set_t                  active_modified_addrs;
+static boost::shared_ptr<UINT8>       fresh_input;
 
 /*================================================================================================*/
 
@@ -51,8 +53,10 @@ inline static void rollback()
 inline static void get_next_active_checkpoint()
 {
   std::vector<checkpoint_with_modified_addrs>::iterator chkpnt_iter, next_chkpnt_iter;
+  // verify if there exist an enabled active checkpoint
   if (active_checkpoint)
   {
+    // exist, then find the next checkpoint in the checkpoint list of the current active CFI
     next_chkpnt_iter = active_cfi->checkpoints.begin(); chkpnt_iter = next_chkpnt_iter;
     while (++next_chkpnt_iter != active_cfi->checkpoints.end())
     {
@@ -73,6 +77,8 @@ inline static void get_next_active_checkpoint()
   }
   else
   {
+    // doest not exist, then the active checkpoint is assigned as the first checkpoint of the
+    // current active CFI
     active_checkpoint = active_cfi->checkpoints[0].first;
     active_modified_addrs = active_cfi->checkpoints[0].second;
   }
@@ -96,6 +102,18 @@ inline static void prepare_new_tainting_phase()
     // exists, then
   }
   return;
+}
+
+
+inline static addrint_value_map_t input_on_active_modified_addrs()
+{
+  addrint_set_t::iterator addr_iter = active_modified_addrs.begin();
+  addrint_value_map_t input_proj;
+  for (; addr_iter != active_modified_addrs.end(); ++addr_iter)
+  {
+    input_proj[*addr_iter] = *(reinterpret_cast<UINT8*>(*addr_iter));
+  }
+  return input_proj;
 }
 
 
@@ -134,6 +152,8 @@ VOID generic_instruction(ADDRINT ins_addr)
         {
           // it is, then it will be marked as resolved
           active_cfi->is_resolved = true;
+          // push an input projection into the corresponding input list of the active CFI
+          active_cfi->second_input_projections.push_back(input_on_active_modified_addrs());
         }
         else
         {
@@ -192,7 +212,6 @@ VOID control_flow_instruction(ADDRINT ins_addr)
   {
     ptr_cond_direct_instruction_t current_cfi =
         boost::static_pointer_cast<cond_direct_instruction>(ins_at_order[current_exec_order]);
-
     // verify if the current CFI depends on the input
     if (!current_cfi->input_dep_addrs.empty())
     {
@@ -218,8 +237,8 @@ VOID control_flow_instruction(ADDRINT ins_addr)
               }
               else
               {
-                // does not exist, then set the CFI as bypassed if it has been not resolved yet, and
-                // disable it
+                // does not exist, then set the CFI as bypassed if it has been not resolved yet,
+                // and disable it
                 active_cfi->is_bypassed = !active_cfi->is_resolved; active_cfi.reset();
               }
             }
@@ -231,9 +250,18 @@ VOID control_flow_instruction(ADDRINT ins_addr)
         }
         else
         {
-          // the active CFI is disabled, then set the current CFI as the active CFI
+          // the active CFI is disabled, then first set the current CFI as the active CFI
           active_cfi = current_cfi; get_next_active_checkpoint();
-          // and rollback to resolve this new active CFI
+
+          // make a copy of the fresh input
+          active_cfi->fresh_input = boost::make_shared<UINT8>(received_msg_size);
+          std::copy(fresh_input.get(), fresh_input.get() + received_msg_size,
+                    current_cfi->fresh_input.get());
+
+          // push an input projection into the corresponding input list of the active CFI
+          active_cfi->first_input_projections.push_back(input_on_active_modified_addrs());
+
+          // and rollback to resolve the new active CFI
           used_rollback_num = 0; rollback();
         }
       }
@@ -249,7 +277,7 @@ VOID control_flow_instruction(ADDRINT ins_addr)
   }
   else
   {
-    // do nothing
+    // CPIs are not beyond the exploring CPI, then omit them
   }
 
   return;
@@ -298,8 +326,16 @@ VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length
  */
 void initialize_rollbacking_phase()
 {
-  active_cfi.reset(); active_checkpoint.reset(); active_modified_addrs.clear();
-  used_rollback_num = 0;
+  // reinitialize some local variables
+  active_cfi.reset(); active_checkpoint.reset();
+  active_modified_addrs.clear(); used_rollback_num = 0;
+
+  // make a fresh input copy
+  fresh_input = boost::make_shared<UINT8>(received_msg_size);
+  UINT8* buffer;
+  if (exploring_cfi) buffer = exploring_cfi->fresh_input.get();
+  else buffer = reinterpret_cast<UINT8*>(received_msg_addr);
+  std::copy(buffer, buffer + received_msg_size, fresh_input.get());
   return;
 }
 

@@ -5,7 +5,7 @@ cond_direct_instruction::cond_direct_instruction(const INS& ins) : instruction(i
   this->is_resolved = false; this->is_bypassed = false; this->is_explored = false;
 
   this->input_dep_addrs.clear(); this->checkpoints.clear();
-  this->first_inputs.clear(); this->second_inputs.clear();
+  this->first_input_projections.clear(); this->second_input_projections.clear();
 
   this->used_rollback_num = 0;
 }
@@ -17,7 +17,7 @@ cond_direct_instruction::cond_direct_instruction(instruction& ins) : instruction
   this->is_resolved = false; this->is_bypassed = false; this->is_explored = false;
 
   this->input_dep_addrs.clear(); this->checkpoints.clear();
-  this->first_inputs.clear(); this->second_inputs.clear();
+  this->first_input_projections.clear(); this->second_input_projections.clear();
 
   this->used_rollback_num = 0;
 }
