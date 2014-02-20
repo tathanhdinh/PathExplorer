@@ -184,7 +184,7 @@ VOID stop_tracing(INT32 code, VOID *data)
  * @brief initialize_logging
  * @param log_filename
  */
-inline static void initialize_logging(std::string log_filename)
+static inline void initialize_logging(std::string log_filename)
 {
   log_sink = logging::add_file_log(log_filename.c_str());
   logging::add_common_attributes();

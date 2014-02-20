@@ -16,7 +16,7 @@
 
 /*================================================================================================*/
 
-inline static void exec_tainting_phase(INS& ins, ptr_instruction_t examined_ins)
+static inline void exec_tainting_phase(INS& ins, ptr_instruction_t examined_ins)
 {
   /* taint logging */
   if (examined_ins->is_syscall)
@@ -74,7 +74,7 @@ inline static void exec_tainting_phase(INS& ins, ptr_instruction_t examined_ins)
 
 /*================================================================================================*/
 
-inline static void exec_rollbacking_state(INS& ins, ptr_instruction_t examined_ins)
+static inline void exec_rollbacking_state(INS& ins, ptr_instruction_t examined_ins)
 {
   INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)resolving_ins_count_analyzer,
                            IARG_INST_PTR, IARG_END);

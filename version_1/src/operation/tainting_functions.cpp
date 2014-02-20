@@ -35,7 +35,7 @@ public:
  * @brief for each executed instruction in this tainting phase, determine the set of input memory
  * addresses that affect to the instruction.
  */
-inline static void determine_cfi_input_dependency()
+static inline void determine_cfi_input_dependency()
 {
   df_vertex_iter vertex_iter;
   df_vertex_iter last_vertex_iter;
@@ -96,7 +96,7 @@ inline static void determine_cfi_input_dependency()
  * rollback from the checkpoint with the modification on the affecting input addresses may change
  * the CFI's decision.
  */
-inline static void set_checkpoints_for_cfi(ptr_cond_direct_instruction_t cfi)
+static inline void set_checkpoints_for_cfi(ptr_cond_direct_instruction_t cfi)
 {
   addrint_set_t dep_addrs = cfi->input_dep_addrs;
   addrint_set_t new_dep_addrs;
@@ -140,7 +140,7 @@ inline static void set_checkpoints_for_cfi(ptr_cond_direct_instruction_t cfi)
 /**
  * @brief save new tainted CFI in this tainting phase
  */
-inline static void save_detected_cfis()
+static inline void save_detected_cfis()
 {
   ptr_cond_direct_instruction_t newly_detected_cfi;
   std::map<UINT32, ptr_instruction_t>::iterator executed_ins_iter;
@@ -181,7 +181,7 @@ inline static void save_detected_cfis()
 /**
  * @brief analyze_executed_instructions
  */
-inline static void analyze_executed_instructions()
+static inline void analyze_executed_instructions()
 {
   determine_cfi_input_dependency(); save_detected_cfis();
   return;
@@ -191,7 +191,7 @@ inline static void analyze_executed_instructions()
 /**
  * @brief calculate_last_input_dep_cfi_exec_order
  */
-inline static void calculate_last_input_dep_cfi_exec_order()
+static inline void calculate_last_input_dep_cfi_exec_order()
 {
   last_input_dep_cfi_exec_order = 0;
   std::map<UINT32, ptr_instruction_t>::reverse_iterator ins_iter;
@@ -220,37 +220,46 @@ inline static void calculate_last_input_dep_cfi_exec_order()
  */
 inline void prepare_new_rollbacking_phase()
 {
+  if (saved_checkpoints.empty())
+  {
 #if !defined(NDEBUG)
-  BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-    << boost::format("stop tainting, %d instructions executed; start analyzing...")
-        % current_exec_order;
+    BOOST_LOG_SEV(log_instance, logging::trivial::info)
+        << boost::format("no checkpoint saved, stop exploring");
+#endif
+    PIN_ExitApplication(0);
+  }
+  else
+  {
+#if !defined(NDEBUG)
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
+        << boost::format("stop tainting, %d instructions executed; start analyzing...")
+           % current_exec_order;
 #endif
 
-  analyze_executed_instructions();
+    analyze_executed_instructions();
 
 #if !defined(NDEBUG)
-  BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-    << boost::format("stop analyzing, %d checkpoints, %d/%d branches detected; start rollbacking")
-       % saved_checkpoints.size()
-       % newly_detected_input_dep_cfis.size() % newly_detected_cfis.size();
+    BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
+        << boost::format("stop analyzing, %d checkpoints, %d/%d branches detected; start rollbacking")
+           % saved_checkpoints.size()
+           % newly_detected_input_dep_cfis.size() % newly_detected_cfis.size();
 #endif
 
-  // calculate the new limit trace length for the rollbacking phase: the limit does not exceed
-  // the execution order of the last input dependent CFI
-  calculate_last_input_dep_cfi_exec_order();
+    // calculate the new limit trace length for the rollbacking phase: the limit does not exceed
+    // the execution order of the last input dependent CFI
+    calculate_last_input_dep_cfi_exec_order();
 
-  // and rollback to the first checkpoint (tainting->rollbacking transition)
-  current_running_state = rollbacking_state; rollbacking::initialize_rollbacking_phase();
-  PIN_RemoveInstrumentation(); saved_checkpoints[0]->rollback();
+    // and rollback to the first checkpoint (tainting->rollbacking transition)
+    current_running_state = rollbacking_state; rollbacking::initialize_rollbacking_phase();
+    PIN_RemoveInstrumentation(); saved_checkpoints[0]->rollback();
+  }
 
   return;
 }
 
 
 /**
- * @brief syscall_instruction
- * @param ins_addr
- * @return
+ * @brief analysis functions applied for syscall instructions
  */
 VOID syscall_instruction(ADDRINT ins_addr)
 {
@@ -261,19 +270,17 @@ VOID syscall_instruction(ADDRINT ins_addr)
 
 
 /**
- * @brief general_instruction
- * @param ins_addr
- * @return
+ * @brief analysis function applied for all instructions
  */
 VOID general_instruction(ADDRINT ins_addr)
 {
   ptr_cond_direct_instruction_t current_cfi, duplicated_cfi;
 
-  // verify if the execution order are not beyond the limit trace length and the executed
+  // verify if the execution order exceeds the limit trace length and the executed
   // instruction is always in user-space
   if ((current_exec_order < max_trace_size) && !ins_at_addr[ins_addr]->is_mapped_from_kernel)
   {
-    // yes
+    // does not exceed
     current_exec_order++;
     if (ins_at_addr[ins_addr]->is_cond_direct_cf)
     {
@@ -288,17 +295,17 @@ VOID general_instruction(ADDRINT ins_addr)
       // duplicate an instruction
       ins_at_order[current_exec_order].reset(new instruction(*ins_at_addr[ins_addr]));
     }
-
+#if !defined(NDEBUG)
     BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
         << boost::format("%-3d %-15s %-50s %-25s %-25s")
            % current_exec_order % addrint_to_hexstring(ins_addr)
-           % ins_at_addr[ins_addr]->disassembled_name
-           % ins_at_addr[ins_addr]->contained_image
+           % ins_at_addr[ins_addr]->disassembled_name % ins_at_addr[ins_addr]->contained_image
            % ins_at_addr[ins_addr]->contained_function;
+#endif
   }
   else
   {
-    // no
+    // exceed
     prepare_new_rollbacking_phase();
   }
 
@@ -307,35 +314,35 @@ VOID general_instruction(ADDRINT ins_addr)
 
 
 /**
- * @brief mem_read_instruction
- * @param ins_addr
- * @param mem_read_addr
- * @param mem_read_size
- * @param p_ctxt
- * @return
+ * @brief in the tainting phase, the memory read analysis is used to:
+ *  save a checkpoint each time the instruction read some memory addresses in the input buffer, and
+ *  update source operands of the instruction as read memory addresses.
  */
 VOID mem_read_instruction(ADDRINT ins_addr,
                           ADDRINT mem_read_addr, UINT32 mem_read_size, CONTEXT* p_ctxt)
 {
-  // a new checkpoint found
+  // verify if the instruction read some addresses in the input buffer
   if (std::max(mem_read_addr, received_msg_addr) <
       std::min(mem_read_addr + mem_read_size, received_msg_addr + received_msg_size))
   {
+    // yes, then save a checkpoint
     ptr_checkpoint_t new_ptr_checkpoint(new checkpoint(p_ctxt, mem_read_addr, mem_read_size));
     saved_checkpoints.push_back(new_ptr_checkpoint);
 
-    BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
+#if !defined(NDEBUG)
+    BOOST_LOG_SEV(log_instance, logging::trivial::info)
       << boost::format("checkpoint detected at %d (%s: %s) because memory is read (%s: %d)")
-         % new_ptr_checkpoint->exec_order
-         % remove_leading_zeros(StringFromAddrint(ins_addr))
+         % new_ptr_checkpoint->exec_order % remove_leading_zeros(StringFromAddrint(ins_addr))
          % ins_at_addr[ins_addr]->disassembled_name
          % addrint_to_hexstring(mem_read_addr) % mem_read_size;
+#endif
   }
 
+  // update source operands
   ptr_operand_t mem_operand;
-  for (UINT32 idx = 0; idx < mem_read_size; ++idx)
+  for (UINT32 addr_offset = 0; addr_offset < mem_read_size; ++addr_offset)
   {
-    mem_operand.reset(new operand(mem_read_addr + idx));
+    mem_operand.reset(new operand(mem_read_addr + addr_offset));
     ins_at_order[current_exec_order]->src_operands.insert(mem_operand);
   }
 
@@ -344,25 +351,23 @@ VOID mem_read_instruction(ADDRINT ins_addr,
 
 
 /**
- * @brief mem_write_instruction
- * @param ins_addr
- * @param mem_written_addr
- * @param mem_written_size
- * @return
+ * @brief in the tainting phase, the memory write analysis is used to:
+ *  save orginal values of overwritten memory addresses, and
+ *  update destination operands of the instruction as written memory addresses.
  */
 VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 mem_written_size)
 {
+  // the first saved checkpoint tracks memory write operations so that we can always rollback to it
   if (!saved_checkpoints.empty())
   {
     saved_checkpoints[0]->mem_write_tracking(mem_written_addr, mem_written_size);
   }
 
-//  exepoint_checkpoints_map[current_exec_order] = saved_checkpoints;
-
+  // update destination operands
   ptr_operand_t mem_operand;
-  for (UINT32 idx = 0; idx < mem_written_size; ++idx)
+  for (UINT32 addr_offset = 0; addr_offset < mem_written_size; ++addr_offset)
   {
-    mem_operand.reset(new operand(mem_written_addr + idx));
+    mem_operand.reset(new operand(mem_written_addr + addr_offset));
     ins_at_order[current_exec_order]->dst_operands.insert(mem_operand);
   }
 
@@ -489,11 +494,6 @@ VOID syscall_entry_analyzer(THREADID thread_id,
 
 /**
  * @brief syscall_exit_analyzer
- * @param thread_id
- * @param p_ctxt
- * @param syscall_std
- * @param data
- * @return
  */
 VOID syscall_exit_analyzer(THREADID thread_id,
                            CONTEXT* p_ctxt, SYSCALL_STANDARD syscall_std, VOID *data)
@@ -506,15 +506,14 @@ VOID syscall_exit_analyzer(THREADID thread_id,
       if (ret_val > 0)
       {
         received_msg_num++;
-        received_msg_addr = logged_syscall_args[1];
-        received_msg_size = ret_val;
-
+        received_msg_addr = logged_syscall_args[1]; received_msg_size = ret_val;
+#if !defined(NDEBUG)
         BOOST_LOG_TRIVIAL(info)
           << boost::format("the first message saved at %s with size %d bytes\n%s\n%s %d")
              % addrint_to_hexstring(received_msg_addr) % received_msg_size
              % "-----------------------------------------------------------------------------------"
              % "start tainting the first time with trace size" % max_trace_size;
-
+#endif
         PIN_RemoveInstrumentation();
       }
     }
@@ -648,6 +647,10 @@ VOID graphical_propagation(ADDRINT ins_addr)
   return;
 }
 
+
+/**
+ * @brief initialize_tainting_phase
+ */
 void initialize_tainting_phase()
 {
   dta_graph.clear(); dta_outer_vertices.clear(); saved_checkpoints.clear();

@@ -16,7 +16,7 @@ static boost::shared_ptr<UINT8>       fresh_input;
 
 namespace rollbacking
 {
-inline static void rollback()
+static inline void rollback()
 {
   // verify if the number of used rollbacks has reached its bound
   if (used_rollback_num < max_rollback_num - 1)
@@ -50,7 +50,7 @@ inline static void rollback()
 /**
  * @brief get_next_active_checkpoint
  */
-inline static void get_next_active_checkpoint()
+static inline void get_next_active_checkpoint()
 {
   std::vector<checkpoint_with_modified_addrs>::iterator chkpnt_iter, next_chkpnt_iter;
   // verify if there exist an enabled active checkpoint
@@ -89,7 +89,7 @@ inline static void get_next_active_checkpoint()
 /**
  * @brief prepare_new_tainting_phase
  */
-inline static void prepare_new_tainting_phase()
+static inline void prepare_new_tainting_phase()
 {
   // verify if there exists unexplored CFI
   ptr_cond_direct_instructions_t::iterator cfi_iter = detected_input_dep_cfis.begin();
@@ -105,7 +105,7 @@ inline static void prepare_new_tainting_phase()
 }
 
 
-inline static addrint_value_map_t input_on_active_modified_addrs()
+static inline addrint_value_map_t input_on_active_modified_addrs()
 {
   addrint_set_t::iterator addr_iter = active_modified_addrs.begin();
   addrint_value_map_t input_proj;
