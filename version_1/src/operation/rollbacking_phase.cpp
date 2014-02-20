@@ -2,6 +2,7 @@
 #include "common.h"
 
 #include <algorithm>
+#include <memory>
 
 /*================================================================================================*/
 
@@ -373,6 +374,11 @@ void initialize_rollbacking_phase(UINT32 trace_length_limit)
   if (exploring_cfi) original_input = exploring_cfi->fresh_input;
   std::copy(original_input.get(), original_input.get() + received_msg_size, fresh_input.get());
 
+  std::shared_ptr<UINT8> tmp_pointer = std::make_shared<UINT8>(received_msg_size);
+  tmp_pointer.reset();
+
+  std::cerr << "initialize_rollbacking_phase\n";
+  std::cerr << "hahaha\n";
   return;
 }
 

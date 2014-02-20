@@ -64,6 +64,7 @@ void checkpoint::mem_write_tracking(ADDRINT mem_addr, UINT32 mem_size)
  */
 void checkpoint::rollback()
 {
+  std::cerr << "rollback\n";
   // restore values of written memory addresses
   std::map<ADDRINT, UINT8>::iterator mem_iter = this->mem_written_log.begin();
   for (; mem_iter != this->mem_written_log.end(); ++mem_iter)
@@ -71,6 +72,7 @@ void checkpoint::rollback()
     PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_iter->first), &mem_iter->second, sizeof(UINT8));
   }
   // restore values of registers
+  std::cerr << "rollback\n";
   PIN_ExecuteAt(this->context.get());
   return;
 }

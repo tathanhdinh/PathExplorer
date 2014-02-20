@@ -37,6 +37,8 @@ public:
  */
 static inline void determine_cfi_input_dependency()
 {
+  std::cerr << "determine cfi input\n";
+
   df_vertex_iter vertex_iter;
   df_vertex_iter last_vertex_iter;
   df_bfs_visitor df_visitor;
@@ -63,6 +65,8 @@ static inline void determine_cfi_input_dependency()
         visited_edges.clear();
         boost::breadth_first_search(dta_graph, *vertex_iter, boost::visitor(df_visitor));
 
+        std::cerr << "start BFS\n";
+
         // for each visited edge
         for (visited_edge_iter = visited_edges.begin();
              visited_edge_iter != visited_edges.end(); ++visited_edge_iter)
@@ -83,6 +87,8 @@ static inline void determine_cfi_input_dependency()
             }
           }
         }
+
+        std::cerr << "stop BFS\n";
       }
     }
   }
@@ -98,6 +104,8 @@ static inline void determine_cfi_input_dependency()
  */
 static inline void set_checkpoints_for_cfi(ptr_cond_direct_instruction_t cfi)
 {
+  std::cerr << "set checkpoints\n";
+
   addrint_set_t dep_addrs = cfi->input_dep_addrs;
   addrint_set_t new_dep_addrs;
   addrint_set_t intersected_addrs;
@@ -133,6 +141,8 @@ static inline void set_checkpoints_for_cfi(ptr_cond_direct_instruction_t cfi)
       else dep_addrs = new_dep_addrs;
     }
   }
+
+  std::cerr << "stop set checkpoints\n";
   return;
 }
 
@@ -142,6 +152,8 @@ static inline void set_checkpoints_for_cfi(ptr_cond_direct_instruction_t cfi)
  */
 static inline void save_detected_cfis()
 {
+  std::cerr << "start save_detected_cfis\n";
+
   ptr_cond_direct_instruction_t newly_detected_cfi;
   std::map<UINT32, ptr_instruction_t>::iterator executed_ins_iter;
 
@@ -174,6 +186,8 @@ static inline void save_detected_cfis()
       }
     }
   }
+
+  std::cerr << "stop save_detected_cfis\n";
   return;
 }
 
@@ -213,6 +227,8 @@ static inline UINT32 new_limit_trace_length()
       }
     }
   }
+
+  std::cerr << "new_limit_trace_length\n";
   return last_exec_order;
 }
 
@@ -249,10 +265,13 @@ inline void prepare_new_rollbacking_phase()
 
     // initalize the next rollbacking phase
     current_running_state = rollbacking_state;
-    rollbacking::initialize_rollbacking_phase(new_limit_trace_length());
+    UINT32 trace_length = new_limit_trace_length();
+    std::cerr << "above\n";
+    rollbacking::initialize_rollbacking_phase(trace_length);
 
+    std::cerr << "I am here\n";
     // and rollback to the first checkpoint (tainting->rollbacking transition)
-    PIN_RemoveInstrumentation(); saved_checkpoints[0]->rollback();
+    // PIN_RemoveInstrumentation(); saved_checkpoints[0]->rollback();
   }
 
   return;
