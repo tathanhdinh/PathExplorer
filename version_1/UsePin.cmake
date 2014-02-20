@@ -46,7 +46,7 @@ if(PIN_FOUND)
     )
     
     set_source_files_properties(${${pin_tool_name}_CXX_FILES} PROPERTIES
-      COMPILE_FLAGS "${PIN_CXX_FLAGS} -std=c++11"
+      COMPILE_FLAGS ${PIN_CXX_FLAGS}
     )
     
     target_link_libraries(${pin_tool_name} ${PINTOOL_LINK_LIBS} pin xed dwarf elf dl)

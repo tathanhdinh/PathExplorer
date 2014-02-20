@@ -2,7 +2,6 @@
 #include "common.h"
 
 #include <algorithm>
-#include <memory>
 
 /*================================================================================================*/
 
@@ -39,8 +38,7 @@ static inline void rollback()
     else
     {
       // exceeds
-      BOOST_LOG_SEV(log_instance, logging::trivial::info)
-          << boost::format("the number of used rollback exceeds its bound value");
+      log_file << boost::format("the number of used rollback exceeds its bound value");
       PIN_ExitApplication(1);
     }
 #endif
@@ -131,8 +129,7 @@ static inline void prepare_new_tainting_phase()
   {
     // does not exist, namely all CFI are explored
 #if !defined(NDEBUG)
-    BOOST_LOG_SEV(log_instance, logging::trivial::info)
-        << boost::format("stop exploring, all CFI have been explored");
+    log_file << boost::format("stop exploring, all CFI have been explored");
 #endif
   }
   return;
@@ -204,8 +201,7 @@ VOID generic_instruction(ADDRINT ins_addr)
       else
       {
         // not activated, then some errors have occurred
-        BOOST_LOG_SEV(log_instance, logging::trivial::fatal)
-            << boost::format("there is no active CFI but the original trace will change");
+        log_file << boost::format("there is no active CFI but the original trace will change");
         PIN_ExitApplication(1);
       }
 #endif
@@ -373,9 +369,6 @@ void initialize_rollbacking_phase(UINT32 trace_length_limit)
   ptr_uint8_t original_input(reinterpret_cast<UINT8*>(received_msg_addr));
   if (exploring_cfi) original_input = exploring_cfi->fresh_input;
   std::copy(original_input.get(), original_input.get() + received_msg_size, fresh_input.get());
-
-  std::shared_ptr<UINT8> tmp_pointer = std::make_shared<UINT8>(received_msg_size);
-  tmp_pointer.reset();
 
   std::cerr << "initialize_rollbacking_phase\n";
   std::cerr << "hahaha\n";

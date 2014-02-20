@@ -1,7 +1,5 @@
 #include "instruction.h"
 
-#include <boost/filesystem.hpp>
-
 #include <pin.H>
 extern "C" {
 #include <xed-interface.h>
@@ -18,15 +16,8 @@ instruction::instruction(const INS& ins)
   this->disassembled_name     = INS_Disassemble(ins);
   
   IMG ins_img = IMG_FindByAddress(this->address);
-  if (IMG_Valid(ins_img)) 
-  {
-    namespace fs = boost::filesystem;
-    this->contained_image     = fs::path(IMG_Name(ins_img)).filename().stem().string();
-  }
-  else 
-  {
-    this->contained_image     = "";
-  }
+  if (IMG_Valid(ins_img)) this->contained_image = IMG_Name(ins_img);
+  else this->contained_image = "";
   this->contained_function    = RTN_FindNameByAddress(this->address);
   
   this->is_syscall            = INS_IsSyscall(ins);
@@ -101,46 +92,3 @@ instruction::instruction(const INS& ins)
   }
 }
 
-/*================================================================================================*/
-
-//instruction::instruction(const instruction& other)
-//{
-//  this->address               = other.address;
-//  this->disassembled_name     = other.disassembled_name;
-
-//  this->contained_image       = other.contained_image;
-//  this->contained_function    = other.contained_function;
-  
-//  this->is_syscall            = other.is_syscall;
-//  this->is_mem_read           = other.is_mem_read;
-//  this->is_mem_write          = other.is_mem_write;
-//  this->is_mapped_from_kernel = other.is_mapped_from_kernel;
-//  this->is_cbranch            = other.is_cbranch;
-//  this->has_mem_read2         = other.has_mem_read2;
-  
-//  this->src_operands          = other.src_operands;
-//  this->dst_operands          = other.dst_operands;
-//}
-
-/*================================================================================================*/
-// there is not dynamically initialized variables, so copy constructor and assignment are the same
-//instruction& instruction::operator=(const instruction& other)
-//{
-//  this->address               = other.address;
-//  this->disassembled_name     = other.disassembled_name;
-
-//  this->contained_image       = other.contained_image;
-//  this->contained_function    = other.contained_function;
-  
-//  this->is_syscall            = other.is_syscall;
-//  this->is_mem_read           = other.is_mem_read;
-//  this->is_mem_write          = other.is_mem_write;
-//  this->is_mapped_from_kernel = other.is_mapped_from_kernel;
-//  this->is_cbranch            = other.is_cbranch;
-//  this->has_mem_read2         = other.has_mem_read2;
-  
-//  this->src_operands          = other.src_operands;
-//  this->dst_operands          = other.dst_operands;
-
-//  return *this;
-//}

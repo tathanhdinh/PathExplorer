@@ -3,23 +3,12 @@
 
 #include <pin.H>
 
-#include <boost/predef.h>
-#include <boost/timer.hpp>
-#include <boost/random.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/format.hpp>
 #include <boost/graph/breadth_first_search.hpp>
 #include <boost/graph/lookup_edge.hpp>
 #include <boost/graph/graphviz.hpp>
-#include <boost/log/core.hpp>
-#include <boost/log/trivial.hpp>
-#include <boost/log/expressions.hpp>
-#include <boost/log/sinks/text_file_backend.hpp>
-#include <boost/log/utility/setup/file.hpp>
-#include <boost/log/utility/setup/common_attributes.hpp>
-#include <boost/log/sources/severity_logger.hpp>
-#include <boost/log/sources/record_ostream.hpp>
+#include <fstream>
 
 #include "../base/checkpoint.h"
 #include "../base/cond_direct_instruction.h"
@@ -62,7 +51,7 @@ extern UINT32                                     received_msg_num;
 extern ADDRINT                                    received_msg_addr;
 extern UINT32                                     received_msg_size;
 
-#if BOOST_OS_LINUX
+#if defined(__gnu_linux__)
 extern ADDRINT                                    logged_syscall_index;   // logged syscall index
 extern ADDRINT                                    logged_syscall_args[6]; // logged syscall arguments
 #endif
@@ -76,21 +65,6 @@ extern KNOB<UINT32>                               max_total_rollback;
 extern KNOB<UINT32>                               max_local_rollback;
 extern KNOB<UINT32>                               max_trace_length;
 
-namespace btime = boost::posix_time;
-extern boost::shared_ptr<btime::ptime>            start_ptr_time;
-extern boost::shared_ptr<btime::ptime>            stop_ptr_time;
-
-namespace logging = boost::log;
-namespace sinks   = boost::log::sinks;
-namespace sources = boost::log::sources;
-typedef sinks::text_file_backend text_backend;
-typedef sinks::synchronous_sink<text_backend>     sink_file_backend;
-typedef logging::trivial::severity_level          log_level;
-extern sources::severity_logger<log_level>        log_instance;
-extern boost::shared_ptr<sink_file_backend>       log_sink;
-
-namespace bran = boost::random;
-extern bran::taus88                               rgen;
-extern bran::uniform_int_distribution<UINT8>      uint8_uniform;
+extern std::ofstream                              log_file;
 
 #endif // COMMON_H

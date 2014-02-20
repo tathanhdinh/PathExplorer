@@ -241,26 +241,23 @@ inline void prepare_new_rollbacking_phase()
   if (saved_checkpoints.empty())
   {
 #if !defined(NDEBUG)
-    BOOST_LOG_SEV(log_instance, logging::trivial::info)
-        << boost::format("no checkpoint saved, stop exploring");
+    log_file << boost::format("no checkpoint saved, stop exploring");
 #endif
     PIN_ExitApplication(0);
   }
   else
   {
 #if !defined(NDEBUG)
-    BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-        << boost::format("stop tainting, %d instructions executed; start analyzing...")
-           % current_exec_order;
+    log_file << boost::format("stop tainting, %d instructions executed; start analyzing...")
+                % current_exec_order;
 #endif
 
     analyze_executed_instructions();
 
 #if !defined(NDEBUG)
-    BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-        << boost::format("stop analyzing, %d checkpoints, %d/%d branches detected; start rollbacking")
-           % saved_checkpoints.size()
-           % newly_detected_input_dep_cfis.size() % newly_detected_cfis.size();
+    log_file << boost::format("stop analyzing, %d checkpoints, %d/%d branches detected; start rollbacking")
+                % saved_checkpoints.size()
+                % newly_detected_input_dep_cfis.size() % newly_detected_cfis.size();
 #endif
 
     // initalize the next rollbacking phase
@@ -316,11 +313,10 @@ VOID general_instruction(ADDRINT ins_addr)
       ins_at_order[current_exec_order].reset(new instruction(*ins_at_addr[ins_addr]));
     }
 #if !defined(NDEBUG)
-    BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-        << boost::format("%-3d %-15s %-50s %-25s %-25s")
-           % current_exec_order % addrint_to_hexstring(ins_addr)
-           % ins_at_addr[ins_addr]->disassembled_name % ins_at_addr[ins_addr]->contained_image
-           % ins_at_addr[ins_addr]->contained_function;
+    log_file << boost::format("%-3d %-15s %-50s %-25s %-25s")
+                % current_exec_order % addrint_to_hexstring(ins_addr)
+                % ins_at_addr[ins_addr]->disassembled_name % ins_at_addr[ins_addr]->contained_image
+                % ins_at_addr[ins_addr]->contained_function;
 #endif
   }
   else
@@ -350,11 +346,10 @@ VOID mem_read_instruction(ADDRINT ins_addr,
     saved_checkpoints.push_back(new_ptr_checkpoint);
 
 #if !defined(NDEBUG)
-    BOOST_LOG_SEV(log_instance, logging::trivial::info)
-      << boost::format("checkpoint detected at %d (%s: %s) because memory is read (%s: %d)")
-         % new_ptr_checkpoint->exec_order  % addrint_to_hexstring(ins_addr)
-         % ins_at_addr[ins_addr]->disassembled_name % addrint_to_hexstring(mem_read_addr)
-         % mem_read_size;
+    log_file << boost::format("checkpoint detected at %d (%s: %s) because memory is read (%s: %d)")
+                % new_ptr_checkpoint->exec_order  % addrint_to_hexstring(ins_addr)
+                % ins_at_addr[ins_addr]->disassembled_name % addrint_to_hexstring(mem_read_addr)
+                % mem_read_size;
 #endif
   }
 

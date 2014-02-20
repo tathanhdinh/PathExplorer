@@ -1,7 +1,6 @@
 #include "operand.h"
 #include "../util/stuffs.h"
 
-/*================================================================================================*/
 
 operand::operand(ADDRINT mem_addr)
 {
@@ -9,7 +8,6 @@ operand::operand(ADDRINT mem_addr)
   this->name = addrint_to_hexstring(mem_addr);
 }
 
-/*================================================================================================*/
 
 operand::operand(REG reg)
 {

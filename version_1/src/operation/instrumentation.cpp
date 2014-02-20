@@ -123,25 +123,21 @@ VOID ins_instrumenter(INS ins, VOID *data)
 
 VOID image_load_instrumenter(IMG loaded_img, VOID *data)
 {
-  boost::filesystem::path loaded_image_path(IMG_Name(loaded_img));
-
 #if !defined(NDEBUG)
-  BOOST_LOG_SEV(log_instance, logging::trivial::info)
-      << boost::format("module %s loaded") % loaded_image_path.filename();
+  log_file << boost::format("module %s loaded") % IMG_Name(loaded_img);
 #endif
 
-#if BOOST_OS_WINDOWS
+#if defined(_WIN32) || defined(_WIN64)
   // verify whether the winsock2 module is loaded
   const static std::string winsock_dll_name("WS2_32.dll");
   if (loaded_image_path.filename() == winsock_dll_name)
   {
-    BOOST_LOG_SEV(log_instance, logging::trivial::info)
-      << "winsock module found";
+    log_file << "winsock module found";
 
     RTN recv_function = RTN_FindByName(loaded_img, "recv");
     if (RTN_Valid(recv_function))
     {
-      BOOST_LOG_SEV(log_instance, logging::trivial::info) << "recv instrumented";
+      log_file << "recv instrumented";
 
       RTN_Open(recv_function);
 
@@ -157,7 +153,7 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
     RTN recvfrom_function = RTN_FindByName(loaded_img, "recvfrom");
     if (RTN_Valid(recvfrom_function))
     {
-      BOOST_LOG_SEV(log_instance, logging::trivial::info) << "recvfrom instrumented";
+      log_file << "recvfrom instrumented";
 
       RTN_Open(recvfrom_function);
 
@@ -175,8 +171,7 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
     RTN wsarecv_function = RTN_FindByName(loaded_img, "WSARecv");
     if (RTN_Valid(wsarecv_function))
     {
-      BOOST_LOG_SEV(log_instance, boost::log::trivial::info) 
-        << "WSARecv instrumented";
+      log_file << "WSARecv instrumented";
 
       RTN_Open(wsarecv_function);
 
@@ -193,7 +188,7 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
     RTN wsarecvfrom_function = RTN_FindByName(loaded_img, "WSARecvFrom");
     if (RTN_Valid(wsarecvfrom_function))
     {
-      BOOST_LOG_SEV(log_instance, logging::trivial::info) << "WSARecvFrom instrumented";
+      log_file << "WSARecvFrom instrumented";
 
       RTN_Open(wsarecvfrom_function);
 
@@ -216,8 +211,7 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
 BOOL process_create_instrumenter(CHILD_PROCESS created_process, VOID* data)
 {
 #if !defined(NDEBUG)
-  BOOST_LOG_SEV(log_instance, logging::trivial::warning) 
-    << boost::format("new process created with id %d") % CHILD_PROCESS_GetId(created_process);
+  log_file << boost::format("new process created with id %d") % CHILD_PROCESS_GetId(created_process);
 #endif
   return TRUE;
 }

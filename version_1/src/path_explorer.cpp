@@ -1,20 +1,12 @@
-//#include <string>
-//#include <map>
-//#include <vector>
-
 #include "operation/instrumentation.h"
 #include "operation/tainting_phase.h"
 #include "operation/capturing_phase.h"
 #include "operation/common.h"
 #include "util/stuffs.h"
-
-extern "C" 
-{
-#include <xed-interface.h>
-}
+#include <ctime>
 
 /* ---------------------------------------------------------------------------------------------- */
-/*                                             global variables                                   */
+/*                                        global variables                                        */
 /* ---------------------------------------------------------------------------------------------- */
 std::map<ADDRINT, ptr_instruction_t>            ins_at_addr;   // statically examined instructions
 std::map<UINT32, ptr_instruction_t>             ins_at_order;  // dynamically examined instructions
@@ -50,22 +42,10 @@ running_state                                   current_running_state;
 UINT64                                          executed_ins_number;
 UINT64                                          econed_ins_number;
 
-namespace btime = boost::posix_time;
-boost::shared_ptr<btime::ptime>                 start_ptr_time;
-boost::shared_ptr<btime::ptime>                 stop_ptr_time;
+time_t                                          start_time;
+time_t                                          stop_time;
 
-namespace logging = boost::log;
-namespace sinks   = boost::log::sinks;
-namespace sources = boost::log::sources;
-typedef sinks::text_file_backend text_backend;
-typedef sinks::synchronous_sink<text_backend>   sink_file_backend;
-typedef logging::trivial::severity_level        log_level;
-sources::severity_logger<log_level>             log_instance;
-boost::shared_ptr<sink_file_backend>            log_sink;
-
-namespace bran = boost::random;
-bran::taus88                                    rgen(static_cast<unsigned int>(std::time(0)));
-bran::uniform_int_distribution<UINT8>           uint8_uniform;
+std::ofstream                                   log_file;
 
 /* ---------------------------------------------------------------------------------------------- */
 /*                                         input handler functions                                */
@@ -86,7 +66,7 @@ KNOB<UINT32>  max_trace_length    (KNOB_MODE_WRITEONCE, "pintool",
 /* ---------------------------------------------------------------------------------------------- */
 VOID start_tracing(VOID *data)
 {
-  start_ptr_time.reset(new btime::ptime(btime::microsec_clock::local_time()));
+  start_time                = std::time(0);
 
   max_trace_size            = max_trace_length.Value();
   trace_size                = 0;
@@ -110,6 +90,8 @@ VOID start_tracing(VOID *data)
 
   current_running_state     = capturing_state;
 
+  log_file.open("path_explorer.log", std::ofstream::out | std::ofstream::trunc);
+
   ::srand(static_cast<uint32_t>(::time(0)));
 
   return;
@@ -124,10 +106,7 @@ VOID start_tracing(VOID *data)
  */
 VOID stop_tracing(INT32 code, VOID *data)
 {
-  stop_ptr_time.reset(new btime::ptime(btime::microsec_clock::local_time()));
-
-  boost::posix_time::time_duration elapsed_time = *stop_ptr_time - *start_ptr_time;
-  uint64_t elapsed_millisec = elapsed_time.total_milliseconds();
+  stop_time = std::time(0);
 
   save_static_trace("static_trace.log");
   
@@ -138,74 +117,57 @@ VOID stop_tracing(INT32 code, VOID *data)
     if ((*cfi_iter)->is_resolved) resolved_cfi_num++;
   }
 
-  BOOST_LOG_SEV(log_instance, logging::trivial::info)
-      << boost::format("stop %d milli-seconds elapsed, %d rollbacks used, %d/%d branches resolved")
-         % elapsed_millisec % total_rollback_times
-         % resolved_cfi_num % detected_input_dep_cfis.size();
+  log_file << boost::format("stop %d milli-seconds elapsed, %d rollbacks used, %d/%d branches resolved")
+              % (stop_time - start_time)
+              % total_rollback_times % resolved_cfi_num % detected_input_dep_cfis.size();
 
         
 //  BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
 //    << boost::format("economized/total executed instruction number %d/%d")
 //        % econed_ins_number % executed_ins_number;
 
-  log_sink->flush();
-                              
+  log_file.close();
   return;
 }
 
-
-/**
- * @brief initialize_logging
- * @param log_filename
- */
-static inline void initialize_logging(std::string log_filename)
-{
-  log_sink = logging::add_file_log(log_filename.c_str());
-  logging::add_common_attributes();
-
-  return;
-}
 
 /* ---------------------------------------------------------------------------------------------- */
 /*                                          main function                                         */
 /* ---------------------------------------------------------------------------------------------- */
 int main(int argc, char *argv[])
 {
-  initialize_logging("path_explorer.log");
-
-  BOOST_LOG_SEV(log_instance, logging::trivial::info) << "initialize image symbol tables";
+  log_file << "initialize image symbol tables";
   PIN_InitSymbols();
 
-  BOOST_LOG_SEV(log_instance, logging::trivial::info) << "initialize Pin";
+  log_file << "initialize Pin";
   if (PIN_Init(argc, argv))
   {
-    BOOST_LOG_SEV(log_instance, logging::trivial::fatal) << "Pin initialization failed";
-    log_sink->flush();
+    log_file << "Pin initialization failed";
+    log_file.close();
   }
   else
   {
-    BOOST_LOG_SEV(log_instance, logging::trivial::info) << "Pin initialization success";
+    log_file << "Pin initialization success";
 
-    BOOST_LOG_SEV(log_instance, logging::trivial::info) << "activate Pintool data-initialization";
+    log_file << "activate Pintool data-initialization";
     PIN_AddApplicationStartFunction(start_tracing, 0);  // 0 is the (unused) input data
 
-    BOOST_LOG_SEV(log_instance, logging::trivial::info) << "activate image-load instrumenter";
+    log_file << "activate image-load instrumenter";
     IMG_AddInstrumentFunction(image_load_instrumenter, 0);
     
-    BOOST_LOG_SEV(log_instance, logging::trivial::info) << "activate process-fork instrumenter";
+    log_file << "activate process-fork instrumenter";
     PIN_AddFollowChildProcessFunction(process_create_instrumenter, 0);
 
-    BOOST_LOG_SEV(log_instance, logging::trivial::info) << "activate instruction instrumenters";
+    log_file << "activate instruction instrumenters";
     INS_AddInstrumentFunction(ins_instrumenter, 0);
 
-#if BOOST_OS_LINUX
+    // In Windows environment, the input tracing is through socket api instead of system call
+#if defined(__gnu_linux__)
     PIN_AddSyscallEntryFunction(capturing::syscall_entry_analyzer, 0);
     PIN_AddSyscallExitFunction(capturing::syscall_exit_analyzer, 0);
-#elif
-    // In Windows environment, the input tracing is through socket api instead of system call
 #endif
 
-    BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "activate Pintool data-finalization";
+    log_file << "activate Pintool data-finalization";
     PIN_AddFiniFunction(stop_tracing, 0);
 
     // now the control is passed to pin, so the main function will never return

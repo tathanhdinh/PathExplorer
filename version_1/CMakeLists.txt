@@ -2,13 +2,12 @@ cmake_minimum_required(VERSION 2.8)
 
 project(PathExplorer_V1)
 
-include(cotire.cmake)
 include(FindPin.cmake)
 include(UsePin.cmake)
 
 # add_subdirectory(src)
-include_directories(/home/monads/.local/include)
-link_directories(/home/monads/.local/lib)
+#include_directories(/home/monads/.local/include)
+#link_directories(/home/monads/.local/lib)
 
 set(PINTOOL_LINK_LIBS boost_log pthread)
 
@@ -33,7 +32,6 @@ ADD_PINTOOL(path_explorer
   src/operation/common.h
   src/util/stuffs.cc
   src/util/stuffs.h)
-cotire(path_explorer)
 
 # add_executable(path_explorer.so instruction.cpp path_explorer.cpp)
 
