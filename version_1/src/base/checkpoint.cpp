@@ -17,7 +17,6 @@ namespace bran = boost::random;
 extern bran::taus88                           rgen;
 extern bran::uniform_int_distribution<UINT8>  uint8_uniform;
 
-/*================================================================================================*/
 
 checkpoint::checkpoint(CONTEXT* p_ctxt, ADDRINT input_mem_read_addr, UINT32 input_mem_read_size)
 {
@@ -40,7 +39,6 @@ checkpoint::checkpoint(CONTEXT* p_ctxt, ADDRINT input_mem_read_addr, UINT32 inpu
                reinterpret_cast<UINT8*>(received_msg_addr), received_msg_size);
 }
 
-/*================================================================================================*/
 
 void checkpoint::mem_write_tracking(ADDRINT mem_addr, UINT32 mem_size)
 {
@@ -60,8 +58,10 @@ void checkpoint::mem_write_tracking(ADDRINT mem_addr, UINT32 mem_size)
   return;
 }
 
-/*================================================================================================*/
 
+/**
+ * @brief checkpoint::rollback
+ */
 void checkpoint::rollback()
 {
   // restore values of written memory addresses
@@ -70,7 +70,32 @@ void checkpoint::rollback()
   {
     PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_iter->first), &mem_iter->second, sizeof(UINT8));
   }
-  // retore values of register
+  // restore values of registers
+  PIN_ExecuteAt(this->context.get());
+  return;
+}
+
+
+/**
+ * @brief checkpoint::rollback_with_new_input
+ * @param input_addr
+ * @param new_input_buffer
+ * @param input_size
+ */
+void checkpoint::rollback_with_new_input(ADDRINT input_addr,
+                                         UINT8* new_input_buffer, UINT32 input_size)
+{
+  // restore values of written memory addresses
+  std::map<ADDRINT, UINT8>::iterator mem_iter = this->mem_written_log.begin();
+  for (; mem_iter != this->mem_written_log.end(); ++mem_iter)
+  {
+    PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_iter->first), &mem_iter->second, sizeof(UINT8));
+  }
+
+  // replace a new input
+  PIN_SafeCopy(reinterpret_cast<UINT8*>(input_addr), new_input_buffer, input_size);
+
+  // restore values of registers
   PIN_ExecuteAt(this->context.get());
   return;
 }

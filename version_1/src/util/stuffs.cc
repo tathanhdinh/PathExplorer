@@ -19,7 +19,7 @@
 
 #include "../base/instruction.h"
 #include "../base/checkpoint.h"
-#include "../base/branch.h"
+//#include "../base/branch.h"
 
 #include <pin.H>
 

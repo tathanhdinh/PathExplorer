@@ -6,6 +6,7 @@
 
 #include <vector>
 
+typedef boost::shared_ptr<UINT8>                    ptr_uint8_t;
 typedef std::set<ADDRINT>                           addrint_set_t;
 typedef std::map<ADDRINT, UINT8>                    addrint_value_map_t;
 typedef std::vector<addrint_value_map_t>            addrint_value_maps_t;
@@ -27,7 +28,7 @@ public:
   std::map<bool, addrint_value_maps_t>          inputs;
   std::vector<checkpoint_with_modified_addrs>   checkpoints;
 
-  boost::shared_ptr<UINT8>                      fresh_input;
+  ptr_uint8_t                                   fresh_input;
 
 public:
   cond_direct_instruction(const INS& ins);

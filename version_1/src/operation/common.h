@@ -31,6 +31,13 @@ typedef enum
   rollbacking_state = 2
 } running_state;
 
+typedef enum
+{
+  syscall_inexist  = 0,
+  syscall_sendto   = 44,
+  syscall_recvfrom = 45
+} syscall_id;
+
 extern std::map<ADDRINT, ptr_instruction_t>       ins_at_addr;
 extern std::map<UINT32, ptr_instruction_t>        ins_at_order;
 

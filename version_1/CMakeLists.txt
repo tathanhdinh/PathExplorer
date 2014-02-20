@@ -26,6 +26,8 @@ ADD_PINTOOL(path_explorer
   src/operation/rollbacking_phase.h
   src/operation/tainting_phase.cpp
   src/operation/tainting_phase.h
+  src/operation/capturing_phase.cpp
+  src/operation/capturing_phase.h
   src/operation/instrumentation.cpp
   src/operation/instrumentation.h
   src/operation/common.h

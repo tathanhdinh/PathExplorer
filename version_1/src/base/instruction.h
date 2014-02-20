@@ -14,12 +14,7 @@ extern "C"
 
 #include "operand.h"
 
-typedef enum 
-{
-  syscall_inexist  = 0,
-  syscall_sendto   = 44,
-  syscall_recvfrom = 45
-} syscall_id;
+
 
 class instruction
 {

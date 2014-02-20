@@ -11,27 +11,27 @@
 #include <iostream>
 #include <limits>
 
-#include <boost/predef.h>
-#include <boost/timer.hpp>
-#include <boost/random.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/format.hpp>
-#include <boost/log/core.hpp>
-#include <boost/log/trivial.hpp>
-#include <boost/log/expressions.hpp>
-#include <boost/log/sinks/text_file_backend.hpp>
-#include <boost/log/utility/setup/file.hpp>
-#include <boost/log/utility/setup/common_attributes.hpp>
-#include <boost/log/sources/severity_logger.hpp>
-#include <boost/log/sources/record_ostream.hpp>
+//#include <boost/predef.h>
+//#include <boost/timer.hpp>
+//#include <boost/random.hpp>
+//#include <boost/date_time/posix_time/posix_time.hpp>
+//#include <boost/shared_ptr.hpp>
+//#include <boost/format.hpp>
+//#include <boost/log/core.hpp>
+//#include <boost/log/trivial.hpp>
+//#include <boost/log/expressions.hpp>
+//#include <boost/log/sinks/text_file_backend.hpp>
+//#include <boost/log/utility/setup/file.hpp>
+//#include <boost/log/utility/setup/common_attributes.hpp>
+//#include <boost/log/sources/severity_logger.hpp>
+//#include <boost/log/sources/record_ostream.hpp>
 
-#include "base/instruction.h"
-#include "base/checkpoint.h"
-#include "base/branch.h"
-#include "base/cond_direct_instruction.h"
+//#include "base/instruction.h"
+//#include "base/checkpoint.h"
+//#include "base/cond_direct_instruction.h"
 #include "operation/instrumentation.h"
 #include "operation/tainting_phase.h"
+#include "operation/capturing_phase.h"
 #include "operation/common.h"
 #include "util/stuffs.h"
 
@@ -136,6 +136,8 @@ VOID start_tracing(VOID *data)
   received_msg_num          = 0;
   logged_syscall_index      = syscall_inexist;
 
+  current_running_state     = capturing_state;
+
   ::srand(static_cast<uint32_t>(::time(0)));
 
   return;
@@ -225,8 +227,8 @@ int main(int argc, char *argv[])
     INS_AddInstrumentFunction(ins_instrumenter, 0);
 
 #if BOOST_OS_LINUX
-    PIN_AddSyscallEntryFunction(tainting::syscall_entry_analyzer, 0);
-    PIN_AddSyscallExitFunction(tainting::syscall_exit_analyzer, 0);
+    PIN_AddSyscallEntryFunction(capturing::syscall_entry_analyzer, 0);
+    PIN_AddSyscallExitFunction(capturing::syscall_exit_analyzer, 0);
 #elif
     // In Windows environment, the input tracing is through socket api instead of system call
 #endif

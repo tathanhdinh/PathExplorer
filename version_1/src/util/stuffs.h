@@ -8,7 +8,7 @@
 #include <pin.H>
 
 #include "../base/instruction.h"
-#include "../base/branch.h"
+//#include "../base/branch.h"
 
 // void        journal_buffer          (const std::string& filename,
 //                                      UINT8* buffer_addr, 

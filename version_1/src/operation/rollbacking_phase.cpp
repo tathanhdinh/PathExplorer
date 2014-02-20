@@ -86,25 +86,60 @@ static inline void get_next_active_checkpoint()
 }
 
 
+static inline ptr_uint8_t calculate_projected_input(ptr_uint8_t original_input,
+                                                    addrint_value_map_t& modified_addrs_with_values)
+{
+  // make a copy of the original input
+  ptr_uint8_t projected_input = boost::make_shared<UINT8>(received_msg_size);
+  std::copy(original_input.get(), original_input.get() + received_msg_size, projected_input.get());
+
+  // update this copy with new values at modified addresses
+  addrint_value_map_t::iterator addr_iter = modified_addrs_with_values.begin();
+  for (; addr_iter != modified_addrs_with_values.end(); ++addr_iter)
+  {
+    projected_input.get()[addr_iter->first - received_msg_addr] = addr_iter->second;
+  }
+  return projected_input;
+}
+
+
 /**
  * @brief prepare_new_tainting_phase
  */
 static inline void prepare_new_tainting_phase()
 {
-  // verify if there exists unexplored CFI
+  // verify if there exists a resolved but unexplored CFI
   ptr_cond_direct_instructions_t::iterator cfi_iter = detected_input_dep_cfis.begin();
   for (; cfi_iter != detected_input_dep_cfis.end(); ++cfi_iter)
   {
-    if (!(*cfi_iter)->is_explored) break;
+    if ((*cfi_iter)->is_resolved && !(*cfi_iter)->is_explored) break;
   }
   if (cfi_iter != detected_input_dep_cfis.end())
   {
-    // exists, then
+    // exists, then calculate a new input for the next tainting phase
+    ptr_uint8_t new_input = calculate_projected_input((*cfi_iter)->fresh_input,
+                                                      (*cfi_iter)->second_input_projections[0]);
+    // set the CFI as explored
+    (*cfi_iter)->is_explored = true;
+    // and rollback to the first checkpoint with the new input
+    saved_checkpoints[0]->rollback_with_new_input(received_msg_addr, new_input.get(),
+                                                  received_msg_size);
+  }
+  else
+  {
+    // does not exist, namely all CFI are explored
+#if !defined(NDEBUG)
+    BOOST_LOG_SEV(log_instance, logging::trivial::info)
+        << boost::format("stop exploring, all CFI have been explored");
+#endif
   }
   return;
 }
 
 
+/**
+ * @brief get a projection of input on the active modified addresses
+ */
 static inline addrint_value_map_t input_on_active_modified_addrs()
 {
   addrint_set_t::iterator addr_iter = active_modified_addrs.begin();
@@ -332,10 +367,16 @@ void initialize_rollbacking_phase()
 
   // make a fresh input copy
   fresh_input = boost::make_shared<UINT8>(received_msg_size);
-  UINT8* buffer;
-  if (exploring_cfi) buffer = exploring_cfi->fresh_input.get();
-  else buffer = reinterpret_cast<UINT8*>(received_msg_addr);
-  std::copy(buffer, buffer + received_msg_size, fresh_input.get());
+  ptr_uint8_t original_input(reinterpret_cast<UINT8*>(received_msg_addr));
+  if (exploring_cfi) original_input = exploring_cfi->fresh_input;
+  std::copy(original_input.get(), original_input.get() + received_msg_size, fresh_input.get());
+
+//  UINT8* buffer;
+//  if (exploring_cfi)
+//    buffer = exploring_cfi->fresh_input.get();
+//  else
+//    buffer = reinterpret_cast<UINT8*>(received_msg_addr);
+//  std::copy(buffer, buffer + received_msg_size, fresh_input.get());
   return;
 }
 

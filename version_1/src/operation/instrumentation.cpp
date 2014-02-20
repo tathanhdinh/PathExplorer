@@ -49,20 +49,8 @@ static inline void exec_tainting_phase(INS& ins, ptr_instruction_t examined_ins)
       INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)tainting::mem_write_instruction,
                                IARG_INST_PTR, IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE, IARG_END);
     }
-
-//    if (examined_ins->is_cond_direct_cf)
-//    {
-//      // conditional branch logging
-//      INS_InsertPredicatedCall(ins, IPOINT_BEFORE,
-//                               (AFUNPTR)tainting::cond_branch_instruction,
-//                               IARG_INST_PTR,
-//                               IARG_BRANCH_TAKEN,
-//                               IARG_END);
-//    }
-//    else
-//    {
-//    }
   }
+
   /* taint propagating */
   INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)tainting::graphical_propagation,
                            IARG_INST_PTR, IARG_END);
@@ -88,23 +76,6 @@ static inline void exec_rollbacking_state(INS& ins, ptr_instruction_t examined_i
                              IARG_INST_PTR, IARG_END);
   }
 
-//  else
-//  {
-//    // note that conditional branches are always direct
-//    if (examined_ins->is_cond_direct_cf)
-//    {
-//      INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)resolving_cond_branch_analyzer,
-//                               IARG_INST_PTR, IARG_BRANCH_TAKEN, IARG_END);
-//    }
-//    else
-//    {
-//      if (examined_ins->is_uncond_indirect_cf)
-//      {
-//        INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)resolving_indirect_branch_call_analyzer,
-//                                 IARG_INST_PTR, IARG_BRANCH_TARGET_ADDR, IARG_END);
-//      }
-//    }
-//  }
   return;
 }
 
