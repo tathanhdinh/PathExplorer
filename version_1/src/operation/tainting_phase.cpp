@@ -1,7 +1,7 @@
 #include <algorithm>
 
 #include "common.h"
-#include "rollbacking_functions.h"
+#include "rollbacking_phase.h"
 #include "../util/stuffs.h"
 
 namespace tainting

@@ -6,13 +6,10 @@
 #include <set>
 
 #include "../util/stuffs.h"
-#include "../base/branch.h"
-#include "../base/instruction.h"
-#include "../base/cond_direct_instruction.h"
-#include "instrumentation_functions.h"
 #include "common.h"
-#include "tainting_functions.h"
-#include "resolving_functions.h"
+#include "instrumentation.h"
+#include "tainting_phase.h"
+#include "rollbacking_phase.h"
 
 /*================================================================================================*/
 
@@ -76,31 +73,38 @@ static inline void exec_tainting_phase(INS& ins, ptr_instruction_t examined_ins)
 
 static inline void exec_rollbacking_state(INS& ins, ptr_instruction_t examined_ins)
 {
-  INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)resolving_ins_count_analyzer,
+  INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)rollbacking::generic_instruction,
                            IARG_INST_PTR, IARG_END);
 
   if (examined_ins->is_mem_write)
   {
-    INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)resolving_st_to_mem_analyzer,
+    INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)rollbacking::mem_write_instruction,
                              IARG_INST_PTR, IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE, IARG_END);
   }
-  else
+
+  if (examined_ins->is_cond_direct_cf)
   {
-    // note that conditional branches are always direct
-    if (examined_ins->is_cond_direct_cf)
-    {
-      INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)resolving_cond_branch_analyzer,
-                               IARG_INST_PTR, IARG_BRANCH_TAKEN, IARG_END);
-    }
-    else
-    {
-      if (examined_ins->is_uncond_indirect_cf)
-      {
-        INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)resolving_indirect_branch_call_analyzer,
-                                 IARG_INST_PTR, IARG_BRANCH_TARGET_ADDR, IARG_END);
-      }
-    }
+    INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)rollbacking::control_flow_instruction,
+                             IARG_INST_PTR, IARG_END);
   }
+
+//  else
+//  {
+//    // note that conditional branches are always direct
+//    if (examined_ins->is_cond_direct_cf)
+//    {
+//      INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)resolving_cond_branch_analyzer,
+//                               IARG_INST_PTR, IARG_BRANCH_TAKEN, IARG_END);
+//    }
+//    else
+//    {
+//      if (examined_ins->is_uncond_indirect_cf)
+//      {
+//        INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)resolving_indirect_branch_call_analyzer,
+//                                 IARG_INST_PTR, IARG_BRANCH_TARGET_ADDR, IARG_END);
+//      }
+//    }
+//  }
   return;
 }
 
@@ -150,8 +154,10 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
 {
   boost::filesystem::path loaded_image_path(IMG_Name(loaded_img));
 
-  BOOST_LOG_SEV(log_instance, logging::trivial::info) 
-    << boost::format("module %s loaded") % loaded_image_path.filename();
+#if !defined(NDEBUG)
+  BOOST_LOG_SEV(log_instance, logging::trivial::info)
+      << boost::format("module %s loaded") % loaded_image_path.filename();
+#endif
 
 #if BOOST_OS_WINDOWS
   // verify whether the winsock2 module is loaded
@@ -164,19 +170,15 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
     RTN recv_function = RTN_FindByName(loaded_img, "recv");
     if (RTN_Valid(recv_function))
     {
-      BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "recv instrumented";
+      BOOST_LOG_SEV(log_instance, logging::trivial::info) << "recv instrumented";
 
       RTN_Open(recv_function);
 
-      RTN_InsertCall(recv_function, IPOINT_BEFORE, 
-                     (AFUNPTR)logging_before_recv_functions_analyzer,
-                     IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
-                     IARG_END);
+      RTN_InsertCall(recv_function, IPOINT_BEFORE, (AFUNPTR)logging_before_recv_functions_analyzer,
+                     IARG_FUNCARG_ENTRYPOINT_VALUE, 1, IARG_END);
 
-      RTN_InsertCall(recv_function, IPOINT_AFTER, 
-                     (AFUNPTR)logging_after_recv_functions_analyzer,
-                     IARG_FUNCRET_EXITPOINT_VALUE,
-                     IARG_END);
+      RTN_InsertCall(recv_function, IPOINT_AFTER, (AFUNPTR)logging_after_recv_functions_analyzer,
+                     IARG_FUNCRET_EXITPOINT_VALUE, IARG_END);
 
       RTN_Close(recv_function);
     }
@@ -184,20 +186,17 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
     RTN recvfrom_function = RTN_FindByName(loaded_img, "recvfrom");
     if (RTN_Valid(recvfrom_function))
     {
-      BOOST_LOG_SEV(log_instance, boost::log::trivial::info) 
-        << "recvfrom instrumented";
+      BOOST_LOG_SEV(log_instance, logging::trivial::info) << "recvfrom instrumented";
 
       RTN_Open(recvfrom_function);
 
       RTN_InsertCall(recvfrom_function, IPOINT_BEFORE,
                      (AFUNPTR)logging_before_recv_functions_analyzer,
-                     IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
-                     IARG_END);
+                     IARG_FUNCARG_ENTRYPOINT_VALUE, 1, IARG_END);
 
       RTN_InsertCall(recvfrom_function, IPOINT_AFTER,
                      (AFUNPTR)logging_after_recv_functions_analyzer,
-                     IARG_FUNCRET_EXITPOINT_VALUE,
-                     IARG_END);
+                     IARG_FUNCRET_EXITPOINT_VALUE, IARG_END);
 
       RTN_Close(recvfrom_function);
     }
@@ -211,12 +210,11 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
       RTN_Open(wsarecv_function);
 
       RTN_InsertCall(wsarecv_function, IPOINT_BEFORE,
-        (AFUNPTR)logging_before_wsarecv_functions_analyzer,
-        IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
-        IARG_END);
+                     (AFUNPTR)logging_before_wsarecv_functions_analyzer,
+                     IARG_FUNCARG_ENTRYPOINT_VALUE, 1, IARG_END);
+
       RTN_InsertCall(wsarecv_function, IPOINT_AFTER,
-        (AFUNPTR)logging_after_wsarecv_funtions_analyzer,
-        IARG_END);
+                     (AFUNPTR)logging_after_wsarecv_funtions_analyzer, IARG_END);
 
       RTN_Close(wsarecv_function);
     }
@@ -224,17 +222,16 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
     RTN wsarecvfrom_function = RTN_FindByName(loaded_img, "WSARecvFrom");
     if (RTN_Valid(wsarecvfrom_function))
     {
-      BOOST_LOG_SEV(log_instance, boost::log::trivial::info) << "WSARecvFrom instrumented";
+      BOOST_LOG_SEV(log_instance, logging::trivial::info) << "WSARecvFrom instrumented";
 
       RTN_Open(wsarecvfrom_function);
 
       RTN_InsertCall(wsarecvfrom_function, IPOINT_BEFORE,
-        (AFUNPTR)logging_before_wsarecv_functions_analyzer,
-        IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
-        IARG_END);
+                     (AFUNPTR)logging_before_wsarecv_functions_analyzer,
+                     IARG_FUNCARG_ENTRYPOINT_VALUE, 1, IARG_END);
+
       RTN_InsertCall(wsarecvfrom_function, IPOINT_AFTER,
-        (AFUNPTR)logging_after_wsarecv_funtions_analyzer,
-        IARG_END);
+                     (AFUNPTR)logging_after_wsarecv_funtions_analyzer, IARG_END);
 
       RTN_Close(wsarecvfrom_function);
     }
@@ -247,7 +244,9 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
 
 BOOL process_create_instrumenter(CHILD_PROCESS created_process, VOID* data)
 {
+#if !defined(NDEBUG)
   BOOST_LOG_SEV(log_instance, logging::trivial::warning) 
     << boost::format("new process created with id %d") % CHILD_PROCESS_GetId(created_process);
+#endif
   return TRUE;
 }

@@ -22,12 +22,12 @@ ADD_PINTOOL(path_explorer
   src/base/cond_direct_instruction.h
   src/base/checkpoint.cpp
   src/base/checkpoint.h
-  src/operation/rollbacking_functions.cpp
-  src/operation/rollbacking_functions.h
-  src/operation/tainting_functions.cpp
-  src/operation/tainting_functions.h
-  src/operation/instrumentation_functions.cpp
-  src/operation/instrumentation_functions.h
+  src/operation/rollbacking_phase.cpp
+  src/operation/rollbacking_phase.h
+  src/operation/tainting_phase.cpp
+  src/operation/tainting_phase.h
+  src/operation/instrumentation.cpp
+  src/operation/instrumentation.h
   src/operation/common.h
   src/util/stuffs.cc
   src/util/stuffs.h)

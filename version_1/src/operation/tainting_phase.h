@@ -1,5 +1,5 @@
-#ifndef TAINTING_FUNCTIONS_H
-#define TAINTING_FUNCTIONS_H
+#ifndef TAINTING_PHASE_H
+#define TAINTING_PHASE_H
 
 #include <pin.H>
 #include <boost/predef.h>

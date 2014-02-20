@@ -1,5 +1,5 @@
-#ifndef ROLLBACKING_FUNCTIONS_H
-#define ROLLBACKING_FUNCTIONS_H
+#ifndef ROLLBACKING_PHASE_H
+#define ROLLBACKING_PHASE_H
 
 #include <pin.H>
 
