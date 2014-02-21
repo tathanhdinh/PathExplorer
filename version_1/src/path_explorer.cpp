@@ -32,7 +32,7 @@ UINT32                                          received_msg_num;
 ADDRINT                                         received_msg_addr;
 UINT32                                          received_msg_size;
 
-#if BOOST_OS_LINUX
+#if defined(__gnu_linux__)
 ADDRINT                                         logged_syscall_index;   // logged syscall index
 ADDRINT                                         logged_syscall_args[6]; // logged syscall arguments
 #endif

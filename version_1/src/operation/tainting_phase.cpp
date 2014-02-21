@@ -268,7 +268,7 @@ inline void prepare_new_rollbacking_phase()
 
     std::cerr << "I am here\n";
     // and rollback to the first checkpoint (tainting->rollbacking transition)
-    // PIN_RemoveInstrumentation(); saved_checkpoints[0]->rollback();
+     PIN_RemoveInstrumentation(); saved_checkpoints[0]->rollback();
   }
 
   return;

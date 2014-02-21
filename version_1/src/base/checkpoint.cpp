@@ -13,11 +13,6 @@ extern ADDRINT                                received_msg_addr;
 extern UINT32                                 received_msg_size;
 extern UINT32                                 current_exec_order;
 
-namespace bran = boost::random;
-extern bran::taus88                           rgen;
-extern bran::uniform_int_distribution<UINT8>  uint8_uniform;
-
-
 checkpoint::checkpoint(CONTEXT* p_ctxt, ADDRINT input_mem_read_addr, UINT32 input_mem_read_size)
 {
   this->context.reset(new CONTEXT);
@@ -179,8 +174,8 @@ void rollback_and_modify(ptr_checkpoint_t& current_ptr_checkpoint, std::set<ADDR
   std::set<ADDRINT>::iterator mem_set_iter = dep_mems.begin();
   for (; mem_set_iter != dep_mems.end(); ++mem_set_iter)
   {
-//     single_byte = rand() % std::numeric_limits<UINT8>::max();
-    single_byte = uint8_uniform(rgen);
+     single_byte = rand() % std::numeric_limits<UINT8>::max();
+//    single_byte = uint8_uniform(rgen);
     PIN_SafeCopy(reinterpret_cast<UINT8*>(*mem_set_iter), &single_byte, 1);
     //*(reinterpret_cast<UINT8*>(*mem_set_iter)) = rand() % std::numeric_limits<UINT8>::max();
   }

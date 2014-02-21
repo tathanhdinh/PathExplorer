@@ -368,10 +368,10 @@ void initialize_rollbacking_phase(UINT32 trace_length_limit)
   fresh_input = boost::make_shared<UINT8>(received_msg_size);
   ptr_uint8_t original_input(reinterpret_cast<UINT8*>(received_msg_addr));
   if (exploring_cfi) original_input = exploring_cfi->fresh_input;
-  std::copy(original_input.get(), original_input.get() + received_msg_size, fresh_input.get());
+//  std::copy(original_input.get(), original_input.get() + received_msg_size, fresh_input.get());
 
   std::cerr << "initialize_rollbacking_phase\n";
-  std::cerr << "hahaha\n";
+  std::cerr << "hahaha1111sdfsdfsd\n";
   return;
 }
 
