@@ -5,10 +5,11 @@
 
 #include <map>
 #include <set>
-//#include <vector>
+#include <vector>
 
 #include <boost/shared_ptr.hpp>
 
+typedef std::map<ADDRINT, UINT8> addrint_value_map_t;
 
 class checkpoint
 {
@@ -23,23 +24,12 @@ public:
   checkpoint(CONTEXT* ptr_context, ADDRINT input_mem_read_addr, UINT32 input_mem_read_size);
   void mem_write_tracking(ADDRINT mem_addr, UINT32 mem_length);
   void rollback(UINT32& existing_exec_order);
-  void rollback_with_new_input(UINT32& existing_exec_order,
-                               ADDRINT input_addr, UINT8* new_input_buffer, UINT32 input_size);
+  void rollback_with_new_input(UINT32& existing_exec_order, ADDRINT input_buffer_addr,
+                               UINT32 input_buffer_size, UINT8* new_buffer);
 };
 
 typedef boost::shared_ptr<checkpoint> ptr_checkpoint_t;
 typedef std::vector<ptr_checkpoint_t> ptr_checkpoints_t;
-
-/*================================================================================================*/
-
-//class ptr_checkpoint_less
-//{
-//public:
-//  bool operator()(ptr_checkpoint_t const& a, ptr_checkpoint_t const& b)
-//  {
-//    return (a->exec_order < b->exec_order);
-//  }
-//};
 
 /*================================================================================================*/
 

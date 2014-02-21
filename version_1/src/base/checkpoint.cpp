@@ -55,7 +55,7 @@ void checkpoint::mem_write_tracking(ADDRINT mem_addr, UINT32 mem_size)
 
 
 /**
- * @brief checkpoint::rollback
+ * @brief keep the current input and rollback
  */
 void checkpoint::rollback(UINT32& existing_exec_order)
 {
@@ -76,13 +76,10 @@ void checkpoint::rollback(UINT32& existing_exec_order)
 
 
 /**
- * @brief checkpoint::rollback_with_new_input
- * @param input_addr
- * @param new_input_buffer
- * @param input_size
+ * @brief replace the current input by a total new input and rollback
  */
-void checkpoint::rollback_with_new_input(UINT32& existing_exec_order, ADDRINT input_addr,
-                                         UINT8* new_input_buffer, UINT32 input_size)
+void checkpoint::rollback_with_new_input(UINT32& existing_exec_order, ADDRINT input_buffer_addr,
+                                         UINT32 input_buffer_size, UINT8* new_buffer)
 {
   // restore the existing execution order
   existing_exec_order = this->exec_order - 1;
@@ -95,7 +92,7 @@ void checkpoint::rollback_with_new_input(UINT32& existing_exec_order, ADDRINT in
   }
 
   // replace a new input
-  PIN_SafeCopy(reinterpret_cast<UINT8*>(input_addr), new_input_buffer, input_size);
+  PIN_SafeCopy(reinterpret_cast<UINT8*>(input_buffer_addr), new_buffer, input_buffer_size);
 
   // restore values of registers
   PIN_ExecuteAt(this->context.get());
