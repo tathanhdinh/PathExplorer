@@ -88,6 +88,7 @@ VOID start_tracing(VOID *data)
   received_msg_num          = 0;
   logged_syscall_index      = syscall_inexist;
 
+  exploring_cfi.reset();
   current_running_state     = capturing_state;
 
   log_file.open("path_explorer.log", std::ofstream::out | std::ofstream::trunc);
@@ -117,7 +118,7 @@ VOID stop_tracing(INT32 code, VOID *data)
     if ((*cfi_iter)->is_resolved) resolved_cfi_num++;
   }
 
-  log_file << boost::format("stop %d milli-seconds elapsed, %d rollbacks used, %d/%d branches resolved")
+  log_file << boost::format("%d seconds elapsed, %d rollbacks used, %d/%d branches resolved\n")
               % (stop_time - start_time)
               % total_rollback_times % resolved_cfi_num % detected_input_dep_cfis.size();
 
@@ -136,29 +137,29 @@ VOID stop_tracing(INT32 code, VOID *data)
 /* ---------------------------------------------------------------------------------------------- */
 int main(int argc, char *argv[])
 {
-  log_file << "initialize image symbol tables";
+  log_file << "initialize image symbol tables\n";
   PIN_InitSymbols();
 
   log_file << "initialize Pin";
   if (PIN_Init(argc, argv))
   {
-    log_file << "Pin initialization failed";
+    log_file << "Pin initialization failed\n";
     log_file.close();
   }
   else
   {
-    log_file << "Pin initialization success";
+    log_file << "Pin initialization success\n";
 
-    log_file << "activate Pintool data-initialization";
+    log_file << "activate Pintool data-initialization\n";
     PIN_AddApplicationStartFunction(start_tracing, 0);  // 0 is the (unused) input data
 
-    log_file << "activate image-load instrumenter";
+    log_file << "activate image-load instrumenter\n";
     IMG_AddInstrumentFunction(image_load_instrumenter, 0);
     
-    log_file << "activate process-fork instrumenter";
+    log_file << "activate process-fork instrumenter\n";
     PIN_AddFollowChildProcessFunction(process_create_instrumenter, 0);
 
-    log_file << "activate instruction instrumenters";
+    log_file << "activate instruction instrumenters\n";
     INS_AddInstrumentFunction(ins_instrumenter, 0);
 
     // In Windows environment, the input tracing is through socket api instead of system call
@@ -167,7 +168,7 @@ int main(int argc, char *argv[])
     PIN_AddSyscallExitFunction(capturing::syscall_exit_analyzer, 0);
 #endif
 
-    log_file << "activate Pintool data-finalization";
+    log_file << "activate Pintool data-finalization\n";
     PIN_AddFiniFunction(stop_tracing, 0);
 
     // now the control is passed to pin, so the main function will never return

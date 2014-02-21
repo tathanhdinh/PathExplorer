@@ -65,7 +65,7 @@ static inline void determine_cfi_input_dependency()
         visited_edges.clear();
         boost::breadth_first_search(dta_graph, *vertex_iter, boost::visitor(df_visitor));
 
-        std::cerr << "start BFS\n";
+        std::cerr << "visited edges: " << visited_edges.size() << "\n";
 
         // for each visited edge
         for (visited_edge_iter = visited_edges.begin();
@@ -80,6 +80,8 @@ static inline void determine_cfi_input_dependency()
             // and is some CFI
             if (ins_at_order[visited_edge_exec_order]->is_cond_direct_cf)
             {
+              std::cerr << "input dependent CFI detected at order: " << visited_edge_exec_order << "\n";
+
               // then this CFI depends on the value of the memory address
               visited_cfi = boost::static_pointer_cast<cond_direct_instruction>(
                     ins_at_order[visited_edge_exec_order]);
@@ -87,8 +89,6 @@ static inline void determine_cfi_input_dependency()
             }
           }
         }
-
-        std::cerr << "stop BFS\n";
       }
     }
   }
@@ -104,8 +104,6 @@ static inline void determine_cfi_input_dependency()
  */
 static inline void set_checkpoints_for_cfi(ptr_cond_direct_instruction_t cfi)
 {
-  std::cerr << "set checkpoints\n";
-
   addrint_set_t dep_addrs = cfi->input_dep_addrs;
   addrint_set_t new_dep_addrs;
   addrint_set_t intersected_addrs;
@@ -142,7 +140,6 @@ static inline void set_checkpoints_for_cfi(ptr_cond_direct_instruction_t cfi)
     }
   }
 
-  std::cerr << "stop set checkpoints\n";
   return;
 }
 
@@ -167,6 +164,7 @@ static inline void save_detected_cfis()
     {
       if (executed_ins_iter->second->is_cond_direct_cf)
       {
+        std::cerr << "input dependent in save\n";
         newly_detected_cfi = boost::static_pointer_cast<cond_direct_instruction>(
               executed_ins_iter->second);
         // and depends on the input
@@ -241,32 +239,29 @@ inline void prepare_new_rollbacking_phase()
   if (saved_checkpoints.empty())
   {
 #if !defined(NDEBUG)
-    log_file << boost::format("no checkpoint saved, stop exploring");
+    log_file << boost::format("no checkpoint saved, stop exploring\n");
 #endif
     PIN_ExitApplication(0);
   }
   else
   {
 #if !defined(NDEBUG)
-    log_file << boost::format("stop tainting, %d instructions executed; start analyzing...")
+    log_file << boost::format("stop tainting, %d instructions executed; start analyzing...\n")
                 % current_exec_order;
 #endif
 
     analyze_executed_instructions();
 
 #if !defined(NDEBUG)
-    log_file << boost::format("stop analyzing, %d checkpoints, %d/%d branches detected; start rollbacking")
+    log_file << boost::format("stop analyzing, %d checkpoints, %d/%d branches detected; start rollbacking\n")
                 % saved_checkpoints.size()
                 % newly_detected_input_dep_cfis.size() % newly_detected_cfis.size();
 #endif
 
     // initalize the next rollbacking phase
     current_running_state = rollbacking_state;
-    UINT32 trace_length = new_limit_trace_length();
-    std::cerr << "above\n";
-    rollbacking::initialize_rollbacking_phase(trace_length);
+    rollbacking::initialize_rollbacking_phase(new_limit_trace_length());
 
-    std::cerr << "I am here\n";
     // and rollback to the first checkpoint (tainting->rollbacking transition)
      PIN_RemoveInstrumentation(); saved_checkpoints[0]->rollback();
   }
@@ -313,7 +308,7 @@ VOID general_instruction(ADDRINT ins_addr)
       ins_at_order[current_exec_order].reset(new instruction(*ins_at_addr[ins_addr]));
     }
 #if !defined(NDEBUG)
-    log_file << boost::format("%-3d %-15s %-50s %-25s %-25s")
+    log_file << boost::format("%-3d %-15s %-50s %-25s %-25s\n")
                 % current_exec_order % addrint_to_hexstring(ins_addr)
                 % ins_at_addr[ins_addr]->disassembled_name % ins_at_addr[ins_addr]->contained_image
                 % ins_at_addr[ins_addr]->contained_function;
@@ -346,7 +341,7 @@ VOID mem_read_instruction(ADDRINT ins_addr,
     saved_checkpoints.push_back(new_ptr_checkpoint);
 
 #if !defined(NDEBUG)
-    log_file << boost::format("checkpoint detected at %d (%s: %s) because memory is read (%s: %d)")
+    log_file << boost::format("checkpoint detected at %d (%s: %s) because memory is read (%s: %d)\n")
                 % new_ptr_checkpoint->exec_order  % addrint_to_hexstring(ins_addr)
                 % ins_at_addr[ins_addr]->disassembled_name % addrint_to_hexstring(mem_read_addr)
                 % mem_read_size;

@@ -124,7 +124,7 @@ VOID ins_instrumenter(INS ins, VOID *data)
 VOID image_load_instrumenter(IMG loaded_img, VOID *data)
 {
 #if !defined(NDEBUG)
-  log_file << boost::format("module %s loaded") % IMG_Name(loaded_img);
+  log_file << boost::format("module loaded %s\n") % IMG_Name(loaded_img);
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -132,12 +132,12 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
   const static std::string winsock_dll_name("WS2_32.dll");
   if (loaded_image_path.filename() == winsock_dll_name)
   {
-    log_file << "winsock module found";
+    log_file << "winsock module found\n";
 
     RTN recv_function = RTN_FindByName(loaded_img, "recv");
     if (RTN_Valid(recv_function))
     {
-      log_file << "recv instrumented";
+      log_file << "recv instrumented\n";
 
       RTN_Open(recv_function);
 
@@ -153,7 +153,7 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
     RTN recvfrom_function = RTN_FindByName(loaded_img, "recvfrom");
     if (RTN_Valid(recvfrom_function))
     {
-      log_file << "recvfrom instrumented";
+      log_file << "recvfrom instrumented\n";
 
       RTN_Open(recvfrom_function);
 
@@ -171,7 +171,7 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
     RTN wsarecv_function = RTN_FindByName(loaded_img, "WSARecv");
     if (RTN_Valid(wsarecv_function))
     {
-      log_file << "WSARecv instrumented";
+      log_file << "WSARecv instrumented\n";
 
       RTN_Open(wsarecv_function);
 
@@ -188,7 +188,7 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
     RTN wsarecvfrom_function = RTN_FindByName(loaded_img, "WSARecvFrom");
     if (RTN_Valid(wsarecvfrom_function))
     {
-      log_file << "WSARecvFrom instrumented";
+      log_file << "WSARecvFrom instrumented\n";
 
       RTN_Open(wsarecvfrom_function);
 
@@ -211,7 +211,7 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
 BOOL process_create_instrumenter(CHILD_PROCESS created_process, VOID* data)
 {
 #if !defined(NDEBUG)
-  log_file << boost::format("new process created with id %d") % CHILD_PROCESS_GetId(created_process);
+  log_file << boost::format("new process created with id %d\n") % CHILD_PROCESS_GetId(created_process);
 #endif
   return TRUE;
 }

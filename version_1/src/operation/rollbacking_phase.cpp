@@ -38,7 +38,7 @@ static inline void rollback()
     else
     {
       // exceeds
-      log_file << boost::format("the number of used rollback exceeds its bound value");
+      log_file << boost::format("the number of used rollback exceeds its bound value\n");
       PIN_ExitApplication(1);
     }
 #endif
@@ -90,7 +90,7 @@ static inline ptr_uint8_t calculate_projected_input(ptr_uint8_t original_input,
                                                     addrint_value_map_t& modified_addrs_with_values)
 {
   // make a copy of the original input
-  ptr_uint8_t projected_input = boost::make_shared<UINT8>(received_msg_size);
+  ptr_uint8_t projected_input(new UINT8[received_msg_size]);
   std::copy(original_input.get(), original_input.get() + received_msg_size, projected_input.get());
 
   // update this copy with new values at modified addresses
@@ -129,8 +129,9 @@ static inline void prepare_new_tainting_phase()
   {
     // does not exist, namely all CFI are explored
 #if !defined(NDEBUG)
-    log_file << boost::format("stop exploring, all CFI have been explored");
+    log_file << boost::format("stop exploring, all CFI have been explored\n");
 #endif
+    PIN_ExitApplication(0);
   }
   return;
 }
@@ -167,6 +168,7 @@ VOID generic_instruction(ADDRINT ins_addr)
   // verify if the execution order of the instruction exceeds the last CFI
   if (current_exec_order > tainted_trace_length)
   {
+    std::cout << "tainted trace length " << tainted_trace_length << "\n";
     // exceeds, namely the rollbacking phase should stop
     prepare_new_tainting_phase();
   }
@@ -201,7 +203,7 @@ VOID generic_instruction(ADDRINT ins_addr)
       else
       {
         // not activated, then some errors have occurred
-        log_file << boost::format("there is no active CFI but the original trace will change");
+        log_file << boost::format("there is no active CFI but the original trace will change\n");
         PIN_ExitApplication(1);
       }
 #endif
@@ -287,7 +289,7 @@ VOID control_flow_instruction(ADDRINT ins_addr)
           active_cfi = current_cfi; get_next_active_checkpoint();
 
           // make a copy of the fresh input
-          active_cfi->fresh_input = boost::make_shared<UINT8>(received_msg_size);
+          active_cfi->fresh_input.reset(new UINT8[received_msg_size]);
           std::copy(fresh_input.get(), fresh_input.get() + received_msg_size,
                     current_cfi->fresh_input.get());
 
@@ -365,10 +367,10 @@ void initialize_rollbacking_phase(UINT32 trace_length_limit)
   tainted_trace_length = trace_length_limit;
 
   // make a fresh input copy
-  fresh_input = boost::make_shared<UINT8>(received_msg_size);
-  ptr_uint8_t original_input(reinterpret_cast<UINT8*>(received_msg_addr));
-  if (exploring_cfi) original_input = exploring_cfi->fresh_input;
-//  std::copy(original_input.get(), original_input.get() + received_msg_size, fresh_input.get());
+  fresh_input.reset(new UINT8[received_msg_size]);
+  UINT8* new_rollbacking_input = reinterpret_cast<UINT8*>(received_msg_addr);
+  if (exploring_cfi) new_rollbacking_input = exploring_cfi->fresh_input.get();
+  std::copy(new_rollbacking_input, new_rollbacking_input + received_msg_size, fresh_input.get());
 
   std::cerr << "initialize_rollbacking_phase\n";
   std::cerr << "hahaha1111sdfsdfsd\n";

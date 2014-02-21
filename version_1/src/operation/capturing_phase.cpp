@@ -11,8 +11,8 @@ VOID logging_before_recv_functions_analyzer(ADDRINT msg_addr)
   received_msg_addr = msg_addr;
   function_has_been_called = true;
 
-  log_file << "recv or recvfrom called, received message buffer: "
-           << addrint_to_hexstring(received_msg_addr);
+  log_file << boost::format("recv or recvfrom called, received message buffer: %s\n")
+              % addrint_to_hexstring(received_msg_addr);
   return;
 }
 
@@ -24,8 +24,8 @@ VOID logging_after_recv_functions_analyzer(UINT32 msg_length)
     {
       received_msg_num++; received_msg_size = msg_length;
 
-      log_file << "recv or recvfrom returned, received message size: "
-               << received_msg_size;
+      log_file << boost::format("recv or recvfrom returned, received message size: %d\n")
+                  % received_msg_size;
     }
     function_has_been_called = false;
   }
@@ -44,8 +44,8 @@ VOID logging_before_wsarecv_functions_analyzer(ADDRINT msg_struct_adddr)
         (reinterpret_cast<WINDOWS::LPWSABUF>(received_msg_struct_addr))->buf);
   function_has_been_called = true;
 
-  log_file << "WSARecv or WSARecvFrom called, received message buffer: "
-           << addrint_to_hexstring(received_msg_addr);
+  log_file << boost::format("WSARecv or WSARecvFrom called, received message buffer: %s\n")
+              % addrint_to_hexstring(received_msg_addr);
 
   return;
 }
@@ -59,15 +59,17 @@ VOID logging_after_wsarecv_funtions_analyzer()
     {
       ++received_msg_num;
 
-      log_file << "WSARecv or WSARecvFrom returned, received message size: " << received_msg_size;
+      log_file << boost::format("WSARecv or WSARecvFrom returned, received message size: %d\n")
+                  % received_msg_size;
+      log_file << boost::format("the first message saved at %s with size %d bytes\nstart tainting with trace size %d\n")
+                  % addrint_to_hexstring(received_msg_addr) % received_msg_size % max_trace_size;
 
-      log_file << boost::format("the first message saved at %s with size %d bytes")
-                  % remove_leading_zeros(StringFromAddrint(received_msg_addr)) % received_msg_size
-               << "\n----------------------------------------------------------------------------\n"
-               << boost::format("start tainting the first time with trace size %d")
-                  % max_trace_size;
-
-      PIN_RemoveInstrumentation();
+      // the first received message is the considered input
+      if (received_msg_num == 1)
+      {
+        // switch to the tainting state
+        current_running_state = tainting_state; PIN_RemoveInstrumentation();
+      }
     }
     function_has_been_called = false;
   }
@@ -109,10 +111,8 @@ VOID syscall_exit_analyzer(THREADID thread_id,
         received_msg_num++;
         received_msg_addr = logged_syscall_args[1]; received_msg_size = returned_value;
 #if !defined(NDEBUG)
-        log_file << boost::format("the first message saved at %s with size %d bytes\n%s\n%s %d\n")
-                    % addrint_to_hexstring(received_msg_addr) % received_msg_size
-                    % "----------------------------------------------------------------------------"
-                    % "start tainting the first time with trace size" % max_trace_size;
+        log_file << boost::format("the first message saved at %s with size %d bytes\nstart tainting the first time with trace size %d\n")
+                    % addrint_to_hexstring(received_msg_addr) % received_msg_size % max_trace_size;
 #endif
         // the first received message is the considered input
         if (received_msg_num == 1)

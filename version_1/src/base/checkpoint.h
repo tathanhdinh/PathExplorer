@@ -14,11 +14,8 @@ class checkpoint
 {
 public:
   boost::shared_ptr<CONTEXT>  context;
-  
-  // maps between a written memory address and original values at this address
-  std::map<ADDRINT, UINT8>    mem_written_log;
-
-  boost::shared_ptr<UINT8>    curr_input;
+  std::map<ADDRINT, UINT8>    mem_written_log; // maps between written memory addresses and original values
+//  boost::shared_ptr<UINT8>    curr_input;
   
   std::set<ADDRINT>           input_dep_addrs;
   UINT32                      exec_order;

@@ -29,9 +29,9 @@ checkpoint::checkpoint(CONTEXT* p_ctxt, ADDRINT input_mem_read_addr, UINT32 inpu
     }
   }
 
-  this->curr_input.reset(new UINT8[received_msg_size]);
-  PIN_SafeCopy(this->curr_input.get(),
-               reinterpret_cast<UINT8*>(received_msg_addr), received_msg_size);
+//  this->curr_input.reset(new UINT8[received_msg_size]);
+//  PIN_SafeCopy(this->curr_input.get(),
+//               reinterpret_cast<UINT8*>(received_msg_addr), received_msg_size);
 }
 
 
@@ -59,7 +59,6 @@ void checkpoint::mem_write_tracking(ADDRINT mem_addr, UINT32 mem_size)
  */
 void checkpoint::rollback()
 {
-  std::cerr << "rollback\n";
   // restore values of written memory addresses
   std::map<ADDRINT, UINT8>::iterator mem_iter = this->mem_written_log.begin();
   for (; mem_iter != this->mem_written_log.end(); ++mem_iter)
@@ -102,8 +101,8 @@ void checkpoint::rollback_with_new_input(ADDRINT input_addr,
 void rollback_and_restore(ptr_checkpoint_t& dest_ptr_checkpoint, UINT8* backup_input_addr)
 {
   // restore the input
-  PIN_SafeCopy(reinterpret_cast<UINT8*>(received_msg_addr),
-               dest_ptr_checkpoint->curr_input.get(), received_msg_size);
+//  PIN_SafeCopy(reinterpret_cast<UINT8*>(received_msg_addr),
+//               dest_ptr_checkpoint->curr_input.get(), received_msg_size);
 
   // restore the current execution order (-1 again because the instruction at the checkpoint will
   // be re-executed)
