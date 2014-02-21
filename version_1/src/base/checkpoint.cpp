@@ -54,20 +54,40 @@ void checkpoint::mem_write_tracking(ADDRINT mem_addr, UINT32 mem_size)
 }
 
 
+static inline void restore_exec_order_and_written_mem(UINT32& existing_exec_order,
+                                                      UINT32 checkpoint_exec_order,
+                                                      addrint_value_map_t& checkpoint_mem_written_log)
+{
+  // restore the existing execution order (-1 because the instruction at the checkpoint will
+  // be re-executed)
+  existing_exec_order = checkpoint_exec_order - 1;
+
+  // restore values of written memory addresses
+  addrint_value_map_t::iterator mem_iter = checkpoint_mem_written_log.begin();
+  for (; mem_iter != checkpoint_mem_written_log.end(); ++mem_iter)
+  {
+    PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_iter->first), &mem_iter->second, sizeof(UINT8));
+  }
+  return;
+}
+
+
 /**
  * @brief keep the current input and rollback
  */
 void checkpoint::rollback(UINT32& existing_exec_order)
 {
-  // restore the existing execution order
-  existing_exec_order = this->exec_order - 1;
+//  // restore the existing execution order (-1 because the instruction at the checkpoint will
+//  // be re-executed)
+//  existing_exec_order = this->exec_order - 1;
 
-  // restore values of written memory addresses
-  std::map<ADDRINT, UINT8>::iterator mem_iter = this->mem_written_log.begin();
-  for (; mem_iter != this->mem_written_log.end(); ++mem_iter)
-  {
-    PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_iter->first), &mem_iter->second, sizeof(UINT8));
-  }
+//  // restore values of written memory addresses
+//  std::map<ADDRINT, UINT8>::iterator mem_iter = this->mem_written_log.begin();
+//  for (; mem_iter != this->mem_written_log.end(); ++mem_iter)
+//  {
+//    PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_iter->first), &mem_iter->second, sizeof(UINT8));
+//  }
+  restore_exec_order_and_written_mem(existing_exec_order, this->exec_order, this->mem_written_log);
 
   // restore values of registers
   PIN_ExecuteAt(this->context.get());
@@ -76,26 +96,47 @@ void checkpoint::rollback(UINT32& existing_exec_order)
 
 
 /**
- * @brief replace the current input by a total new input and rollback
+ * @brief replace the current input by a new input and rollback
  */
 void checkpoint::rollback_with_new_input(UINT32& existing_exec_order, ADDRINT input_buffer_addr,
                                          UINT32 input_buffer_size, UINT8* new_buffer)
 {
-  // restore the existing execution order
-  existing_exec_order = this->exec_order - 1;
+//  // restore the existing execution order (-1 because the instruction at the checkpoint will
+//  // be re-executed)
+//  existing_exec_order = this->exec_order - 1;
 
-  // restore values of written memory addresses
-  std::map<ADDRINT, UINT8>::iterator mem_iter = this->mem_written_log.begin();
-  for (; mem_iter != this->mem_written_log.end(); ++mem_iter)
-  {
-    PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_iter->first), &mem_iter->second, sizeof(UINT8));
-  }
+//  // restore values of written memory addresses
+//  std::map<ADDRINT, UINT8>::iterator mem_iter = this->mem_written_log.begin();
+//  for (; mem_iter != this->mem_written_log.end(); ++mem_iter)
+//  {
+//    PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_iter->first), &mem_iter->second, sizeof(UINT8));
+//  }
+  restore_exec_order_and_written_mem(existing_exec_order, this->exec_order, this->mem_written_log);
 
-  // replace a new input
+  // replace the current input
   PIN_SafeCopy(reinterpret_cast<UINT8*>(input_buffer_addr), new_buffer, input_buffer_size);
 
   // restore values of registers
   PIN_ExecuteAt(this->context.get());
+  return;
+}
+
+
+void checkpoint::rollback_with_modified_input(UINT32& existing_exec_order,
+                                              addrint_value_map_t& modified_addrs_values)
+{
+  restore_exec_order_and_written_mem(existing_exec_order, this->exec_order, this->mem_written_log);
+
+  // modify the current input
+  addrint_value_map_t::iterator mem_iter = modified_addrs_values.begin();
+  for (; mem_iter != modified_addrs_values.end(); ++mem_iter)
+  {
+    PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_iter->first), &mem_iter->second, sizeof(UINT8));
+  }
+
+  // restore values of registers
+  PIN_ExecuteAt(this->context.get());
+
   return;
 }
 
