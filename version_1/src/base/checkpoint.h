@@ -15,7 +15,6 @@ class checkpoint
 public:
   boost::shared_ptr<CONTEXT>  context;
   std::map<ADDRINT, UINT8>    mem_written_log; // maps between written memory addresses and original values
-//  boost::shared_ptr<UINT8>    curr_input;
   
   std::set<ADDRINT>           input_dep_addrs;
   UINT32                      exec_order;
@@ -23,8 +22,9 @@ public:
 public:
   checkpoint(CONTEXT* ptr_context, ADDRINT input_mem_read_addr, UINT32 input_mem_read_size);
   void mem_write_tracking(ADDRINT mem_addr, UINT32 mem_length);
-  void rollback();
-  void rollback_with_new_input(ADDRINT input_addr, UINT8* new_input_buffer, UINT32 input_size);
+  void rollback(UINT32& existing_exec_order);
+  void rollback_with_new_input(UINT32& existing_exec_order,
+                               ADDRINT input_addr, UINT8* new_input_buffer, UINT32 input_size);
 };
 
 typedef boost::shared_ptr<checkpoint> ptr_checkpoint_t;

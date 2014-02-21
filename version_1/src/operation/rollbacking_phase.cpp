@@ -122,8 +122,8 @@ static inline void prepare_new_tainting_phase()
     // set the CFI as explored
     (*cfi_iter)->is_explored = true;
     // and rollback to the first checkpoint with the new input
-    saved_checkpoints[0]->rollback_with_new_input(received_msg_addr, new_input.get(),
-                                                  received_msg_size);
+    saved_checkpoints[0]->rollback_with_new_input(current_exec_order, received_msg_addr,
+                                                  new_input.get(), received_msg_size);
   }
   else
   {

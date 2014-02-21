@@ -57,16 +57,19 @@ void checkpoint::mem_write_tracking(ADDRINT mem_addr, UINT32 mem_size)
 /**
  * @brief checkpoint::rollback
  */
-void checkpoint::rollback()
+void checkpoint::rollback(UINT32& existing_exec_order)
 {
+  // restore the existing execution order
+  existing_exec_order = this->exec_order - 1;
+
   // restore values of written memory addresses
   std::map<ADDRINT, UINT8>::iterator mem_iter = this->mem_written_log.begin();
   for (; mem_iter != this->mem_written_log.end(); ++mem_iter)
   {
     PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_iter->first), &mem_iter->second, sizeof(UINT8));
   }
+
   // restore values of registers
-  std::cerr << "rollback\n";
   PIN_ExecuteAt(this->context.get());
   return;
 }
@@ -78,9 +81,12 @@ void checkpoint::rollback()
  * @param new_input_buffer
  * @param input_size
  */
-void checkpoint::rollback_with_new_input(ADDRINT input_addr,
+void checkpoint::rollback_with_new_input(UINT32& existing_exec_order, ADDRINT input_addr,
                                          UINT8* new_input_buffer, UINT32 input_size)
 {
+  // restore the existing execution order
+  existing_exec_order = this->exec_order - 1;
+
   // restore values of written memory addresses
   std::map<ADDRINT, UINT8>::iterator mem_iter = this->mem_written_log.begin();
   for (; mem_iter != this->mem_written_log.end(); ++mem_iter)
