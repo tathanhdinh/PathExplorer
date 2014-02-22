@@ -1,6 +1,8 @@
 #include "rollbacking_phase.h"
 #include "common.h"
 
+#include <cstdlib>
+#include <limits>
 #include <algorithm>
 
 /*================================================================================================*/
@@ -11,12 +13,24 @@ static UINT32                         max_rollback_num;
 static UINT32                         used_rollback_num;
 static UINT32                         tainted_trace_length;
 static addrint_set_t                  active_modified_addrs;
+static addrint_value_map_t            active_modified_addrs_values;
 static boost::shared_ptr<UINT8>       fresh_input;
 
 /*================================================================================================*/
 
 namespace rollbacking
 {
+static inline void generate_testing_values()
+{
+  addrint_value_map_t::iterator addr_iter = active_modified_addrs_values.begin();
+  for (; addr_iter != active_modified_addrs_values.end(); ++addr_iter)
+  {
+    addr_iter->second = rand() % std::numeric_limits<UINT8>::max();
+  }
+  return;
+}
+
+
 static inline void rollback()
 {
   // verify if the number of used rollbacks has reached its bound
@@ -24,7 +38,10 @@ static inline void rollback()
   {
     // not reached yet, then just rollback again with a new value of the input
     active_cfi->used_rollback_num++; used_rollback_num++;
-    rollback_and_modify(active_checkpoint, active_modified_addrs);
+    generate_testing_values();
+    active_checkpoint->rollback_with_modified_input(current_exec_order,
+                                                    active_modified_addrs_values);
+//    rollback_and_modify(active_checkpoint, active_modified_addrs);
   }
   else
   {
@@ -32,7 +49,8 @@ static inline void rollback()
     if (used_rollback_num == max_rollback_num - 1)
     {
       active_cfi->used_rollback_num++; used_rollback_num++;
-      rollback_and_restore(active_checkpoint, active_modified_addrs);
+      active_checkpoint->rollback_with_original_input(current_exec_order);
+//      rollback_and_restore(active_checkpoint, active_modified_addrs);
     }
 #if !defined(NDEBUG)
     else
