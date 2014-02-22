@@ -20,6 +20,18 @@ static boost::shared_ptr<UINT8>       fresh_input;
 
 namespace rollbacking
 {
+static inline void initialize_values_at_active_modified_addrs()
+{
+  active_modified_addrs_values.clear();
+  addrint_set_t::iterator addr_iter = active_modified_addrs.begin();
+  for (; addr_iter != active_modified_addrs.end(); ++addr_iter)
+  {
+    active_modified_addrs_values[*addr_iter] = 0;
+  }
+  return;
+}
+
+
 static inline void generate_testing_values()
 {
   addrint_value_map_t::iterator addr_iter = active_modified_addrs_values.begin();
@@ -41,7 +53,6 @@ static inline void rollback()
     generate_testing_values();
     active_checkpoint->rollback_with_modified_input(current_exec_order,
                                                     active_modified_addrs_values);
-//    rollback_and_modify(active_checkpoint, active_modified_addrs);
   }
   else
   {
@@ -50,7 +61,6 @@ static inline void rollback()
     {
       active_cfi->used_rollback_num++; used_rollback_num++;
       active_checkpoint->rollback_with_original_input(current_exec_order);
-//      rollback_and_restore(active_checkpoint, active_modified_addrs);
     }
 #if !defined(NDEBUG)
     else
@@ -99,6 +109,7 @@ static inline void get_next_active_checkpoint()
     // current active CFI
     active_checkpoint = active_cfi->checkpoints[0].first;
     active_modified_addrs = active_cfi->checkpoints[0].second;
+    initialize_values_at_active_modified_addrs();
   }
   return;
 }
@@ -139,6 +150,10 @@ static inline void prepare_new_tainting_phase()
                                                       (*cfi_iter)->second_input_projections[0]);
     // set the CFI as explored
     (*cfi_iter)->is_explored = true;
+#if !defined(NDEBUG)
+    log_file << boost::format("explore the CFI %s at %d\n")
+                % (*cfi_iter)->disassembled_name % (*cfi_iter)->exec_order;
+#endif
     // and rollback to the first checkpoint with the new input
     saved_checkpoints[0]->rollback_with_new_input(current_exec_order,
                                                   received_msg_addr, received_msg_size,
@@ -187,7 +202,6 @@ VOID generic_instruction(ADDRINT ins_addr)
   // verify if the execution order of the instruction exceeds the last CFI
   if (current_exec_order > tainted_trace_length)
   {
-    std::cout << "tainted trace length " << tainted_trace_length << "\n";
     // exceeds, namely the rollbacking phase should stop
     prepare_new_tainting_phase();
   }
@@ -207,6 +221,10 @@ VOID generic_instruction(ADDRINT ins_addr)
         {
           // it is, then it will be marked as resolved
           active_cfi->is_resolved = true;
+#if !defined(NDEBUG)
+          log_file << boost::format("the CFI %s at %d is resolved\n")
+                      % active_cfi->disassembled_name % active_cfi->exec_order;
+#endif
           // push an input projection into the corresponding input list of the active CFI
           active_cfi->second_input_projections.push_back(input_on_active_modified_addrs());
         }
@@ -293,6 +311,11 @@ VOID control_flow_instruction(ADDRINT ins_addr)
               {
                 // does not exist, then set the CFI as bypassed if it has been not resolved yet,
                 // and disable it
+#if !defined(NDEBUG)
+                if (!active_cfi->is_resolved)
+                  log_file << boost::format("the CFI %s at %d is bypassed\n")
+                              % active_cfi->disassembled_name % active_cfi->exec_order;
+#endif
                 active_cfi->is_bypassed = !active_cfi->is_resolved; active_cfi.reset();
               }
             }
@@ -333,7 +356,6 @@ VOID control_flow_instruction(ADDRINT ins_addr)
   {
     // CPIs are not beyond the exploring CPI, then omit them
   }
-
   return;
 }
 
@@ -391,8 +413,6 @@ void initialize_rollbacking_phase(UINT32 trace_length_limit)
   if (exploring_cfi) new_rollbacking_input = exploring_cfi->fresh_input.get();
   std::copy(new_rollbacking_input, new_rollbacking_input + received_msg_size, fresh_input.get());
 
-  std::cerr << "initialize_rollbacking_phase\n";
-  std::cerr << "hahaha1111sdfsdfsd\n";
   return;
 }
 

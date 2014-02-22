@@ -80,7 +80,8 @@ static inline void determine_cfi_input_dependency()
             // and is some CFI
             if (ins_at_order[visited_edge_exec_order]->is_cond_direct_cf)
             {
-              std::cerr << "input dependent CFI detected at order: " << visited_edge_exec_order << "\n";
+              std::cerr << "input dependent CFI detected at order: "
+                        << visited_edge_exec_order << "\n";
 
               // then this CFI depends on the value of the memory address
               visited_cfi = boost::static_pointer_cast<cond_direct_instruction>(
