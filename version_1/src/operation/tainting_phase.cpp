@@ -105,18 +105,24 @@ static inline void determine_cfi_input_dependency()
 static inline void set_checkpoints_for_cfi(ptr_cond_direct_instruction_t cfi)
 {
   addrint_set_t dep_addrs = cfi->input_dep_addrs;
-  addrint_set_t new_dep_addrs;
-  addrint_set_t intersected_addrs;
+  addrint_set_t input_dep_addrs, new_dep_addrs, intersected_addrs;
   checkpoint_with_modified_addrs checkpoint_with_input_addrs;
 
   ptr_checkpoints_t::iterator chkpnt_iter = saved_checkpoints.begin();
   for (; chkpnt_iter != saved_checkpoints.end(); ++chkpnt_iter)
   {
+    // find the input addresses of the checkpoint
+    input_dep_addrs.clear();
+    addrint_value_map_t::iterator addr_iter = (*chkpnt_iter)->input_dep_original_values.begin();
+    for (; addr_iter != (*chkpnt_iter)->input_dep_original_values.end(); ++addr_iter)
+    {
+      input_dep_addrs.insert(addr_iter->first);
+    }
+
     // find the intersection between the input addresses of the checkpoint and the affecting input
     // addresses of the CFI
     intersected_addrs.clear();
-    std::set_intersection((*chkpnt_iter)->input_dep_addrs.begin(),
-                          (*chkpnt_iter)->input_dep_addrs.end(),
+    std::set_intersection(input_dep_addrs.begin(), input_dep_addrs.end(),
                           dep_addrs.begin(), dep_addrs.end(),
                           std::inserter(intersected_addrs, intersected_addrs.begin()));
     // verify if the intersection is not empty

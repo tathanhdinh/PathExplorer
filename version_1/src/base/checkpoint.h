@@ -17,7 +17,7 @@ public:
   boost::shared_ptr<CONTEXT>  context;
   addrint_value_map_t         mem_written_log; // maps between written memory addresses and original values
   
-  std::set<ADDRINT>           input_dep_addrs;
+  addrint_value_map_t         input_dep_original_values;
   UINT32                      exec_order;
     
 public:
@@ -26,6 +26,7 @@ public:
   void mem_write_tracking(ADDRINT mem_addr, UINT32 mem_length);
 
   void rollback(UINT32& existing_exec_order);
+  void rollback_with_original_input(UINT32& existing_exec_order);
   void rollback_with_new_input(UINT32& existing_exec_order, ADDRINT input_buffer_addr,
                                UINT32 input_buffer_size, UINT8* new_buffer);
   void rollback_with_modified_input(UINT32& existing_exec_order,

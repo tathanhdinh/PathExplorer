@@ -20,18 +20,13 @@ checkpoint::checkpoint(CONTEXT* p_ctxt, ADDRINT input_mem_read_addr, UINT32 inpu
 
   this->exec_order = current_exec_order;
 
-  for (UINT32 idx = 0; idx < input_mem_read_size; ++idx)
+  UINT32 mem_offset; UINT8 single_byte;
+  for (mem_offset = 0; mem_offset < input_mem_read_size; ++mem_offset)
   {
-    if ((received_msg_addr <= input_mem_read_addr + idx) &&
-        (input_mem_read_addr + idx < received_msg_addr + received_msg_size))
-    {
-      this->input_dep_addrs.insert(input_mem_read_addr + idx);
-    }
+    PIN_SafeCopy(&single_byte,
+                 reinterpret_cast<UINT8*>(input_mem_read_addr + mem_offset), sizeof(UINT8));
+    this->input_dep_original_values[input_mem_read_addr + mem_offset] = single_byte;
   }
-
-//  this->curr_input.reset(new UINT8[received_msg_size]);
-//  PIN_SafeCopy(this->curr_input.get(),
-//               reinterpret_cast<UINT8*>(received_msg_addr), received_msg_size);
 }
 
 
@@ -45,7 +40,7 @@ void checkpoint::mem_write_tracking(ADDRINT mem_addr, UINT32 mem_size)
     {
       // then the original value is logged.
 //       mem_written_log[mem_addr + offset] = *(reinterpret_cast<UINT8*>(mem_addr + offset));
-      PIN_SafeCopy(&single_byte, reinterpret_cast<UINT8*>(mem_addr + offset), 1);
+      PIN_SafeCopy(&single_byte, reinterpret_cast<UINT8*>(mem_addr + offset), sizeof(UINT8));
       mem_written_log[mem_addr + offset] = single_byte;
     }
   }
@@ -73,20 +68,29 @@ static inline void restore_exec_order_and_written_mem(UINT32& existing_exec_orde
 
 
 /**
+ * @brief restore the current input and rollback
+ */
+void checkpoint::rollback_with_original_input(UINT32& existing_exec_order)
+{
+  restore_exec_order_and_written_mem(existing_exec_order, this->exec_order, this->mem_written_log);
+
+  // restore the original input
+  addrint_value_map_t::iterator mem_iter = this->input_dep_original_values.begin();
+  for (; mem_iter != this->input_dep_original_values.end(); ++mem_iter)
+  {
+    PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_iter->first), &mem_iter->second, sizeof(UINT8));
+  }
+
+  // restore the values of registers
+  PIN_ExecuteAt(this->context.get());
+  return;
+}
+
+/**
  * @brief keep the current input and rollback
  */
 void checkpoint::rollback(UINT32& existing_exec_order)
 {
-//  // restore the existing execution order (-1 because the instruction at the checkpoint will
-//  // be re-executed)
-//  existing_exec_order = this->exec_order - 1;
-
-//  // restore values of written memory addresses
-//  std::map<ADDRINT, UINT8>::iterator mem_iter = this->mem_written_log.begin();
-//  for (; mem_iter != this->mem_written_log.end(); ++mem_iter)
-//  {
-//    PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_iter->first), &mem_iter->second, sizeof(UINT8));
-//  }
   restore_exec_order_and_written_mem(existing_exec_order, this->exec_order, this->mem_written_log);
 
   // restore values of registers
@@ -101,16 +105,6 @@ void checkpoint::rollback(UINT32& existing_exec_order)
 void checkpoint::rollback_with_new_input(UINT32& existing_exec_order, ADDRINT input_buffer_addr,
                                          UINT32 input_buffer_size, UINT8* new_buffer)
 {
-//  // restore the existing execution order (-1 because the instruction at the checkpoint will
-//  // be re-executed)
-//  existing_exec_order = this->exec_order - 1;
-
-//  // restore values of written memory addresses
-//  std::map<ADDRINT, UINT8>::iterator mem_iter = this->mem_written_log.begin();
-//  for (; mem_iter != this->mem_written_log.end(); ++mem_iter)
-//  {
-//    PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_iter->first), &mem_iter->second, sizeof(UINT8));
-//  }
   restore_exec_order_and_written_mem(existing_exec_order, this->exec_order, this->mem_written_log);
 
   // replace the current input
@@ -122,6 +116,9 @@ void checkpoint::rollback_with_new_input(UINT32& existing_exec_order, ADDRINT in
 }
 
 
+/**
+ * @brief modify the current input and rollback
+ */
 void checkpoint::rollback_with_modified_input(UINT32& existing_exec_order,
                                               addrint_value_map_t& modified_addrs_values)
 {
