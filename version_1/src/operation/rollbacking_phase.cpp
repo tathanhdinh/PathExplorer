@@ -45,6 +45,8 @@ static inline void generate_testing_values()
 
 static inline void rollback()
 {
+  std::cerr << "used rollback number: " << used_rollback_num << "\n";
+
   // verify if the number of used rollbacks has reached its bound
   if (used_rollback_num < max_rollback_num - 1)
   {
@@ -66,7 +68,7 @@ static inline void rollback()
     else
     {
       // exceeds
-      log_file << boost::format("the number of used rollback exceeds its bound value\n");
+      log_file << boost::format("fatal: the number of used rollback exceeds its bound value\n");
       PIN_ExitApplication(1);
     }
 #endif
@@ -219,12 +221,15 @@ VOID generic_instruction(ADDRINT ins_addr)
         // control-flow, then verify if the CFI is the just previous executed instruction
         if (active_cfi->exec_order + 1 == current_exec_order)
         {
+#if !defined(NDEBUG)
+          if (!active_cfi->is_resolved)
+          {
+            log_file << boost::format("the CFI %s at %d is resolved\n")
+                        % active_cfi->disassembled_name % active_cfi->exec_order;
+          }
+#endif
           // it is, then it will be marked as resolved
           active_cfi->is_resolved = true;
-#if !defined(NDEBUG)
-          log_file << boost::format("the CFI %s at %d is resolved\n")
-                      % active_cfi->disassembled_name % active_cfi->exec_order;
-#endif
           // push an input projection into the corresponding input list of the active CFI
           active_cfi->second_input_projections.push_back(input_on_active_modified_addrs());
         }
@@ -234,6 +239,7 @@ VOID generic_instruction(ADDRINT ins_addr)
           // change the control flow
         }
         // in both cases, we need rollback
+        std::cerr << "rollback from 1\n";
         rollback();
       }
 #if !defined(NDEBUG)
@@ -245,37 +251,37 @@ VOID generic_instruction(ADDRINT ins_addr)
       }
 #endif
     }
-    else
-    {
-      // the executed instruction is in the original trace, then verify if there exists currently
-      // some CFI needed to resolve
-      if (active_cfi)
-      {
-        // exists, then verify if the executed instruction has exceeded this CFI
-        if (current_exec_order <= active_cfi->exec_order)
-        {
-          // not exceeded yet, then do nothing
-        }
-        else
-        {
-          // just exceeded, then rollback
-          rollback();
-        }
-      }
-      else
-      {
-        // does not exist, then do nothing
-      }
-    }
+//    else
+//    {
+//      // the executed instruction is in the original trace, then verify if there exists currently
+//      // some CFI needed to resolve
+//      if (active_cfi)
+//      {
+//        // exists, then verify if the executed instruction has exceeded this CFI
+//        if (current_exec_order <= active_cfi->exec_order)
+//        {
+//          // not exceeded yet, then do nothing
+//        }
+//        else
+//        {
+//          // just exceeded, then rollback
+//          std::cerr << "rollback from 2\n";
+//          rollback();
+//        }
+//      }
+//      else
+//      {
+//        // does not exist, then do nothing
+//      }
+//    }
   }
+
   return;
 }
 
 
 /**
  * @brief control_flow_instruction
- * @param ins_addr
- * @return
  */
 VOID control_flow_instruction(ADDRINT ins_addr)
 {
@@ -287,6 +293,8 @@ VOID control_flow_instruction(ADDRINT ins_addr)
     // verify if the current CFI depends on the input
     if (!current_cfi->input_dep_addrs.empty())
     {
+      std::cerr << "examining CFI at " << current_cfi->exec_order << "\n";
+
       // depends, then verify if it is resolved or bypassed
       if (!current_cfi->is_resolved && !current_cfi->is_bypassed)
       {
@@ -294,10 +302,13 @@ VOID control_flow_instruction(ADDRINT ins_addr)
         // to resolve (i.e. the active CFI is already enabled)
         if (active_cfi)
         {
+          std::cerr << "the active CFI at " << active_cfi->exec_order << " is enabled\n";
+
           // enabled, then verify if the current CFI is the active CFI
           if (current_exec_order == active_cfi->exec_order)
           {
             // is the active CFI, then verify if its current checkpoint is in the last rollback try
+            std::cerr << "used rollback number " << used_rollback_num << "\n";
             if (used_rollback_num == max_rollback_num)
             {
               // yes, then verify if there exists another checkpoint
@@ -305,18 +316,20 @@ VOID control_flow_instruction(ADDRINT ins_addr)
               if (active_checkpoint)
               {
                 // exists, then rollback to the new active checkpoint
+                std::cerr << "go to the next checkpoint\n";
+                std::cerr << "rollback from 3\n";
                 used_rollback_num = 0; rollback();
               }
               else
               {
-                // does not exist, then set the CFI as bypassed if it has been not resolved yet,
-                // and disable it
+                // does not exist, then set the CFI as bypassed and disable it
 #if !defined(NDEBUG)
-                if (!active_cfi->is_resolved)
-                  log_file << boost::format("the CFI %s at %d is bypassed\n")
-                              % active_cfi->disassembled_name % active_cfi->exec_order;
+                log_file << boost::format("the CFI %s at %d is bypassed\n")
+                            % active_cfi->disassembled_name % active_cfi->exec_order;
 #endif
-                active_cfi->is_bypassed = !active_cfi->is_resolved; active_cfi.reset();
+                used_rollback_num = 0;
+                active_cfi->is_bypassed = true; active_cfi.reset();
+                std::cerr << "reset active CFI\n";
               }
             }
           }
@@ -327,9 +340,14 @@ VOID control_flow_instruction(ADDRINT ins_addr)
         }
         else
         {
+          std::cerr << "the active CFI is disabled\n";
+
           // the active CFI is disabled, then first set the current CFI as the active CFI
           active_cfi = current_cfi; get_next_active_checkpoint();
-
+#if !defined(NDEBUG)
+          log_file << boost::format("new CFI %s at %d is activated\n")
+                      % active_cfi->disassembled_name % active_cfi->exec_order;
+#endif
           // make a copy of the fresh input
           active_cfi->fresh_input.reset(new UINT8[received_msg_size]);
           std::copy(fresh_input.get(), fresh_input.get() + received_msg_size,
@@ -339,6 +357,7 @@ VOID control_flow_instruction(ADDRINT ins_addr)
           active_cfi->first_input_projections.push_back(input_on_active_modified_addrs());
 
           // and rollback to resolve the new active CFI
+          std::cerr << "rollback from 4\n";
           used_rollback_num = 0; rollback();
         }
       }

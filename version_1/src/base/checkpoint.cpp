@@ -68,10 +68,11 @@ static inline void restore_exec_order_and_written_mem(UINT32& existing_exec_orde
 
 
 /**
- * @brief restore the current input and rollback
+ * @brief restore the original input and rollback
  */
 void checkpoint::rollback_with_original_input(UINT32& existing_exec_order)
 {
+  std::cerr << "rollback with original input\n";
   restore_exec_order_and_written_mem(existing_exec_order, this->exec_order, this->mem_written_log);
 
   // restore the original input
@@ -91,6 +92,8 @@ void checkpoint::rollback_with_original_input(UINT32& existing_exec_order)
  */
 void checkpoint::rollback(UINT32& existing_exec_order)
 {
+  std::cerr << "rollback with current input\n";
+
   restore_exec_order_and_written_mem(existing_exec_order, this->exec_order, this->mem_written_log);
 
   // restore values of registers
@@ -105,6 +108,8 @@ void checkpoint::rollback(UINT32& existing_exec_order)
 void checkpoint::rollback_with_new_input(UINT32& existing_exec_order, ADDRINT input_buffer_addr,
                                          UINT32 input_buffer_size, UINT8* new_buffer)
 {
+  std::cerr << "rollback with new input\n";
+
   restore_exec_order_and_written_mem(existing_exec_order, this->exec_order, this->mem_written_log);
 
   // replace the current input
@@ -122,6 +127,8 @@ void checkpoint::rollback_with_new_input(UINT32& existing_exec_order, ADDRINT in
 void checkpoint::rollback_with_modified_input(UINT32& existing_exec_order,
                                               addrint_value_map_t& modified_addrs_values)
 {
+  std::cerr << "rollback with modified input\n";
+
   restore_exec_order_and_written_mem(existing_exec_order, this->exec_order, this->mem_written_log);
 
   // modify the current input

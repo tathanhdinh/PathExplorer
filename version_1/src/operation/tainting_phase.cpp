@@ -220,7 +220,7 @@ static inline UINT32 new_limit_trace_length()
   // reverse iterate in the list of executed instructions
   for (ins_iter = ins_at_order.rbegin(); ins_iter != ins_at_order.rend(); ++ins_iter)
   {
-    // verif if the instruction is a CFI
+    // verify if the instruction is a CFI
     if (ins_iter->second->is_cond_direct_cf)
     {
       // and this CFI depends on the input
@@ -233,7 +233,6 @@ static inline UINT32 new_limit_trace_length()
     }
   }
 
-  std::cerr << "new_limit_trace_length\n";
   return last_exec_order;
 }
 
@@ -253,21 +252,22 @@ inline void prepare_new_rollbacking_phase()
   else
   {
 #if !defined(NDEBUG)
-    log_file << boost::format("stop tainting, %d instructions executed; start analyzing...\n")
+    log_file << boost::format("stop tainting, %d instructions executed; start analyzing\n")
                 % current_exec_order;
 #endif
 
     analyze_executed_instructions();
 
-#if !defined(NDEBUG)
-    log_file << boost::format("stop analyzing, %d checkpoints, %d/%d branches detected; start rollbacking\n")
-                % saved_checkpoints.size()
-                % newly_detected_input_dep_cfis.size() % newly_detected_cfis.size();
-#endif
-
     // initalize the next rollbacking phase
     current_running_state = rollbacking_state;
-    rollbacking::initialize_rollbacking_phase(new_limit_trace_length());
+    UINT32 rollbacking_trace_length = new_limit_trace_length();
+    rollbacking::initialize_rollbacking_phase(rollbacking_trace_length);
+
+#if !defined(NDEBUG)
+    log_file << boost::format("stop analyzing, %d checkpoints, %d/%d branches detected; start rollbacking with limit trace %d\n")
+                % saved_checkpoints.size() % newly_detected_input_dep_cfis.size()
+                % newly_detected_cfis.size() % rollbacking_trace_length;
+#endif
 
     // and rollback to the first checkpoint (tainting->rollbacking transition)
      PIN_RemoveInstrumentation(); saved_checkpoints[0]->rollback(current_exec_order);
