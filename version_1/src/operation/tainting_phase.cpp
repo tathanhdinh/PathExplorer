@@ -274,7 +274,8 @@ inline void prepare_new_rollbacking_phase()
 
     // and rollback to the first checkpoint (tainting->rollbacking transition)
      PIN_RemoveInstrumentation();
-     saved_checkpoints[0]->rollback_with_current_input(current_exec_order);
+//     saved_checkpoints[0]->rollback_with_current_input(current_exec_order);
+     rollback_with_current_input(saved_checkpoints[0], current_exec_order);
   }
 
   return;

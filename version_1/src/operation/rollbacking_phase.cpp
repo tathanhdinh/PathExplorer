@@ -53,8 +53,10 @@ static inline void rollback()
     // not reached yet, then just rollback again with a new value of the input
     active_cfi->used_rollback_num++; used_rollback_num++;
     generate_testing_values();
-    active_checkpoint->rollback_with_modified_input(current_exec_order,
-                                                    active_modified_addrs_values);
+//    active_checkpoint->rollback_with_modified_input(current_exec_order,
+//                                                    active_modified_addrs_values);
+    rollback_with_modified_input(active_checkpoint, current_exec_order,
+                                 active_modified_addrs_values);
   }
   else
   {
@@ -62,7 +64,8 @@ static inline void rollback()
     if (used_rollback_num == max_rollback_num - 1)
     {
       active_cfi->used_rollback_num++; used_rollback_num++;
-      active_checkpoint->rollback_with_original_input(current_exec_order);
+//      active_checkpoint->rollback_with_original_input(current_exec_order);
+      rollback_with_original_input(active_checkpoint, current_exec_order);
     }
 #if !defined(NDEBUG)
     else
@@ -164,8 +167,10 @@ static inline void prepare_new_tainting_phase()
 
     // rollback to the first checkpoint with the new input
     PIN_RemoveInstrumentation();
-    saved_checkpoints[0]->rollback_with_new_input(current_exec_order, received_msg_addr,
-                                                  received_msg_size, tainting_input.get());
+//    saved_checkpoints[0]->rollback_with_new_input(current_exec_order, received_msg_addr,
+//                                                  received_msg_size, tainting_input.get());
+    rollback_with_new_input(saved_checkpoints[0], current_exec_order, received_msg_addr,
+                            received_msg_size, tainting_input.get());
   }
   else
   {

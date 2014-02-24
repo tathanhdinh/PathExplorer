@@ -3,7 +3,6 @@
 
 #include <pin.H>
 
-//#include <boost/format.hpp>
 #include <fstream>
 
 #include "../base/checkpoint.h"
