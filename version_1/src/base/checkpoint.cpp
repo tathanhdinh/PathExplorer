@@ -127,7 +127,7 @@ void checkpoint::rollback_with_new_input(UINT32& existing_exec_order, ADDRINT in
 void checkpoint::rollback_with_modified_input(UINT32& existing_exec_order,
                                               addrint_value_map_t& modified_addrs_values)
 {
-  std::cerr << "rollback with modified input\n";
+  std::cerr << "rollback with modified input " << modified_addrs_values.size() << "\n" ;
 
   restore_exec_order_and_written_mem(existing_exec_order, this->exec_order, this->mem_written_log);
 

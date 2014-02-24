@@ -1,5 +1,6 @@
 #include "rollbacking_phase.h"
 #include "common.h"
+#include "../util/stuffs.h"
 
 #include <cstdlib>
 #include <limits>
@@ -210,6 +211,12 @@ VOID generic_instruction(ADDRINT ins_addr)
   else
   {
     current_exec_order++;
+#if !defined(NDEBUG)
+    log_file << boost::format("%-3d %-15s %-50s %-25s %-25s\n")
+                % current_exec_order % addrint_to_hexstring(ins_addr)
+                % ins_at_addr[ins_addr]->disassembled_name % ins_at_addr[ins_addr]->contained_image
+                % ins_at_addr[ins_addr]->contained_function;
+#endif
 
     // verify if the executed instruction is in the original trace
     if (ins_at_order[current_exec_order]->address != ins_addr)
@@ -285,91 +292,169 @@ VOID generic_instruction(ADDRINT ins_addr)
  */
 VOID control_flow_instruction(ADDRINT ins_addr)
 {
+  ptr_cond_direct_instruction_t current_cfi;
+
   // consider only CFIs that are beyond the exploring CFI
   if (!exploring_cfi || (exploring_cfi && (exploring_cfi->exec_order < current_exec_order)))
   {
-    ptr_cond_direct_instruction_t current_cfi =
-        boost::static_pointer_cast<cond_direct_instruction>(ins_at_order[current_exec_order]);
-    // verify if the current CFI depends on the input
-    if (!current_cfi->input_dep_addrs.empty())
+    // verify if there exists already an active CFI in resolving
+    if (active_cfi)
     {
-      std::cerr << "examining CFI at " << current_cfi->exec_order << "\n";
-
-      // depends, then verify if it is resolved or bypassed
-      if (!current_cfi->is_resolved && !current_cfi->is_bypassed)
+      // yes, then verify if the current execution order reaches the active CFI
+      if (current_exec_order < active_cfi->exec_order)
       {
-        // neither resolved nor bypassed, then verify if there exist already an active CFI needed
-        // to resolve (i.e. the active CFI is already enabled)
-        if (active_cfi)
+        // not reached yes, then do nothing
+      }
+      else
+      {
+        std::cerr << active_cfi->exec_order << " " << current_exec_order << "\n";
+        // reached, then normally the current CFI should be the active one
+        if (current_exec_order == active_cfi->exec_order)
         {
-          std::cerr << "the active CFI at " << active_cfi->exec_order << " is enabled\n";
-
-          // enabled, then verify if the current CFI is the active CFI
-          if (current_exec_order == active_cfi->exec_order)
+          // verify if its current checkpoint is in the last rollback try
+          if (used_rollback_num == max_rollback_num)
           {
-            // is the active CFI, then verify if its current checkpoint is in the last rollback try
-            std::cerr << "used rollback number " << used_rollback_num << "\n";
-            if (used_rollback_num == max_rollback_num)
+            // yes, then verify if there exists another checkpoint
+            get_next_active_checkpoint();
+            if (active_checkpoint)
             {
-              // yes, then verify if there exists another checkpoint
-              get_next_active_checkpoint();
-              if (active_checkpoint)
-              {
-                // exists, then rollback to the new active checkpoint
-                std::cerr << "go to the next checkpoint\n";
-                std::cerr << "rollback from 3\n";
-                used_rollback_num = 0; rollback();
-              }
-              else
-              {
-                // does not exist, then set the CFI as bypassed and disable it
+              // exists, then rollback to the new active checkpoint
+              std::cerr << "rollback from 2\n";
+              used_rollback_num = 0; rollback();
+            }
+            else
+            {
 #if !defined(NDEBUG)
+              if (!active_cfi->is_resolved)
+              {
                 log_file << boost::format("the CFI %s at %d is bypassed\n")
                             % active_cfi->disassembled_name % active_cfi->exec_order;
-#endif
-                used_rollback_num = 0;
-                active_cfi->is_bypassed = true; active_cfi.reset();
-                std::cerr << "reset active CFI\n";
               }
+#endif
+              // does not exist, all of tests reserved for it have been used
+              active_cfi->is_bypassed = !active_cfi->is_resolved; active_cfi.reset();
+              used_rollback_num = 0;
             }
           }
           else
           {
-            // the current CFI is not the active CFI, then do nothing
+            // its current checkpoint is not in the last rollback try
+            std::cerr << "rollback from 3\n";
+            rollback();
           }
         }
+#if !defined(NDEBUG)
         else
         {
-          std::cerr << "the active CFI is disabled\n";
-
-          // the active CFI is disabled, then first set the current CFI as the active CFI
-          active_cfi = current_cfi; get_next_active_checkpoint();
-#if !defined(NDEBUG)
-          log_file << boost::format("new CFI %s at %d is activated\n")
+          log_file << boost::format("fatal: the examined CFI's execution order (%s %d) exceeds the active CFI (%s %d)\n")
+                      % ins_at_addr[ins_addr]->disassembled_name % current_exec_order
                       % active_cfi->disassembled_name % active_cfi->exec_order;
-#endif
-          // make a copy of the fresh input
-          active_cfi->fresh_input.reset(new UINT8[received_msg_size]);
-          std::copy(fresh_input.get(), fresh_input.get() + received_msg_size,
-                    current_cfi->fresh_input.get());
-
-          // push an input projection into the corresponding input list of the active CFI
-          active_cfi->first_input_projections.push_back(input_on_active_modified_addrs());
-
-          // and rollback to resolve the new active CFI
-          std::cerr << "rollback from 4\n";
-          used_rollback_num = 0; rollback();
+          PIN_ExitApplication(1);
         }
-      }
-      else
-      {
-        // either resolved or bypassed, then do nothing
+#endif
       }
     }
     else
     {
-      // doest not depend, then do nothing
+      current_cfi = boost::static_pointer_cast<cond_direct_instruction>(
+            ins_at_order[current_exec_order]);
+      // there is no CFI in resolving, then verify if the current CFI depends on the input
+      if (!current_cfi->input_dep_addrs.empty())
+      {
+        // yes, then set it as the active CFI
+        active_cfi = current_cfi; get_next_active_checkpoint();
+#if !defined(NDEBUG)
+        log_file << boost::format("the CFI %s at %d is activated\n")
+                    % active_cfi->disassembled_name % active_cfi->exec_order;
+#endif
+        // make a copy of the fresh input
+        active_cfi->fresh_input.reset(new UINT8[received_msg_size]);
+        std::copy(fresh_input.get(), fresh_input.get() + received_msg_size,
+                  active_cfi->fresh_input.get());
+
+        // push an input projection into the corresponding input list of the active CFI
+        active_cfi->first_input_projections.push_back(input_on_active_modified_addrs());
+
+        // and rollback to resolve the new active CFI
+        std::cerr << "rollback from 4\n";
+        used_rollback_num = 0; rollback();
+      }
+      else
+      {
+        // the current CFI does not depend on the input, then do nothing
+      }
     }
+
+//    ptr_cond_direct_instruction_t current_cfi =
+//        boost::static_pointer_cast<cond_direct_instruction>(ins_at_order[current_exec_order]);
+//    // verify if the current CFI depends on the input
+//    if (!current_cfi->input_dep_addrs.empty())
+//    {
+//      // depends, then verify if it is resolved or bypassed
+//      if (!current_cfi->is_resolved && !current_cfi->is_bypassed)
+//      {
+//        // neither resolved nor bypassed, then verify if there exist already an active CFI needed
+//        // to resolve (i.e. the active CFI is already enabled)
+//        if (active_cfi)
+//        {
+//          // enabled, then verify if the current CFI is the active CFI
+//          if (current_exec_order == active_cfi->exec_order)
+//          {
+//            // is the active CFI, then verify if its current checkpoint is in the last rollback try
+//            if (used_rollback_num == max_rollback_num)
+//            {
+//              // yes, then verify if there exists another checkpoint
+//              get_next_active_checkpoint();
+//              if (active_checkpoint)
+//              {
+//                // exists, then rollback to the new active checkpoint
+//                used_rollback_num = 0; rollback();
+//              }
+//              else
+//              {
+//                // does not exist, then set the CFI as bypassed and disable it
+//#if !defined(NDEBUG)
+//                log_file << boost::format("the CFI %s at %d is bypassed\n")
+//                            % active_cfi->disassembled_name % active_cfi->exec_order;
+//#endif
+//                used_rollback_num = 0; active_cfi->is_bypassed = true; active_cfi.reset();
+//              }
+//            }
+//          }
+//          else
+//          {
+//            // the current CFI is not the active CFI, then do nothing
+//          }
+//        }
+//        else
+//        {
+//          // the active CFI is disabled, then first set the current CFI as the active CFI
+//          active_cfi = current_cfi; get_next_active_checkpoint();
+//#if !defined(NDEBUG)
+//          log_file << boost::format("new CFI %s at %d is activated\n")
+//                      % active_cfi->disassembled_name % active_cfi->exec_order;
+//#endif
+//          // make a copy of the fresh input
+//          active_cfi->fresh_input.reset(new UINT8[received_msg_size]);
+//          std::copy(fresh_input.get(), fresh_input.get() + received_msg_size,
+//                    current_cfi->fresh_input.get());
+
+//          // push an input projection into the corresponding input list of the active CFI
+//          active_cfi->first_input_projections.push_back(input_on_active_modified_addrs());
+
+//          // and rollback to resolve the new active CFI
+//          used_rollback_num = 0; rollback();
+//        }
+//      }
+//      else
+//      {
+//        // either resolved or bypassed, then do nothing
+//      }
+//    }
+//    else
+//    {
+//      // doest not depend, then do nothing
+//    }
   }
   else
   {
