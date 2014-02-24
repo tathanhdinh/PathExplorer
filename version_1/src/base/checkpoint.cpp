@@ -90,7 +90,7 @@ void checkpoint::rollback_with_original_input(UINT32& existing_exec_order)
 /**
  * @brief keep the current input and rollback
  */
-void checkpoint::rollback(UINT32& existing_exec_order)
+void checkpoint::rollback_with_current_input(UINT32& existing_exec_order)
 {
   std::cerr << "rollback with current input\n";
 

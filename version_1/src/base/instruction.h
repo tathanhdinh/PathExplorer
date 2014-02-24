@@ -14,8 +14,6 @@ extern "C"
 
 #include "operand.h"
 
-
-
 class instruction
 {
 public:
@@ -43,6 +41,6 @@ public:
 //  instruction& operator=(instruction const& other_ins);
 };
 
-typedef boost::shared_ptr<instruction> ptr_instruction_t;
+typedef pept::shared_ptr<instruction> ptr_instruction_t;
 
 #endif // INSTRUCTION_H

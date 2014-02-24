@@ -7,14 +7,21 @@
 #include <set>
 #include <vector>
 
+#if __cplusplus <= 199711L
 #include <boost/shared_ptr.hpp>
+#define pept boost
+#else
+#include <memory>
+#define pept std
+#endif
 
 typedef std::map<ADDRINT, UINT8> addrint_value_map_t;
 
 class checkpoint
 {
 public:
-  boost::shared_ptr<CONTEXT>  context;
+  pept::shared_ptr<CONTEXT>     context;
+
   addrint_value_map_t         mem_written_log; // maps between written memory addresses and original values
   
   addrint_value_map_t         input_dep_original_values;
@@ -25,7 +32,7 @@ public:
 
   void mem_write_tracking(ADDRINT mem_addr, UINT32 mem_length);
 
-  void rollback(UINT32& existing_exec_order);
+  void rollback_with_current_input(UINT32& existing_exec_order);
   void rollback_with_original_input(UINT32& existing_exec_order);
   void rollback_with_new_input(UINT32& existing_exec_order, ADDRINT input_buffer_addr,
                                UINT32 input_buffer_size, UINT8* new_buffer);
@@ -33,7 +40,7 @@ public:
                                     addrint_value_map_t& modified_addrs_values);
 };
 
-typedef boost::shared_ptr<checkpoint> ptr_checkpoint_t;
+typedef pept::shared_ptr<checkpoint> ptr_checkpoint_t;
 typedef std::vector<ptr_checkpoint_t> ptr_checkpoints_t;
 
 /*================================================================================================*/

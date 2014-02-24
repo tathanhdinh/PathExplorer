@@ -1,5 +1,5 @@
 #include "../operation/common.h"
-
+#include <boost/graph/graphviz.hpp>
 
 std::string addrint_to_hexstring(ADDRINT input)
 {
@@ -16,9 +16,12 @@ void save_static_trace(const std::string& filename)
   std::map<ADDRINT, ptr_instruction_t>::iterator ins_iter = ins_at_addr.begin();
   for (; ins_iter != ins_at_addr.end(); ++ins_iter)
   {
-    out_file << boost::format("%-15s %-50s %-25s %-25s\n")
-                % addrint_to_hexstring(ins_iter->first) % ins_iter->second->disassembled_name
-                % ins_iter->second->contained_image % ins_iter->second->contained_function;
+    tfm::format(out_file, "%-15s %-50s %-25s %-25s\n", addrint_to_hexstring(ins_iter->first),
+                ins_iter->second->disassembled_name, ins_iter->second->contained_image,
+                ins_iter->second->contained_function);
+//    out_file << boost::format("%-15s %-50s %-25s %-25s\n")
+//                % addrint_to_hexstring(ins_iter->first) % ins_iter->second->disassembled_name
+//                % ins_iter->second->contained_image % ins_iter->second->contained_function;
   }
   out_file.close();
 
@@ -54,12 +57,14 @@ public:
         (received_msg_addr <= boost::get<ADDRINT>(current_vertex->value)) &&
         (boost::get<ADDRINT>(current_vertex->value) < received_msg_addr + received_msg_size))
     {
-      vertex_label << boost::format("[color=blue,style=filled,label=\"%s\"]")
-                      % current_vertex->name;
+      tfm::format(vertex_label, "[color=blue,style=filled,label=\"%s\"]", current_vertex->name);
+//      vertex_label << boost::format("[color=blue,style=filled,label=\"%s\"]")
+//                      % current_vertex->name;
     }
     else
     {
-      vertex_label << boost::format("[color=black,label=\"%s\"]") % current_vertex->name;
+      tfm::format(vertex_label, "[color=black,label=\"%s\"]", current_vertex->name);
+//      vertex_label << boost::format("[color=black,label=\"%s\"]") % current_vertex->name;
     }
   }
 
@@ -82,8 +87,10 @@ public:
   void operator()(std::ostream& edge_label, Edge edge)
   {
     df_edge current_edge = tainting_graph[edge];
-    edge_label << boost::format("[label=\"%s: %s\"]")
-                  % current_edge % ins_at_order[current_edge]->disassembled_name;
+    tfm::format(edge_label, "[label=\"%s: %s\"]",
+                current_edge, ins_at_order[current_edge]->disassembled_name);
+//    edge_label << boost::format("[label=\"%s: %s\"]")
+//                  % current_edge % ins_at_order[current_edge]->disassembled_name;
   }
 
 private:

@@ -15,7 +15,7 @@ static UINT32                         used_rollback_num;
 static UINT32                         tainted_trace_length;
 static addrint_set_t                  active_modified_addrs;
 static addrint_value_map_t            active_modified_addrs_values;
-static boost::shared_ptr<UINT8>       fresh_input;
+static ptr_uint8_t                    fresh_input;
 
 /*================================================================================================*/
 
@@ -69,7 +69,9 @@ static inline void rollback()
     else
     {
       // exceeds
-      log_file << boost::format("fatal: the number of used rollback exceeds its bound value\n");
+      tfm::format(log_file, "fatal: the number of used rollback (%d) exceeds its bound value\n",
+                  used_rollback_num);
+//      log_file << boost::format("fatal: the number of used rollback exceeds its bound value\n");
       PIN_ExitApplication(1);
     }
 #endif
@@ -154,8 +156,10 @@ static inline void prepare_new_tainting_phase()
     // set the CFI as explored
     (*cfi_iter)->is_explored = true;
 #if !defined(NDEBUG)
-    log_file << boost::format("explore the CFI %s at %d\n")
-                % (*cfi_iter)->disassembled_name % (*cfi_iter)->exec_order;
+    tfm::format(log_file, "explore the CFI %s at %d\n",
+                (*cfi_iter)->disassembled_name, (*cfi_iter)->exec_order);
+//    log_file << boost::format("explore the CFI %s at %d\n")
+//                % (*cfi_iter)->disassembled_name % (*cfi_iter)->exec_order;
 #endif
     // and rollback to the first checkpoint with the new input
     saved_checkpoints[0]->rollback_with_new_input(current_exec_order,
@@ -165,9 +169,9 @@ static inline void prepare_new_tainting_phase()
   else
   {
     // does not exist, namely all CFI are explored
-#if !defined(NDEBUG)
-    log_file << boost::format("stop exploring, all CFI have been explored\n");
-#endif
+//#if !defined(NDEBUG)
+    log_file << "stop exploring, all CFI have been explored\n";
+//#endif
     PIN_ExitApplication(0);
   }
   return;
@@ -212,10 +216,13 @@ VOID generic_instruction(ADDRINT ins_addr)
   {
     current_exec_order++;
 #if !defined(NDEBUG)
-    log_file << boost::format("%-3d %-15s %-50s %-25s %-25s\n")
-                % current_exec_order % addrint_to_hexstring(ins_addr)
-                % ins_at_addr[ins_addr]->disassembled_name % ins_at_addr[ins_addr]->contained_image
-                % ins_at_addr[ins_addr]->contained_function;
+    tfm::format(log_file, "%-3d %-15s %-50s %-25s %-25s\n", current_exec_order,
+                addrint_to_hexstring(ins_addr), ins_at_addr[ins_addr]->disassembled_name,
+                ins_at_addr[ins_addr]->contained_image, ins_at_addr[ins_addr]->contained_function);
+//    log_file << boost::format("%-3d %-15s %-50s %-25s %-25s\n")
+//                % current_exec_order % addrint_to_hexstring(ins_addr)
+//                % ins_at_addr[ins_addr]->disassembled_name % ins_at_addr[ins_addr]->contained_image
+//                % ins_at_addr[ins_addr]->contained_function;
 #endif
 
     // verify if the executed instruction is in the original trace
@@ -231,8 +238,10 @@ VOID generic_instruction(ADDRINT ins_addr)
 #if !defined(NDEBUG)
           if (!active_cfi->is_resolved)
           {
-            log_file << boost::format("the CFI %s at %d is resolved\n")
-                        % active_cfi->disassembled_name % active_cfi->exec_order;
+            tfm::format(log_file, "the CFI %s at %d is resolved\n", active_cfi->disassembled_name,
+                        active_cfi->exec_order);
+//            log_file << boost::format("the CFI %s at %d is resolved\n")
+//                        % active_cfi->disassembled_name % active_cfi->exec_order;
           }
 #endif
           // it is, then it will be marked as resolved
@@ -253,7 +262,7 @@ VOID generic_instruction(ADDRINT ins_addr)
       else
       {
         // not activated, then some errors have occurred
-        log_file << boost::format("there is no active CFI but the original trace will change\n");
+        log_file << "there is no active CFI but the original trace will change\n";
         PIN_ExitApplication(1);
       }
 #endif
@@ -327,8 +336,10 @@ VOID control_flow_instruction(ADDRINT ins_addr)
 #if !defined(NDEBUG)
               if (!active_cfi->is_resolved)
               {
-                log_file << boost::format("the CFI %s at %d is bypassed\n")
-                            % active_cfi->disassembled_name % active_cfi->exec_order;
+                tfm::format(log_file, "the CFI %s at %d is bypassed\n",
+                            active_cfi->disassembled_name, active_cfi->exec_order);
+//                log_file << boost::format("the CFI %s at %d is bypassed\n")
+//                            % active_cfi->disassembled_name % active_cfi->exec_order;
               }
 #endif
               // does not exist, all of tests reserved for it have been used
@@ -346,9 +357,13 @@ VOID control_flow_instruction(ADDRINT ins_addr)
 #if !defined(NDEBUG)
         else
         {
-          log_file << boost::format("fatal: the examined CFI's execution order (%s %d) exceeds the active CFI (%s %d)\n")
-                      % ins_at_addr[ins_addr]->disassembled_name % current_exec_order
-                      % active_cfi->disassembled_name % active_cfi->exec_order;
+          tfm::format(log_file,
+                      "fatal: the examined CFI's execution order (%s %d) exceeds the active CFI (%s %d)\n",
+                      ins_at_addr[ins_addr]->disassembled_name, current_exec_order,
+                      active_cfi->disassembled_name, active_cfi->exec_order);
+//          log_file << boost::format("fatal: the examined CFI's execution order (%s %d) exceeds the active CFI (%s %d)\n")
+//                      % ins_at_addr[ins_addr]->disassembled_name % current_exec_order
+//                      % active_cfi->disassembled_name % active_cfi->exec_order;
           PIN_ExitApplication(1);
         }
 #endif
@@ -356,7 +371,7 @@ VOID control_flow_instruction(ADDRINT ins_addr)
     }
     else
     {
-      current_cfi = boost::static_pointer_cast<cond_direct_instruction>(
+      current_cfi = pept::static_pointer_cast<cond_direct_instruction>(
             ins_at_order[current_exec_order]);
       // there is no CFI in resolving, then verify if the current CFI depends on the input
       if (!current_cfi->input_dep_addrs.empty())
@@ -364,8 +379,10 @@ VOID control_flow_instruction(ADDRINT ins_addr)
         // yes, then set it as the active CFI
         active_cfi = current_cfi; get_next_active_checkpoint();
 #if !defined(NDEBUG)
-        log_file << boost::format("the CFI %s at %d is activated\n")
-                    % active_cfi->disassembled_name % active_cfi->exec_order;
+        tfm::format(log_file, "the CFI %s at %d is activated\n",
+                    active_cfi->disassembled_name, active_cfi->exec_order);
+//        log_file << boost::format("the CFI %s at %d is activated\n")
+//                    % active_cfi->disassembled_name % active_cfi->exec_order;
 #endif
         // make a copy of the fresh input
         active_cfi->fresh_input.reset(new UINT8[received_msg_size]);
@@ -386,7 +403,7 @@ VOID control_flow_instruction(ADDRINT ins_addr)
     }
 
 //    ptr_cond_direct_instruction_t current_cfi =
-//        boost::static_pointer_cast<cond_direct_instruction>(ins_at_order[current_exec_order]);
+//        pept::static_pointer_cast<cond_direct_instruction>(ins_at_order[current_exec_order]);
 //    // verify if the current CFI depends on the input
 //    if (!current_cfi->input_dep_addrs.empty())
 //    {

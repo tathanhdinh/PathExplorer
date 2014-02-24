@@ -124,7 +124,8 @@ VOID ins_instrumenter(INS ins, VOID *data)
 VOID image_load_instrumenter(IMG loaded_img, VOID *data)
 {
 #if !defined(NDEBUG)
-  log_file << boost::format("module loaded %s\n") % IMG_Name(loaded_img);
+  tfm::format(log_file, "module loaded %s\n", IMG_Name(loaded_img));
+//  log_file << boost::format("module loaded %s\n") % IMG_Name(loaded_img);
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -211,7 +212,8 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
 BOOL process_create_instrumenter(CHILD_PROCESS created_process, VOID* data)
 {
 #if !defined(NDEBUG)
-  log_file << boost::format("new process created with id %d\n") % CHILD_PROCESS_GetId(created_process);
+  tfm::format(log_file, "new process created with id %d\n", CHILD_PROCESS_GetId(created_process));
+//  log_file << boost::format("new process created with id %d\n") % CHILD_PROCESS_GetId(created_process);
 #endif
   return TRUE;
 }

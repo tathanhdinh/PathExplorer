@@ -10,6 +10,7 @@ include(UsePin.cmake)
 #link_directories(/home/monads/.local/lib)
 
 set(PINTOOL_LINK_LIBS boost_log pthread)
+#add_definitions("-std=c++0x")
 
 ADD_PINTOOL(path_explorer
   src/path_explorer.cpp
@@ -31,7 +32,8 @@ ADD_PINTOOL(path_explorer
   src/operation/instrumentation.h
   src/operation/common.h
   src/util/stuffs.cc
-  src/util/stuffs.h)
+  src/util/stuffs.h
+  src/util/tinyformat.h)
 
 # add_executable(path_explorer.so instruction.cpp path_explorer.cpp)
 

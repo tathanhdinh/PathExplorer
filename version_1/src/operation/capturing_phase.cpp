@@ -111,8 +111,11 @@ VOID syscall_exit_analyzer(THREADID thread_id,
         received_msg_num++;
         received_msg_addr = logged_syscall_args[1]; received_msg_size = returned_value;
 #if !defined(NDEBUG)
-        log_file << boost::format("the first message saved at %s with size %d bytes\nstart tainting the first time with trace size %d\n")
-                    % addrint_to_hexstring(received_msg_addr) % received_msg_size % max_trace_size;
+        tfm::format(log_file,
+                    "the first message saved at %s with size %d bytes\nstart tainting the first time with trace size %d\n",
+                    addrint_to_hexstring(received_msg_addr), received_msg_size, max_trace_size);
+//        log_file << boost::format("the first message saved at %s with size %d bytes\nstart tainting the first time with trace size %d\n")
+//                    % addrint_to_hexstring(received_msg_addr) % received_msg_size % max_trace_size;
 #endif
         // the first received message is the considered input
         if (received_msg_num == 1)

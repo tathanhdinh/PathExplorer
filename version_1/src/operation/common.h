@@ -3,15 +3,12 @@
 
 #include <pin.H>
 
-#include <boost/shared_ptr.hpp>
-#include <boost/format.hpp>
-#include <boost/graph/breadth_first_search.hpp>
-#include <boost/graph/lookup_edge.hpp>
-#include <boost/graph/graphviz.hpp>
+//#include <boost/format.hpp>
 #include <fstream>
 
 #include "../base/checkpoint.h"
 #include "../base/cond_direct_instruction.h"
+#include "../util/tinyformat.h"
 
 typedef enum
 {
