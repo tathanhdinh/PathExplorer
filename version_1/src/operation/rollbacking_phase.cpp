@@ -51,10 +51,7 @@ static inline void rollback()
   if (used_rollback_num < max_rollback_num - 1)
   {
     // not reached yet, then just rollback again with a new value of the input
-    active_cfi->used_rollback_num++; used_rollback_num++;
-    generate_testing_values();
-//    active_checkpoint->rollback_with_modified_input(current_exec_order,
-//                                                    active_modified_addrs_values);
+    active_cfi->used_rollback_num++; used_rollback_num++; generate_testing_values();
     rollback_with_modified_input(active_checkpoint, current_exec_order,
                                  active_modified_addrs_values);
   }
@@ -64,7 +61,6 @@ static inline void rollback()
     if (used_rollback_num == max_rollback_num - 1)
     {
       active_cfi->used_rollback_num++; used_rollback_num++;
-//      active_checkpoint->rollback_with_original_input(current_exec_order);
       rollback_with_original_input(active_checkpoint, current_exec_order);
     }
 #if !defined(NDEBUG)
@@ -212,8 +208,6 @@ static inline addrint_value_map_t input_on_active_modified_addrs()
  */
 VOID generic_instruction(ADDRINT ins_addr)
 {
-  std::cerr << "sgaga\n";
-
   // verify if the execution order of the instruction exceeds the last CFI
   if (current_exec_order > tainted_trace_length)
   {
@@ -229,12 +223,10 @@ VOID generic_instruction(ADDRINT ins_addr)
 //                ins_at_addr[ins_addr]->contained_image, ins_at_addr[ins_addr]->contained_function);
 //#endif
 
-    std::cerr << current_exec_order << " " << tainted_trace_length << "\n";
+//    std::cerr << current_exec_order << " " << tainted_trace_length << "\n";
     // verify if the executed instruction is in the original trace
-    std::cerr << ins_at_order[current_exec_order]->address << "\n";
     if (ins_at_order[current_exec_order]->address != ins_addr)
     {
-      std::cerr << "not equal\n";
       // is not in, then verify if the current control-flow instruction (abbr. CFI) is activated
       if (active_cfi)
       {
@@ -252,7 +244,10 @@ VOID generic_instruction(ADDRINT ins_addr)
           // it is, then it will be marked as resolved
           active_cfi->is_resolved = true;
           // push an input projection into the corresponding input list of the active CFI
-          active_cfi->second_input_projections.push_back(input_on_active_modified_addrs());
+          if (active_cfi->second_input_projections.empty())
+          {
+            active_cfi->second_input_projections.push_back(input_on_active_modified_addrs());
+          }
         }
         else
         {
@@ -260,6 +255,8 @@ VOID generic_instruction(ADDRINT ins_addr)
           // change the control flow
         }
         // in both cases, we need rollback
+        std::cerr << current_exec_order << "\n";
+        std::cerr << "rollback from 1\n";
         rollback();
       }
 #if !defined(NDEBUG)
@@ -273,14 +270,17 @@ VOID generic_instruction(ADDRINT ins_addr)
     }
     else
     {
-      std::cerr << "equal\n";
+//      std::cerr << "equal\n";
       // the executed instruction is in the original trace, then verify if there exists active CFI
       // and the executed instruction has exceeded this CFI
-      if (active_cfi && (current_exec_order > active_cfi->exec_order)) rollback();
+      if (active_cfi && (current_exec_order > active_cfi->exec_order))
+      {
+        std::cerr << "rollback from 2\n";
+        rollback();
+      }
     }
   }
 
-  std::cerr << "fgaga\n";
   return;
 }
 
@@ -290,7 +290,6 @@ VOID generic_instruction(ADDRINT ins_addr)
  */
 VOID control_flow_instruction(ADDRINT ins_addr)
 {
-  std::cerr << "sgigi\n";
   ptr_cond_direct_instruction_t current_cfi;
 
   // consider only CFIs that are beyond the exploring CFI
@@ -317,6 +316,7 @@ VOID control_flow_instruction(ADDRINT ins_addr)
             if (active_checkpoint)
             {
               // exists, then rollback to the new active checkpoint
+              std::cerr << "rollback from 3\n";
               used_rollback_num = 0; rollback();
             }
             else
@@ -356,15 +356,18 @@ VOID control_flow_instruction(ADDRINT ins_addr)
                   active_cfi->fresh_input.get());
 
         // push an input projection into the corresponding input list of the active CFI
-        active_cfi->first_input_projections.push_back(input_on_active_modified_addrs());
+        if (active_cfi->first_input_projections.empty())
+        {
+          active_cfi->first_input_projections.push_back(input_on_active_modified_addrs());
+        }
 
         // and rollback to resolve the new active CFI
+        std::cerr << "rollback from 4\n";
         used_rollback_num = 0; rollback();
       }
     }
   }
 
-  std::cerr << "fgigi\n";
   return;
 }
 

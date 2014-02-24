@@ -298,7 +298,6 @@ VOID syscall_instruction(ADDRINT ins_addr)
  */
 VOID general_instruction(ADDRINT ins_addr)
 {
-  std::cerr << "general " << current_exec_order << "\n";
   ptr_cond_direct_instruction_t current_cfi, duplicated_cfi;
 
   // verify if the execution order exceeds the limit trace length and the executed

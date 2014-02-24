@@ -76,10 +76,7 @@ VOID start_tracing(VOID *data)
   used_checkpoint_number    = 0;
 
   max_total_rollback_times  = max_total_rollback.Value();
-  total_rollback_times      = 0;
-  
   max_local_rollback_times  = max_local_rollback.Value();
-  local_rollback_times      = 0;
   
   executed_ins_number       = 0;
   econed_ins_number         = 0;
@@ -115,6 +112,7 @@ VOID stop_tracing(INT32 code, VOID *data)
   for (; cfi_iter != detected_input_dep_cfis.end(); ++cfi_iter)
   {
     if ((*cfi_iter)->is_resolved) resolved_cfi_num++;
+    total_rollback_times += (*cfi_iter)->used_rollback_num;
   }
 
   tfm::format(log_file, "%d seconds elapsed, %d rollbacks used, %d/%d branches resolved\n",
