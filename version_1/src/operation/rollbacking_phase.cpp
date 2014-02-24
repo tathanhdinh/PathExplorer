@@ -1,4 +1,4 @@
-#include "rollbacking_phase.h"
+#include "tainting_phase.h"
 #include "common.h"
 #include "../util/stuffs.h"
 
@@ -16,6 +16,7 @@ static UINT32                         tainted_trace_length;
 static addrint_set_t                  active_modified_addrs;
 static addrint_value_map_t            active_modified_addrs_values;
 static ptr_uint8_t                    fresh_input;
+static ptr_uint8_t                    tainting_input;
 
 /*================================================================================================*/
 
@@ -46,8 +47,6 @@ static inline void generate_testing_values()
 
 static inline void rollback()
 {
-  std::cerr << "used rollback number: " << used_rollback_num << "\n";
-
   // verify if the number of used rollbacks has reached its bound
   if (used_rollback_num < max_rollback_num - 1)
   {
@@ -119,20 +118,20 @@ static inline void get_next_active_checkpoint()
 }
 
 
-static inline ptr_uint8_t calculate_projected_input(ptr_uint8_t original_input,
-                                                    addrint_value_map_t& modified_addrs_with_values)
+static inline void calculate_tainting_input(ptr_uint8_t original_input,
+                                            addrint_value_map_t& modified_addrs_with_values)
 {
   // make a copy of the original input
-  ptr_uint8_t projected_input(new UINT8[received_msg_size]);
-  std::copy(original_input.get(), original_input.get() + received_msg_size, projected_input.get());
+  tainting_input.reset(new UINT8[received_msg_size]);
+  std::copy(original_input.get(), original_input.get() + received_msg_size, tainting_input.get());
 
   // update this copy with new values at modified addresses
   addrint_value_map_t::iterator addr_iter = modified_addrs_with_values.begin();
   for (; addr_iter != modified_addrs_with_values.end(); ++addr_iter)
   {
-    projected_input.get()[addr_iter->first - received_msg_addr] = addr_iter->second;
+    tainting_input.get()[addr_iter->first - received_msg_addr] = addr_iter->second;
   }
-  return projected_input;
+  return;
 }
 
 
@@ -149,26 +148,31 @@ static inline void prepare_new_tainting_phase()
   }
   if (cfi_iter != detected_input_dep_cfis.end())
   {
-    // exists, then calculate a new input for the next tainting phase
-    ptr_uint8_t new_input = calculate_projected_input((*cfi_iter)->fresh_input,
-                                                      (*cfi_iter)->second_input_projections[0]);
-    // set the CFI as explored
-    (*cfi_iter)->is_explored = true;
+    // exists, then set the CFI as explored
+    exploring_cfi = *cfi_iter; exploring_cfi->is_explored = true;
+    // calculate a new input for the next tainting phase
+    calculate_tainting_input(exploring_cfi->fresh_input, exploring_cfi->second_input_projections[0]);
+
+    // initialize new tainting phase
+    current_running_state = tainting_state; tainting::initialize_tainting_phase();
+
 #if !defined(NDEBUG)
-    tfm::format(log_file, "explore the CFI %s at %d\n", (*cfi_iter)->disassembled_name,
-                (*cfi_iter)->exec_order);
+    tfm::format(log_file, "explore the CFI %s at %d, start tainting\n", exploring_cfi->disassembled_name,
+                exploring_cfi->exec_order);
+    log_file.flush();
 #endif
-    // and rollback to the first checkpoint with the new input
-    saved_checkpoints[0]->rollback_with_new_input(current_exec_order,
-                                                  received_msg_addr, received_msg_size,
-                                                  new_input.get());
+
+    // rollback to the first checkpoint with the new input
+    PIN_RemoveInstrumentation();
+    saved_checkpoints[0]->rollback_with_new_input(current_exec_order, received_msg_addr,
+                                                  received_msg_size, tainting_input.get());
   }
   else
   {
     // does not exist, namely all CFI are explored
-//#if !defined(NDEBUG)
+#if !defined(NDEBUG)
     log_file << "stop exploring, all CFI have been explored\n";
-//#endif
+#endif
     PIN_ExitApplication(0);
   }
   return;
@@ -203,6 +207,8 @@ static inline addrint_value_map_t input_on_active_modified_addrs()
  */
 VOID generic_instruction(ADDRINT ins_addr)
 {
+  std::cerr << "sgaga\n";
+
   // verify if the execution order of the instruction exceeds the last CFI
   if (current_exec_order > tainted_trace_length)
   {
@@ -212,15 +218,18 @@ VOID generic_instruction(ADDRINT ins_addr)
   else
   {
     current_exec_order++;
-#if !defined(NDEBUG)
-    tfm::format(log_file, "%-3d %-15s %-50s %-25s %-25s\n", current_exec_order,
-                addrint_to_hexstring(ins_addr), ins_at_addr[ins_addr]->disassembled_name,
-                ins_at_addr[ins_addr]->contained_image, ins_at_addr[ins_addr]->contained_function);
-#endif
+//#if !defined(NDEBUG)
+//    tfm::format(log_file, "%-3d %-15s %-50s %-25s %-25s\n", current_exec_order,
+//                addrint_to_hexstring(ins_addr), ins_at_addr[ins_addr]->disassembled_name,
+//                ins_at_addr[ins_addr]->contained_image, ins_at_addr[ins_addr]->contained_function);
+//#endif
 
+    std::cerr << current_exec_order << " " << tainted_trace_length << "\n";
     // verify if the executed instruction is in the original trace
+    std::cerr << ins_at_order[current_exec_order]->address << "\n";
     if (ins_at_order[current_exec_order]->address != ins_addr)
     {
+      std::cerr << "not equal\n";
       // is not in, then verify if the current control-flow instruction (abbr. CFI) is activated
       if (active_cfi)
       {
@@ -246,7 +255,6 @@ VOID generic_instruction(ADDRINT ins_addr)
           // change the control flow
         }
         // in both cases, we need rollback
-        std::cerr << "rollback from 1\n";
         rollback();
       }
 #if !defined(NDEBUG)
@@ -260,29 +268,14 @@ VOID generic_instruction(ADDRINT ins_addr)
     }
     else
     {
-      // the executed instruction is in the original trace, then verify if there exists currently
-      // some CFI needed to resolve
-      if (active_cfi)
-      {
-        // exists, then verify if the executed instruction has exceeded this CFI
-        if (current_exec_order <= active_cfi->exec_order)
-        {
-          // not exceeded yet, then do nothing
-        }
-        else
-        {
-          // just exceeded, then rollback
-          std::cerr << "rollback from 2\n";
-          rollback();
-        }
-      }
-      else
-      {
-        // does not exist, then do nothing
-      }
+      std::cerr << "equal\n";
+      // the executed instruction is in the original trace, then verify if there exists active CFI
+      // and the executed instruction has exceeded this CFI
+      if (active_cfi && (current_exec_order > active_cfi->exec_order)) rollback();
     }
   }
 
+  std::cerr << "fgaga\n";
   return;
 }
 
@@ -292,6 +285,7 @@ VOID generic_instruction(ADDRINT ins_addr)
  */
 VOID control_flow_instruction(ADDRINT ins_addr)
 {
+  std::cerr << "sgigi\n";
   ptr_cond_direct_instruction_t current_cfi;
 
   // consider only CFIs that are beyond the exploring CFI
@@ -307,7 +301,6 @@ VOID control_flow_instruction(ADDRINT ins_addr)
       }
       else
       {
-        std::cerr << active_cfi->exec_order << " " << current_exec_order << "\n";
         // reached, then normally the current CFI should be the active one
         if (current_exec_order == active_cfi->exec_order)
         {
@@ -319,7 +312,6 @@ VOID control_flow_instruction(ADDRINT ins_addr)
             if (active_checkpoint)
             {
               // exists, then rollback to the new active checkpoint
-              std::cerr << "rollback from 2\n";
               used_rollback_num = 0; rollback();
             }
             else
@@ -336,37 +328,22 @@ VOID control_flow_instruction(ADDRINT ins_addr)
               used_rollback_num = 0;
             }
           }
-//          else
-//          {
-//            // its current checkpoint is not in the last rollback try
-//            std::cerr << "rollback from 3\n";
-//            rollback();
-//          }
+
         }
-#if !defined(NDEBUG)
-//        else
-//        {
-//          tfm::format(log_file,
-//                      "fatal: the examined CFI's execution order (%s %d) exceeds the active CFI (%s %d)\n",
-//                      ins_at_addr[ins_addr]->disassembled_name, current_exec_order,
-//                      active_cfi->disassembled_name, active_cfi->exec_order);
-//          PIN_ExitApplication(1);
-//        }
-#endif
       }
     }
     else
     {
+      // there is no CFI in resolving, then verify if the current CFI depends on the input
       current_cfi = pept::static_pointer_cast<cond_direct_instruction>(
             ins_at_order[current_exec_order]);
-      // there is no CFI in resolving, then verify if the current CFI depends on the input
       if (!current_cfi->input_dep_addrs.empty())
       {
         // yes, then set it as the active CFI
         active_cfi = current_cfi; get_next_active_checkpoint();
 #if !defined(NDEBUG)
-        tfm::format(log_file, "the CFI %s at %d is activated\n",
-                    active_cfi->disassembled_name, active_cfi->exec_order);
+        tfm::format(log_file, "the CFI %s at %d is activated\n", active_cfi->disassembled_name,
+                    active_cfi->exec_order);
 #endif
         // make a copy of the fresh input
         active_cfi->fresh_input.reset(new UINT8[received_msg_size]);
@@ -377,100 +354,18 @@ VOID control_flow_instruction(ADDRINT ins_addr)
         active_cfi->first_input_projections.push_back(input_on_active_modified_addrs());
 
         // and rollback to resolve the new active CFI
-        std::cerr << "rollback from 4\n";
         used_rollback_num = 0; rollback();
       }
-      else
-      {
-        // the current CFI does not depend on the input, then do nothing
-      }
     }
-
-//    ptr_cond_direct_instruction_t current_cfi =
-//        pept::static_pointer_cast<cond_direct_instruction>(ins_at_order[current_exec_order]);
-//    // verify if the current CFI depends on the input
-//    if (!current_cfi->input_dep_addrs.empty())
-//    {
-//      // depends, then verify if it is resolved or bypassed
-//      if (!current_cfi->is_resolved && !current_cfi->is_bypassed)
-//      {
-//        // neither resolved nor bypassed, then verify if there exist already an active CFI needed
-//        // to resolve (i.e. the active CFI is already enabled)
-//        if (active_cfi)
-//        {
-//          // enabled, then verify if the current CFI is the active CFI
-//          if (current_exec_order == active_cfi->exec_order)
-//          {
-//            // is the active CFI, then verify if its current checkpoint is in the last rollback try
-//            if (used_rollback_num == max_rollback_num)
-//            {
-//              // yes, then verify if there exists another checkpoint
-//              get_next_active_checkpoint();
-//              if (active_checkpoint)
-//              {
-//                // exists, then rollback to the new active checkpoint
-//                used_rollback_num = 0; rollback();
-//              }
-//              else
-//              {
-//                // does not exist, then set the CFI as bypassed and disable it
-//#if !defined(NDEBUG)
-//                log_file << boost::format("the CFI %s at %d is bypassed\n")
-//                            % active_cfi->disassembled_name % active_cfi->exec_order;
-//#endif
-//                used_rollback_num = 0; active_cfi->is_bypassed = true; active_cfi.reset();
-//              }
-//            }
-//          }
-//          else
-//          {
-//            // the current CFI is not the active CFI, then do nothing
-//          }
-//        }
-//        else
-//        {
-//          // the active CFI is disabled, then first set the current CFI as the active CFI
-//          active_cfi = current_cfi; get_next_active_checkpoint();
-//#if !defined(NDEBUG)
-//          log_file << boost::format("new CFI %s at %d is activated\n")
-//                      % active_cfi->disassembled_name % active_cfi->exec_order;
-//#endif
-//          // make a copy of the fresh input
-//          active_cfi->fresh_input.reset(new UINT8[received_msg_size]);
-//          std::copy(fresh_input.get(), fresh_input.get() + received_msg_size,
-//                    current_cfi->fresh_input.get());
-
-//          // push an input projection into the corresponding input list of the active CFI
-//          active_cfi->first_input_projections.push_back(input_on_active_modified_addrs());
-
-//          // and rollback to resolve the new active CFI
-//          used_rollback_num = 0; rollback();
-//        }
-//      }
-//      else
-//      {
-//        // either resolved or bypassed, then do nothing
-//      }
-//    }
-//    else
-//    {
-//      // doest not depend, then do nothing
-//    }
   }
-  else
-  {
-    // CPIs are not beyond the exploring CPI, then omit them
-  }
+
+  std::cerr << "fgigi\n";
   return;
 }
 
 
 /**
- * @brief mem_write_instruction
- * @param ins_addr
- * @param mem_addr
- * @param mem_length
- * @return
+ * @brief tracking instructions that write memory
  */
 VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length)
 {

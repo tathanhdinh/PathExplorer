@@ -40,7 +40,6 @@ extern std::vector<ptr_checkpoint_t>              saved_checkpoints;
 
 extern ptr_cond_direct_instructions_t             detected_input_dep_cfis;
 extern ptr_cond_direct_instruction_t              exploring_cfi;
-extern UINT32                                     exploring_cfi_exec_order;
 
 extern UINT32                                     current_exec_order;
 

@@ -24,7 +24,6 @@ std::vector<ptr_checkpoint_t>                   saved_checkpoints;
 
 ptr_cond_direct_instructions_t                  detected_input_dep_cfis;
 ptr_cond_direct_instruction_t                   exploring_cfi;
-UINT32                                          exploring_cfi_exec_order;
 
 UINT32                                          current_exec_order;
 

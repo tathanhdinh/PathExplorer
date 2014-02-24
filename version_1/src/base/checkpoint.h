@@ -22,7 +22,8 @@ class checkpoint
 public:
   pept::shared_ptr<CONTEXT>     context;
 
-  addrint_value_map_t         mem_written_log; // maps between written memory addresses and original values
+  // maps between written memory addresses and original values
+  addrint_value_map_t         mem_written_log;
   
   addrint_value_map_t         input_dep_original_values;
   UINT32                      exec_order;
@@ -43,13 +44,20 @@ public:
 typedef pept::shared_ptr<checkpoint> ptr_checkpoint_t;
 typedef std::vector<ptr_checkpoint_t> ptr_checkpoints_t;
 
-/*================================================================================================*/
+void rollback_with_current_input(ptr_checkpoint_t destination, UINT32& existing_exec_order);
+void rollback_with_original_input(ptr_checkpoint_t destination, UINT32& existing_exec_order);
+void rollback_with_new_input(ptr_checkpoint_t destination, UINT32& existing_exec_order,
+                             ADDRINT input_buffer_addr, UINT32 input_buffer_size,
+                             UINT8* new_buffer);
+void rollback_with_modified_input(ptr_checkpoint_t destination, UINT32& existing_exec_order,
+                                  addrint_value_map& modified_addrs_values);
 
-void rollback_and_restore(ptr_checkpoint_t& ptr_chkpnt, UINT8* backup_input_addr);
 
-void rollback_and_restore(ptr_checkpoint_t& ptr_chkpnt, std::set<ADDRINT>& mem_addrs);
+//void rollback_and_restore(ptr_checkpoint_t& ptr_chkpnt, UINT8* backup_input_addr);
 
-void rollback_and_modify(ptr_checkpoint_t& ptr_chkpnt, std::set<ADDRINT>& dep_mems);
+//void rollback_and_restore(ptr_checkpoint_t& ptr_chkpnt, std::set<ADDRINT>& mem_addrs);
+
+//void rollback_and_modify(ptr_checkpoint_t& ptr_chkpnt, std::set<ADDRINT>& dep_mems);
 
 #endif // CHECKPOINT_H
 

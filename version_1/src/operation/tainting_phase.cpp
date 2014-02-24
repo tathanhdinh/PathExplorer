@@ -13,6 +13,7 @@ namespace tainting
 static std::vector<df_edge_desc>  visited_edges;
 static df_diagram                 dta_graph;
 static df_vertex_desc_set         dta_outer_vertices;
+static UINT32                     rollbacking_trace_length;
 
 #if !defined(NDEBUG)
 static ptr_cond_direct_instructions_t newly_detected_input_dep_cfis;
@@ -67,8 +68,6 @@ static inline void determine_cfi_input_dependency()
         // take a BFS from this vertice
         visited_edges.clear();
         boost::breadth_first_search(dta_graph, *vertex_iter, boost::visitor(df_visitor));
-
-        std::cerr << "visited edges: " << visited_edges.size() << "\n";
 
         // for each visited edge
         for (visited_edge_iter = visited_edges.begin();
@@ -174,7 +173,6 @@ static inline void save_detected_cfis()
     {
       if (executed_ins_iter->second->is_cond_direct_cf)
       {
-        std::cerr << "input dependent in save\n";
         newly_detected_cfi = pept::static_pointer_cast<cond_direct_instruction>(
               executed_ins_iter->second);
         // and depends on the input
@@ -214,9 +212,9 @@ static inline void analyze_executed_instructions()
  * @brief calculate a new limit trace length for the next rollbacking phase, this limit is the
  * execution order of the last input dependent CFI in the tainting phase.
  */
-static inline UINT32 new_limit_trace_length()
+static inline void calculate_rollbacking_trace_length()
 {
-  UINT32 last_exec_order = 0;
+  rollbacking_trace_length = 0;
 
   std::map<UINT32, ptr_instruction_t>::reverse_iterator ins_iter;
   ptr_cond_direct_instruction_t last_cfi;
@@ -230,13 +228,13 @@ static inline UINT32 new_limit_trace_length()
       last_cfi = pept::static_pointer_cast<cond_direct_instruction>(ins_iter->second);
       if (!last_cfi->input_dep_addrs.empty())
       {
-        last_exec_order = last_cfi->exec_order;
+        rollbacking_trace_length = last_cfi->exec_order;
         break;
       }
     }
   }
 
-  return last_exec_order;
+  return;
 }
 
 
@@ -257,15 +255,13 @@ inline void prepare_new_rollbacking_phase()
 #if !defined(NDEBUG)
     tfm::format(log_file, "stop tainting, %d instructions executed; start analyzing\n",
                 current_exec_order);
-//    log_file << boost::format("stop tainting, %d instructions executed; start analyzing\n")
-//                % current_exec_order;
+    log_file.flush();
 #endif
 
     analyze_executed_instructions();
 
     // initalize the next rollbacking phase
-    current_running_state = rollbacking_state;
-    UINT32 rollbacking_trace_length = new_limit_trace_length();
+    current_running_state = rollbacking_state; calculate_rollbacking_trace_length();
     rollbacking::initialize_rollbacking_phase(rollbacking_trace_length);
 
 #if !defined(NDEBUG)
@@ -273,9 +269,7 @@ inline void prepare_new_rollbacking_phase()
                 "stop analyzing, %d checkpoints, %d/%d branches detected; start rollbacking with limit trace %d\n",
                 saved_checkpoints.size(), newly_detected_input_dep_cfis.size(),
                 newly_detected_cfis.size(), rollbacking_trace_length);
-//    log_file << boost::format("stop analyzing, %d checkpoints, %d/%d branches detected; start rollbacking with limit trace %d\n")
-//                % saved_checkpoints.size() % newly_detected_input_dep_cfis.size()
-//                % newly_detected_cfis.size() % rollbacking_trace_length;
+    log_file.flush();
 #endif
 
     // and rollback to the first checkpoint (tainting->rollbacking transition)
@@ -303,6 +297,7 @@ VOID syscall_instruction(ADDRINT ins_addr)
  */
 VOID general_instruction(ADDRINT ins_addr)
 {
+  std::cerr << "general " << current_exec_order << "\n";
   ptr_cond_direct_instruction_t current_cfi, duplicated_cfi;
 
   // verify if the execution order exceeds the limit trace length and the executed
@@ -328,10 +323,7 @@ VOID general_instruction(ADDRINT ins_addr)
     tfm::format(log_file, "%-3d %-15s %-50s %-25s %-25s\n", current_exec_order,
                 addrint_to_hexstring(ins_addr), ins_at_addr[ins_addr]->disassembled_name,
                 ins_at_addr[ins_addr]->contained_image, ins_at_addr[ins_addr]->contained_function);
-//    log_file << boost::format("%-3d %-15s %-50s %-25s %-25s\n")
-//                % current_exec_order % addrint_to_hexstring(ins_addr)
-//                % ins_at_addr[ins_addr]->disassembled_name % ins_at_addr[ins_addr]->contained_image
-//                % ins_at_addr[ins_addr]->contained_function;
+    log_file.flush();
 #endif
   }
   else
@@ -365,10 +357,6 @@ VOID mem_read_instruction(ADDRINT ins_addr,
                 new_ptr_checkpoint->exec_order, addrint_to_hexstring(ins_addr),
                 ins_at_addr[ins_addr]->disassembled_name, addrint_to_hexstring(mem_read_addr),
                 mem_read_size);
-//    log_file << boost::format("checkpoint detected at %d (%s: %s) because memory is read (%s: %d)\n")
-//                % new_ptr_checkpoint->exec_order  % addrint_to_hexstring(ins_addr)
-//                % ins_at_addr[ins_addr]->disassembled_name % addrint_to_hexstring(mem_read_addr)
-//                % mem_read_size;
 #endif
   }
 
@@ -539,7 +527,7 @@ VOID graphical_propagation(ADDRINT ins_addr)
 void initialize_tainting_phase()
 {
   dta_graph.clear(); dta_outer_vertices.clear(); saved_checkpoints.clear();
-  newly_detected_input_dep_cfis.clear(); newly_detected_cfis.clear();
+  newly_detected_input_dep_cfis.clear(); newly_detected_cfis.clear(); ins_at_order.clear();
   return;
 }
 

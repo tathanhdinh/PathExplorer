@@ -9,7 +9,7 @@ include(UsePin.cmake)
 #include_directories(/home/monads/.local/include)
 #link_directories(/home/monads/.local/lib)
 
-set(PINTOOL_LINK_LIBS boost_log pthread)
+#set(PINTOOL_LINK_LIBS boost_log pthread)
 #add_definitions("-std=c++0x")
 
 ADD_PINTOOL(path_explorer
