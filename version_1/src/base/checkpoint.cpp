@@ -29,7 +29,7 @@ checkpoint::checkpoint(UINT32 existing_exec_order,
 void checkpoint::mem_write_tracking(ADDRINT mem_addr, UINT32 mem_size)
 {
   UINT8 single_byte;
-  log_file << "mem===>\n";
+//  log_file << "mem===>\n";
   for (UINT32 offset = 0; offset < mem_size; ++offset)
   {
     // this address is written for the first time,
@@ -39,10 +39,10 @@ void checkpoint::mem_write_tracking(ADDRINT mem_addr, UINT32 mem_size)
 //       mem_written_log[mem_addr + offset] = *(reinterpret_cast<UINT8*>(mem_addr + offset));
       PIN_SafeCopy(&single_byte, reinterpret_cast<UINT8*>(mem_addr + offset), sizeof(UINT8));
       mem_written_log[mem_addr + offset] = single_byte;
-      tfm::format(log_file, "(%s %d) ", addrint_to_hexstring(mem_addr + offset), single_byte);
+//      tfm::format(log_file, "(%s %d) ", addrint_to_hexstring(mem_addr + offset), single_byte);
     }
   }
-  log_file << "\n<===mem\n";
+//  log_file << "\n<===mem\n";
 
   return;
 }

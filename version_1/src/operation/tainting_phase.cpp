@@ -298,7 +298,6 @@ inline void prepare_new_rollbacking_phase()
 
     // and rollback to the first checkpoint (tainting->rollbacking transition)
      PIN_RemoveInstrumentation();
-//     saved_checkpoints[0]->rollback_with_current_input(current_exec_order);
      rollback_with_current_input(saved_checkpoints[0], current_exec_order);
   }
 
@@ -381,7 +380,7 @@ VOID mem_read_instruction(ADDRINT ins_addr,
     tfm::format(log_file, "checkpoint detected at %d (%s: %s) because memory is read (%s: %d)\n",
                 new_ptr_checkpoint->exec_order, addrint_to_hexstring(ins_addr),
                 ins_at_addr[ins_addr]->disassembled_name, addrint_to_hexstring(mem_read_addr),
-                mem_read_size);
+                *(reinterpret_cast<UINT8*>(mem_read_addr)));
 #endif
   }
 
