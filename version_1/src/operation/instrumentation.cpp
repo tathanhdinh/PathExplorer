@@ -64,16 +64,16 @@ static inline void exec_rollbacking_phase(INS& ins, ptr_instruction_t examined_i
   INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)rollbacking::generic_instruction,
                            IARG_INST_PTR, IARG_END);
 
-  if (examined_ins->is_mem_write)
-  {
-    INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)rollbacking::mem_write_instruction,
-                             IARG_INST_PTR, IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE, IARG_END);
-  }
-
   if (examined_ins->is_cond_direct_cf)
   {
     INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)rollbacking::control_flow_instruction,
                              IARG_INST_PTR, IARG_END);
+  }
+
+  if (examined_ins->is_mem_write)
+  {
+    INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)rollbacking::mem_write_instruction,
+                             IARG_INST_PTR, IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE, IARG_END);
   }
 
   return;
@@ -125,7 +125,6 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
 {
 #if !defined(NDEBUG)
   tfm::format(log_file, "module loaded %s\n", IMG_Name(loaded_img));
-//  log_file << boost::format("module loaded %s\n") % IMG_Name(loaded_img);
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -213,7 +212,6 @@ BOOL process_create_instrumenter(CHILD_PROCESS created_process, VOID* data)
 {
 #if !defined(NDEBUG)
   tfm::format(log_file, "new process created with id %d\n", CHILD_PROCESS_GetId(created_process));
-//  log_file << boost::format("new process created with id %d\n") % CHILD_PROCESS_GetId(created_process);
 #endif
   return TRUE;
 }

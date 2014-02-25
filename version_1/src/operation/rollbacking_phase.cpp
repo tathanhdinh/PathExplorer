@@ -253,6 +253,7 @@ VOID generic_instruction(ADDRINT ins_addr)
           // change the control flow
         }
         // in both cases, we need rollback
+        tfm::format(std::cerr, "rollback from 1 (%d to %d)\n", current_exec_order, active_checkpoint->exec_order);
         rollback();
       }
 #if !defined(NDEBUG)
@@ -271,6 +272,7 @@ VOID generic_instruction(ADDRINT ins_addr)
       // and the executed instruction has exceeded this CFI
       if (active_cfi && (current_exec_order > active_cfi->exec_order))
       {
+        tfm::format(std::cerr, "rollback from 2 (%d to %d)\n", current_exec_order, active_checkpoint->exec_order);
         rollback();
       }
     }
@@ -311,6 +313,7 @@ VOID control_flow_instruction(ADDRINT ins_addr)
             if (active_checkpoint)
             {
               // exists, then rollback to the new active checkpoint
+              tfm::format(std::cerr, "rollback from 3 (%d to %d)\n", current_exec_order, active_checkpoint->exec_order);
               used_rollback_num = 0; rollback();
             }
             else
@@ -356,6 +359,7 @@ VOID control_flow_instruction(ADDRINT ins_addr)
         }
 
         // and rollback to resolve the new active CFI
+        tfm::format(std::cerr, "rollback from 4 (%d to %d)\n", current_exec_order, active_checkpoint->exec_order);
         used_rollback_num = 0; rollback();
       }
     }

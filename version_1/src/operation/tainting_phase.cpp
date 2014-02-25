@@ -80,9 +80,8 @@ static inline void determine_cfi_input_dependency()
             // and is some CFI
             if (ins_at_order[visited_edge_exec_order]->is_cond_direct_cf)
             {
-              std::cerr << "input dependent CFI detected at order: "
-                        << visited_edge_exec_order << "\n";
-
+//              std::cerr << "input dependent CFI detected at order: "
+//                        << visited_edge_exec_order << "\n";
               // then this CFI depends on the value of the memory address
               visited_cfi = pept::static_pointer_cast<cond_direct_instruction>(
                     ins_at_order[visited_edge_exec_order]);
@@ -240,11 +239,11 @@ static inline void analyze_executed_instructions()
 static inline void calculate_rollbacking_trace_length()
 {
   rollbacking_trace_length = 0;
-  order_ins_map_t::reverse_iterator ins_iter;
+  order_ins_map_t::reverse_iterator ins_iter = ins_at_order.rbegin();
   ptr_cond_direct_ins_t last_cfi;
 
   // reverse iterate in the list of executed instructions
-  for (ins_iter = ins_at_order.rbegin(); ins_iter != ins_at_order.rend(); ++ins_iter)
+  for (++ins_iter; ins_iter != ins_at_order.rend(); ++ins_iter)
   {
     // verify if the instruction is a CFI
     if (ins_iter->second->is_cond_direct_cf)
