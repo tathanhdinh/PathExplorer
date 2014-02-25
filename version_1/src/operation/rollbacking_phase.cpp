@@ -10,6 +10,7 @@
 
 static ptr_cond_direct_instruction_t  active_cfi;
 static ptr_checkpoint_t               active_checkpoint;
+static ptr_checkpoint_t               first_checkpoint;
 static UINT32                         max_rollback_num;
 static UINT32                         used_rollback_num;
 static UINT32                         tainted_trace_length;
@@ -163,13 +164,7 @@ static inline void prepare_new_tainting_phase()
 
     // rollback to the first checkpoint with the new input
     PIN_RemoveInstrumentation();
-//    saved_checkpoints[0]->rollback_with_new_input(current_exec_order, received_msg_addr,
-//                                                  received_msg_size, tainting_input.get());
-    if (!saved_checkpoints[0])
-    {
-      std::cerr << "fatal\n";
-    }
-    rollback_with_new_input(saved_checkpoints[0], current_exec_order, received_msg_addr,
+    rollback_with_new_input(first_checkpoint, current_exec_order, received_msg_addr,
                             received_msg_size, tainting_input.get());
   }
   else
@@ -212,7 +207,6 @@ static inline addrint_value_map_t input_on_active_modified_addrs()
  */
 VOID generic_instruction(ADDRINT ins_addr)
 {
-  tfm::format(std::cerr, "generic at %d (%s)\n", current_exec_order, addrint_to_hexstring(ins_addr));
   // verify if the execution order of the instruction exceeds the last CFI
   if (current_exec_order >= tainted_trace_length)
   {
@@ -228,7 +222,6 @@ VOID generic_instruction(ADDRINT ins_addr)
 //                ins_at_addr[ins_addr]->contained_image, ins_at_addr[ins_addr]->contained_function);
 //#endif
 
-//    std::cerr << current_exec_order << " " << tainted_trace_length << "\n";
     // verify if the executed instruction is in the original trace
     if (ins_at_order[current_exec_order]->address != ins_addr)
     {
@@ -260,8 +253,6 @@ VOID generic_instruction(ADDRINT ins_addr)
           // change the control flow
         }
         // in both cases, we need rollback
-        std::cerr << current_exec_order << "\n";
-        std::cerr << "rollback from 1\n";
         rollback();
       }
 #if !defined(NDEBUG)
@@ -280,7 +271,6 @@ VOID generic_instruction(ADDRINT ins_addr)
       // and the executed instruction has exceeded this CFI
       if (active_cfi && (current_exec_order > active_cfi->exec_order))
       {
-        std::cerr << "rollback from 2\n";
         rollback();
       }
     }
@@ -321,7 +311,6 @@ VOID control_flow_instruction(ADDRINT ins_addr)
             if (active_checkpoint)
             {
               // exists, then rollback to the new active checkpoint
-              std::cerr << "rollback from 3\n";
               used_rollback_num = 0; rollback();
             }
             else
@@ -367,7 +356,6 @@ VOID control_flow_instruction(ADDRINT ins_addr)
         }
 
         // and rollback to resolve the new active CFI
-        std::cerr << "rollback from 4\n";
         used_rollback_num = 0; rollback();
       }
     }
@@ -416,8 +404,8 @@ VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length
 void initialize_rollbacking_phase(UINT32 trace_length_limit)
 {
   // reinitialize some local variables
-  active_cfi.reset(); active_checkpoint.reset(); active_modified_addrs.clear();
-  used_rollback_num = 0; max_rollback_num = max_local_rollback.Value();
+  active_cfi.reset(); active_checkpoint.reset(); first_checkpoint = saved_checkpoints[0];
+  active_modified_addrs.clear(); used_rollback_num = 0; max_rollback_num = max_local_rollback.Value();
   tainted_trace_length = trace_length_limit;
 
   // make a fresh input copy

@@ -41,8 +41,6 @@ public:
  */
 static inline void determine_cfi_input_dependency()
 {
-  std::cerr << "determine cfi input\n";
-
   df_vertex_iter vertex_iter;
   df_vertex_iter last_vertex_iter;
   df_bfs_visitor df_visitor;
@@ -162,8 +160,6 @@ static inline void set_checkpoints_for_cfi(const ptr_cond_direct_instruction_t& 
  */
 static inline void save_detected_cfis()
 {
-  std::cerr << "start save_detected_cfis\n";
-
   ptr_cond_direct_instruction_t new_cfi;
   std::map<UINT32, ptr_instruction_t>::iterator ins_iter;
 
@@ -192,7 +188,6 @@ static inline void save_detected_cfis()
     }
   }
 
-  std::cerr << "stop save_detected_cfis\n";
   return;
 }
 
@@ -297,8 +292,6 @@ VOID syscall_instruction(ADDRINT ins_addr)
  */
 VOID general_instruction(ADDRINT ins_addr)
 {
-  tfm::format(std::cerr, "generic tainting at %d (%s)\n", current_exec_order, addrint_to_hexstring(ins_addr));
-
   ptr_cond_direct_instruction_t current_cfi, duplicated_cfi;
 
   // verify if the execution order exceeds the limit trace length and the executed

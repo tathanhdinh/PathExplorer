@@ -19,9 +19,6 @@ void save_static_trace(const std::string& filename)
     tfm::format(out_file, "%-15s %-50s %-25s %-25s\n", addrint_to_hexstring(ins_iter->first),
                 ins_iter->second->disassembled_name, ins_iter->second->contained_image,
                 ins_iter->second->contained_function);
-//    out_file << boost::format("%-15s %-50s %-25s %-25s\n")
-//                % addrint_to_hexstring(ins_iter->first) % ins_iter->second->disassembled_name
-//                % ins_iter->second->contained_image % ins_iter->second->contained_function;
   }
   out_file.close();
 

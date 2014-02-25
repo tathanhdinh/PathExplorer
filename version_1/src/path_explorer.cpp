@@ -118,14 +118,6 @@ VOID stop_tracing(INT32 code, VOID *data)
   tfm::format(log_file, "%d seconds elapsed, %d rollbacks used, %d/%d branches resolved\n",
               (stop_time - start_time),
               total_rollback_times, resolved_cfi_num, detected_input_dep_cfis.size());
-//  log_file << boost::format("%d seconds elapsed, %d rollbacks used, %d/%d branches resolved\n")
-//              % (stop_time - start_time)
-//              % total_rollback_times % resolved_cfi_num % detected_input_dep_cfis.size();
-
-        
-//  BOOST_LOG_SEV(log_instance, boost::log::trivial::info)
-//    << boost::format("economized/total executed instruction number %d/%d")
-//        % econed_ins_number % executed_ins_number;
 
   log_file.close();
   return;

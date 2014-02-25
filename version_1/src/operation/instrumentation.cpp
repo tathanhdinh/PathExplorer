@@ -59,7 +59,7 @@ static inline void exec_tainting_phase(INS& ins, ptr_instruction_t examined_ins)
 
 /*================================================================================================*/
 
-static inline void exec_rollbacking_state(INS& ins, ptr_instruction_t examined_ins)
+static inline void exec_rollbacking_phase(INS& ins, ptr_instruction_t examined_ins)
 {
   INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)rollbacking::generic_instruction,
                            IARG_INST_PTR, IARG_END);
@@ -104,12 +104,11 @@ VOID ins_instrumenter(INS ins, VOID *data)
     switch (current_running_state)
     {
     case tainting_state:
-      std::cerr << "in tainting\n";
       exec_tainting_phase(ins, examined_ins);
       break;
 
     case rollbacking_state:
-      exec_rollbacking_state(ins, examined_ins);
+      exec_rollbacking_phase(ins, examined_ins);
       break;
 
     default:
