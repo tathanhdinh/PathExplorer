@@ -1,6 +1,6 @@
 #include "checkpoint.h"
 
-//#include "../util/stuffs.h"
+#include "../util/stuffs.h"
 
 
 checkpoint::checkpoint(UINT32 existing_exec_order,
@@ -17,6 +17,8 @@ checkpoint::checkpoint(UINT32 existing_exec_order,
     PIN_SafeCopy(&single_byte,
                  reinterpret_cast<UINT8*>(input_mem_read_addr + mem_offset), sizeof(UINT8));
     this->input_dep_original_values[input_mem_read_addr + mem_offset] = single_byte;
+    tfm::format(std::cerr, "save %s with value %d\n",
+                addrint_to_hexstring(input_mem_read_addr + mem_offset), single_byte);
   }
 }
 
@@ -27,6 +29,7 @@ checkpoint::checkpoint(UINT32 existing_exec_order,
 void checkpoint::mem_write_tracking(ADDRINT mem_addr, UINT32 mem_size)
 {
   UINT8 single_byte;
+  log_file << "mem===>\n";
   for (UINT32 offset = 0; offset < mem_size; ++offset)
   {
     // this address is written for the first time,
@@ -36,8 +39,10 @@ void checkpoint::mem_write_tracking(ADDRINT mem_addr, UINT32 mem_size)
 //       mem_written_log[mem_addr + offset] = *(reinterpret_cast<UINT8*>(mem_addr + offset));
       PIN_SafeCopy(&single_byte, reinterpret_cast<UINT8*>(mem_addr + offset), sizeof(UINT8));
       mem_written_log[mem_addr + offset] = single_byte;
+      tfm::format(log_file, "(%s %d) ", addrint_to_hexstring(mem_addr + offset), single_byte);
     }
   }
+  log_file << "\n<===mem\n";
 
   return;
 }
@@ -49,6 +54,7 @@ void checkpoint::mem_write_tracking(ADDRINT mem_addr, UINT32 mem_size)
 static inline void generic_restore(UINT32& existing_exec_order, UINT32 checkpoint_exec_order,
                                    addrint_value_map_t& checkpoint_mem_written_log)
 {
+  log_file << "restore===>\n";
   // restore the existing execution order (-1 because the instruction at the checkpoint will
   // be re-executed)
   existing_exec_order = checkpoint_exec_order - 1;
@@ -57,8 +63,10 @@ static inline void generic_restore(UINT32& existing_exec_order, UINT32 checkpoin
   addrint_value_map_t::iterator mem_iter = checkpoint_mem_written_log.begin();
   for (; mem_iter != checkpoint_mem_written_log.end(); ++mem_iter)
   {
+    tfm::format(log_file, "(%s %d) ", addrint_to_hexstring(mem_iter->first), mem_iter->second);
     PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_iter->first), &mem_iter->second, sizeof(UINT8));
   }
+  log_file << "\n<===restore\n";
 
   checkpoint_mem_written_log.clear();
   return;
@@ -91,6 +99,9 @@ void rollback_with_original_input(const ptr_checkpoint_t& dest, UINT32& existing
   addrint_value_map_t::iterator mem_iter = dest->input_dep_original_values.begin();
   for (; mem_iter != dest->input_dep_original_values.end(); ++mem_iter)
   {
+//    std::cerr << "restore " << addrint_to_hexstring(mem_iter->first) << " with value " << mem_iter->second << "\n";
+    tfm::format(std::cerr, "restore %s with value %d\n",
+                addrint_to_hexstring(mem_iter->first), mem_iter->second);
     PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_iter->first), &mem_iter->second, sizeof(UINT8));
   }
 

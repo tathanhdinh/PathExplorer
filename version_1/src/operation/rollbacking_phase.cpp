@@ -253,7 +253,11 @@ VOID generic_instruction(ADDRINT ins_addr)
           // change the control flow
         }
         // in both cases, we need rollback
-        tfm::format(std::cerr, "rollback from 1 (%d to %d)\n", current_exec_order, active_checkpoint->exec_order);
+        tfm::format(std::cerr, "%d %s %s\n", current_exec_order,
+                    addrint_to_hexstring(ins_at_order[current_exec_order]->address),
+                    addrint_to_hexstring(ins_addr));
+        tfm::format(std::cerr, "rollback from 1 (%d to %d)\n", current_exec_order,
+                    active_checkpoint->exec_order);
         rollback();
       }
 #if !defined(NDEBUG)
@@ -272,7 +276,8 @@ VOID generic_instruction(ADDRINT ins_addr)
       // and the executed instruction has exceeded this CFI
       if (active_cfi && (current_exec_order > active_cfi->exec_order))
       {
-        tfm::format(std::cerr, "rollback from 2 (%d to %d)\n", current_exec_order, active_checkpoint->exec_order);
+        tfm::format(std::cerr, "rollback from 2 (%d to %d)\n", current_exec_order,
+                    active_checkpoint->exec_order);
         rollback();
       }
     }
@@ -313,7 +318,8 @@ VOID control_flow_instruction(ADDRINT ins_addr)
             if (active_checkpoint)
             {
               // exists, then rollback to the new active checkpoint
-              tfm::format(std::cerr, "rollback from 3 (%d to %d)\n", current_exec_order, active_checkpoint->exec_order);
+              tfm::format(std::cerr, "rollback from 3 (%d to %d)\n", current_exec_order,
+                          active_checkpoint->exec_order);
               used_rollback_num = 0; rollback();
             }
             else
@@ -359,7 +365,8 @@ VOID control_flow_instruction(ADDRINT ins_addr)
         }
 
         // and rollback to resolve the new active CFI
-        tfm::format(std::cerr, "rollback from 4 (%d to %d)\n", current_exec_order, active_checkpoint->exec_order);
+        tfm::format(std::cerr, "rollback from 4 (%d to %d)\n", current_exec_order,
+                    active_checkpoint->exec_order);
         used_rollback_num = 0; rollback();
       }
     }
@@ -409,8 +416,8 @@ void initialize_rollbacking_phase(UINT32 trace_length_limit)
 {
   // reinitialize some local variables
   active_cfi.reset(); active_checkpoint.reset(); first_checkpoint = saved_checkpoints[0];
-  active_modified_addrs.clear(); used_rollback_num = 0; max_rollback_num = max_local_rollback.Value();
-  tainted_trace_length = trace_length_limit;
+  active_modified_addrs.clear(); tainted_trace_length = trace_length_limit;
+  used_rollback_num = 0; max_rollback_num = max_local_rollback.Value();
 
   // make a fresh input copy
   fresh_input.reset(new UINT8[received_msg_size]);
