@@ -33,7 +33,6 @@ public:
   addrint_set_t                                 input_dep_addrs;
   addrint_value_maps_t                          first_input_projections;
   addrint_value_maps_t                          second_input_projections;
-  std::map<bool, addrint_value_maps_t>          inputs;
   std::vector<checkpoint_with_modified_addrs>   checkpoints;
 
   ptr_uint8_t                                   fresh_input;
@@ -43,7 +42,7 @@ public:
   cond_direct_instruction(instruction& ins);
 };
 
-typedef pept::shared_ptr<cond_direct_instruction>   ptr_cond_direct_instruction_t;
-typedef std::vector<ptr_cond_direct_instruction_t>  ptr_cond_direct_instructions_t;
+typedef pept::shared_ptr<cond_direct_instruction> ptr_cond_direct_ins_t;
+typedef std::vector<ptr_cond_direct_ins_t> ptr_cond_direct_inss_t;
 
 #endif // COND_DIRECT_INSTRUCTION_H

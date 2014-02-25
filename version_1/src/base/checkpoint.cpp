@@ -1,22 +1,15 @@
 #include "checkpoint.h"
 
-#include <limits>
-#include <cstdlib>
-#include <ctime>
-#include <map>
+//#include "../util/stuffs.h"
 
-#include "../util/stuffs.h"
 
-extern ADDRINT                                received_msg_addr;
-extern UINT32                                 received_msg_size;
-extern UINT32                                 current_exec_order;
-
-checkpoint::checkpoint(CONTEXT* p_ctxt, ADDRINT input_mem_read_addr, UINT32 input_mem_read_size)
+checkpoint::checkpoint(UINT32 existing_exec_order,
+                       CONTEXT* p_ctxt, ADDRINT input_mem_read_addr, UINT32 input_mem_read_size)
 {
   this->context.reset(new CONTEXT);
   PIN_SaveContext(p_ctxt, this->context.get());
 
-  this->exec_order = current_exec_order;
+  this->exec_order = existing_exec_order;
 
   UINT32 mem_offset; UINT8 single_byte;
   for (mem_offset = 0; mem_offset < input_mem_read_size; ++mem_offset)
@@ -50,9 +43,11 @@ void checkpoint::mem_write_tracking(ADDRINT mem_addr, UINT32 mem_size)
 }
 
 
-static inline void restore_exec_order_and_written_mem(UINT32& existing_exec_order,
-                                                      UINT32 checkpoint_exec_order,
-                                                      addrint_value_map_t& checkpoint_mem_written_log)
+/**
+ * @brief restore the execution order and over-written memory addresses
+ */
+static inline void generic_restore(UINT32& existing_exec_order, UINT32 checkpoint_exec_order,
+                                   addrint_value_map_t& checkpoint_mem_written_log)
 {
   // restore the existing execution order (-1 because the instruction at the checkpoint will
   // be re-executed)
@@ -69,100 +64,14 @@ static inline void restore_exec_order_and_written_mem(UINT32& existing_exec_orde
 
 
 /**
- * @brief restore the original input and rollback
- */
-//void checkpoint::rollback_with_original_input(UINT32& existing_exec_order)
-//{
-//  std::cerr << "rollback with original input\n";
-//  restore_exec_order_and_written_mem(existing_exec_order, this->exec_order, this->mem_written_log);
-
-//  // restore the original input
-//  addrint_value_map_t::iterator mem_iter = this->input_dep_original_values.begin();
-//  for (; mem_iter != this->input_dep_original_values.end(); ++mem_iter)
-//  {
-//    PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_iter->first), &mem_iter->second, sizeof(UINT8));
-//  }
-
-//  // restore the values of registers
-//  PIN_ExecuteAt(this->context.get());
-//  return;
-//}
-
-
-/**
- * @brief keep the current input and rollback
- */
-//void checkpoint::rollback_with_current_input(UINT32& existing_exec_order)
-//{
-//  std::cerr << "rollback with current input\n";
-
-//  restore_exec_order_and_written_mem(existing_exec_order, this->exec_order, this->mem_written_log);
-
-//  std::cerr << "hahaha\n";
-//  // restore values of registers
-//  PIN_ExecuteAt(this->context.get());
-//  return;
-//}
-
-
-/**
- * @brief replace the current input by a new input and rollback
- */
-//void checkpoint::rollback_with_new_input(UINT32& existing_exec_order, ADDRINT input_buffer_addr,
-//                                         UINT32 input_buffer_size, UINT8* new_buffer)
-//{
-//  std::cerr << "rollback with new input\n";
-
-//  restore_exec_order_and_written_mem(existing_exec_order, this->exec_order, this->mem_written_log);
-
-//  std::cerr << existing_exec_order << "\n";
-
-//  // replace the current input
-//  PIN_SafeCopy(reinterpret_cast<UINT8*>(input_buffer_addr), new_buffer, input_buffer_size);
-
-//  std::cerr << "hahahasdfsdfsdf\n";
-//  // restore values of registers
-//  PIN_ExecuteAt(this->context.get());
-//  return;
-//}
-
-
-/**
- * @brief modify the current input and rollback
- */
-//void checkpoint::rollback_with_modified_input(UINT32& existing_exec_order,
-//                                              addrint_value_map_t& modified_addrs_values)
-//{
-//  std::cerr << "rollback with modified input " << modified_addrs_values.size() << "\n" ;
-
-//  restore_exec_order_and_written_mem(existing_exec_order, this->exec_order, this->mem_written_log);
-
-//  // modify the current input
-//  addrint_value_map_t::iterator mem_iter = modified_addrs_values.begin();
-//  for (; mem_iter != modified_addrs_values.end(); ++mem_iter)
-//  {
-//    PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_iter->first), &mem_iter->second, sizeof(UINT8));
-//  }
-
-//  // restore values of registers
-//  PIN_ExecuteAt(this->context.get());
-
-//  return;
-//}
-
-
-/**
  * @brief keep the current input and rollback
  */
 void rollback_with_current_input(const ptr_checkpoint_t& destination, UINT32& existing_exec_order)
 {
-  std::cerr << "rollback with current input\n";
-
-  restore_exec_order_and_written_mem(existing_exec_order, destination->exec_order,
-                                     destination->mem_written_log);
+//  std::cerr << "rollback with current input\n";
+  generic_restore(existing_exec_order, destination->exec_order, destination->mem_written_log);
 
   // restore values of registers
-  std::cerr << "restore registers\n";
   PIN_ExecuteAt(destination->context.get());
   return;
 }
@@ -171,23 +80,20 @@ void rollback_with_current_input(const ptr_checkpoint_t& destination, UINT32& ex
 /**
  * @brief restore the original input and rollback
  */
-void rollback_with_original_input(const ptr_checkpoint_t& destination, UINT32& existing_exec_order)
+void rollback_with_original_input(const ptr_checkpoint_t& dest, UINT32& existing_exec_order)
 {
-  std::cerr << "rollback with original input\n";
-
-  restore_exec_order_and_written_mem(existing_exec_order, destination->exec_order,
-                                     destination->mem_written_log);
+//  std::cerr << "rollback with original input\n";
+  generic_restore(existing_exec_order, dest->exec_order, dest->mem_written_log);
 
   // restore the original input
-  addrint_value_map_t::iterator mem_iter = destination->input_dep_original_values.begin();
-  for (; mem_iter != destination->input_dep_original_values.end(); ++mem_iter)
+  addrint_value_map_t::iterator mem_iter = dest->input_dep_original_values.begin();
+  for (; mem_iter != dest->input_dep_original_values.end(); ++mem_iter)
   {
     PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_iter->first), &mem_iter->second, sizeof(UINT8));
   }
 
   // restore the values of registers
-  std::cerr << "restore registers\n";
-  PIN_ExecuteAt(destination->context.get());
+  PIN_ExecuteAt(dest->context.get());
   return;
 }
 
@@ -195,20 +101,17 @@ void rollback_with_original_input(const ptr_checkpoint_t& destination, UINT32& e
 /**
  * @brief replace the current input by a new input and rollback
  */
-void rollback_with_new_input(const ptr_checkpoint_t& destination, UINT32& existing_exec_order,
+void rollback_with_new_input(const ptr_checkpoint_t& dest, UINT32& existing_exec_order,
                              ADDRINT input_buffer_addr, UINT32 input_buffer_size, UINT8* new_buffer)
 {
-  tfm::format(std::cerr, "rollback with new input to checkpoint at %d\n", destination->exec_order);
-
-  restore_exec_order_and_written_mem(existing_exec_order, destination->exec_order,
-                                     destination->mem_written_log);
+//  std::cerr << "rollback with new input\n";
+  generic_restore(existing_exec_order, dest->exec_order, dest->mem_written_log);
 
   // replace the current input
   PIN_SafeCopy(reinterpret_cast<UINT8*>(input_buffer_addr), new_buffer, input_buffer_size);
 
   // restore values of registers
-  std::cerr << "restore registers\n";
-  PIN_ExecuteAt(destination->context.get());
+  PIN_ExecuteAt(dest->context.get());
   return;
 }
 
@@ -216,13 +119,11 @@ void rollback_with_new_input(const ptr_checkpoint_t& destination, UINT32& existi
 /**
  * @brief modify the current input and rollback
  */
-void rollback_with_modified_input(const ptr_checkpoint_t& destination, UINT32& existing_exec_order,
+void rollback_with_modified_input(const ptr_checkpoint_t& dest, UINT32& existing_exec_order,
                                   addrint_value_map_t& modified_addrs_values)
 {
-  std::cerr << "rollback with modified input " << modified_addrs_values.size() << "\n" ;
-
-  restore_exec_order_and_written_mem(existing_exec_order, destination->exec_order,
-                                     destination->mem_written_log);
+//  std::cerr << "rollback with modified input " << modified_addrs_values.size() << "\n" ;
+  generic_restore(existing_exec_order, dest->exec_order, dest->mem_written_log);
 
   // modify the current input
   addrint_value_map_t::iterator mem_iter = modified_addrs_values.begin();
@@ -232,8 +133,7 @@ void rollback_with_modified_input(const ptr_checkpoint_t& destination, UINT32& e
   }
 
   // restore values of registers
-  std::cerr << "restore registers\n";
-  PIN_ExecuteAt(destination->context.get());
+  PIN_ExecuteAt(dest->context.get());
   return;
 }
 

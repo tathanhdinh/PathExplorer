@@ -91,7 +91,7 @@ static inline void exec_rollbacking_phase(INS& ins, ptr_instruction_t examined_i
  */
 VOID ins_instrumenter(INS ins, VOID *data)
 {
-  if (current_running_state != capturing_state)
+  if (current_running_phase != capturing_state)
   {
     // examining statically instructions
     ptr_instruction_t examined_ins(new instruction(ins));
@@ -101,7 +101,7 @@ VOID ins_instrumenter(INS ins, VOID *data)
       ins_at_addr[examined_ins->address].reset(new cond_direct_instruction(*examined_ins));
     }
 
-    switch (current_running_state)
+    switch (current_running_phase)
     {
     case tainting_state:
       exec_tainting_phase(ins, examined_ins);

@@ -16,8 +16,8 @@ static df_vertex_desc_set         dta_outer_vertices;
 static UINT32                     rollbacking_trace_length;
 
 #if !defined(NDEBUG)
-static ptr_cond_direct_instructions_t newly_detected_input_dep_cfis;
-static ptr_cond_direct_instructions_t newly_detected_cfis;
+static ptr_cond_direct_inss_t newly_detected_input_dep_cfis;
+static ptr_cond_direct_inss_t newly_detected_cfis;
 #endif
 
 
@@ -49,7 +49,7 @@ static inline void determine_cfi_input_dependency()
   ADDRINT mem_addr;
 
   UINT32 visited_edge_exec_order;
-  ptr_cond_direct_instruction_t visited_cfi;
+  ptr_cond_direct_ins_t visited_cfi;
 
   // get the set of vertices in the tainting graph
   boost::tie(vertex_iter, last_vertex_iter) = boost::vertices(dta_graph);
@@ -103,7 +103,7 @@ static inline void determine_cfi_input_dependency()
  * rollback from the checkpoint with the modification on the affecting input addresses may change
  * the CFI's decision.
  */
-static inline void set_checkpoints_for_cfi(const ptr_cond_direct_instruction_t& cfi)
+static inline void set_checkpoints_for_cfi(const ptr_cond_direct_ins_t& cfi)
 {
   addrint_set_t dep_addrs = cfi->input_dep_addrs;
   addrint_set_t input_dep_addrs, new_dep_addrs, intersected_addrs;
@@ -160,33 +160,64 @@ static inline void set_checkpoints_for_cfi(const ptr_cond_direct_instruction_t& 
  */
 static inline void save_detected_cfis()
 {
-  ptr_cond_direct_instruction_t new_cfi;
-  std::map<UINT32, ptr_instruction_t>::iterator ins_iter;
+  ptr_cond_direct_ins_t new_cfi;
+  std::map<UINT32, ptr_instruction_t>::reverse_iterator ins_iter = ins_at_order.rbegin();
 
-  // iterate over executed instructions in this tainting phase
-  for (ins_iter = ins_at_order.begin(); ins_iter != ins_at_order.end(); ++ins_iter)
+  if (ins_at_order.size() > 1)
   {
-    // consider only the instruction that is not behind the exploring CFI
-    if (!exploring_cfi || (exploring_cfi && (ins_iter->first > exploring_cfi->exec_order)))
+    for (++ins_iter; ins_iter != ins_at_order.rend(); ++ins_iter)
     {
-      if (ins_iter->second->is_cond_direct_cf)
+      // consider only the instruction that is not behind the exploring CFI
+      if (!exploring_cfi || (exploring_cfi && (ins_iter->first > exploring_cfi->exec_order)))
       {
-        new_cfi = pept::static_pointer_cast<cond_direct_instruction>(ins_iter->second);
-        // and depends on the input
-        if (!new_cfi->input_dep_addrs.empty())
+        if (ins_iter->second->is_cond_direct_cf)
         {
-          // then set its checkpoints and save it
-          set_checkpoints_for_cfi(new_cfi); detected_input_dep_cfis.push_back(new_cfi);
+          new_cfi = pept::static_pointer_cast<cond_direct_instruction>(ins_iter->second);
+          // and depends on the input
+          if (!new_cfi->input_dep_addrs.empty())
+          {
+            // then set its checkpoints and save it
+            set_checkpoints_for_cfi(new_cfi); detected_input_dep_cfis.push_back(new_cfi);
 #if !defined(NDEBUG)
-          newly_detected_input_dep_cfis.push_back(new_cfi);
+            newly_detected_input_dep_cfis.push_back(new_cfi);
+#endif
+          }
+#if !defined(NDEBUG)
+          newly_detected_cfis.push_back(new_cfi);
 #endif
         }
-#if !defined(NDEBUG)
-        newly_detected_cfis.push_back(new_cfi);
-#endif
+      }
+      else
+      {
+        break;
       }
     }
   }
+
+//  // iterate over executed instructions in this tainting phase
+//  for (ins_iter = ins_at_order.begin(); ins_iter != ins_at_order.end(); ++ins_iter)
+//  {
+//    // consider only the instruction that is not behind the exploring CFI
+//    if (!exploring_cfi || (exploring_cfi && (ins_iter->first > exploring_cfi->exec_order)))
+//    {
+//      if (ins_iter->second->is_cond_direct_cf)
+//      {
+//        new_cfi = pept::static_pointer_cast<cond_direct_instruction>(ins_iter->second);
+//        // and depends on the input
+//        if (!new_cfi->input_dep_addrs.empty())
+//        {
+//          // then set its checkpoints and save it
+//          set_checkpoints_for_cfi(new_cfi); detected_input_dep_cfis.push_back(new_cfi);
+//#if !defined(NDEBUG)
+//          newly_detected_input_dep_cfis.push_back(new_cfi);
+//#endif
+//        }
+//#if !defined(NDEBUG)
+//        newly_detected_cfis.push_back(new_cfi);
+//#endif
+//      }
+//    }
+//  }
 
   return;
 }
@@ -209,9 +240,9 @@ static inline void analyze_executed_instructions()
 static inline void calculate_rollbacking_trace_length()
 {
   rollbacking_trace_length = 0;
+  order_ins_map_t::reverse_iterator ins_iter;
+  ptr_cond_direct_ins_t last_cfi;
 
-  std::map<UINT32, ptr_instruction_t>::reverse_iterator ins_iter;
-  ptr_cond_direct_instruction_t last_cfi;
   // reverse iterate in the list of executed instructions
   for (ins_iter = ins_at_order.rbegin(); ins_iter != ins_at_order.rend(); ++ins_iter)
   {
@@ -255,7 +286,7 @@ inline void prepare_new_rollbacking_phase()
     analyze_executed_instructions();
 
     // initalize the next rollbacking phase
-    current_running_state = rollbacking_state; calculate_rollbacking_trace_length();
+    current_running_phase = rollbacking_state; calculate_rollbacking_trace_length();
     rollbacking::initialize_rollbacking_phase(rollbacking_trace_length);
 
 #if !defined(NDEBUG)
@@ -292,7 +323,7 @@ VOID syscall_instruction(ADDRINT ins_addr)
  */
 VOID general_instruction(ADDRINT ins_addr)
 {
-  ptr_cond_direct_instruction_t current_cfi, duplicated_cfi;
+  ptr_cond_direct_ins_t current_cfi, duplicated_cfi;
 
   // verify if the execution order exceeds the limit trace length and the executed
   // instruction is always in user-space
@@ -343,7 +374,8 @@ VOID mem_read_instruction(ADDRINT ins_addr,
       std::min(mem_read_addr + mem_read_size, received_msg_addr + received_msg_size))
   {
     // yes, then save a checkpoint
-    ptr_checkpoint_t new_ptr_checkpoint(new checkpoint(p_ctxt, mem_read_addr, mem_read_size));
+    ptr_checkpoint_t new_ptr_checkpoint(new checkpoint(current_exec_order,
+                                                       p_ctxt, mem_read_addr, mem_read_size));
     saved_checkpoints.push_back(new_ptr_checkpoint);
 
 #if !defined(NDEBUG)

@@ -29,7 +29,8 @@ public:
   UINT32                      exec_order;
     
 public:
-  checkpoint(CONTEXT* ptr_context, ADDRINT input_mem_read_addr, UINT32 input_mem_read_size);
+  checkpoint(UINT32 existing_exec_order,
+             CONTEXT* ptr_context, ADDRINT input_mem_read_addr, UINT32 input_mem_read_size);
 
   void mem_write_tracking(ADDRINT mem_addr, UINT32 mem_length);
 };

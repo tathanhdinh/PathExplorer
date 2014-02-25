@@ -8,7 +8,7 @@
 
 /*================================================================================================*/
 
-static ptr_cond_direct_instruction_t  active_cfi;
+static ptr_cond_direct_ins_t  active_cfi;
 static ptr_checkpoint_t               active_checkpoint;
 static ptr_checkpoint_t               first_checkpoint;
 static UINT32                         max_rollback_num;
@@ -141,7 +141,7 @@ static inline void calculate_tainting_input(ptr_uint8_t original_input,
 static inline void prepare_new_tainting_phase()
 {
   // verify if there exists a resolved but unexplored CFI
-  ptr_cond_direct_instructions_t::iterator cfi_iter = detected_input_dep_cfis.begin();
+  ptr_cond_direct_inss_t::iterator cfi_iter = detected_input_dep_cfis.begin();
   for (; cfi_iter != detected_input_dep_cfis.end(); ++cfi_iter)
   {
     if ((*cfi_iter)->is_resolved && !(*cfi_iter)->is_explored) break;
@@ -154,7 +154,7 @@ static inline void prepare_new_tainting_phase()
     calculate_tainting_input(exploring_cfi->fresh_input, exploring_cfi->second_input_projections[0]);
 
     // initialize new tainting phase
-    current_running_state = tainting_state; tainting::initialize_tainting_phase();
+    current_running_phase = tainting_state; tainting::initialize_tainting_phase();
 
 #if !defined(NDEBUG)
     tfm::format(log_file, "explore the CFI %s at %d, start tainting\n", exploring_cfi->disassembled_name,
@@ -285,7 +285,7 @@ VOID generic_instruction(ADDRINT ins_addr)
  */
 VOID control_flow_instruction(ADDRINT ins_addr)
 {
-  ptr_cond_direct_instruction_t current_cfi;
+  ptr_cond_direct_ins_t current_cfi;
 
   // consider only CFIs that are beyond the exploring CFI
   if (!exploring_cfi || (exploring_cfi && (exploring_cfi->exec_order < current_exec_order)))
@@ -381,7 +381,7 @@ VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length
   {
     // no, namely we are now in normal "forward" execution, so all checkpoint until the current
     // execution order need to track memory write instructions
-    std::vector<ptr_checkpoint_t>::iterator chkpnt_iter = saved_checkpoints.begin();
+    ptr_checkpoints_t::iterator chkpnt_iter = saved_checkpoints.begin();
     for (; chkpnt_iter != saved_checkpoints.end(); ++chkpnt_iter)
     {
       if ((*chkpnt_iter)->exec_order <= current_exec_order)

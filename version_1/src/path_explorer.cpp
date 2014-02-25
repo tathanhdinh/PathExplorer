@@ -22,8 +22,8 @@ UINT32                                          max_trace_size;
 
 std::vector<ptr_checkpoint_t>                   saved_checkpoints;
 
-ptr_cond_direct_instructions_t                  detected_input_dep_cfis;
-ptr_cond_direct_instruction_t                   exploring_cfi;
+ptr_cond_direct_inss_t                  detected_input_dep_cfis;
+ptr_cond_direct_ins_t                   exploring_cfi;
 
 UINT32                                          current_exec_order;
 
@@ -36,7 +36,7 @@ ADDRINT                                         logged_syscall_index;   // logge
 ADDRINT                                         logged_syscall_args[6]; // logged syscall arguments
 #endif
 
-running_state                                   current_running_state;
+running_phase                                   current_running_phase;
 
 UINT64                                          executed_ins_number;
 UINT64                                          econed_ins_number;
@@ -85,7 +85,7 @@ VOID start_tracing(VOID *data)
   logged_syscall_index      = syscall_inexist;
 
   exploring_cfi.reset();
-  current_running_state     = capturing_state;
+  current_running_phase     = capturing_state;
 
   log_file.open("path_explorer.log", std::ofstream::out | std::ofstream::trunc);
 
@@ -108,7 +108,7 @@ VOID stop_tracing(INT32 code, VOID *data)
   save_static_trace("static_trace.log");
   
   UINT32 resolved_cfi_num = 0;
-  ptr_cond_direct_instructions_t::iterator cfi_iter = detected_input_dep_cfis.begin();
+  ptr_cond_direct_inss_t::iterator cfi_iter = detected_input_dep_cfis.begin();
   for (; cfi_iter != detected_input_dep_cfis.end(); ++cfi_iter)
   {
     if ((*cfi_iter)->is_resolved) resolved_cfi_num++;
