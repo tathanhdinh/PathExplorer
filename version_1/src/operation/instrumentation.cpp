@@ -104,6 +104,7 @@ VOID ins_instrumenter(INS ins, VOID *data)
     switch (current_running_state)
     {
     case tainting_state:
+      std::cerr << "in tainting\n";
       exec_tainting_phase(ins, examined_ins);
       break;
 

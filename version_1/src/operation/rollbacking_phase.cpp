@@ -165,6 +165,10 @@ static inline void prepare_new_tainting_phase()
     PIN_RemoveInstrumentation();
 //    saved_checkpoints[0]->rollback_with_new_input(current_exec_order, received_msg_addr,
 //                                                  received_msg_size, tainting_input.get());
+    if (!saved_checkpoints[0])
+    {
+      std::cerr << "fatal\n";
+    }
     rollback_with_new_input(saved_checkpoints[0], current_exec_order, received_msg_addr,
                             received_msg_size, tainting_input.get());
   }
@@ -208,8 +212,9 @@ static inline addrint_value_map_t input_on_active_modified_addrs()
  */
 VOID generic_instruction(ADDRINT ins_addr)
 {
+  tfm::format(std::cerr, "generic at %d (%s)\n", current_exec_order, addrint_to_hexstring(ins_addr));
   // verify if the execution order of the instruction exceeds the last CFI
-  if (current_exec_order > tainted_trace_length)
+  if (current_exec_order >= tainted_trace_length)
   {
     // exceeds, namely the rollbacking phase should stop
     prepare_new_tainting_phase();

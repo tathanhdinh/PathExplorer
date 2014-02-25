@@ -37,12 +37,15 @@ public:
 typedef pept::shared_ptr<checkpoint> ptr_checkpoint_t;
 typedef std::vector<ptr_checkpoint_t> ptr_checkpoints_t;
 
-extern void rollback_with_current_input(ptr_checkpoint_t destination, UINT32& existing_exec_order);
-extern void rollback_with_original_input(ptr_checkpoint_t destination, UINT32& existing_exec_order);
-extern void rollback_with_new_input(ptr_checkpoint_t destination, UINT32& existing_exec_order,
-                                    ADDRINT input_buffer_addr, UINT32 input_buffer_size,
-                                    UINT8* new_buffer);
-extern void rollback_with_modified_input(ptr_checkpoint_t destination, UINT32& existing_exec_order,
+extern void rollback_with_current_input(const ptr_checkpoint_t& destination,
+                                        UINT32& existing_exec_order);
+extern void rollback_with_original_input(const ptr_checkpoint_t& destination,
+                                         UINT32& existing_exec_order);
+extern void rollback_with_new_input(const ptr_checkpoint_t& destination,
+                                    UINT32& existing_exec_order, ADDRINT input_buffer_addr,
+                                    UINT32 input_buffer_size, UINT8* new_buffer);
+extern void rollback_with_modified_input(const ptr_checkpoint_t& destination,
+                                         UINT32& existing_exec_order,
                                          addrint_value_map_t& modified_addrs_values);
 
 

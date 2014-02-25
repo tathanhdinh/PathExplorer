@@ -105,7 +105,7 @@ static inline void determine_cfi_input_dependency()
  * rollback from the checkpoint with the modification on the affecting input addresses may change
  * the CFI's decision.
  */
-static inline void set_checkpoints_for_cfi(ptr_cond_direct_instruction_t cfi)
+static inline void set_checkpoints_for_cfi(const ptr_cond_direct_instruction_t& cfi)
 {
   addrint_set_t dep_addrs = cfi->input_dep_addrs;
   addrint_set_t input_dep_addrs, new_dep_addrs, intersected_addrs;
@@ -114,38 +114,42 @@ static inline void set_checkpoints_for_cfi(ptr_cond_direct_instruction_t cfi)
   ptr_checkpoints_t::iterator chkpnt_iter = saved_checkpoints.begin();
   for (; chkpnt_iter != saved_checkpoints.end(); ++chkpnt_iter)
   {
-    // find the input addresses of the checkpoint
-    input_dep_addrs.clear();
-    addrint_value_map_t::iterator addr_iter = (*chkpnt_iter)->input_dep_original_values.begin();
-    for (; addr_iter != (*chkpnt_iter)->input_dep_original_values.end(); ++addr_iter)
+    // consider only checkpoints before the CFI
+    if ((*chkpnt_iter)->exec_order <= cfi->exec_order)
     {
-      input_dep_addrs.insert(addr_iter->first);
-    }
+      // find the input addresses of the checkpoint
+      input_dep_addrs.clear();
+      addrint_value_map_t::iterator addr_iter = (*chkpnt_iter)->input_dep_original_values.begin();
+      for (; addr_iter != (*chkpnt_iter)->input_dep_original_values.end(); ++addr_iter)
+      {
+        input_dep_addrs.insert(addr_iter->first);
+      }
 
-    // find the intersection between the input addresses of the checkpoint and the affecting input
-    // addresses of the CFI
-    intersected_addrs.clear();
-    std::set_intersection(input_dep_addrs.begin(), input_dep_addrs.end(),
-                          dep_addrs.begin(), dep_addrs.end(),
-                          std::inserter(intersected_addrs, intersected_addrs.begin()));
-    // verify if the intersection is not empty
-    if (!intersected_addrs.empty())
-    {
-      // not empty, then the checkpoint and the intersected addrs make a pair, namely when we need
-      // to change the decision of the CFI then we should rollback to the checkpoint and modify some
-      // value at the address of the intersected addrs
-      checkpoint_with_input_addrs = std::make_pair(*chkpnt_iter, intersected_addrs);
-      cfi->checkpoints.push_back(checkpoint_with_input_addrs);
+      // find the intersection between the input addresses of the checkpoint and the affecting input
+      // addresses of the CFI
+      intersected_addrs.clear();
+      std::set_intersection(input_dep_addrs.begin(), input_dep_addrs.end(),
+                            dep_addrs.begin(), dep_addrs.end(),
+                            std::inserter(intersected_addrs, intersected_addrs.begin()));
+      // verify if the intersection is not empty
+      if (!intersected_addrs.empty())
+      {
+        // not empty, then the checkpoint and the intersected addrs make a pair, namely when we need
+        // to change the decision of the CFI then we should rollback to the checkpoint and modify some
+        // value at the address of the intersected addrs
+        checkpoint_with_input_addrs = std::make_pair(*chkpnt_iter, intersected_addrs);
+        cfi->checkpoints.push_back(checkpoint_with_input_addrs);
 
-      // the addrs in the intersected set are subtracted from the original dep_addrs
-      new_dep_addrs.clear();
-      std::set_difference(dep_addrs.begin(), dep_addrs.end(),
-                          intersected_addrs.begin(), intersected_addrs.end(),
-                          std::inserter(new_dep_addrs, new_dep_addrs.begin()));
-      // if the rest is empty then we have finished
-      if (new_dep_addrs.empty()) break;
-      // but if it is not empty then we continue to the next checkpoint
-      else dep_addrs = new_dep_addrs;
+        // the addrs in the intersected set are subtracted from the original dep_addrs
+        new_dep_addrs.clear();
+        std::set_difference(dep_addrs.begin(), dep_addrs.end(),
+                            intersected_addrs.begin(), intersected_addrs.end(),
+                            std::inserter(new_dep_addrs, new_dep_addrs.begin()));
+        // if the rest is empty then we have finished
+        if (new_dep_addrs.empty()) break;
+        // but if it is not empty then we continue to the next checkpoint
+        else dep_addrs = new_dep_addrs;
+      }
     }
   }
 
@@ -160,34 +164,29 @@ static inline void save_detected_cfis()
 {
   std::cerr << "start save_detected_cfis\n";
 
-  ptr_cond_direct_instruction_t newly_detected_cfi;
-  std::map<UINT32, ptr_instruction_t>::iterator executed_ins_iter;
+  ptr_cond_direct_instruction_t new_cfi;
+  std::map<UINT32, ptr_instruction_t>::iterator ins_iter;
 
   // iterate over executed instructions in this tainting phase
-  for (executed_ins_iter = ins_at_order.begin();
-       executed_ins_iter != ins_at_order.end(); ++executed_ins_iter)
+  for (ins_iter = ins_at_order.begin(); ins_iter != ins_at_order.end(); ++ins_iter)
   {
     // consider only the instruction that is not behind the exploring CFI
-    if (!exploring_cfi ||
-        (exploring_cfi && (executed_ins_iter->first > exploring_cfi->exec_order)))
+    if (!exploring_cfi || (exploring_cfi && (ins_iter->first > exploring_cfi->exec_order)))
     {
-      if (executed_ins_iter->second->is_cond_direct_cf)
+      if (ins_iter->second->is_cond_direct_cf)
       {
-        newly_detected_cfi = pept::static_pointer_cast<cond_direct_instruction>(
-              executed_ins_iter->second);
+        new_cfi = pept::static_pointer_cast<cond_direct_instruction>(ins_iter->second);
         // and depends on the input
-        if (!newly_detected_cfi->input_dep_addrs.empty())
+        if (!new_cfi->input_dep_addrs.empty())
         {
-          // then set its checkpoints
-          set_checkpoints_for_cfi(newly_detected_cfi);
-          // and save it
-          detected_input_dep_cfis.push_back(newly_detected_cfi);
+          // then set its checkpoints and save it
+          set_checkpoints_for_cfi(new_cfi); detected_input_dep_cfis.push_back(new_cfi);
 #if !defined(NDEBUG)
-          newly_detected_input_dep_cfis.push_back(newly_detected_cfi);
+          newly_detected_input_dep_cfis.push_back(new_cfi);
 #endif
         }
 #if !defined(NDEBUG)
-        newly_detected_cfis.push_back(newly_detected_cfi);
+        newly_detected_cfis.push_back(new_cfi);
 #endif
       }
     }
@@ -298,6 +297,8 @@ VOID syscall_instruction(ADDRINT ins_addr)
  */
 VOID general_instruction(ADDRINT ins_addr)
 {
+  tfm::format(std::cerr, "generic tainting at %d (%s)\n", current_exec_order, addrint_to_hexstring(ins_addr));
+
   ptr_cond_direct_instruction_t current_cfi, duplicated_cfi;
 
   // verify if the execution order exceeds the limit trace length and the executed
