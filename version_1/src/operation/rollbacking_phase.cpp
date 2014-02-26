@@ -114,8 +114,14 @@ static inline void get_next_active_checkpoint()
     // current active CFI
     active_checkpoint = active_cfi->checkpoints[0].first;
     active_modified_addrs = active_cfi->checkpoints[0].second;
-    initialize_values_at_active_modified_addrs();
+    if (active_checkpoint->exec_order == 669)
+    {
+      std::cerr << "size: " << active_modified_addrs.size() << "\n";
+      PIN_ExitApplication(1);
+    }
+//    initialize_values_at_active_modified_addrs();
   }
+  initialize_values_at_active_modified_addrs();
   return;
 }
 
