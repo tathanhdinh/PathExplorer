@@ -80,7 +80,7 @@ VOID logging_after_wsarecv_funtions_analyzer()
 VOID syscall_entry_analyzer(THREADID thread_id,
                             CONTEXT* p_ctxt, SYSCALL_STANDARD syscall_std, VOID *data)
 {
-  if (current_running_phase == capturing_state)
+  if (current_running_phase == capturing_phase)
   {
     logged_syscall_index = PIN_GetSyscallNumber(p_ctxt, syscall_std);
     if (logged_syscall_index == syscall_recvfrom)
@@ -101,7 +101,7 @@ VOID syscall_entry_analyzer(THREADID thread_id,
 VOID syscall_exit_analyzer(THREADID thread_id,
                            CONTEXT* p_ctxt, SYSCALL_STANDARD syscall_std, VOID *data)
 {
-  if (current_running_phase == capturing_state)
+  if (current_running_phase == capturing_phase)
   {
     if (logged_syscall_index == syscall_recvfrom)
     {

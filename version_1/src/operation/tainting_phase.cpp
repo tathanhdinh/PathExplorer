@@ -403,11 +403,19 @@ VOID mem_read_instruction(ADDRINT ins_addr,
  */
 VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 mem_written_size)
 {
+#if !defined(ENABLE_FAST_ROLLBACK)
   // the first saved checkpoint tracks memory write operations so that we can always rollback to it
   if (!saved_checkpoints.empty())
   {
     saved_checkpoints[0]->mem_write_tracking(mem_written_addr, mem_written_size);
   }
+#else
+  ptr_checkpoints_t::iterator chkpnt_iter = saved_checkpoints.begin();
+  for (; chkpnt_iter != saved_checkpoints.end(); ++chkpnt_iter)
+  {
+    (*chkpnt_iter)->mem_write_tracking(mem_written_addr, mem_written_size);
+  }
+#endif
 
   // update destination operands
   ptr_operand_t mem_operand;

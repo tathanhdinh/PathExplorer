@@ -2,7 +2,7 @@
 
 #include "../util/stuffs.h"
 
-extern ADDRINT received_msg_addr;
+//extern ADDRINT received_msg_addr;
 
 checkpoint::checkpoint(UINT32 existing_exec_order,
                        CONTEXT* p_ctxt, ADDRINT input_mem_read_addr, UINT32 input_mem_read_size)
@@ -59,8 +59,9 @@ static inline void generic_restore(UINT32& existing_exec_order, UINT32 checkpoin
   {
     PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_iter->first), &mem_iter->second, sizeof(UINT8));
   }
-
+#if !defined(ENABLE_FAST_ROLLBACK)
   checkpoint_mem_written_log.clear();
+#endif
   return;
 }
 
@@ -102,12 +103,12 @@ void rollback_with_original_input(const ptr_checkpoint_t& dest, UINT32& existing
  * @brief replace the current input by a new input and rollback
  */
 void rollback_with_new_input(const ptr_checkpoint_t& dest, UINT32& existing_exec_order,
-                             ADDRINT input_buffer_addr, UINT32 input_buffer_size, UINT8* new_buffer)
+                             ADDRINT input_addr, UINT32 input_size, UINT8* new_buffer)
 {
   generic_restore(existing_exec_order, dest->exec_order, dest->mem_written_log);
 
   // replace the current input
-  PIN_SafeCopy(reinterpret_cast<UINT8*>(input_buffer_addr), new_buffer, input_buffer_size);
+  PIN_SafeCopy(reinterpret_cast<UINT8*>(input_addr), new_buffer, input_size);
 
   // restore values of registers
   PIN_ExecuteAt(dest->context.get());

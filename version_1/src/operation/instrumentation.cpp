@@ -70,11 +70,13 @@ static inline void exec_rollbacking_phase(INS& ins, ptr_instruction_t examined_i
                              IARG_INST_PTR, IARG_END);
   }
 
+#if !defined(ENABLE_FAST_ROLLBACK)
   if (examined_ins->is_mem_write)
   {
     INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)rollbacking::mem_write_instruction,
                              IARG_INST_PTR, IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE, IARG_END);
   }
+#endif
 
   return;
 }
@@ -85,13 +87,11 @@ static inline void exec_rollbacking_phase(INS& ins, ptr_instruction_t examined_i
  * @brief instrumentation function: all analysis functions are inserted using
  * INS_InsertPredicatedCall to make sure that the instruction is examined iff it is executed.
  * 
- * @param ins current examined instruction.
- * @param data not used.
- * @return VOID
+ * @param ins current examined instruction (data is not used)
  */
 VOID ins_instrumenter(INS ins, VOID *data)
 {
-  if (current_running_phase != capturing_state)
+  if (current_running_phase != capturing_phase)
   {
     // examining statically instructions
     ptr_instruction_t examined_ins(new instruction(ins));

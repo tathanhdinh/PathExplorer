@@ -8,43 +8,43 @@
 /* ---------------------------------------------------------------------------------------------- */
 /*                                        global variables                                        */
 /* ---------------------------------------------------------------------------------------------- */
-std::map<ADDRINT, ptr_instruction_t>            ins_at_addr;   // statically examined instructions
-std::map<UINT32, ptr_instruction_t>             ins_at_order;  // dynamically examined instructions
+std::map<ADDRINT, ptr_instruction_t>  ins_at_addr;   // statically examined instructions
+std::map<UINT32, ptr_instruction_t>   ins_at_order;  // dynamically examined instructions
 
-UINT32                                          total_rollback_times;
-UINT32                                          local_rollback_times;
-UINT32                                          trace_size;
-UINT32                                          used_checkpoint_number;
+UINT32                                total_rollback_times;
+UINT32                                local_rollback_times;
+UINT32                                trace_size;
+UINT32                                used_checkpoint_number;
 
-UINT32                                          max_total_rollback_times;
-UINT32                                          max_local_rollback_times;
-UINT32                                          max_trace_size;
+UINT32                                max_total_rollback_times;
+UINT32                                max_local_rollback_times;
+UINT32                                max_trace_size;
 
-std::vector<ptr_checkpoint_t>                   saved_checkpoints;
+std::vector<ptr_checkpoint_t>         saved_checkpoints;
 
-ptr_cond_direct_inss_t                  detected_input_dep_cfis;
-ptr_cond_direct_ins_t                   exploring_cfi;
+ptr_cond_direct_inss_t                detected_input_dep_cfis;
+ptr_cond_direct_ins_t                 exploring_cfi;
 
-UINT32                                          current_exec_order;
+UINT32                                current_exec_order;
 
-UINT32                                          received_msg_num;
-ADDRINT                                         received_msg_addr;
-UINT32                                          received_msg_size;
+UINT32                                received_msg_num;
+ADDRINT                               received_msg_addr;
+UINT32                                received_msg_size;
 
 #if defined(__gnu_linux__)
-ADDRINT                                         logged_syscall_index;   // logged syscall index
-ADDRINT                                         logged_syscall_args[6]; // logged syscall arguments
+ADDRINT                               logged_syscall_index;   // logged syscall index
+ADDRINT                               logged_syscall_args[6]; // logged syscall arguments
 #endif
 
-running_phase                                   current_running_phase;
+running_phase                         current_running_phase;
 
-UINT64                                          executed_ins_number;
-UINT64                                          econed_ins_number;
+UINT64                                executed_ins_number;
+UINT64                                econed_ins_number;
 
-time_t                                          start_time;
-time_t                                          stop_time;
+time_t                                start_time;
+time_t                                stop_time;
 
-std::ofstream                                   log_file;
+std::ofstream                         log_file;
 
 /* ---------------------------------------------------------------------------------------------- */
 /*                                         input handler functions                                */
@@ -85,7 +85,7 @@ VOID start_tracing(VOID *data)
   logged_syscall_index      = syscall_inexist;
 
   exploring_cfi.reset();
-  current_running_phase     = capturing_state;
+  current_running_phase     = capturing_phase;
 
   log_file.open("path_explorer.log", std::ofstream::out | std::ofstream::trunc);
 

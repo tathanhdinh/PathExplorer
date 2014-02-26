@@ -11,7 +11,7 @@
 
 typedef enum
 {
-  capturing_state   = 0,
+  capturing_phase   = 0,
   tainting_state    = 1,
   rollbacking_state = 2
 } running_phase;
