@@ -70,8 +70,6 @@ static inline void rollback()
       // exceeds
       tfm::format(log_file, "fatal: the number of used rollback (%d) exceeds its bound value (%d)\n",
                   used_rollback_num, max_rollback_num);
-      tfm::format(std::cerr, "%s %d\n", addrint_to_hexstring(received_msg_addr + 12),
-                  *(reinterpret_cast<UINT8*>(received_msg_addr + 12)));
       PIN_ExitApplication(1);
     }
 #endif
@@ -114,13 +112,8 @@ static inline void get_next_active_checkpoint()
     // current active CFI
     active_checkpoint = active_cfi->checkpoints[0].first;
     active_modified_addrs = active_cfi->checkpoints[0].second;
-    if (active_checkpoint->exec_order == 669)
-    {
-      std::cerr << "size: " << active_modified_addrs.size() << "\n";
-      PIN_ExitApplication(1);
-    }
-//    initialize_values_at_active_modified_addrs();
   }
+
   initialize_values_at_active_modified_addrs();
   return;
 }
@@ -215,8 +208,6 @@ static inline addrint_value_map_t input_on_active_modified_addrs()
  */
 VOID generic_instruction(ADDRINT ins_addr)
 {
-
-
   // verify if the execution order of the instruction exceeds the last CFI
   if (current_exec_order >= tainted_trace_length)
   {
@@ -226,13 +217,11 @@ VOID generic_instruction(ADDRINT ins_addr)
   else
   {
     current_exec_order++;
-#if !defined(NDEBUG)
-    tfm::format(std::cerr, "%-3d %-15s %-50s %-25s %-25s\n", current_exec_order,
-                addrint_to_hexstring(ins_addr), ins_at_addr[ins_addr]->disassembled_name,
-                ins_at_addr[ins_addr]->contained_image, ins_at_addr[ins_addr]->contained_function);
-    tfm::format(std::cerr, "value at %s %d\n", addrint_to_hexstring(received_msg_addr + 12),
-                *(reinterpret_cast<UINT8*>(received_msg_addr + 12)));
-#endif
+//#if !defined(NDEBUG)
+//    tfm::format(std::cerr, "%-3d %-15s %-50s %-25s %-25s\n", current_exec_order,
+//                addrint_to_hexstring(ins_addr), ins_at_addr[ins_addr]->disassembled_name,
+//                ins_at_addr[ins_addr]->contained_image, ins_at_addr[ins_addr]->contained_function);
+//#endif
 
     // verify if the executed instruction is in the original trace
     if (ins_at_order[current_exec_order]->address != ins_addr)
@@ -265,33 +254,24 @@ VOID generic_instruction(ADDRINT ins_addr)
           // change the control flow
         }
         // in both cases, we need rollback
-        tfm::format(std::cerr, "%d %s %s\n", current_exec_order,
-                    addrint_to_hexstring(ins_at_order[current_exec_order]->address),
-                    addrint_to_hexstring(ins_addr));
-        tfm::format(std::cerr, "rollback from 1 (%d to %d)\n", current_exec_order,
-                    active_checkpoint->exec_order);
         rollback();
       }
 #if !defined(NDEBUG)
       else
       {
         // not activated, then some errors have occurred
-        log_file << "there is no active CFI but the original trace will change\n";
+        tfm::format(log_file,
+                    "fatal: there is no active CFI but the original trace changes (%s %d)\n",
+                    addrint_to_hexstring(ins_addr), current_exec_order);
         PIN_ExitApplication(1);
       }
 #endif
     }
     else
     {
-//      std::cerr << "equal\n";
       // the executed instruction is in the original trace, then verify if there exists active CFI
       // and the executed instruction has exceeded this CFI
-      if (active_cfi && (current_exec_order > active_cfi->exec_order))
-      {
-        tfm::format(std::cerr, "rollback from 2 (%d to %d)\n", current_exec_order,
-                    active_checkpoint->exec_order);
-        rollback();
-      }
+      if (active_cfi && (current_exec_order > active_cfi->exec_order)) rollback();
     }
   }
 
@@ -330,8 +310,6 @@ VOID control_flow_instruction(ADDRINT ins_addr)
             if (active_checkpoint)
             {
               // exists, then rollback to the new active checkpoint
-              tfm::format(std::cerr, "rollback from 3 (%d to %d)\n", current_exec_order,
-                          active_checkpoint->exec_order);
               used_rollback_num = 0; rollback();
             }
             else
@@ -343,7 +321,7 @@ VOID control_flow_instruction(ADDRINT ins_addr)
                             active_cfi->disassembled_name, active_cfi->exec_order);
               }
 #endif
-              // does not exist, all of tests reserved for it have been used
+              // the next checkpoint does not exist, all of tests reserved for it have been used
               active_cfi->is_bypassed = !active_cfi->is_resolved; active_cfi.reset();
               used_rollback_num = 0;
             }
@@ -377,8 +355,6 @@ VOID control_flow_instruction(ADDRINT ins_addr)
         }
 
         // and rollback to resolve the new active CFI
-        tfm::format(std::cerr, "rollback from 4 (%d to %d)\n", current_exec_order,
-                    active_checkpoint->exec_order);
         used_rollback_num = 0; rollback();
       }
     }
@@ -393,12 +369,6 @@ VOID control_flow_instruction(ADDRINT ins_addr)
  */
 VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length)
 {
-  if ((mem_addr <= received_msg_addr + 12) && (received_msg_addr + 12 < mem_addr + mem_length))
-  {
-    tfm::format(std::cerr, "warning, write to address %s\n", addrint_to_hexstring(mem_addr));
-    PIN_ExitApplication(1);
-  }
-
   // verify if the active checkpoint is enabled
   if (active_checkpoint)
   {
