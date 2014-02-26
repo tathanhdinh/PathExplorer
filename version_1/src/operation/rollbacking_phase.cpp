@@ -70,6 +70,8 @@ static inline void rollback()
       // exceeds
       tfm::format(log_file, "fatal: the number of used rollback (%d) exceeds its bound value (%d)\n",
                   used_rollback_num, max_rollback_num);
+      tfm::format(std::cerr, "%s %d\n", addrint_to_hexstring(received_msg_addr + 12),
+                  *(reinterpret_cast<UINT8*>(received_msg_addr + 12)));
       PIN_ExitApplication(1);
     }
 #endif
@@ -207,6 +209,8 @@ static inline addrint_value_map_t input_on_active_modified_addrs()
  */
 VOID generic_instruction(ADDRINT ins_addr)
 {
+
+
   // verify if the execution order of the instruction exceeds the last CFI
   if (current_exec_order >= tainted_trace_length)
   {
@@ -216,11 +220,13 @@ VOID generic_instruction(ADDRINT ins_addr)
   else
   {
     current_exec_order++;
-//#if !defined(NDEBUG)
-//    tfm::format(log_file, "%-3d %-15s %-50s %-25s %-25s\n", current_exec_order,
-//                addrint_to_hexstring(ins_addr), ins_at_addr[ins_addr]->disassembled_name,
-//                ins_at_addr[ins_addr]->contained_image, ins_at_addr[ins_addr]->contained_function);
-//#endif
+#if !defined(NDEBUG)
+    tfm::format(std::cerr, "%-3d %-15s %-50s %-25s %-25s\n", current_exec_order,
+                addrint_to_hexstring(ins_addr), ins_at_addr[ins_addr]->disassembled_name,
+                ins_at_addr[ins_addr]->contained_image, ins_at_addr[ins_addr]->contained_function);
+    tfm::format(std::cerr, "value at %s %d\n", addrint_to_hexstring(received_msg_addr + 12),
+                *(reinterpret_cast<UINT8*>(received_msg_addr + 12)));
+#endif
 
     // verify if the executed instruction is in the original trace
     if (ins_at_order[current_exec_order]->address != ins_addr)
@@ -381,6 +387,12 @@ VOID control_flow_instruction(ADDRINT ins_addr)
  */
 VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length)
 {
+  if ((mem_addr <= received_msg_addr + 12) && (received_msg_addr + 12 < mem_addr + mem_length))
+  {
+    tfm::format(std::cerr, "warning, write to address %s\n", addrint_to_hexstring(mem_addr));
+    PIN_ExitApplication(1);
+  }
+
   // verify if the active checkpoint is enabled
   if (active_checkpoint)
   {

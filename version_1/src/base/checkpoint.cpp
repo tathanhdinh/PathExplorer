@@ -2,6 +2,7 @@
 
 #include "../util/stuffs.h"
 
+extern ADDRINT received_msg_addr;
 
 checkpoint::checkpoint(UINT32 existing_exec_order,
                        CONTEXT* p_ctxt, ADDRINT input_mem_read_addr, UINT32 input_mem_read_size)
@@ -65,6 +66,14 @@ static inline void generic_restore(UINT32& existing_exec_order, UINT32 checkpoin
   {
     tfm::format(log_file, "(%s %d) ", addrint_to_hexstring(mem_iter->first), mem_iter->second);
     PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_iter->first), &mem_iter->second, sizeof(UINT8));
+//    if (mem_iter->first == received_msg_addr + 12)
+//    {
+//      tfm::format(std::cerr, "restore address %s with value %d\n",
+//                  addrint_to_hexstring(mem_iter->first), mem_iter->second);
+//      PIN_ExitApplication(1);
+//    }
+//    tfm::format(std::cerr, "restore address %s with value %d\n",
+//                addrint_to_hexstring(mem_iter->first), mem_iter->second);
   }
   log_file << "\n<===restore\n";
 
