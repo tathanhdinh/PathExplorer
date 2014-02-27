@@ -63,7 +63,10 @@ KNOB<UINT32>  max_trace_length    (KNOB_MODE_WRITEONCE, "pintool",
 /* ---------------------------------------------------------------------------------------------- */
 /*                                  basic instrumentation functions                               */
 /* ---------------------------------------------------------------------------------------------- */
-VOID start_tracing(VOID *data)
+/**
+ * @brief initialize input variables
+ */
+VOID start_exploring(VOID *data)
 {
   start_time                = std::time(0);
 
@@ -96,12 +99,9 @@ VOID start_tracing(VOID *data)
 
 
 /**
- * @brief stop_tracing
- * @param code
- * @param data
- * @return
+ * @brief collect explored results
  */
-VOID stop_tracing(INT32 code, VOID *data)
+VOID stop_exploring(INT32 code, VOID *data)
 {
   stop_time = std::time(0);
 
@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
     log_file << "Pin initialization success\n";
 
     log_file << "activate Pintool data-initialization\n";
-    PIN_AddApplicationStartFunction(start_tracing, 0);  // 0 is the (unused) input data
+    PIN_AddApplicationStartFunction(start_exploring, 0);  // 0 is the (unused) input data
 
     log_file << "activate image-load instrumenter\n";
     IMG_AddInstrumentFunction(image_load_instrumenter, 0);
@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
 #endif
 
     log_file << "activate Pintool data-finalization\n";
-    PIN_AddFiniFunction(stop_tracing, 0);
+    PIN_AddFiniFunction(stop_exploring, 0);
 
     // now the control is passed to pin, so the main function will never return
     PIN_StartProgram();
