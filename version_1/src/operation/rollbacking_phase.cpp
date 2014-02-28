@@ -160,7 +160,7 @@ static inline void prepare_new_tainting_phase()
 #if !defined(NDEBUG)
     tfm::format(log_file, "explore the CFI %s at %d, start tainting\n", exploring_cfi->disassembled_name,
                 exploring_cfi->exec_order);
-    log_file.flush();
+//    log_file.flush();
 #endif
 
     // rollback to the first checkpoint with the new input

@@ -94,6 +94,14 @@ VOID start_exploring(VOID *data)
 
   ::srand(static_cast<uint32_t>(::time(0)));
 
+#if !defined(ENABLE_FAST_ROLLBACK)
+  tfm::format(log_file, "local rollback %d, trace depth %d, fast rollback disabled\n",
+              max_local_rollback_times, max_trace_size);
+#else
+  tfm::format(log_file, "local rollback %d, trace depth %d, fast rollback enabled\n",
+              max_local_rollback_times, max_trace_size);
+#endif
+
   return;
 }
 

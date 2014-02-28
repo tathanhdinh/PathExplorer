@@ -279,7 +279,7 @@ inline void prepare_new_rollbacking_phase()
 #if !defined(NDEBUG)
     tfm::format(log_file, "stop tainting, %d instructions executed; start analyzing\n",
                 current_exec_order);
-    log_file.flush();
+//    log_file.flush();
 #endif
 
     analyze_executed_instructions();
@@ -293,7 +293,7 @@ inline void prepare_new_rollbacking_phase()
                 "stop analyzing, %d checkpoints, %d/%d branches detected; start rollbacking with limit trace %d\n",
                 saved_checkpoints.size(), newly_detected_input_dep_cfis.size(),
                 newly_detected_cfis.size(), rollbacking_trace_length);
-    log_file.flush();
+//    log_file.flush();
 #endif
 
     // and rollback to the first checkpoint (tainting->rollbacking transition)
@@ -346,7 +346,7 @@ VOID general_instruction(ADDRINT ins_addr)
     tfm::format(log_file, "%-3d %-15s %-50s %-25s %-25s\n", current_exec_order,
                 addrint_to_hexstring(ins_addr), ins_at_addr[ins_addr]->disassembled_name,
                 ins_at_addr[ins_addr]->contained_image, ins_at_addr[ins_addr]->contained_function);
-    log_file.flush();
+//    log_file.flush();
 #endif
   }
   else
