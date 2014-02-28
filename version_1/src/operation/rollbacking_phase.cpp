@@ -8,16 +8,16 @@
 
 /*================================================================================================*/
 
-static ptr_cond_direct_ins_t  active_cfi;
-static ptr_checkpoint_t               active_checkpoint;
-static ptr_checkpoint_t               first_checkpoint;
-static UINT32                         max_rollback_num;
-static UINT32                         used_rollback_num;
-static UINT32                         tainted_trace_length;
-static addrint_set_t                  active_modified_addrs;
-static addrint_value_map_t            active_modified_addrs_values;
-static ptr_uint8_t                    fresh_input;
-static ptr_uint8_t                    tainting_input;
+static ptr_cond_direct_ins_t    active_cfi;
+static ptr_checkpoint_t         active_checkpoint;
+static ptr_checkpoint_t         first_checkpoint;
+static UINT32                   max_rollback_num;
+static UINT32                   used_rollback_num;
+static UINT32                   tainted_trace_length;
+static addrint_set_t            active_modified_addrs;
+static addrint_value_map_t      active_modified_addrs_values;
+static ptr_uint8_t              fresh_input;
+static ptr_uint8_t              tainting_input;
 
 /*================================================================================================*/
 
@@ -158,8 +158,8 @@ static inline void prepare_new_tainting_phase()
     current_running_phase = tainting_state; tainting::initialize_tainting_phase();
 
 #if !defined(NDEBUG)
-    tfm::format(log_file, "explore the CFI %s at %d, start tainting\n", exploring_cfi->disassembled_name,
-                exploring_cfi->exec_order);
+    tfm::format(log_file, "explore the CFI %s at %d, start tainting\n",
+                exploring_cfi->disassembled_name, exploring_cfi->exec_order);
 //    log_file.flush();
 #endif
 
