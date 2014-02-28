@@ -98,7 +98,7 @@ set(PIN_COMPILE_FLAGS "-Wall -Werror -Wno-unknown-pragmas -O3 -fomit-frame-point
 set(PIN_C_FLAGS "${PIN_COMPILE_FLAGS}")
 #set(PIN_CXX_FLAGS "${PIN_COMPILE_FLAGS} -MMD")
 #set(PIN_CXX_FLAGS "${PIN_COMPILE_FLAGS} -MMD -std=c++11")
-set(PIN_CXX_FLAGS "${PIN_COMPILE_FLAGS} -MMD -std=c++11 -DENABLE_FAST_ROLLBACK")
+set(PIN_CXX_FLAGS "${PIN_COMPILE_FLAGS} -MMD -std=c++11 -DENABLE_FAST_ROLLBACK -DNDEBUG")
 set(PIN_LINKER_FLAGS "-Wl,--hash-style=sysv -shared -Wl,-Bsymbolic -Wl,--version-script=${PIN_VERSION_SCRIPT}")
 # set(PIN_LINKER_FLAGS "-Wl,--hash-style=sysv -Wl,-Bsymbolic -Wl,--version-script=${PIN_VERSION_SCRIPT}")
 

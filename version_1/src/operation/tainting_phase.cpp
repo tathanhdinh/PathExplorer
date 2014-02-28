@@ -558,8 +558,11 @@ VOID graphical_propagation(ADDRINT ins_addr)
  */
 void initialize_tainting_phase()
 {
-  dta_graph.clear(); dta_outer_vertices.clear(); saved_checkpoints.clear();
-  newly_detected_input_dep_cfis.clear(); newly_detected_cfis.clear(); ins_at_order.clear();
+  dta_graph.clear(); dta_outer_vertices.clear(); saved_checkpoints.clear(); ins_at_order.clear();
+#if !defined(NDEBUG)
+  newly_detected_input_dep_cfis.clear();
+  newly_detected_cfis.clear();
+#endif
   return;
 }
 
