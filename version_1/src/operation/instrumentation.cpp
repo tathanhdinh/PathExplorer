@@ -124,8 +124,42 @@ VOID ins_instrumenter(INS ins, VOID *data)
   return;
 }
 
-/*================================================================================================*/
 
+/**
+ * @brief instrument_recvs
+ */
+static inline void instrument_recvs(RTN& recv_function)
+{
+  RTN_Open(recv_function);
+
+  RTN_InsertCall(recv_function, IPOINT_BEFORE, (AFUNPTR)capturing::before_recvs,
+                 IARG_FUNCARG_ENTRYPOINT_VALUE, 1, IARG_END);
+
+  RTN_InsertCall(recv_function, IPOINT_AFTER, (AFUNPTR)capturing::after_recvs,
+                 IARG_FUNCRET_EXITPOINT_VALUE, IARG_END);
+
+  RTN_Close(recv_function);
+  return;
+}
+
+
+static inline void instrument_wsarecvs(RTN& wsarecv_function)
+{
+  RTN_Open(wsarecv_function);
+
+  RTN_InsertCall(wsarecv_function, IPOINT_BEFORE, (AFUNPTR)capturing::before_wsarecvs,
+                 IARG_FUNCARG_ENTRYPOINT_VALUE, 1, IARG_END);
+
+  RTN_InsertCall(wsarecv_function, IPOINT_AFTER, (AFUNPTR)capturing::after_wsarecvs, IARG_END);
+
+  RTN_Close(wsarecv_function);
+  return;
+}
+
+
+/**
+ * @brief detect loaded images
+ */
 VOID image_load_instrumenter(IMG loaded_img, VOID *data)
 {
 #if !defined(NDEBUG)
@@ -141,74 +175,41 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
     log_file << "winsock module found\n";
 #endif
 
-    RTN recv_function = RTN_FindByName(loaded_img, "recv");
-    if (RTN_Valid(recv_function))
+    RTN recv_func = RTN_FindByName(loaded_img, "recv");
+    if (RTN_Valid(recv_func))
     {
 #if !defined(NDEBUG)
       log_file << "recv instrumented\n";
 #endif
-
-      RTN_Open(recv_function);
-
-      RTN_InsertCall(recv_function, IPOINT_BEFORE, (AFUNPTR)capturing::before_recvs,
-                     IARG_FUNCARG_ENTRYPOINT_VALUE, 1, IARG_END);
-
-      RTN_InsertCall(recv_function, IPOINT_AFTER, (AFUNPTR)capturing::after_recvs,
-                     IARG_FUNCRET_EXITPOINT_VALUE, IARG_END);
-
-      RTN_Close(recv_function);
+      instrument_recvs(recv_func);
     }
 
-    RTN recvfrom_function = RTN_FindByName(loaded_img, "recvfrom");
-    if (RTN_Valid(recvfrom_function))
+    RTN recvfrom_func = RTN_FindByName(loaded_img, "recvfrom");
+    if (RTN_Valid(recvfrom_func))
     {
+#if !defined(NDEBUG)
       log_file << "recvfrom instrumented\n";
-
-      RTN_Open(recvfrom_function);
-
-      RTN_InsertCall(recvfrom_function, IPOINT_BEFORE,
-                     (AFUNPTR)logging_before_recv_functions_analyzer,
-                     IARG_FUNCARG_ENTRYPOINT_VALUE, 1, IARG_END);
-
-      RTN_InsertCall(recvfrom_function, IPOINT_AFTER,
-                     (AFUNPTR)logging_after_recv_functions_analyzer,
-                     IARG_FUNCRET_EXITPOINT_VALUE, IARG_END);
-
-      RTN_Close(recvfrom_function);
+#endif
+      instrument_recvs(recvfrom_func);
     }
 
-    RTN wsarecv_function = RTN_FindByName(loaded_img, "WSARecv");
-    if (RTN_Valid(wsarecv_function))
+    RTN wsarecv_func = RTN_FindByName(loaded_img, "WSARecv");
+    if (RTN_Valid(wsarecv_func))
     {
+#if !defined(NDEBUG)
       log_file << "WSARecv instrumented\n";
+#endif
 
-      RTN_Open(wsarecv_function);
-
-      RTN_InsertCall(wsarecv_function, IPOINT_BEFORE,
-                     (AFUNPTR)logging_before_wsarecv_functions_analyzer,
-                     IARG_FUNCARG_ENTRYPOINT_VALUE, 1, IARG_END);
-
-      RTN_InsertCall(wsarecv_function, IPOINT_AFTER,
-                     (AFUNPTR)logging_after_wsarecv_funtions_analyzer, IARG_END);
-
-      RTN_Close(wsarecv_function);
+      instrument_wsarecvs(wsarecv_func);
     }
 
-    RTN wsarecvfrom_function = RTN_FindByName(loaded_img, "WSARecvFrom");
-    if (RTN_Valid(wsarecvfrom_function))
+    RTN wsarecvfrom_func = RTN_FindByName(loaded_img, "WSARecvFrom");
+    if (RTN_Valid(wsarecvfrom_func))
     {
+#if !defined(NDEBUG)
       log_file << "WSARecvFrom instrumented\n";
-
-      RTN_Open(wsarecvfrom_function);
-
-      RTN_InsertCall(wsarecvfrom_function, IPOINT_BEFORE,
-                     (AFUNPTR)logging_before_wsarecv_functions_analyzer,
-                     IARG_FUNCARG_ENTRYPOINT_VALUE, 1, IARG_END);
-
-      RTN_InsertCall(wsarecvfrom_function, IPOINT_AFTER,
-                     (AFUNPTR)logging_after_wsarecv_funtions_analyzer, IARG_END);
-
-      RTN_Close(wsarecvfrom_function);
+#endif
+      instrument_wsarecvs(wsarecvfrom_func);
     }
   }
 #endif
