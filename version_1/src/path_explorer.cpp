@@ -85,7 +85,9 @@ VOID start_exploring(VOID *data)
   econed_ins_number         = 0;
   
   received_msg_num          = 0;
+#if defined(__gnu_linux__)
   logged_syscall_index      = syscall_inexist;
+#endif
 
   exploring_cfi.reset();
   current_running_phase     = capturing_phase;

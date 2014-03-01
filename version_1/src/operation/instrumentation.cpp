@@ -8,8 +8,13 @@
 #include "../util/stuffs.h"
 #include "common.h"
 #include "instrumentation.h"
+#include "capturing_phase.h"
 #include "tainting_phase.h"
 #include "rollbacking_phase.h"
+
+#if defined(_WIN32) || defined(_WIN64)
+#include <stdlib.h>
+#endif
 
 /*================================================================================================*/
 
@@ -124,27 +129,31 @@ VOID ins_instrumenter(INS ins, VOID *data)
 VOID image_load_instrumenter(IMG loaded_img, VOID *data)
 {
 #if !defined(NDEBUG)
-  tfm::format(log_file, "module loaded %s\n", IMG_Name(loaded_img));
+  tfm::format(log_file, "module %s loaded\n", IMG_Name(loaded_img));
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)
-  // verify whether the winsock2 module is loaded
-  const static std::string winsock_dll_name("WS2_32.dll");
-  if (loaded_image_path.filename() == winsock_dll_name)
+  // verify if the winsock2 module is loaded
+  std::string loaded_img_full_name = IMG_Name(loaded_img);
+  if (loaded_img_full_name.find_last_of("WS2_32.dll") != std::string::npos)
   {
+#if !defined(NDEBUG)
     log_file << "winsock module found\n";
+#endif
 
     RTN recv_function = RTN_FindByName(loaded_img, "recv");
     if (RTN_Valid(recv_function))
     {
+#if !defined(NDEBUG)
       log_file << "recv instrumented\n";
+#endif
 
       RTN_Open(recv_function);
 
-      RTN_InsertCall(recv_function, IPOINT_BEFORE, (AFUNPTR)logging_before_recv_functions_analyzer,
+      RTN_InsertCall(recv_function, IPOINT_BEFORE, (AFUNPTR)capturing::before_recvs,
                      IARG_FUNCARG_ENTRYPOINT_VALUE, 1, IARG_END);
 
-      RTN_InsertCall(recv_function, IPOINT_AFTER, (AFUNPTR)logging_after_recv_functions_analyzer,
+      RTN_InsertCall(recv_function, IPOINT_AFTER, (AFUNPTR)capturing::after_recvs,
                      IARG_FUNCRET_EXITPOINT_VALUE, IARG_END);
 
       RTN_Close(recv_function);

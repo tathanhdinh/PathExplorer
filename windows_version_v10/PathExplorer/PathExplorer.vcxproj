@@ -14,6 +14,31 @@
       <Platform>Win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\version_1\src\base\checkpoint.cpp" />
+    <ClCompile Include="..\..\version_1\src\base\cond_direct_instruction.cpp" />
+    <ClCompile Include="..\..\version_1\src\base\instruction.cpp" />
+    <ClCompile Include="..\..\version_1\src\base\operand.cpp" />
+    <ClCompile Include="..\..\version_1\src\operation\capturing_phase.cpp" />
+    <ClCompile Include="..\..\version_1\src\operation\instrumentation.cpp" />
+    <ClCompile Include="..\..\version_1\src\operation\rollbacking_phase.cpp" />
+    <ClCompile Include="..\..\version_1\src\operation\tainting_phase.cpp" />
+    <ClCompile Include="..\..\version_1\src\path_explorer.cpp" />
+    <ClCompile Include="..\..\version_1\src\util\stuffs.cc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\version_1\src\base\checkpoint.h" />
+    <ClInclude Include="..\..\version_1\src\base\cond_direct_instruction.h" />
+    <ClInclude Include="..\..\version_1\src\base\instruction.h" />
+    <ClInclude Include="..\..\version_1\src\base\operand.h" />
+    <ClInclude Include="..\..\version_1\src\operation\capturing_phase.h" />
+    <ClInclude Include="..\..\version_1\src\operation\common.h" />
+    <ClInclude Include="..\..\version_1\src\operation\instrumentation.h" />
+    <ClInclude Include="..\..\version_1\src\operation\rollbacking_phase.h" />
+    <ClInclude Include="..\..\version_1\src\operation\tainting_phase.h" />
+    <ClInclude Include="..\..\version_1\src\util\stuffs.h" />
+    <ClInclude Include="..\..\version_1\src\util\tinyformat.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{6E0B74FB-B0AD-4163-802C-5631417285E7}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -127,31 +152,6 @@
       <AdditionalOptions> /EXPORT:main /ENTRY:Ptrace_DllMainCRTStartup@12 %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\previous_version\analysis_functions.cc" />
-    <ClCompile Include="..\..\previous_version\branch.cpp" />
-    <ClCompile Include="..\..\previous_version\checkpoint.cpp" />
-    <ClCompile Include="..\..\previous_version\instruction.cpp" />
-    <ClCompile Include="..\..\previous_version\instrumentation_functions.cc" />
-    <ClCompile Include="..\..\previous_version\logging_functions.cc" />
-    <ClCompile Include="..\..\previous_version\path_explorer.cpp" />
-    <ClCompile Include="..\..\previous_version\resolving_functions.cc" />
-    <ClCompile Include="..\..\previous_version\stuffs.cc" />
-    <ClCompile Include="..\..\previous_version\tainting_functions.cc" />
-    <ClCompile Include="..\..\previous_version\variable.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\previous_version\analysis_functions.h" />
-    <ClInclude Include="..\..\previous_version\branch.h" />
-    <ClInclude Include="..\..\previous_version\checkpoint.h" />
-    <ClInclude Include="..\..\previous_version\instruction.h" />
-    <ClInclude Include="..\..\previous_version\instrumentation_functions.h" />
-    <ClInclude Include="..\..\previous_version\logging_functions.h" />
-    <ClInclude Include="..\..\previous_version\resolving_functions.h" />
-    <ClInclude Include="..\..\previous_version\stuffs.h" />
-    <ClInclude Include="..\..\previous_version\tainting_functions.h" />
-    <ClInclude Include="..\..\previous_version\variable.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

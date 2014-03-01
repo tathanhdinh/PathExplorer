@@ -15,69 +15,69 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\previous_version\analysis_functions.cc">
+    <ClCompile Include="..\..\version_1\src\base\checkpoint.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\previous_version\branch.cpp">
+    <ClCompile Include="..\..\version_1\src\base\cond_direct_instruction.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\previous_version\checkpoint.cpp">
+    <ClCompile Include="..\..\version_1\src\base\instruction.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\previous_version\instruction.cpp">
+    <ClCompile Include="..\..\version_1\src\base\operand.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\previous_version\instrumentation_functions.cc">
+    <ClCompile Include="..\..\version_1\src\operation\capturing_phase.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\previous_version\logging_functions.cc">
+    <ClCompile Include="..\..\version_1\src\operation\instrumentation.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\previous_version\path_explorer.cpp">
+    <ClCompile Include="..\..\version_1\src\operation\rollbacking_phase.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\previous_version\resolving_functions.cc">
+    <ClCompile Include="..\..\version_1\src\operation\tainting_phase.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\previous_version\stuffs.cc">
+    <ClCompile Include="..\..\version_1\src\util\stuffs.cc">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\previous_version\tainting_functions.cc">
-      <Filter>Fichiers sources</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\previous_version\variable.cpp">
+    <ClCompile Include="..\..\version_1\src\path_explorer.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\previous_version\analysis_functions.h">
+    <ClInclude Include="..\..\version_1\src\base\checkpoint.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\previous_version\branch.h">
+    <ClInclude Include="..\..\version_1\src\base\cond_direct_instruction.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\previous_version\checkpoint.h">
+    <ClInclude Include="..\..\version_1\src\base\instruction.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\previous_version\instruction.h">
+    <ClInclude Include="..\..\version_1\src\base\operand.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\previous_version\instrumentation_functions.h">
+    <ClInclude Include="..\..\version_1\src\operation\capturing_phase.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\previous_version\logging_functions.h">
+    <ClInclude Include="..\..\version_1\src\operation\common.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\previous_version\resolving_functions.h">
+    <ClInclude Include="..\..\version_1\src\operation\instrumentation.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\previous_version\stuffs.h">
+    <ClInclude Include="..\..\version_1\src\operation\rollbacking_phase.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\previous_version\tainting_functions.h">
+    <ClInclude Include="..\..\version_1\src\operation\tainting_phase.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\previous_version\variable.h">
+    <ClInclude Include="..\..\version_1\src\util\stuffs.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\version_1\src\util\tinyformat.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
   </ItemGroup>
