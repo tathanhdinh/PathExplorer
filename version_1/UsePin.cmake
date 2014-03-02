@@ -49,7 +49,7 @@ if(PIN_FOUND)
       COMPILE_FLAGS ${PIN_CXX_FLAGS}
     )
     
-    target_link_libraries(${pin_tool_name} ${PINTOOL_LINK_LIBS} pin pinvm libxed ntdll-32)
+    target_link_libraries(${pin_tool_name} ${PINTOOL_LINK_LIBS} pin pinvm libxed ntdll-32 libcmt libcpmt)
 
   endmacro(ADD_PINTOOL pin_tool_name)
 

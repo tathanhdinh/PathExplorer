@@ -20,8 +20,6 @@
 #  PIN_USE_FILE         - Convenience include file.
 #  PIN_CPU_ARCH         - ia32, ia64
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-
 set(PIN_FOUND false)
 
 # Add the convenience use file if available.
@@ -98,7 +96,6 @@ set(PIN_VERSION_SCRIPT ${PIN_ROOT_DIR}/source/include/pin/pintool.ver)
 
 #set(PIN_COMPILE_FLAGS "-Wall -Werror -Wno-unknown-pragmas -O3 -fomit-frame-pointer -fno-strict-aliasing -DBOOST_LOG_DYN_LINK")
 set(PIN_COMPILE_FLAGS "-Wall -Werror -Wno-unknown-pragmas -O3 -fomit-frame-pointer -fno-strict-aliasing")
-set(PIN_COMPILE_FLAGS "/D TARGET_IA32 /D HOST_IA32 /D TARGET_WINDOWS /D USING_XED /D _WINDLL /D _MBCS /D_SECURE_SCL=0")
 set(PIN_C_FLAGS "${PIN_COMPILE_FLAGS}")
 #set(PIN_CXX_FLAGS "${PIN_COMPILE_FLAGS} -MMD")
 #set(PIN_CXX_FLAGS "${PIN_COMPILE_FLAGS} -MMD -std=c++11")
@@ -118,41 +115,3 @@ elseif("${PIN_CPU_ARCH}" STREQUAL "ipf")
 endif("${PIN_CPU_ARCH}" STREQUAL "ia32e")
 
 set(PIN_FOUND true)
-
-else(${CMAKE_SYSTEM_NAME} MATCHES "Linux") # setting for Windows
-
-set(BOOST_INCLUDE_DIRS "C:/Users/Ta Thanh Dinh/Documents/boost_1_55_0-msvc-10.0-32")
-
-set(PIN_FOUND false)
-
-set(PIN_CPU_ARCH "ia32")
-set(PIN_CPU_ARCH_LONG "ia32")
-
-set(PIN_INCLUDE_DIRS
-  ${PIN_ROOT_DIR}/extras/xed2-${PIN_CPU_ARCH_LONG}/include
-  ${PIN_ROOT_DIR}/source/include/pin
-  ${PIN_ROOT_DIR}/source/include/pin/gen
-  ${PIN_ROOT_DIR}/extras/components/include
-  ${BOOST_INCLUDE_DIRS}
-)
-
-set(PIN_LIBRARY_DIRS
-  ${PIN_ROOT_DIR}/extras/xed2-${PIN_CPU_ARCH_LONG}/lib
-  ${PIN_ROOT_DIR}/${PIN_CPU_ARCH_LONG}/lib
-  ${PIN_ROOT_DIR}/${PIN_CPU_ARCH_LONG}/lib-ext
-)
-
-set(PIN_COMPILE_FLAGS "/D TARGET_IA32 /D HOST_IA32 /D TARGET_WINDOWS /D USING_XED /D _WINDLL /D _MBCS /D_SECURE_SCL=0")
-set(PIN_C_FLAGS "${PIN_COMPILE_FLAGS} -DENABLE_FAST_ROLLBACK -DNDEBUG")
-set(PIN_CXX_FLAGS "${PIN_COMPILE_FLAGS} -DENABLE_FAST_ROLLBACK -DNDEBUG")
-set(PIN_LINKER_FLAGS "/NODEFAULTLIB:library")
-
-set(PIN_DEFINITIONS "")
-list(APPEND PIN_DEFINITIONS TARGET_WINDOWS BIGARRAY_MULTIPLIER=1 USING_XED TARGET_IA32 HOST_IA32)
-
-set(PIN_FOUND true)
-
-endif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-
-
-
