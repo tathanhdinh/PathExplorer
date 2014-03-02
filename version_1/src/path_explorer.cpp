@@ -20,7 +20,8 @@ UINT32                                max_total_rollback_times;
 UINT32                                max_local_rollback_times;
 UINT32                                max_trace_size;
 
-std::vector<ptr_checkpoint_t>         saved_checkpoints;
+//std::vector<ptr_checkpoint_t>         saved_checkpoints;
+ptr_checkpoints_t                     saved_checkpoints;
 
 ptr_cond_direct_inss_t                detected_input_dep_cfis;
 ptr_cond_direct_ins_t                 exploring_cfi;

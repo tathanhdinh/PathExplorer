@@ -1,6 +1,6 @@
-cmake_minimum_required(VERSION 2.8)
-
 project(PathExplorer_V1)
+
+cmake_minimum_required(VERSION 2.8)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
@@ -53,7 +53,7 @@ ADD_PINTOOL(path_explorer
 #   src/utilities/utils.cpp
 #   src/main.cpp)
 
-else()
+else() #============================================================================================
 
 set(CMAKE_BUILD_TYPE "None")
 
@@ -135,7 +135,9 @@ set(CMAKE_CXX_FLAGS "${OTHER_DEFS} ${PIN_DEFS}")
 set(CMAKE_SHARED_LINKER_FLAGS "/EXPORT:main /ENTRY:Ptrace_DllMainCRTStartup@12 /NODEFAULTLIB")
 
 add_library(pathexplorer SHARED ${SOURCES})
-
 target_link_libraries(pathexplorer ${PIN_LIBS} ${OTHER_LIBS})
+
+#add_executable(pseudope ${SOURCES})
+#target_link_libraries(pseudope ${PIN_LIBS} ${OTHER_LIBS})
 
 endif()

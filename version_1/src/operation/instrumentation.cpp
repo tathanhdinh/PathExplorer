@@ -169,7 +169,7 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
 #if defined(_WIN32) || defined(_WIN64)
   // verify if the winsock2 module is loaded
   std::string loaded_img_full_name = IMG_Name(loaded_img);
-  if (loaded_img_full_name.find_last_of("WS2_32.dll") != std::string::npos)
+  if (loaded_img_full_name.find("WS2_32.dll") != std::string::npos)
   {
 #if !defined(NDEBUG)
     log_file << "winsock module found\n";
