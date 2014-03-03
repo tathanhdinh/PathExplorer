@@ -20,7 +20,6 @@ UINT32                                max_total_rollback_times;
 UINT32                                max_local_rollback_times;
 UINT32                                max_trace_size;
 
-//std::vector<ptr_checkpoint_t>         saved_checkpoints;
 ptr_checkpoints_t                     saved_checkpoints;
 
 ptr_cond_direct_inss_t                detected_input_dep_cfis;
@@ -28,9 +27,10 @@ ptr_cond_direct_ins_t                 exploring_cfi;
 
 UINT32                                current_exec_order;
 
-UINT32                                received_msg_num;
+//UINT32                                received_msg_num;
 ADDRINT                               received_msg_addr;
 UINT32                                received_msg_size;
+UINT32                                received_msg_order;
 
 #if defined(__gnu_linux__)
 ADDRINT                               logged_syscall_index;   // logged syscall index
@@ -50,16 +50,17 @@ std::ofstream                         log_file;
 /* ---------------------------------------------------------------------------------------------- */
 /*                                         input handler functions                                */
 /* ---------------------------------------------------------------------------------------------- */
-KNOB<UINT32>  max_local_rollback  (KNOB_MODE_WRITEONCE, "pintool",
-                                   "r", "7000",
-                                   "specify the maximum local number of rollback" );
+KNOB<UINT32> max_local_rollback       (KNOB_MODE_WRITEONCE, "pintool", "r", "7000",
+                                       "specify the maximum local number of rollback" );
 
-KNOB<UINT32>  max_total_rollback  (KNOB_MODE_WRITEONCE, "pintool",
-                                   "t", "4000000000",
-                                   "specify the maximum total number of rollback" );
+KNOB<UINT32> max_total_rollback       (KNOB_MODE_WRITEONCE, "pintool", "t", "4000000000",
+                                       "specify the maximum total number of rollback" );
 
-KNOB<UINT32>  max_trace_length    (KNOB_MODE_WRITEONCE, "pintool", 
-                                   "l", "100", "specify the length of the longest trace" );
+KNOB<UINT32> max_trace_length         (KNOB_MODE_WRITEONCE, "pintool", "l", "100",
+                                       "specify the length of the longest trace" );
+
+KNOB<UINT32> interested_input_order   (KNOB_MODE_WRITEONCE, "pintool", "i", "1",
+                                       "specify the order of the treated input");
 
 /* ---------------------------------------------------------------------------------------------- */
 /*                                  basic instrumentation functions                               */
@@ -81,21 +82,21 @@ VOID start_exploring(VOID *data)
 
   max_total_rollback_times  = max_total_rollback.Value();
   max_local_rollback_times  = max_local_rollback.Value();
+  received_msg_order        = interested_input_order.Value();
   
   executed_ins_number       = 0;
   econed_ins_number         = 0;
   
-  received_msg_num          = 0;
 #if defined(__gnu_linux__)
   logged_syscall_index      = syscall_inexist;
 #endif
 
   exploring_cfi.reset();
-  current_running_phase     = capturing_phase;
+//  current_running_phase     = capturing_phase;
 
   log_file.open("path_explorer.log", std::ofstream::out | std::ofstream::trunc);
 
-  ::srand(static_cast<uint32_t>(::time(0)));
+  ::srand(static_cast<unsigned int>(::time(0)));
 
 #if !defined(ENABLE_FAST_ROLLBACK)
   tfm::format(log_file, "local rollback %d, trace depth %d, fast rollback disabled\n",
@@ -127,8 +128,8 @@ VOID stop_exploring(INT32 code, VOID *data)
   }
 
   tfm::format(log_file, "%d seconds elapsed, %d rollbacks used, %d/%d branches resolved\n",
-              (stop_time - start_time),
-              total_rollback_times, resolved_cfi_num, detected_input_dep_cfis.size());
+              (stop_time - start_time), total_rollback_times, resolved_cfi_num,
+              detected_input_dep_cfis.size());
 
   log_file.close();
   return;

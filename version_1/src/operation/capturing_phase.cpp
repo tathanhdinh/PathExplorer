@@ -10,33 +10,65 @@ namespace capturing
 
 /*================================================================================================*/
 
-static bool     function_has_been_called = false;
+static UINT32   received_msg_number;
+static bool     function_called = false;
 static ADDRINT  received_msg_struct_addr;
 
 /*================================================================================================*/
 
-VOID before_recvs(ADDRINT msg_addr)
+void initialize()
 {
-  received_msg_addr = msg_addr;
-  function_has_been_called = true;
+  function_called = false; received_msg_number = 0;
   return;
 }
 
+
+/**
+ * @brief prepare_new_tainting_phase
+ */
+static inline void prepare_new_tainting_phase()
+{
+  // switch to the tainting state
+  current_running_phase = tainting_phase; PIN_RemoveInstrumentation();
+#if !defined(NDEBUG)
+  tfm::format(log_file, "the message of order %d saved at %s with size %d bytes\n",
+              received_msg_number, addrint_to_hexstring(received_msg_addr), received_msg_size);
+#endif
+  return;
+}
+
+/**
+ * @brief determine the received message address of recv or recvfrom
+ */
+VOID before_recvs(ADDRINT msg_addr)
+{
+  received_msg_addr = msg_addr; function_called = true;
+  return;
+}
+
+
+/**
+ * @brief determine the received message length of recv or recvfrom
+ */
 VOID after_recvs(UINT32 msg_length)
 {
-  if (function_has_been_called)
+  if (function_called)
   {
     if (msg_length > 0)
     {
-      received_msg_num++; received_msg_size = msg_length;
+      received_msg_number++; received_msg_size = msg_length; function_called = false;
 
-#if !defined(NDEBUG)
-      tfm::format(log_file,
-        "the first message saved at %s with size %d bytes\nstart tainting the first time with trace size %d\n", 
-        addrint_to_hexstring(received_msg_addr), received_msg_size, max_trace_size);
-#endif
+      // verify if the received message is the interesting message
+      if (received_msg_number == received_msg_order)
+      {
+        prepare_new_tainting_phase();
+//        current_running_phase = tainting_state; PIN_RemoveInstrumentation();
+//#if !defined(NDEBUG)
+//      tfm::format(log_file, "the message of order %d saved at %s with size %d bytes\n",
+//                  received_msg_number, addrint_to_hexstring(received_msg_addr), received_msg_size);
+//#endif
+      }
     }
-    function_has_been_called = false;
   }
   return;
 }
@@ -46,44 +78,43 @@ VOID after_recvs(UINT32 msg_length)
 //#include <WinSock2.h>
 //#include <Windows.h>
 //};
+/**
+ * @brief determine the address a type LPWSABUF containing the address of the received message
+ */
 VOID before_wsarecvs(ADDRINT msg_struct_addr)
 {
-  received_msg_struct_addr = msg_struct_addr;
-  received_msg_addr = reinterpret_cast<ADDRINT>(
-        (reinterpret_cast<LPWSABUF>(msg_struct_addr))->buf);
-  function_has_been_called = true;
-
-  /*log_file << boost::format("WSARecv or WSARecvFrom called, received message buffer: %s\n")
-              % addrint_to_hexstring(received_msg_addr);*/
-
+  received_msg_struct_addr = msg_struct_addr; function_called = true;
+  received_msg_addr = reinterpret_cast<ADDRINT>((reinterpret_cast<LPWSABUF>(
+                                                   received_msg_struct_addr))->buf);
   return;
 }
 
+
+/**
+ * @brief determine the received message length or WSARecv or WSARecvFrom
+ */
 VOID after_wsarecvs()
 {
-  if (function_has_been_called)
+  if (function_called)
   {
     received_msg_size = (reinterpret_cast<LPWSABUF>(received_msg_struct_addr))->len;
     if (received_msg_size > 0)
     {
-      ++received_msg_num;
+      ++received_msg_number;
 
-      /*log_file << boost::format("WSARecv or WSARecvFrom returned, received message size: %d\n")
-                  % received_msg_size;
-      log_file << boost::format("the first message saved at %s with size %d bytes\nstart tainting with trace size %d\n")
-                  % addrint_to_hexstring(received_msg_addr) % received_msg_size % max_trace_size;*/
-      tfm::format(log_file, 
-        "the first message saved at %s with size %d bytes\nstart tainting with trace size %d\n", 
-        addrint_to_hexstring(received_msg_addr), received_msg_size, max_trace_size);
+//      tfm::format(log_file,
+//        "the first message saved at %s with size %d bytes\nstart tainting with trace size %d\n",
+//        addrint_to_hexstring(received_msg_addr), received_msg_size, max_trace_size);
 
-      // the first received message is the considered input
-      if (received_msg_num == 1)
+      // the first received message is the interested input
+      if (received_msg_number == received_msg_order)
       {
-        // switch to the tainting state
-        current_running_phase = tainting_state; PIN_RemoveInstrumentation();
+        prepare_new_tainting_phase();
+//        // switch to the tainting state
+//        current_running_phase = tainting_state; PIN_RemoveInstrumentation();
       }
     }
-    function_has_been_called = false;
+    function_called = false;
   }
 
   return;

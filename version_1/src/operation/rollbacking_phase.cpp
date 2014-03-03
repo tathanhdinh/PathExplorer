@@ -155,7 +155,7 @@ static inline void prepare_new_tainting_phase()
     calculate_tainting_input(exploring_cfi->fresh_input, exploring_cfi->second_input_projections[0]);
 
     // initialize new tainting phase
-    current_running_phase = tainting_state; tainting::initialize_tainting_phase();
+    current_running_phase = tainting_phase; tainting::initialize_tainting_phase();
 
 #if !defined(NDEBUG)
     tfm::format(log_file, "explore the CFI %s at %d, start tainting\n",
@@ -400,7 +400,7 @@ VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length
 /**
  * @brief initialize_rollbacking_phase
  */
-void initialize_rollbacking_phase(UINT32 trace_length_limit)
+void initialize(UINT32 trace_length_limit)
 {
   // reinitialize some local variables
   active_cfi.reset(); active_checkpoint.reset(); first_checkpoint = saved_checkpoints[0];

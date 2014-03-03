@@ -1,5 +1,3 @@
-#include <pin.H>
-
 #include <fstream>
 #include <vector>
 #include <map>
@@ -108,11 +106,11 @@ VOID ins_instrumenter(INS ins, VOID *data)
 
     switch (current_running_phase)
     {
-    case tainting_state:
+    case tainting_phase:
       exec_tainting_phase(ins, examined_ins);
       break;
 
-    case rollbacking_state:
+    case rollbacking_phase:
       exec_rollbacking_phase(ins, examined_ins);
       break;
 
@@ -126,7 +124,7 @@ VOID ins_instrumenter(INS ins, VOID *data)
 
 
 /**
- * @brief instrument_recvs
+ * @brief instrument recv and recvfrom functions
  */
 static inline void instrument_recvs(RTN& recv_function)
 {
@@ -143,6 +141,9 @@ static inline void instrument_recvs(RTN& recv_function)
 }
 
 
+/**
+ * @brief instrument WSARecv and WSARecvFrom functions
+ */
 static inline void instrument_wsarecvs(RTN& wsarecv_function)
 {
   RTN_Open(wsarecv_function);
@@ -163,7 +164,8 @@ static inline void instrument_wsarecvs(RTN& wsarecv_function)
 VOID image_load_instrumenter(IMG loaded_img, VOID *data)
 {
 #if !defined(NDEBUG)
-  tfm::format(log_file, "module %s loaded\n", IMG_Name(loaded_img));
+  tfm::format(log_file, "module %s is loaded at %s\n",
+              IMG_Name(loaded_img), addrint_to_hexstring(IMG_StartAddress(loaded_img)));
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -172,14 +174,14 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
   if (loaded_img_full_name.find("WS2_32.dll") != std::string::npos)
   {
 #if !defined(NDEBUG)
-    log_file << "winsock module found\n";
+    log_file << "winsock module is found\n";
 #endif
 
     RTN recv_func = RTN_FindByName(loaded_img, "recv");
     if (RTN_Valid(recv_func))
     {
 #if !defined(NDEBUG)
-      log_file << "recv instrumented\n";
+      tfm::format(log_file, "recv is located at %s\n", addrint_to_hexstring(RTN_Address(recv_func)));
 #endif
       instrument_recvs(recv_func);
     }
@@ -188,7 +190,7 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
     if (RTN_Valid(recvfrom_func))
     {
 #if !defined(NDEBUG)
-      log_file << "recvfrom instrumented\n";
+      tfm::format(log_file, "recvfrom is located at %s\n", addrint_to_hexstring(RTN_Address(recvfrom_func)));
 #endif
       instrument_recvs(recvfrom_func);
     }
@@ -197,9 +199,8 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
     if (RTN_Valid(wsarecv_func))
     {
 #if !defined(NDEBUG)
-      log_file << "WSARecv instrumented\n";
+      tfm::format(log_file, "WSARecv is located at %s\n", addrint_to_hexstring(RTN_Address(wsarecv_func)));
 #endif
-
       instrument_wsarecvs(wsarecv_func);
     }
 
@@ -207,10 +208,12 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
     if (RTN_Valid(wsarecvfrom_func))
     {
 #if !defined(NDEBUG)
-      log_file << "WSARecvFrom instrumented\n";
+      tfm::format(log_file, "WSARecvFrom is located at %s\n", addrint_to_hexstring(RTN_Address(wsarecvfrom_func)));
 #endif
       instrument_wsarecvs(wsarecvfrom_func);
     }
+
+    current_running_phase = capturing_phase; capturing::initialize();
   }
 #endif
   return;

@@ -285,12 +285,11 @@ inline void prepare_new_rollbacking_phase()
     analyze_executed_instructions();
 
     // initalize the next rollbacking phase
-    current_running_phase = rollbacking_state; calculate_rollbacking_trace_length();
-    rollbacking::initialize_rollbacking_phase(rollbacking_trace_length);
+    current_running_phase = rollbacking_phase; calculate_rollbacking_trace_length();
+    rollbacking::initialize(rollbacking_trace_length);
 
 #if !defined(NDEBUG)
-    tfm::format(log_file,
-                "stop analyzing, %d checkpoints, %d/%d branches detected; start rollbacking with limit trace %d\n",
+    tfm::format(log_file, "stop analyzing, %d checkpoints, %d/%d branches detected; start rollbacking with limit trace %d\n",
                 saved_checkpoints.size(), newly_detected_input_dep_cfis.size(),
                 newly_detected_cfis.size(), rollbacking_trace_length);
 //    log_file.flush();

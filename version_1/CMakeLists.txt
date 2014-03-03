@@ -79,7 +79,7 @@ set(PIN_INCLUDE_DIRS
 
 set(PIN_DEFS "/D TARGET_IA32 /D HOST_IA32 /D TARGET_WINDOWS /D USING_XED /D_SECURE_SCL=0 /D_ITERATOR_DEBUG_LEVEL=0")
 
-set(OTHER_DEFS "/D _WINDLL /D _MBCS /MT /EHsc /nologo")
+set(OTHER_DEFS "/D _WINDLL /D _MBCS /MT /EHsc /O2 /Ob2 /nologo")
 
 set(PIN_LIBRARY_DIRS
   ${PIN_ROOT_DIR}/extras/xed2-${PIN_CPU_ARCH_LONG}/lib
@@ -91,13 +91,17 @@ set(PIN_LIBS pin pinvm libxed ntdll-32)
 
 set(OTHER_LIBS libcpmt libcmt)
 
-set(BOOST_INCLUDE_DIRS
-  "C:/Users/Ta Thanh Dinh/Documents/boost_1_55_0-msvc-10.0-32"
-)
+if(NOT DEFINED BOOST_ROOT_DIR)
+  message(FATAL_ERROR "\nBoost not found!\n"
+    "Please set the environment variable BOOST_ROOT_DIR to the base directory"
+    " of the Boost library.\n")
+endif(NOT DEFINED BOOST_ROOT_DIR)
+message(STATUS "BOOST_ROOT_DIR: ${BOOST_ROOT_DIR}")
+
 
 set(INCLUDE_DIRS
   ${PIN_INCLUDE_DIRS}
-  ${BOOST_INCLUDE_DIRS}
+  ${BOOST_ROOT_DIR}
 )
 
 set(SOURCES
