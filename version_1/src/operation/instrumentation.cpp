@@ -60,8 +60,10 @@ static inline void exec_tainting_phase(INS& ins, ptr_instruction_t examined_ins)
   return;
 }
 
-/*================================================================================================*/
 
+/**
+ * @brief instrument codes executed in rollbacking phase
+ */
 static inline void exec_rollbacking_phase(INS& ins, ptr_instruction_t examined_ins)
 {
   INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)rollbacking::generic_instruction,

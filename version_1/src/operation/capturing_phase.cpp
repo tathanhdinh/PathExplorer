@@ -11,7 +11,7 @@ namespace capturing
 /*================================================================================================*/
 
 static UINT32   received_msg_number;
-static bool     function_called = false;
+static bool     function_called;
 static ADDRINT  received_msg_struct_addr;
 
 /*================================================================================================*/
@@ -23,9 +23,6 @@ void initialize()
 }
 
 
-/**
- * @brief prepare_new_tainting_phase
- */
 static inline void prepare_new_tainting_phase()
 {
   // switch to the tainting state
@@ -36,6 +33,22 @@ static inline void prepare_new_tainting_phase()
 #endif
   return;
 }
+
+
+static inline void handle_received_message()
+{
+  if (received_msg_size > 0)
+  {
+    received_msg_number++;
+    // verify if the received message is the interesting message
+    if (received_msg_number == received_msg_order)
+    {
+      prepare_new_tainting_phase();
+    }
+  }
+  return;
+}
+
 
 /**
  * @brief determine the received message address of recv or recvfrom
@@ -54,30 +67,13 @@ VOID after_recvs(UINT32 msg_length)
 {
   if (function_called)
   {
-    if (msg_length > 0)
-    {
-      received_msg_number++; received_msg_size = msg_length; function_called = false;
-
-      // verify if the received message is the interesting message
-      if (received_msg_number == received_msg_order)
-      {
-        prepare_new_tainting_phase();
-//        current_running_phase = tainting_state; PIN_RemoveInstrumentation();
-//#if !defined(NDEBUG)
-//      tfm::format(log_file, "the message of order %d saved at %s with size %d bytes\n",
-//                  received_msg_number, addrint_to_hexstring(received_msg_addr), received_msg_size);
-//#endif
-      }
-    }
+    function_called = false; received_msg_size = msg_length;
+    handle_received_message();
   }
   return;
 }
 
-//namespace WINDOWS
-//{
-//#include <WinSock2.h>
-//#include <Windows.h>
-//};
+
 /**
  * @brief determine the address a type LPWSABUF containing the address of the received message
  */
@@ -97,24 +93,9 @@ VOID after_wsarecvs()
 {
   if (function_called)
   {
-    received_msg_size = (reinterpret_cast<LPWSABUF>(received_msg_struct_addr))->len;
-    if (received_msg_size > 0)
-    {
-      ++received_msg_number;
-
-//      tfm::format(log_file,
-//        "the first message saved at %s with size %d bytes\nstart tainting with trace size %d\n",
-//        addrint_to_hexstring(received_msg_addr), received_msg_size, max_trace_size);
-
-      // the first received message is the interested input
-      if (received_msg_number == received_msg_order)
-      {
-        prepare_new_tainting_phase();
-//        // switch to the tainting state
-//        current_running_phase = tainting_state; PIN_RemoveInstrumentation();
-      }
-    }
     function_called = false;
+    received_msg_size = (reinterpret_cast<LPWSABUF>(received_msg_struct_addr))->len;
+    handle_received_message();
   }
 
   return;
