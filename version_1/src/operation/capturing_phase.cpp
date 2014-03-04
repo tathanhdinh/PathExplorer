@@ -4,18 +4,19 @@
 
 namespace capturing 
 {
-#if defined(_WIN32) || defined(_WIN64)
-#include <WinSock2.h>
-#include <Windows.h>
 
 /*================================================================================================*/
 
 static UINT32   received_msg_number;
 static bool     function_called;
+#if defined(_WIN32) || defined(_WIN64)
 static ADDRINT  received_msg_struct_addr;
+#endif
 
 /*================================================================================================*/
-
+/**
+ * @brief initialize a new capturing phase
+ */
 void initialize()
 {
   function_called = false; received_msg_number = 0;
@@ -23,6 +24,9 @@ void initialize()
 }
 
 
+/**
+ * @brief prepare switching to a new tainting phase
+ */
 static inline void prepare_new_tainting_phase()
 {
   // switch to the tainting state
@@ -50,6 +54,7 @@ static inline void handle_received_message()
 }
 
 
+#if defined(_WIN32) || defined(_WIN64)
 /**
  * @brief determine the received message address of recv or recvfrom
  */
@@ -77,6 +82,8 @@ VOID after_recvs(UINT32 msg_length)
 /**
  * @brief determine the address a type LPWSABUF containing the address of the received message
  */
+#include <WinSock2.h>
+#include <Windows.h>
 VOID before_wsarecvs(ADDRINT msg_struct_addr)
 {
   received_msg_struct_addr = msg_struct_addr; function_called = true;

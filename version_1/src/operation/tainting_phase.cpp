@@ -225,13 +225,17 @@ static inline void calculate_rollbacking_trace_length()
     {
       // and this CFI depends on the input
       last_cfi = pept::static_pointer_cast<cond_direct_instruction>(ins_iter->second);
-      if (!last_cfi->input_dep_addrs.empty())
-      {
-        rollbacking_trace_length = last_cfi->exec_order;
-        break;
-      }
+      if (!last_cfi->input_dep_addrs.empty()) break;
+//      {
+//        rollbacking_trace_length = last_cfi->exec_order;
+//        break;
+//      }
     }
   }
+
+  if (last_cfi && (!exploring_cfi || (last_cfi->exec_order > exploring_cfi->exec_order)))
+    rollbacking_trace_length = std::min(last_cfi->exec_order + 1, max_trace_size);
+  else rollbacking_trace_length = 0;
 
   return;
 }
