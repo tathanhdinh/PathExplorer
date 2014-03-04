@@ -1,16 +1,33 @@
 #ifndef INSTRUCTION_H
 #define INSTRUCTION_H
 
-#include <string>
-#include <map>
-#include <set>
-#include <vector>
+// these definitions are not necessary (defined already in the CMakeLists),
+// they are added just to make qt-creator parsing headers
+#if defined(_WIN32) || defined(_WIN64)
+#ifndef TARGET_IA32
+#define TARGET_IA32
+#endif
+#ifndef HOST_IA32
+#define HOST_IA32
+#endif
+#ifndef TARGET_WINDOWS
+#define TARGET_WINDOWS
+#endif
+#ifndef USING_XED
+#define USING_XED
+#endif
+#endif
 
 #include <pin.H>
 extern "C"
 {
 #include <xed-interface.h>
 }
+
+#include <string>
+#include <map>
+#include <set>
+#include <vector>
 
 #include "operand.h"
 
@@ -37,12 +54,10 @@ public:
 public:
   instruction();
   instruction(const INS& ins);
-//  instruction(instruction const& other_ins);
-//  instruction& operator=(instruction const& other_ins);
 };
 
-typedef pept::shared_ptr<instruction> ptr_instruction_t;
-typedef std::map<ADDRINT, ptr_instruction_t> addr_ins_map_t;
-typedef std::map<UINT32, ptr_instruction_t> order_ins_map_t;
+typedef pept::shared_ptr<instruction>         ptr_instruction_t;
+typedef std::map<ADDRINT, ptr_instruction_t>  addr_ins_map_t;
+typedef std::map<UINT32, ptr_instruction_t>   order_ins_map_t;
 
 #endif // INSTRUCTION_H

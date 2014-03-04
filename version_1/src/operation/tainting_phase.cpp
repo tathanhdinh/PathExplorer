@@ -16,8 +16,8 @@ static df_vertex_desc_set         dta_outer_vertices;
 static UINT32                     rollbacking_trace_length;
 
 #if !defined(NDEBUG)
-static ptr_cond_direct_inss_t newly_detected_input_dep_cfis;
-static ptr_cond_direct_inss_t newly_detected_cfis;
+static ptr_cond_direct_inss_t     newly_detected_input_dep_cfis;
+static ptr_cond_direct_inss_t     newly_detected_cfis;
 #endif
 
 
@@ -192,31 +192,6 @@ static inline void save_detected_cfis()
       }
     }
   }
-
-//  // iterate over executed instructions in this tainting phase
-//  for (ins_iter = ins_at_order.begin(); ins_iter != ins_at_order.end(); ++ins_iter)
-//  {
-//    // consider only the instruction that is not behind the exploring CFI
-//    if (!exploring_cfi || (exploring_cfi && (ins_iter->first > exploring_cfi->exec_order)))
-//    {
-//      if (ins_iter->second->is_cond_direct_cf)
-//      {
-//        new_cfi = pept::static_pointer_cast<cond_direct_instruction>(ins_iter->second);
-//        // and depends on the input
-//        if (!new_cfi->input_dep_addrs.empty())
-//        {
-//          // then set its checkpoints and save it
-//          set_checkpoints_for_cfi(new_cfi); detected_input_dep_cfis.push_back(new_cfi);
-//#if !defined(NDEBUG)
-//          newly_detected_input_dep_cfis.push_back(new_cfi);
-//#endif
-//        }
-//#if !defined(NDEBUG)
-//        newly_detected_cfis.push_back(new_cfi);
-//#endif
-//      }
-//    }
-//  }
 
   return;
 }

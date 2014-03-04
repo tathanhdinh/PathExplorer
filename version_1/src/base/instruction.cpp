@@ -1,10 +1,4 @@
 #include "instruction.h"
-
-#include <pin.H>
-extern "C" {
-#include <xed-interface.h>
-}
-
 #include "../util/stuffs.h"
 
 /*================================================================================================*/
@@ -16,12 +10,19 @@ instruction::instruction(const INS& ins)
   this->disassembled_name     = INS_Disassemble(ins);
   
   IMG ins_img = IMG_FindByAddress(this->address);
-  if (IMG_Valid(ins_img)) this->contained_image = IMG_Name(ins_img);
-  else this->contained_image = "";
+  if (IMG_Valid(ins_img))
+    this->contained_image     = IMG_Name(ins_img);
+  else
+    this->contained_image     = "";
   this->contained_function    = RTN_FindNameByAddress(this->address);
   
   this->is_syscall            = INS_IsSyscall(ins);
+  // some workarround to detect if the instruction is mapped from the kernel
+#if defined(_WIN32) || defined(_WIN64)
+  this->is_mapped_from_kernel = (this->contained_image.find("ntdll.dll") != std::string::npos);
+#elif defined(__gnu_linux__)
   this->is_mapped_from_kernel = this->contained_image.empty();
+#endif
   this->is_mem_read           = INS_IsMemoryRead(ins);
   this->is_mem_write          = INS_IsMemoryWrite(ins);
 
