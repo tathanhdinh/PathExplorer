@@ -100,9 +100,9 @@ private:
  */
 void save_tainting_graph(df_diagram& dta_graph, const std::string& filename)
 {
-  std::ofstream out_file(filename.c_str(), std::ofstream::out | std::ofstream::trunc );
-  boost::write_graphviz(out_file, dta_graph, 
-                        vertex_label_writer(dta_graph), edge_label_writer(dta_graph));
+  std::ofstream out_file(filename.c_str(), std::ofstream::out | std::ofstream::trunc);
+  boost::write_graphviz(out_file, dta_graph, vertex_label_writer(dta_graph),
+                        edge_label_writer(dta_graph));
   out_file.close();
 
   return;

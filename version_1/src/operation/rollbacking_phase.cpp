@@ -158,7 +158,8 @@ static inline void prepare_new_tainting_phase()
     current_running_phase = tainting_phase; tainting::initialize_tainting_phase();
 
 #if !defined(NDEBUG)
-    tfm::format(log_file, "explore the CFI %s at %d, start tainting\n",
+    tfm::format(log_file, "%s\nexplore the CFI %s at %d, start tainting\n",
+                "================================================================================",
                 exploring_cfi->disassembled_name, exploring_cfi->exec_order);
     log_file.flush();
 #endif
@@ -309,6 +310,10 @@ VOID control_flow_instruction(ADDRINT ins_addr)
             get_next_active_checkpoint();
             if (active_checkpoint)
             {
+#if !defined(NDEBUG)
+              tfm::format(log_file, "the cfi at %d is still actived, its next checkpoint is at %d\n",
+                          active_cfi->exec_order, active_checkpoint->exec_order);
+#endif
               // exists, then rollback to the new active checkpoint
               used_rollback_num = 0; rollback();
             }
@@ -340,8 +345,9 @@ VOID control_flow_instruction(ADDRINT ins_addr)
         // yes, then set it as the active CFI
         active_cfi = current_cfi; get_next_active_checkpoint();
 #if !defined(NDEBUG)
-        tfm::format(log_file, "the CFI %s at %d is activated\n", active_cfi->disassembled_name,
-                    active_cfi->exec_order);
+        tfm::format(log_file, "the CFI %s at %d is activated, its first checkpoint is at %d\n",
+                    active_cfi->disassembled_name, active_cfi->exec_order,
+                    active_checkpoint->exec_order);
 #endif
         // make a copy of the fresh input
         active_cfi->fresh_input.reset(new UINT8[received_msg_size]);

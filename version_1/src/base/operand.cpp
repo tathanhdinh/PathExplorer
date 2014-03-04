@@ -1,6 +1,7 @@
 #include "operand.h"
 #include "../util/stuffs.h"
 
+/*================================================================================================*/
 
 operand::operand(ADDRINT mem_addr)
 {

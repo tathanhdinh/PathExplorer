@@ -32,7 +32,8 @@ static inline void prepare_new_tainting_phase()
   // switch to the tainting state
   current_running_phase = tainting_phase; PIN_RemoveInstrumentation();
 #if !defined(NDEBUG)
-  tfm::format(log_file, "the message of order %d saved at %s with size %d bytes\n",
+  tfm::format(log_file, "%s\nthe message of order %d saved at %s with size %d bytes\n",
+              "================================================================================",
               received_msg_number, addrint_to_hexstring(received_msg_addr), received_msg_size);
 #endif
   return;

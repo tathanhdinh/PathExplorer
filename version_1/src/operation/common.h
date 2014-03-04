@@ -47,7 +47,7 @@ extern order_ins_map_t          ins_at_order;
 extern UINT32                   total_rollback_times;
 extern UINT32                   local_rollback_times;
 extern UINT32                   trace_size;
-extern UINT32                   used_checkpoint_number;
+//extern UINT32                   used_checkpoint_number;
 
 extern UINT32                   max_total_rollback_times;
 extern UINT32                   max_local_rollback_times;

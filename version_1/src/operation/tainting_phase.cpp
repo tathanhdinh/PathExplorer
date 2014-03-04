@@ -80,12 +80,14 @@ static inline void determine_cfi_input_dependency()
             // and is some CFI
             if (ins_at_order[visited_edge_exec_order]->is_cond_direct_cf)
             {
-//              std::cerr << "input dependent CFI detected at order: "
-//                        << visited_edge_exec_order << "\n";
               // then this CFI depends on the value of the memory address
               visited_cfi = pept::static_pointer_cast<cond_direct_instruction>(
                     ins_at_order[visited_edge_exec_order]);
               visited_cfi->input_dep_addrs.insert(mem_addr);
+//#if !defined(NDEBUG)
+//              tfm::format(log_file, "the cfi at %d depends on the address %s\n",
+//                          visited_cfi->exec_order, addrint_to_hexstring(mem_addr));
+//#endif
             }
           }
         }
@@ -136,6 +138,10 @@ static inline void set_checkpoints_for_cfi(const ptr_cond_direct_ins_t& cfi)
         // value at the address of the intersected addrs
         checkpoint_with_input_addrs = std::make_pair(*chkpnt_iter, intersected_addrs);
         cfi->checkpoints.push_back(checkpoint_with_input_addrs);
+//#if !defined(NDEBUG)
+//        tfm::format(log_file, "the cfi at %d has a checkpoint at %d\n", cfi->exec_order,
+//                    (*chkpnt_iter)->exec_order);
+//#endif
 
         // the addrs in the intersected set are subtracted from the original dep_addrs
         new_dep_addrs.clear();
@@ -202,6 +208,10 @@ static inline void save_detected_cfis()
  */
 static inline void analyze_executed_instructions()
 {
+  if (!exploring_cfi)
+  {
+    save_tainting_graph(dta_graph, "tainting_graph.dot");
+  }
   determine_cfi_input_dependency(); save_detected_cfis();
   return;
 }
