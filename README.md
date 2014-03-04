@@ -1,6 +1,6 @@
 #### PathExplorer: a Pintool for Binary Code Covering 
 
-##### The current version is UNSTABLE, but the following are less unstable:
+##### The current version is UNSTABLE, but the following are less unstable (obsolete information, update later):
 
 * Dynamic tainting: construct the dataflow graph based on the liveness analysis (using the outer interface of live variables).
 * Checkpoint detection: for each conditional branch there are several execution points which may affect to its decision.
