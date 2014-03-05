@@ -82,7 +82,6 @@
     <ClCompile Include="..\previous_version\logging_functions.cc" />
     <ClCompile Include="..\previous_version\path_explorer.cpp" />
     <ClCompile Include="..\previous_version\resolving_functions.cc" />
-    <ClCompile Include="..\previous_version\stuffs.cc" />
     <ClCompile Include="..\previous_version\tainting_functions.cc" />
     <ClCompile Include="..\previous_version\variable.cpp" />
   </ItemGroup>
@@ -94,7 +93,6 @@
     <ClInclude Include="..\previous_version\instrumentation_functions.h" />
     <ClInclude Include="..\previous_version\logging_functions.h" />
     <ClInclude Include="..\previous_version\resolving_functions.h" />
-    <ClInclude Include="..\previous_version\stuffs.h" />
     <ClInclude Include="..\previous_version\tainting_functions.h" />
     <ClInclude Include="..\previous_version\variable.h" />
   </ItemGroup>
