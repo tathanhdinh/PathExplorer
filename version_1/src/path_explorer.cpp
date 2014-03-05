@@ -14,7 +14,6 @@ std::map<UINT32, ptr_instruction_t>   ins_at_order;  // dynamically examined ins
 UINT32                                total_rollback_times;
 UINT32                                local_rollback_times;
 UINT32                                trace_size;
-//UINT32                                used_checkpoint_number;
 
 UINT32                                max_total_rollback_times;
 UINT32                                max_local_rollback_times;

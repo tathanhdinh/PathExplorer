@@ -26,6 +26,7 @@ public:
   bool is_resolved;
   bool is_bypassed;
   bool is_explored;
+  bool is_singular;
 
   UINT32 used_rollback_num;
   UINT32 exec_order;

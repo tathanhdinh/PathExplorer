@@ -7,7 +7,7 @@ cond_direct_instruction::cond_direct_instruction(const INS& ins) : instruction(i
   this->input_dep_addrs.clear(); this->checkpoints.clear();
   this->first_input_projections.clear(); this->second_input_projections.clear();
 
-  this->used_rollback_num = 0;
+  this->used_rollback_num = 0; this->is_singular = false;
 }
 
 /*================================================================================================*/

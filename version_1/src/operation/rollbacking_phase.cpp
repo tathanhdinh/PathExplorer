@@ -8,6 +8,12 @@
 
 /*================================================================================================*/
 
+typedef enum
+{
+  randomized = 0,
+  sequential = 1
+} input_generation_mode;
+
 static ptr_cond_direct_ins_t    active_cfi;
 static ptr_checkpoint_t         active_checkpoint;
 static ptr_checkpoint_t         first_checkpoint;
@@ -18,6 +24,7 @@ static addrint_set_t            active_modified_addrs;
 static addrint_value_map_t      active_modified_addrs_values;
 static ptr_uint8_t              fresh_input;
 static ptr_uint8_t              tainting_input;
+static input_generation_mode    gen_mode;
 
 /*================================================================================================*/
 
@@ -31,6 +38,22 @@ static inline void initialize_values_at_active_modified_addrs()
   {
     active_modified_addrs_values[*addr_iter] = 0;
   }
+
+  // verify if the set of modified address is small
+  if (active_modified_addrs_values.size() == 1)
+  {
+    // yes, then the maximal rollback number is customized
+    max_rollback_num = std::numeric_limits<UINT8>::max();
+    gen_mode = sequential;
+  }
+  else
+  {
+    // no, set as default
+    max_rollback_num = max_local_rollback.Value();
+    gen_mode = randomized;
+  }
+
+  used_rollback_num = 0;
   return;
 }
 
@@ -40,7 +63,8 @@ static inline void generate_testing_values()
   addrint_value_map_t::iterator addr_iter = active_modified_addrs_values.begin();
   for (; addr_iter != active_modified_addrs_values.end(); ++addr_iter)
   {
-    addr_iter->second = rand() % std::numeric_limits<UINT8>::max();
+    if (gen_mode == randomized) addr_iter->second = rand() % std::numeric_limits<UINT8>::max();
+    else addr_iter->second++;
   }
   return;
 }
@@ -102,8 +126,7 @@ static inline void get_next_active_checkpoint()
 
     if (next_chkpnt_iter == active_cfi->checkpoints.end())
     {
-      active_checkpoint.reset();
-      active_modified_addrs.clear();
+      active_checkpoint.reset(); active_modified_addrs.clear();
     }
   }
   else
@@ -114,7 +137,7 @@ static inline void get_next_active_checkpoint()
     active_modified_addrs = active_cfi->checkpoints[0].second;
   }
 
-  initialize_values_at_active_modified_addrs();
+  if (active_checkpoint) initialize_values_at_active_modified_addrs();
   return;
 }
 
@@ -315,20 +338,22 @@ VOID control_flow_instruction(ADDRINT ins_addr)
                           active_cfi->exec_order, active_checkpoint->exec_order);
 #endif
               // exists, then rollback to the new active checkpoint
-              used_rollback_num = 0; rollback();
+              /*used_rollback_num = 0;*/ rollback();
             }
             else
             {
+              // the next checkpoint does not exist, all of its reserved tests have been used
+              active_cfi->is_bypassed = !active_cfi->is_resolved;
+              if (active_cfi->is_bypassed && (gen_mode == sequential)) active_cfi->is_singular = true;
 #if !defined(NDEBUG)
-              if (!active_cfi->is_resolved)
+              if (active_cfi->is_bypassed)
               {
-                tfm::format(log_file, "the CFI %s at %d is bypassed\n",
-                            active_cfi->disassembled_name, active_cfi->exec_order);
+                tfm::format(log_file, "the CFI %s at %d is bypassed with singularity %s\n",
+                            active_cfi->disassembled_name, active_cfi->exec_order,
+                            active_cfi->is_singular);
               }
 #endif
-              // the next checkpoint does not exist, all of tests reserved for it have been used
-              active_cfi->is_bypassed = !active_cfi->is_resolved; active_cfi.reset();
-              used_rollback_num = 0;
+              active_cfi.reset(); used_rollback_num = 0;
             }
           }
 
@@ -361,7 +386,7 @@ VOID control_flow_instruction(ADDRINT ins_addr)
         }
 
         // and rollback to resolve the new active CFI
-        used_rollback_num = 0; rollback();
+        /*used_rollback_num = 0;*/ rollback();
       }
     }
   }
@@ -411,7 +436,7 @@ void initialize(UINT32 trace_length_limit)
   // reinitialize some local variables
   active_cfi.reset(); active_checkpoint.reset(); first_checkpoint = saved_checkpoints[0];
   active_modified_addrs.clear(); tainted_trace_length = trace_length_limit;
-  used_rollback_num = 0; max_rollback_num = max_local_rollback.Value();
+  used_rollback_num = 0; max_rollback_num = max_local_rollback.Value(); gen_mode = randomized;
 
   // make a fresh input copy
   fresh_input.reset(new UINT8[received_msg_size]);

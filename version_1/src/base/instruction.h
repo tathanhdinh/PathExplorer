@@ -39,14 +39,14 @@ public:
   std::string   contained_image;
   std::string   contained_function;
     
-  bool  is_syscall;
-  bool  is_mem_read;
-  bool  is_mem_write;
-  bool  is_mapped_from_kernel;
-  bool  is_cond_direct_cf;     // conditional control-flow instructions are always direct
-  bool  is_uncond_indirect_cf; // unconditional control-flow instructions are always indirect
-  bool  has_mem_read2;
-  bool  has_real_rep;
+  bool is_syscall;
+  bool is_mem_read;
+  bool is_mem_write;
+  bool is_mapped_from_kernel;
+  bool is_cond_direct_cf;     // conditional control-flow instructions are always direct
+  bool is_uncond_indirect_cf; // unconditional control-flow instructions are always indirect
+  bool has_mem_read2;
+  bool has_real_rep;
 
   std::set<ptr_operand_t> src_operands;
   std::set<ptr_operand_t> dst_operands;
