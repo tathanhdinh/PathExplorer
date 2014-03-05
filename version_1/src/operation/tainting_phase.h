@@ -7,7 +7,7 @@ namespace tainting
 {
 extern void initialize_tainting_phase   ();
 
-extern VOID syscall_instruction         (ADDRINT ins_addr);
+extern VOID kernel_mapped_instruction         (ADDRINT ins_addr);
 
 extern VOID general_instruction         (ADDRINT ins_addr);
 

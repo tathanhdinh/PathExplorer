@@ -37,21 +37,6 @@ ADD_PINTOOL(path_explorer
   src/util/stuffs.h
   src/util/tinyformat.h)
 
-# add_executable(path_explorer.so instruction.cpp path_explorer.cpp)
-
-# install(TARGETS pintaint RUNTIME DESTINATION bin)
-
-# ADD_PINTOOL(PathExplorer2
-#   src/analysis/instruction_operand.cpp
-#   src/analysis/instruction.cpp
-#   src/analysis/conditional_branch.cpp
-#   src/analysis/dataflow.cpp
-#   src/engine/checkpoint.cpp
-#   src/engine/fast_execution.cpp
-#   src/instrumentation/trace_analyzer.cpp
-#   src/instrumentation/trace_resolver.cpp
-#   src/utilities/utils.cpp
-#   src/main.cpp)
 
 else() #============================================================================================
 

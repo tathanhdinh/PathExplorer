@@ -19,9 +19,9 @@
 static inline void exec_tainting_phase(INS& ins, ptr_instruction_t examined_ins)
 {
   /* taint logging */
-  if (examined_ins->is_syscall)
+  if (examined_ins->is_mapped_from_kernel)
   {
-    INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)tainting::syscall_instruction,
+    INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)tainting::kernel_mapped_instruction,
                              IARG_INST_PTR, IARG_END);
   }
   else
@@ -66,23 +66,34 @@ static inline void exec_tainting_phase(INS& ins, ptr_instruction_t examined_ins)
  */
 static inline void exec_rollbacking_phase(INS& ins, ptr_instruction_t examined_ins)
 {
-  INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)rollbacking::generic_instruction,
-                           IARG_INST_PTR, IARG_END);
-
-  if (examined_ins->is_cond_direct_cf)
+  if (examined_ins->is_mapped_from_kernel)
   {
-    INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)rollbacking::control_flow_instruction,
-                             IARG_INST_PTR, IARG_END);
+    tfm::format(log_file,
+                "unsafe rollbacking: a kernel mapped instruction (%s %s) will be executed at %d\n",
+                addrint_to_hexstring(examined_ins->address), examined_ins->disassembled_name,
+                current_exec_order + 1);
+    PIN_ExitApplication(1);
   }
+  else
+  {
+
+    INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)rollbacking::generic_instruction,
+                             IARG_INST_PTR, IARG_END);
+
+    if (examined_ins->is_cond_direct_cf)
+    {
+      INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)rollbacking::control_flow_instruction,
+                               IARG_INST_PTR, IARG_END);
+    }
 
 #if !defined(ENABLE_FAST_ROLLBACK)
-  if (examined_ins->is_mem_write)
-  {
-    INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)rollbacking::mem_write_instruction,
-                             IARG_INST_PTR, IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE, IARG_END);
-  }
+    if (examined_ins->is_mem_write)
+    {
+      INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)rollbacking::mem_write_instruction,
+                               IARG_INST_PTR, IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE, IARG_END);
+    }
 #endif
-
+  }
   return;
 }
 

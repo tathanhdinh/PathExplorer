@@ -44,6 +44,7 @@ static inline void initialize_values_at_active_modified_addrs()
   {
     // yes, then the maximal rollback number is customized
     max_rollback_num = std::numeric_limits<UINT8>::max();
+//    max_rollback_num = max_local_rollback.Value();
     gen_mode = sequential;
   }
   else
@@ -107,24 +108,23 @@ static inline void rollback()
  */
 static inline void get_next_active_checkpoint()
 {
-  std::vector<checkpoint_with_modified_addrs>::iterator chkpnt_iter, next_chkpnt_iter;
+  std::vector<checkpoint_with_modified_addrs>::iterator chkpnt_iter, nx_chkpnt_iter;
   // verify if there exist an enabled active checkpoint
   if (active_checkpoint)
   {
     // exist, then find the next checkpoint in the checkpoint list of the current active CFI
-    next_chkpnt_iter = active_cfi->checkpoints.begin(); chkpnt_iter = next_chkpnt_iter;
-    while (++next_chkpnt_iter != active_cfi->checkpoints.end())
+    nx_chkpnt_iter = active_cfi->checkpoints.begin(); chkpnt_iter = nx_chkpnt_iter;
+    while (++nx_chkpnt_iter != active_cfi->checkpoints.end())
     {
       if (chkpnt_iter->first->exec_order == active_checkpoint->exec_order)
       {
-        active_checkpoint = next_chkpnt_iter->first;
-        active_modified_addrs = next_chkpnt_iter->second;
+        active_checkpoint = nx_chkpnt_iter->first; active_modified_addrs = nx_chkpnt_iter->second;
         break;
       }
-      chkpnt_iter = next_chkpnt_iter;
+      chkpnt_iter = nx_chkpnt_iter;
     }
 
-    if (next_chkpnt_iter == active_cfi->checkpoints.end())
+    if (nx_chkpnt_iter == active_cfi->checkpoints.end())
     {
       active_checkpoint.reset(); active_modified_addrs.clear();
     }
@@ -241,11 +241,11 @@ VOID generic_instruction(ADDRINT ins_addr)
   else
   {
     current_exec_order++;
-//#if !defined(NDEBUG)
-//    tfm::format(std::cerr, "%-3d %-15s %-50s %-25s %-25s\n", current_exec_order,
-//                addrint_to_hexstring(ins_addr), ins_at_addr[ins_addr]->disassembled_name,
-//                ins_at_addr[ins_addr]->contained_image, ins_at_addr[ins_addr]->contained_function);
-//#endif
+#if !defined(NDEBUG)
+    tfm::format(std::cerr, "%-3d %-15s %-50s %-25s %-25s\n", current_exec_order,
+                addrint_to_hexstring(ins_addr), ins_at_addr[ins_addr]->disassembled_name,
+                ins_at_addr[ins_addr]->contained_image, ins_at_addr[ins_addr]->contained_function);
+#endif
 
     // verify if the executed instruction is in the original trace
     if (ins_at_order[current_exec_order]->address != ins_addr)
@@ -284,8 +284,7 @@ VOID generic_instruction(ADDRINT ins_addr)
       else
       {
         // not activated, then some errors have occurred
-        tfm::format(log_file,
-                    "fatal: there is no active CFI but the original trace changes (%s %d)\n",
+        tfm::format(log_file, "fatal: there is no active CFI but the original trace changes (%s %d)\n",
                     addrint_to_hexstring(ins_addr), current_exec_order);
         PIN_ExitApplication(1);
       }

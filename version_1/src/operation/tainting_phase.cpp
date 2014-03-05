@@ -296,9 +296,9 @@ inline void prepare_new_rollbacking_phase()
 /**
  * @brief analysis functions applied for syscall instructions
  */
-VOID syscall_instruction(ADDRINT ins_addr)
+VOID kernel_mapped_instruction(ADDRINT ins_addr)
 {
-  // the tainting phase always finishes when a syscall is met
+  // the tainting phase always finishes when a kernel mapped instruction is met
   prepare_new_rollbacking_phase();
   return;
 }
