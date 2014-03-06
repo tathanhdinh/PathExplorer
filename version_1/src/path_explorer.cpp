@@ -8,43 +8,45 @@
 /* ---------------------------------------------------------------------------------------------- */
 /*                                        global variables                                        */
 /* ---------------------------------------------------------------------------------------------- */
-std::map<ADDRINT, ptr_instruction_t>  ins_at_addr;   // statically examined instructions
-std::map<UINT32, ptr_instruction_t>   ins_at_order;  // dynamically examined instructions
+addr_ins_map_t          ins_at_addr;  // statically examined instructions
+order_ins_map_t         ins_at_order; // dynamically examined instructions
 
-UINT32                                total_rollback_times;
-UINT32                                local_rollback_times;
-UINT32                                trace_size;
+UINT32                  total_rollback_times;
+UINT32                  local_rollback_times;
+UINT32                  trace_size;
 
-UINT32                                max_total_rollback_times;
-UINT32                                max_local_rollback_times;
-UINT32                                max_trace_size;
+UINT32                  max_total_rollback_times;
+UINT32                  max_local_rollback_times;
+UINT32                  max_trace_size;
 
-ptr_checkpoints_t                     saved_checkpoints;
+ptr_checkpoints_t       saved_checkpoints;
 
-ptr_cond_direct_inss_t                detected_input_dep_cfis;
-ptr_cond_direct_ins_t                 exploring_cfi;
+ptr_cond_direct_inss_t  detected_input_dep_cfis;
+ptr_cond_direct_ins_t   exploring_cfi;
 
-UINT32                                current_exec_order;
+UINT32                  current_exec_order;
 
-//UINT32                                received_msg_num;
-ADDRINT                               received_msg_addr;
-UINT32                                received_msg_size;
-UINT32                                received_msg_order;
+ADDRINT                 received_msg_addr;
+UINT32                  received_msg_size;
+UINT32                  received_msg_order;
+
+THREADID                traced_thread_id;
+bool                    traced_thread_is_fixed;
 
 #if defined(__gnu_linux__)
-ADDRINT                               logged_syscall_index;   // logged syscall index
-ADDRINT                               logged_syscall_args[6]; // logged syscall arguments
+ADDRINT                 logged_syscall_index;   // logged syscall index
+ADDRINT                 logged_syscall_args[6]; // logged syscall arguments
 #endif
 
-running_phase                         current_running_phase;
+running_phase           current_running_phase;
 
-UINT64                                executed_ins_number;
-UINT64                                econed_ins_number;
+UINT64                  executed_ins_number;
+UINT64                  econed_ins_number;
 
-time_t                                start_time;
-time_t                                stop_time;
+time_t                  start_time;
+time_t                  stop_time;
 
-std::ofstream                         log_file;
+std::ofstream           log_file;
 
 /* ---------------------------------------------------------------------------------------------- */
 /*                                         input handler functions                                */
@@ -77,7 +79,6 @@ VOID start_exploring(VOID *data)
 
   total_rollback_times      = 0;
   local_rollback_times      = 0;
-//  used_checkpoint_number    = 0;
 
   max_total_rollback_times  = max_total_rollback.Value();
   max_local_rollback_times  = max_local_rollback.Value();
@@ -91,7 +92,8 @@ VOID start_exploring(VOID *data)
 #endif
 
   exploring_cfi.reset();
-//  current_running_phase     = capturing_phase;
+  current_running_phase     = capturing_phase;
+  traced_thread_is_fixed    = false;
 
   log_file.open("path_explorer.log", std::ofstream::out | std::ofstream::trunc);
 
@@ -159,8 +161,8 @@ int main(int argc, char *argv[])
     log_file << "activate image-load instrumenter\n";
     IMG_AddInstrumentFunction(image_load_instrumenter, 0);
     
-    log_file << "activate process-fork instrumenter\n";
-    PIN_AddFollowChildProcessFunction(process_create_instrumenter, 0);
+//    log_file << "activate process-fork instrumenter\n";
+//    PIN_AddFollowChildProcessFunction(process_create_instrumenter, 0);
 
     log_file << "activate instruction instrumenters\n";
     INS_AddInstrumentFunction(ins_instrumenter, 0);

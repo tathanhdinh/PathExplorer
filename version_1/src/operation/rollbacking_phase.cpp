@@ -230,71 +230,74 @@ static inline addrint_value_map_t input_on_active_modified_addrs()
  * @param ins_addr: the address of the current examined instruction.
  * @return no return value.
  */
-VOID generic_instruction(ADDRINT ins_addr)
+VOID generic_instruction(ADDRINT ins_addr, THREADID thread_id)
 {
-  // verify if the execution order of the instruction exceeds the last CFI
-  if (current_exec_order >= tainted_trace_length)
+  if (thread_id == traced_thread_id)
   {
-    // exceeds, namely the rollbacking phase should stop
-    prepare_new_tainting_phase();
-  }
-  else
-  {
-    current_exec_order++;
-#if !defined(NDEBUG)
-    tfm::format(std::cerr, "%-3d %-15s %-50s %-25s %-25s\n", current_exec_order,
-                addrint_to_hexstring(ins_addr), ins_at_addr[ins_addr]->disassembled_name,
-                ins_at_addr[ins_addr]->contained_image, ins_at_addr[ins_addr]->contained_function);
-#endif
-
-    // verify if the executed instruction is in the original trace
-    if (ins_at_order[current_exec_order]->address != ins_addr)
+    // verify if the execution order of the instruction exceeds the last CFI
+    if (current_exec_order >= tainted_trace_length)
     {
-      // is not in, then verify if the current control-flow instruction (abbr. CFI) is activated
-      if (active_cfi)
-      {
-        // activated, that means the rollback from some checkpoint of this CFI will change the
-        // control-flow, then verify if the CFI is the just previous executed instruction
-        if (active_cfi->exec_order + 1 == current_exec_order)
-        {
-#if !defined(NDEBUG)
-          if (!active_cfi->is_resolved)
-          {
-            tfm::format(log_file, "the CFI %s at %d is resolved\n", active_cfi->disassembled_name,
-                        active_cfi->exec_order);
-          }
-#endif
-          // it is, then it will be marked as resolved
-          active_cfi->is_resolved = true;
-          // push an input projection into the corresponding input list of the active CFI
-          if (active_cfi->second_input_projections.empty())
-          {
-            active_cfi->second_input_projections.push_back(input_on_active_modified_addrs());
-          }
-        }
-        else
-        {
-          // it is not, that means some other CFI (between the current CFI and the checkpoint) will
-          // change the control flow
-        }
-        // in both cases, we need rollback
-        rollback();
-      }
-#if !defined(NDEBUG)
-      else
-      {
-        // not activated, then some errors have occurred
-        tfm::format(log_file, "fatal: there is no active CFI but the original trace changes (%s %d)\n",
-                    addrint_to_hexstring(ins_addr), current_exec_order);
-        PIN_ExitApplication(1);
-      }
-#endif
+      // exceeds, namely the rollbacking phase should stop
+      prepare_new_tainting_phase();
     }
     else
     {
-      // the executed instruction is in the original trace, then verify if there exists active CFI
-      // and the executed instruction has exceeded this CFI
-      if (active_cfi && (current_exec_order > active_cfi->exec_order)) rollback();
+      current_exec_order++;
+#if !defined(NDEBUG)
+      tfm::format(std::cerr, "%-3d %-15s %-50s %-25s %-25s\n", current_exec_order,
+                  addrint_to_hexstring(ins_addr), ins_at_addr[ins_addr]->disassembled_name,
+                  ins_at_addr[ins_addr]->contained_image, ins_at_addr[ins_addr]->contained_function);
+#endif
+
+      // verify if the executed instruction is in the original trace
+      if (ins_at_order[current_exec_order]->address != ins_addr)
+      {
+        // is not in, then verify if the current control-flow instruction (abbr. CFI) is activated
+        if (active_cfi)
+        {
+          // activated, that means the rollback from some checkpoint of this CFI will change the
+          // control-flow, then verify if the CFI is the just previous executed instruction
+          if (active_cfi->exec_order + 1 == current_exec_order)
+          {
+#if !defined(NDEBUG)
+            if (!active_cfi->is_resolved)
+            {
+              tfm::format(log_file, "the CFI %s at %d is resolved\n", active_cfi->disassembled_name,
+                          active_cfi->exec_order);
+            }
+#endif
+            // it is, then it will be marked as resolved
+            active_cfi->is_resolved = true;
+            // push an input projection into the corresponding input list of the active CFI
+            if (active_cfi->second_input_projections.empty())
+            {
+              active_cfi->second_input_projections.push_back(input_on_active_modified_addrs());
+            }
+          }
+          else
+          {
+            // it is not, that means some other CFI (between the current CFI and the checkpoint) will
+            // change the control flow
+          }
+          // in both cases, we need rollback
+          rollback();
+        }
+#if !defined(NDEBUG)
+        else
+        {
+          // not activated, then some errors have occurred
+          tfm::format(log_file, "fatal: there is no active CFI but the original trace changes (%s %d)\n",
+                      addrint_to_hexstring(ins_addr), current_exec_order);
+          PIN_ExitApplication(1);
+        }
+#endif
+      }
+      else
+      {
+        // the executed instruction is in the original trace, then verify if there exists active CFI
+        // and the executed instruction has exceeded this CFI
+        if (active_cfi && (current_exec_order > active_cfi->exec_order)) rollback();
+      }
     }
   }
 
@@ -305,87 +308,90 @@ VOID generic_instruction(ADDRINT ins_addr)
 /**
  * @brief control_flow_instruction
  */
-VOID control_flow_instruction(ADDRINT ins_addr)
+VOID control_flow_instruction(ADDRINT ins_addr, THREADID thread_id)
 {
   ptr_cond_direct_ins_t current_cfi;
 
-  // consider only CFIs that are beyond the exploring CFI
-  if (!exploring_cfi || (exploring_cfi && (exploring_cfi->exec_order < current_exec_order)))
+  if (thread_id == traced_thread_id)
   {
-    // verify if there exists already an active CFI in resolving
-    if (active_cfi)
+    // consider only CFIs that are beyond the exploring CFI
+    if (!exploring_cfi || (exploring_cfi && (exploring_cfi->exec_order < current_exec_order)))
     {
-      // yes, then verify if the current execution order reaches the active CFI
-      if (current_exec_order < active_cfi->exec_order)
+      // verify if there exists already an active CFI in resolving
+      if (active_cfi)
       {
-        // not reached yes, then do nothing
+        // yes, then verify if the current execution order reaches the active CFI
+        if (current_exec_order < active_cfi->exec_order)
+        {
+          // not reached yes, then do nothing
+        }
+        else
+        {
+          // reached, then normally the current CFI should be the active one
+          if (current_exec_order == active_cfi->exec_order)
+          {
+            // verify if its current checkpoint is in the last rollback try
+            if (used_rollback_num == max_rollback_num)
+            {
+              // yes, then verify if there exists another checkpoint
+              get_next_active_checkpoint();
+              if (active_checkpoint)
+              {
+#if !defined(NDEBUG)
+                tfm::format(log_file, "the cfi at %d is still actived, its next checkpoint is at %d\n",
+                            active_cfi->exec_order, active_checkpoint->exec_order);
+#endif
+                // exists, then rollback to the new active checkpoint
+                /*used_rollback_num = 0;*/ rollback();
+              }
+              else
+              {
+                // the next checkpoint does not exist, all of its reserved tests have been used
+                active_cfi->is_bypassed = !active_cfi->is_resolved;
+                if (active_cfi->is_bypassed && (gen_mode == sequential)) active_cfi->is_singular = true;
+#if !defined(NDEBUG)
+                if (active_cfi->is_bypassed)
+                {
+                  tfm::format(log_file, "the CFI %s at %d is bypassed with singularity %s\n",
+                              active_cfi->disassembled_name, active_cfi->exec_order,
+                              active_cfi->is_singular);
+                }
+#endif
+                active_cfi.reset(); used_rollback_num = 0;
+              }
+            }
+
+          }
+        }
       }
       else
       {
-        // reached, then normally the current CFI should be the active one
-        if (current_exec_order == active_cfi->exec_order)
+        // there is no CFI in resolving, then verify if the current CFI depends on the input
+        current_cfi = pept::static_pointer_cast<cond_direct_instruction>(
+              ins_at_order[current_exec_order]);
+        if (!current_cfi->input_dep_addrs.empty())
         {
-          // verify if its current checkpoint is in the last rollback try
-          if (used_rollback_num == max_rollback_num)
+          // yes, then set it as the active CFI
+          active_cfi = current_cfi; get_next_active_checkpoint();
+#if !defined(NDEBUG)
+          tfm::format(log_file, "the CFI %s at %d is activated, its first checkpoint is at %d\n",
+                      active_cfi->disassembled_name, active_cfi->exec_order,
+                      active_checkpoint->exec_order);
+#endif
+          // make a copy of the fresh input
+          active_cfi->fresh_input.reset(new UINT8[received_msg_size]);
+          std::copy(fresh_input.get(), fresh_input.get() + received_msg_size,
+                    active_cfi->fresh_input.get());
+
+          // push an input projection into the corresponding input list of the active CFI
+          if (active_cfi->first_input_projections.empty())
           {
-            // yes, then verify if there exists another checkpoint
-            get_next_active_checkpoint();
-            if (active_checkpoint)
-            {
-#if !defined(NDEBUG)
-              tfm::format(log_file, "the cfi at %d is still actived, its next checkpoint is at %d\n",
-                          active_cfi->exec_order, active_checkpoint->exec_order);
-#endif
-              // exists, then rollback to the new active checkpoint
-              /*used_rollback_num = 0;*/ rollback();
-            }
-            else
-            {
-              // the next checkpoint does not exist, all of its reserved tests have been used
-              active_cfi->is_bypassed = !active_cfi->is_resolved;
-              if (active_cfi->is_bypassed && (gen_mode == sequential)) active_cfi->is_singular = true;
-#if !defined(NDEBUG)
-              if (active_cfi->is_bypassed)
-              {
-                tfm::format(log_file, "the CFI %s at %d is bypassed with singularity %s\n",
-                            active_cfi->disassembled_name, active_cfi->exec_order,
-                            active_cfi->is_singular);
-              }
-#endif
-              active_cfi.reset(); used_rollback_num = 0;
-            }
+            active_cfi->first_input_projections.push_back(input_on_active_modified_addrs());
           }
 
+          // and rollback to resolve the new active CFI
+          /*used_rollback_num = 0;*/ rollback();
         }
-      }
-    }
-    else
-    {
-      // there is no CFI in resolving, then verify if the current CFI depends on the input
-      current_cfi = pept::static_pointer_cast<cond_direct_instruction>(
-            ins_at_order[current_exec_order]);
-      if (!current_cfi->input_dep_addrs.empty())
-      {
-        // yes, then set it as the active CFI
-        active_cfi = current_cfi; get_next_active_checkpoint();
-#if !defined(NDEBUG)
-        tfm::format(log_file, "the CFI %s at %d is activated, its first checkpoint is at %d\n",
-                    active_cfi->disassembled_name, active_cfi->exec_order,
-                    active_checkpoint->exec_order);
-#endif
-        // make a copy of the fresh input
-        active_cfi->fresh_input.reset(new UINT8[received_msg_size]);
-        std::copy(fresh_input.get(), fresh_input.get() + received_msg_size,
-                  active_cfi->fresh_input.get());
-
-        // push an input projection into the corresponding input list of the active CFI
-        if (active_cfi->first_input_projections.empty())
-        {
-          active_cfi->first_input_projections.push_back(input_on_active_modified_addrs());
-        }
-
-        // and rollback to resolve the new active CFI
-        /*used_rollback_num = 0;*/ rollback();
       }
     }
   }
@@ -397,29 +403,33 @@ VOID control_flow_instruction(ADDRINT ins_addr)
 /**
  * @brief tracking instructions that write memory
  */
-VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length)
+VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length,
+                           THREADID thread_id)
 {
-  // verify if the active checkpoint is enabled
-  if (active_checkpoint)
+  if (thread_id == traced_thread_id)
   {
-    // yes, namely we are now in some "reverse" execution from it to the active CFI, so this
-    // checkpoint needs to track memory write instructions
-    active_checkpoint->mem_write_tracking(mem_addr, mem_length);
-  }
-  else
-  {
-    // no, namely we are now in normal "forward" execution, so all checkpoint until the current
-    // execution order need to track memory write instructions
-    ptr_checkpoints_t::iterator chkpnt_iter = saved_checkpoints.begin();
-    for (; chkpnt_iter != saved_checkpoints.end(); ++chkpnt_iter)
+    // verify if the active checkpoint is enabled
+    if (active_checkpoint)
     {
-      if ((*chkpnt_iter)->exec_order <= current_exec_order)
+      // yes, namely we are now in some "reverse" execution from it to the active CFI, so this
+      // checkpoint needs to track memory write instructions
+      active_checkpoint->mem_write_tracking(mem_addr, mem_length);
+    }
+    else
+    {
+      // no, namely we are now in normal "forward" execution, so all checkpoint until the current
+      // execution order need to track memory write instructions
+      ptr_checkpoints_t::iterator chkpnt_iter = saved_checkpoints.begin();
+      for (; chkpnt_iter != saved_checkpoints.end(); ++chkpnt_iter)
       {
-        (*chkpnt_iter)->mem_write_tracking(mem_addr, mem_length);
-      }
-      else
-      {
-        break;
+        if ((*chkpnt_iter)->exec_order <= current_exec_order)
+        {
+          (*chkpnt_iter)->mem_write_tracking(mem_addr, mem_length);
+        }
+        else
+        {
+          break;
+        }
       }
     }
   }

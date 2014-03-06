@@ -296,10 +296,10 @@ inline void prepare_new_rollbacking_phase()
 /**
  * @brief analysis functions applied for syscall instructions
  */
-VOID kernel_mapped_instruction(ADDRINT ins_addr)
+VOID kernel_mapped_instruction(ADDRINT ins_addr, THREADID thread_id)
 {
   // the tainting phase always finishes when a kernel mapped instruction is met
-  prepare_new_rollbacking_phase();
+  if (thread_id == traced_thread_id) prepare_new_rollbacking_phase();
   return;
 }
 
@@ -307,42 +307,44 @@ VOID kernel_mapped_instruction(ADDRINT ins_addr)
 /**
  * @brief analysis function applied for all instructions
  */
-VOID general_instruction(ADDRINT ins_addr)
+VOID general_instruction(ADDRINT ins_addr, THREADID thread_id)
 {
   ptr_cond_direct_ins_t current_cfi, duplicated_cfi;
 
-  // verify if the execution order exceeds the limit trace length and the executed
-  // instruction is always in user-space
-  if ((current_exec_order < max_trace_size) && !ins_at_addr[ins_addr]->is_mapped_from_kernel)
+  if (thread_id == traced_thread_id)
   {
-    // does not exceed
-    current_exec_order++;
-    if (ins_at_addr[ins_addr]->is_cond_direct_cf)
+    // verify if the execution order exceeds the limit trace length and the executed
+    // instruction is always in user-space
+    if ((current_exec_order < max_trace_size) && !ins_at_addr[ins_addr]->is_mapped_from_kernel)
     {
-      // duplicate a CFI
-      current_cfi = pept::static_pointer_cast<cond_direct_instruction>(ins_at_addr[ins_addr]);
-      duplicated_cfi.reset(new cond_direct_instruction(*current_cfi));
-      duplicated_cfi->exec_order = current_exec_order;
-      ins_at_order[current_exec_order] = duplicated_cfi;
+      // does not exceed
+      current_exec_order++;
+      if (ins_at_addr[ins_addr]->is_cond_direct_cf)
+      {
+        // duplicate a CFI
+        current_cfi = pept::static_pointer_cast<cond_direct_instruction>(ins_at_addr[ins_addr]);
+        duplicated_cfi.reset(new cond_direct_instruction(*current_cfi));
+        duplicated_cfi->exec_order = current_exec_order;
+        ins_at_order[current_exec_order] = duplicated_cfi;
+      }
+      else
+      {
+        // duplicate an instruction
+        ins_at_order[current_exec_order].reset(new instruction(*ins_at_addr[ins_addr]));
+      }
+#if !defined(NDEBUG)
+      tfm::format(log_file, "%-3d %-15s %-50s %-25s %-25s\n", current_exec_order,
+                  addrint_to_hexstring(ins_addr), ins_at_addr[ins_addr]->disassembled_name,
+                  ins_at_addr[ins_addr]->contained_image, ins_at_addr[ins_addr]->contained_function);
+      //    log_file.flush();
+#endif
     }
     else
     {
-      // duplicate an instruction
-      ins_at_order[current_exec_order].reset(new instruction(*ins_at_addr[ins_addr]));
+      // exceed
+      prepare_new_rollbacking_phase();
     }
-#if !defined(NDEBUG)
-    tfm::format(log_file, "%-3d %-15s %-50s %-25s %-25s\n", current_exec_order,
-                addrint_to_hexstring(ins_addr), ins_at_addr[ins_addr]->disassembled_name,
-                ins_at_addr[ins_addr]->contained_image, ins_at_addr[ins_addr]->contained_function);
-//    log_file.flush();
-#endif
   }
-  else
-  {
-    // exceed
-    prepare_new_rollbacking_phase();
-  }
-
   return;
 }
 
@@ -352,34 +354,36 @@ VOID general_instruction(ADDRINT ins_addr)
  *  save a checkpoint each time the instruction read some memory addresses in the input buffer, and
  *  update source operands of the instruction as read memory addresses.
  */
-VOID mem_read_instruction(ADDRINT ins_addr,
-                          ADDRINT mem_read_addr, UINT32 mem_read_size, CONTEXT* p_ctxt)
+VOID mem_read_instruction(ADDRINT ins_addr, ADDRINT mem_read_addr, UINT32 mem_read_size,
+                          CONTEXT* p_ctxt, THREADID thread_id)
 {
-  // verify if the instruction read some addresses in the input buffer
-  if (std::max(mem_read_addr, received_msg_addr) <
-      std::min(mem_read_addr + mem_read_size, received_msg_addr + received_msg_size))
+  if (thread_id == traced_thread_id)
   {
-    // yes, then save a checkpoint
-    ptr_checkpoint_t new_ptr_checkpoint(new checkpoint(current_exec_order,
-                                                       p_ctxt, mem_read_addr, mem_read_size));
-    saved_checkpoints.push_back(new_ptr_checkpoint);
+    // verify if the instruction read some addresses in the input buffer
+    if (std::max(mem_read_addr, received_msg_addr) <
+        std::min(mem_read_addr + mem_read_size, received_msg_addr + received_msg_size))
+    {
+      // yes, then save a checkpoint
+      ptr_checkpoint_t new_ptr_checkpoint(new checkpoint(current_exec_order,
+                                                         p_ctxt, mem_read_addr, mem_read_size));
+      saved_checkpoints.push_back(new_ptr_checkpoint);
 
 #if !defined(NDEBUG)
-    tfm::format(log_file, "checkpoint detected at %d (%s: %s) because memory is read (%s: %d)\n",
-                new_ptr_checkpoint->exec_order, addrint_to_hexstring(ins_addr),
-                ins_at_addr[ins_addr]->disassembled_name, addrint_to_hexstring(mem_read_addr),
-                *(reinterpret_cast<UINT8*>(mem_read_addr)));
+      tfm::format(log_file, "checkpoint detected at %d (%s: %s) because memory is read (%s: %d)\n",
+                  new_ptr_checkpoint->exec_order, addrint_to_hexstring(ins_addr),
+                  ins_at_addr[ins_addr]->disassembled_name, addrint_to_hexstring(mem_read_addr),
+                  *(reinterpret_cast<UINT8*>(mem_read_addr)));
 #endif
-  }
+    }
 
-  // update source operands
-  ptr_operand_t mem_operand;
-  for (UINT32 addr_offset = 0; addr_offset < mem_read_size; ++addr_offset)
-  {
-    mem_operand.reset(new operand(mem_read_addr + addr_offset));
-    ins_at_order[current_exec_order]->src_operands.insert(mem_operand);
+    // update source operands
+    ptr_operand_t mem_operand;
+    for (UINT32 addr_offset = 0; addr_offset < mem_read_size; ++addr_offset)
+    {
+      mem_operand.reset(new operand(mem_read_addr + addr_offset));
+      ins_at_order[current_exec_order]->src_operands.insert(mem_operand);
+    }
   }
-
   return;
 }
 
@@ -389,28 +393,32 @@ VOID mem_read_instruction(ADDRINT ins_addr,
  *  save orginal values of overwritten memory addresses, and
  *  update destination operands of the instruction as written memory addresses.
  */
-VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 mem_written_size)
+VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 mem_written_size,
+                           THREADID thread_id)
 {
+  if (thread_id == traced_thread_id)
+  {
 #if !defined(ENABLE_FAST_ROLLBACK)
-  // the first saved checkpoint tracks memory write operations so that we can always rollback to it
-  if (!saved_checkpoints.empty())
-  {
-    saved_checkpoints[0]->mem_write_tracking(mem_written_addr, mem_written_size);
-  }
+    // the first saved checkpoint tracks memory write operations so that we can always rollback to it
+    if (!saved_checkpoints.empty())
+    {
+      saved_checkpoints[0]->mem_write_tracking(mem_written_addr, mem_written_size);
+    }
 #else
-  ptr_checkpoints_t::iterator chkpnt_iter = saved_checkpoints.begin();
-  for (; chkpnt_iter != saved_checkpoints.end(); ++chkpnt_iter)
-  {
-    (*chkpnt_iter)->mem_write_tracking(mem_written_addr, mem_written_size);
-  }
+    ptr_checkpoints_t::iterator chkpnt_iter = saved_checkpoints.begin();
+    for (; chkpnt_iter != saved_checkpoints.end(); ++chkpnt_iter)
+    {
+      (*chkpnt_iter)->mem_write_tracking(mem_written_addr, mem_written_size);
+    }
 #endif
 
-  // update destination operands
-  ptr_operand_t mem_operand;
-  for (UINT32 addr_offset = 0; addr_offset < mem_written_size; ++addr_offset)
-  {
-    mem_operand.reset(new operand(mem_written_addr + addr_offset));
-    ins_at_order[current_exec_order]->dst_operands.insert(mem_operand);
+    // update destination operands
+    ptr_operand_t mem_operand;
+    for (UINT32 addr_offset = 0; addr_offset < mem_written_size; ++addr_offset)
+    {
+      mem_operand.reset(new operand(mem_written_addr + addr_offset));
+      ins_at_order[current_exec_order]->dst_operands.insert(mem_operand);
+    }
   }
 
   return;
@@ -518,22 +526,25 @@ inline std::set<df_vertex_desc> destination_variables(UINT32 idx)
  * @param ins_addr
  * @return
  */
-VOID graphical_propagation(ADDRINT ins_addr)
+VOID graphical_propagation(ADDRINT ins_addr, THREADID thread_id)
 {
-  std::set<df_vertex_desc> src_vertex_descs = source_variables(current_exec_order);
-  std::set<df_vertex_desc> dst_vertex_descs = destination_variables(current_exec_order);
-
-  std::set<df_vertex_desc>::iterator src_vertex_desc_iter;
-  std::set<df_vertex_desc>::iterator dst_vertex_desc_iter;
-
-  // insert the edges between each pair (source, destination) into the tainting graph
-  for (src_vertex_desc_iter = src_vertex_descs.begin();
-       src_vertex_desc_iter != src_vertex_descs.end(); ++src_vertex_desc_iter) 
+  if (thread_id == traced_thread_id)
   {
-    for (dst_vertex_desc_iter = dst_vertex_descs.begin();
-         dst_vertex_desc_iter != dst_vertex_descs.end(); ++dst_vertex_desc_iter) 
+    std::set<df_vertex_desc> src_vertex_descs = source_variables(current_exec_order);
+    std::set<df_vertex_desc> dst_vertex_descs = destination_variables(current_exec_order);
+
+    std::set<df_vertex_desc>::iterator src_vertex_desc_iter;
+    std::set<df_vertex_desc>::iterator dst_vertex_desc_iter;
+
+    // insert the edges between each pair (source, destination) into the tainting graph
+    for (src_vertex_desc_iter = src_vertex_descs.begin();
+         src_vertex_desc_iter != src_vertex_descs.end(); ++src_vertex_desc_iter)
     {
-      boost::add_edge(*src_vertex_desc_iter, *dst_vertex_desc_iter, current_exec_order, dta_graph);
+      for (dst_vertex_desc_iter = dst_vertex_descs.begin();
+           dst_vertex_desc_iter != dst_vertex_descs.end(); ++dst_vertex_desc_iter)
+      {
+        boost::add_edge(*src_vertex_desc_iter, *dst_vertex_desc_iter, current_exec_order, dta_graph);
+      }
     }
   }
 

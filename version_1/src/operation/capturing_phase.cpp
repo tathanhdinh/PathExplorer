@@ -59,9 +59,13 @@ static inline void handle_received_message()
 /**
  * @brief determine the received message address of recv or recvfrom
  */
-VOID before_recvs(ADDRINT msg_addr)
+VOID before_recvs(ADDRINT msg_addr, THREADID thread_id)
 {
   received_msg_addr = msg_addr; function_called = true;
+  if (!traced_thread_is_fixed)
+  {
+    traced_thread_id = thread_id; traced_thread_is_fixed = true;
+  }
   return;
 }
 
@@ -69,12 +73,23 @@ VOID before_recvs(ADDRINT msg_addr)
 /**
  * @brief determine the received message length of recv or recvfrom
  */
-VOID after_recvs(UINT32 msg_length)
+VOID after_recvs(UINT32 msg_length, THREADID thread_id)
 {
-  if (function_called)
+  if (function_called && traced_thread_is_fixed && (traced_thread_id == thread_id))
   {
+#if !defined(NDEBUG)
+    tfm::format(log_file, "message is received from recv or recvfrom at thread id %d\n", thread_id);
+#endif
     function_called = false; received_msg_size = msg_length;
     handle_received_message();
+  }
+  else
+  {
+#if !defined(NDEBUG)
+    tfm::format(log_file, "fatal: message receiving function returns without being called or the thread id is changed from %d to %d\n",
+                traced_thread_id, thread_id);
+#endif
+    PIN_ExitApplication(1);
   }
   return;
 }
@@ -85,11 +100,15 @@ VOID after_recvs(UINT32 msg_length)
  */
 #include <WinSock2.h>
 #include <Windows.h>
-VOID before_wsarecvs(ADDRINT msg_struct_addr)
+VOID before_wsarecvs(ADDRINT msg_struct_addr, THREADID thread_id)
 {
   received_msg_struct_addr = msg_struct_addr; function_called = true;
   received_msg_addr = reinterpret_cast<ADDRINT>((reinterpret_cast<LPWSABUF>(
                                                    received_msg_struct_addr))->buf);
+  if (!traced_thread_is_fixed)
+  {
+    traced_thread_id = thread_id; traced_thread_is_fixed = true;
+  }
   return;
 }
 
@@ -97,15 +116,25 @@ VOID before_wsarecvs(ADDRINT msg_struct_addr)
 /**
  * @brief determine the received message length or WSARecv or WSARecvFrom
  */
-VOID after_wsarecvs()
+VOID after_wsarecvs(THREADID thread_id)
 {
-  if (function_called)
+  if (function_called && traced_thread_is_fixed && (traced_thread_id == thread_id))
   {
+#if !defined(NDEBUG)
+    tfm::format(log_file, "message is received from WSARecv or WSARecvFrom at thread id %d\n", thread_id);
+#endif
     function_called = false;
     received_msg_size = (reinterpret_cast<LPWSABUF>(received_msg_struct_addr))->len;
     handle_received_message();
   }
-
+  else
+  {
+#if !defined(NDEBUG)
+    tfm::format(log_file, "fatal: message receiving function returns without being called or the thread id is changed from %d to %d\n",
+                traced_thread_id, thread_id);
+#endif
+    PIN_ExitApplication(1);
+  }
   return;
 }
 #elif defined(__gnu_linux__)

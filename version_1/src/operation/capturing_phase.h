@@ -24,13 +24,13 @@ namespace capturing
 extern void initialize();
 
 #if defined(_WIN32) || defined(_WIN64)
-extern VOID before_recvs      (ADDRINT msg_addr);
+extern VOID before_recvs      (ADDRINT msg_addr, THREADID thread_id);
 
-extern VOID after_recvs       (UINT32 msg_length);
+extern VOID after_recvs       (UINT32 msg_length, THREADID thread_id);
 
-extern VOID before_wsarecvs   (ADDRINT msg_struct_addr);
+extern VOID before_wsarecvs   (ADDRINT msg_struct_addr, THREADID thread_id);
 
-extern VOID after_wsarecvs    ();
+extern VOID after_wsarecvs    (THREADID thread_id);
 #elif defined(__gnu_linux__)
 extern VOID syscall_entry_analyzer(THREADID thread_id, CONTEXT* p_ctxt,
                                    SYSCALL_STANDARD syscall_std, VOID *data);

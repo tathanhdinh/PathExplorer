@@ -17,18 +17,18 @@
 #define USING_XED
 #endif
 #endif
-
 #include <pin.H>
 
 namespace rollbacking
 {
-extern void initialize                  (UINT32 trace_length_limit);
+extern void initialize                (UINT32 trace_length_limit);
 
-extern VOID generic_instruction         (ADDRINT ins_addr);
+extern VOID generic_instruction       (ADDRINT ins_addr, THREADID thread_id);
 
-extern VOID mem_write_instruction       (ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length);
+extern VOID mem_write_instruction     (ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length,
+                                       THREADID thread_id);
 
-extern VOID control_flow_instruction    (ADDRINT ins_addr);
+extern VOID control_flow_instruction  (ADDRINT ins_addr, THREADID thread_id);
 };
 
 #endif // ROLLBACKING_FUNCTIONS_H

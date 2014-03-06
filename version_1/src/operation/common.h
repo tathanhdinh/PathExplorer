@@ -60,10 +60,12 @@ extern ptr_cond_direct_ins_t    exploring_cfi;
 
 extern UINT32                   current_exec_order;
 
-//extern UINT32                   received_msg_num;
 extern ADDRINT                  received_msg_addr;
 extern UINT32                   received_msg_size;
 extern UINT32                   received_msg_order;
+
+extern THREADID                 traced_thread_id;
+extern bool                     traced_thread_is_fixed;
 
 #if defined(__gnu_linux__)
 extern ADDRINT                  logged_syscall_index;   // logged syscall index

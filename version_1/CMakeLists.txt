@@ -89,29 +89,31 @@ set(INCLUDE_DIRS
   ${BOOST_ROOT_DIR}
 )
 
-set(SOURCES
-  src/path_explorer.cpp
-  src/base/operand.cpp
-  src/base/operand.h
-  src/base/instruction.cpp
-  src/base/instruction.h
-  src/base/cond_direct_instruction.cpp
-  src/base/cond_direct_instruction.h
-  src/base/checkpoint.cpp
-  src/base/checkpoint.h
-  src/operation/rollbacking_phase.cpp
-  src/operation/rollbacking_phase.h
-  src/operation/tainting_phase.cpp
-  src/operation/tainting_phase.h
-  src/operation/capturing_phase.cpp
-  src/operation/capturing_phase.h
-  src/operation/instrumentation.cpp
-  src/operation/instrumentation.h
-  src/operation/common.h
-  src/util/stuffs.cc
-  src/util/stuffs.h
-  src/util/tinyformat.h
-)
+#set(SOURCES
+#  src/path_explorer.cpp
+#  src/base/operand.cpp
+#  src/base/operand.h
+#  src/base/instruction.cpp
+#  src/base/instruction.h
+#  src/base/cond_direct_instruction.cpp
+#  src/base/cond_direct_instruction.h
+#  src/base/checkpoint.cpp
+#  src/base/checkpoint.h
+#  src/operation/rollbacking_phase.cpp
+#  src/operation/rollbacking_phase.h
+#  src/operation/tainting_phase.cpp
+#  src/operation/tainting_phase.h
+#  src/operation/capturing_phase.cpp
+#  src/operation/capturing_phase.h
+#  src/operation/instrumentation.cpp
+#  src/operation/instrumentation.h
+#  src/operation/common.h
+#  src/util/stuffs.cc
+#  src/util/stuffs.h
+#  src/util/tinyformat.h
+#)
+
+file(GLOB_RECURSE SOURCES src "*.h" "*.cpp")
 
 include_directories(${INCLUDE_DIRS})
 link_directories(${PIN_LIBRARY_DIRS})
