@@ -1,3 +1,7 @@
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMake/")
+#set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake/")
+include(cotire)
+
 project(PathExplorer_V1)
 
 cmake_minimum_required(VERSION 2.8)
@@ -72,7 +76,7 @@ set(PIN_LIBRARY_DIRS
   ${PIN_ROOT_DIR}/${PIN_CPU_ARCH_LONG}/lib-ext
 )
 
-set(PIN_LIBS pin pinvm libxed ntdll-32)
+set(PIN_LIBS pin pinvm libxed ntdll-32 dbghelp)
 
 set(OTHER_LIBS libcpmt libcmt)
 
@@ -127,6 +131,13 @@ set(CMAKE_SHARED_LINKER_FLAGS "/EXPORT:main /ENTRY:Ptrace_DllMainCRTStartup@12 /
 
 add_library(pathexplorer SHARED ${SOURCES})
 target_link_libraries(pathexplorer ${PIN_LIBS} ${OTHER_LIBS})
+
+#set(HEADER_IGNORE_PATH $ENV{PROGRAMFILES})
+#set_target_properties(pathexplorer PROPERTIES
+#  COTIRE_PREFIX_HEADER_IGNORE_PATH "${PIN_ROOT_DIR}"
+#)
+set_target_properties(pathexplorer PROPERTIES COTIRE_CXX_PREFIX_HEADER_INIT "pch.h")
+cotire(pathexplorer)
 
 #add_executable(pseudope ${SOURCES})
 #target_link_libraries(pseudope ${PIN_LIBS} ${OTHER_LIBS})

@@ -243,11 +243,11 @@ VOID generic_instruction(ADDRINT ins_addr, THREADID thread_id)
     else
     {
       current_exec_order++;
-#if !defined(NDEBUG)
-      tfm::format(std::cerr, "%-3d %-15s %-50s %-25s %-25s\n", current_exec_order,
-                  addrint_to_hexstring(ins_addr), ins_at_addr[ins_addr]->disassembled_name,
-                  ins_at_addr[ins_addr]->contained_image, ins_at_addr[ins_addr]->contained_function);
-#endif
+//#if !defined(NDEBUG)
+//      tfm::format(std::cerr, "%-3d %-15s %-50s %-25s %-25s\n", current_exec_order,
+//                  addrint_to_hexstring(ins_addr), ins_at_addr[ins_addr]->disassembled_name,
+//                  ins_at_addr[ins_addr]->contained_image, ins_at_addr[ins_addr]->contained_function);
+//#endif
 
       // verify if the executed instruction is in the original trace
       if (ins_at_order[current_exec_order]->address != ins_addr)
@@ -348,11 +348,12 @@ VOID control_flow_instruction(ADDRINT ins_addr, THREADID thread_id)
               {
                 // the next checkpoint does not exist, all of its reserved tests have been used
                 active_cfi->is_bypassed = !active_cfi->is_resolved;
-                if (active_cfi->is_bypassed && (gen_mode == sequential)) active_cfi->is_singular = true;
+                if (active_cfi->is_bypassed && (active_cfi->checkpoints.size() == 1) &&
+                    (gen_mode == sequential)) active_cfi->is_singular = true;
 #if !defined(NDEBUG)
                 if (active_cfi->is_bypassed)
                 {
-                  tfm::format(log_file, "the CFI %s at %d is bypassed with singularity %s\n",
+                  tfm::format(log_file, "the CFI %s at %d is bypassed (singularity: %s)\n",
                               active_cfi->disassembled_name, active_cfi->exec_order,
                               active_cfi->is_singular);
                 }

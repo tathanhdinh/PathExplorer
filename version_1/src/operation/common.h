@@ -1,8 +1,8 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-// these definitions are not necessary (since they are defined already in the CMakeLists),
-// they are added just to make qt-creator parsing headers
+// these definitions are not necessary (defined already in the CMakeLists),
+// they are added just to help qt-creator parsing headers
 #if defined(_WIN32) || defined(_WIN64)
 #ifndef TARGET_IA32
 #define TARGET_IA32
@@ -17,7 +17,6 @@
 #define USING_XED
 #endif
 #endif
-
 #include <pin.H>
 
 #include <fstream>

@@ -10,6 +10,11 @@ namespace capturing
 static UINT32   received_msg_number;
 static bool     function_called;
 #if defined(_WIN32) || defined(_WIN64)
+namespace windows
+{
+#include <WinSock2.h>
+#include <Windows.h>
+};
 static ADDRINT  received_msg_struct_addr;
 #endif
 
@@ -98,12 +103,10 @@ VOID after_recvs(UINT32 msg_length, THREADID thread_id)
 /**
  * @brief determine the address a type LPWSABUF containing the address of the received message
  */
-#include <WinSock2.h>
-#include <Windows.h>
 VOID before_wsarecvs(ADDRINT msg_struct_addr, THREADID thread_id)
 {
   received_msg_struct_addr = msg_struct_addr; function_called = true;
-  received_msg_addr = reinterpret_cast<ADDRINT>((reinterpret_cast<LPWSABUF>(
+  received_msg_addr = reinterpret_cast<ADDRINT>((reinterpret_cast<windows::LPWSABUF>(
                                                    received_msg_struct_addr))->buf);
   if (!traced_thread_is_fixed)
   {
@@ -124,7 +127,7 @@ VOID after_wsarecvs(THREADID thread_id)
     tfm::format(log_file, "message is received from WSARecv or WSARecvFrom at thread id %d\n", thread_id);
 #endif
     function_called = false;
-    received_msg_size = (reinterpret_cast<LPWSABUF>(received_msg_struct_addr))->len;
+    received_msg_size = (reinterpret_cast<windows::LPWSABUF>(received_msg_struct_addr))->len;
     handle_received_message();
   }
   else

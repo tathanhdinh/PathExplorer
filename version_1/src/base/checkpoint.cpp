@@ -2,10 +2,9 @@
 
 #include "../util/stuffs.h"
 
-//extern ADDRINT received_msg_addr;
 
-checkpoint::checkpoint(UINT32 existing_exec_order,
-                       CONTEXT* p_ctxt, ADDRINT input_mem_read_addr, UINT32 input_mem_read_size)
+checkpoint::checkpoint(UINT32 existing_exec_order, CONTEXT* p_ctxt,
+                       ADDRINT input_mem_read_addr, UINT32 input_mem_read_size)
 {
   this->context.reset(new CONTEXT);
   PIN_SaveContext(p_ctxt, this->context.get());
