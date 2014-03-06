@@ -166,11 +166,11 @@ static inline void set_checkpoints_for_cfi(const ptr_cond_direct_ins_t& cfi)
 static inline void save_detected_cfis()
 {
   ptr_cond_direct_ins_t new_cfi;
-  std::map<UINT32, ptr_instruction_t>::reverse_iterator ins_iter = ins_at_order.rbegin();
+  std::map<UINT32, ptr_instruction_t>::iterator ins_iter = ins_at_order.begin();
 
   if (ins_at_order.size() > 1)
   {
-    for (++ins_iter; ins_iter != ins_at_order.rend(); ++ins_iter)
+    for (++ins_iter; ins_iter != ins_at_order.end(); ++ins_iter)
     {
       // consider only the instruction that is not behind the exploring CFI
       if (!exploring_cfi || (exploring_cfi && (ins_iter->first > exploring_cfi->exec_order)))
@@ -192,10 +192,10 @@ static inline void save_detected_cfis()
 #endif
         }
       }
-      else
-      {
-        break;
-      }
+//      else
+//      {
+//        break;
+//      }
     }
   }
 
