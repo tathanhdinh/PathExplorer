@@ -58,7 +58,10 @@ void explorer_graph::add_vertex(ptr_instruction_t& ins)
 }
 
 
-static inline bool path_code_is_equal(path_code_t& x, path_code_t& y)
+/**
+ * @brief verify if two path codes are equal
+ */
+static inline bool path_codes_are_equal(path_code_t& x, path_code_t& y)
 {
   bool equality = false;
   path_code_t::iterator path_iter, last_path_iter;
@@ -71,6 +74,9 @@ static inline bool path_code_is_equal(path_code_t& x, path_code_t& y)
 }
 
 
+/**
+ * @brief add an edge into the graph
+ */
 void explorer_graph::add_edge(ptr_instruction_t& ins_a, ptr_instruction_t& ins_b,
                               path_code_t& edge_path_code, addrint_value_map_t& edge_addrs_values)
 {
@@ -94,7 +100,7 @@ void explorer_graph::add_edge(ptr_instruction_t& ins_a, ptr_instruction_t& ins_b
     if (boost::target(*out_edge_iter, internal_exp_graph) == ins_b_desc)
     {
       // yes, then add the selected values and addresses into the list of this edge
-      if (path_code_is_equal(edge_path_code, internal_exp_graph[*out_edge_iter].first))
+      if (path_codes_are_equal(edge_path_code, internal_exp_graph[*out_edge_iter].first))
       {
         internal_exp_graph[*out_edge_iter].second.push_back(edge_addrs_values); break;
       }
@@ -110,3 +116,32 @@ void explorer_graph::add_edge(ptr_instruction_t& ins_a, ptr_instruction_t& ins_b
 
   return;
 }
+
+
+class exp_vertex_label_writer
+{
+public:
+  template<typename Vertex>
+  void operator()(std::ostream& label, Vertex vertex)
+  {
+    exp_vertex = internal_exp_graph[vertex];
+    tfm::format(label, "[label=\"<%s: %s>\"]", addrint_to_hexstring(exp_vertex->address),
+                exp_vertex->disassembled_name);
+    return;
+  }
+};
+
+
+class exp_edge_label_writer
+{
+public:
+  template<typename Edge>
+  void operator()(std::ostream& label, Edge edge)
+  {
+    exp_edge = internal_exp_graph[edge];
+    tfm::format(label, "[label=\"<follow times: %d>\"]", exp_edge.second.size());
+    return;
+  }
+};
+
+
