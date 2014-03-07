@@ -15,6 +15,7 @@ typedef boost::adjacency_list<boost::listS, boost::vecS,
 typedef boost::graph_traits<exp_graph>::vertex_descriptor   exp_vertex_desc;
 typedef boost::graph_traits<exp_graph>::edge_descriptor     exp_edge_desc;
 typedef boost::graph_traits<exp_graph>::vertex_iterator     exp_vertex_iter;
+typedef boost::graph_traits<exp_graph>::edge_iterator       exp_edge_iter;
 
 /*================================================================================================*/
 
@@ -145,6 +146,21 @@ public:
     return;
   }
 };
+
+
+static inline void prune_graph()
+{
+  boost::graph_traits<exp_graph>::out_edge_iterator out_e_iter, last_out_e_iter;
+  boost::graph_traits<exp_graph>::in_edge_iterator in_e_iter, last_in_e_iter,
+
+  exp_vertex_iter v_iter, next_v_iter, last_v_iter;
+  boost::tie(v_iter, last_v_iter) = boost::vertices(internal_exp_graph);
+  for (next_v_iter = v_iter; v_iter != last_v_iter; v_iter = next_v_iter)
+  {
+    ++next_v_iter;
+    boost::tie(out_e_iter, last_out_e_iter) = boost::out_edges(*v_iter, internal_exp_graph);
+  }
+}
 
 
 void explorer_graph::save_to_file(std::string filename)
