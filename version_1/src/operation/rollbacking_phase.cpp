@@ -12,7 +12,7 @@ typedef enum
 {
   randomized = 0,
   sequential = 1
-} input_generation_mode;
+}                               input_generation_mode;
 
 static ptr_cond_direct_ins_t    active_cfi;
 static ptr_checkpoint_t         active_checkpoint;
@@ -22,9 +22,11 @@ static UINT32                   used_rollback_num;
 static UINT32                   tainted_trace_length;
 static addrint_set_t            active_modified_addrs;
 static addrint_value_map_t      active_modified_addrs_values;
+static addrint_value_map_t      input_on_active_modified_addrs;
 static ptr_uint8_t              fresh_input;
 static ptr_uint8_t              tainting_input;
 static input_generation_mode    gen_mode;
+
 
 /*================================================================================================*/
 
@@ -32,7 +34,7 @@ namespace rollbacking
 {
 static inline void initialize_values_at_active_modified_addrs()
 {
-  active_modified_addrs_values.clear();
+  active_modified_addrs_values.clear(); input_on_active_modified_addrs.clear();
   addrint_set_t::iterator addr_iter = active_modified_addrs.begin();
   for (; addr_iter != active_modified_addrs.end(); ++addr_iter)
   {
@@ -178,7 +180,7 @@ static inline void prepare_new_tainting_phase()
     calculate_tainting_input(exploring_cfi->fresh_input, exploring_cfi->second_input_projections[0]);
 
     // initialize new tainting phase
-    current_running_phase = tainting_phase; tainting::initialize_tainting_phase();
+    current_running_phase = tainting_phase; tainting::initialize();
 
 #if !defined(NDEBUG)
     tfm::format(log_file, "%s\nexplore the CFI %s at %d, start tainting\n",
@@ -207,15 +209,18 @@ static inline void prepare_new_tainting_phase()
 /**
  * @brief get a projection of input on the active modified addresses
  */
-static inline addrint_value_map_t input_on_active_modified_addrs()
+static inline void project_input_on_active_modified_addrs()
 {
+//  input_on_active_modified_addrs.clear();
   addrint_set_t::iterator addr_iter = active_modified_addrs.begin();
-  addrint_value_map_t input_proj;
+//  addrint_value_map_t input_proj;
   for (; addr_iter != active_modified_addrs.end(); ++addr_iter)
   {
-    input_proj[*addr_iter] = *(reinterpret_cast<UINT8*>(*addr_iter));
+//    input_proj[*addr_iter] = *(reinterpret_cast<UINT8*>(*addr_iter));
+    input_on_active_modified_addrs[*addr_iter] = *(reinterpret_cast<UINT8*>(*addr_iter));
   }
-  return input_proj;
+  return;
+//  return input_proj;
 }
 
 
@@ -271,8 +276,18 @@ VOID generic_instruction(ADDRINT ins_addr, THREADID thread_id)
             // push an input projection into the corresponding input list of the active CFI
             if (active_cfi->second_input_projections.empty())
             {
-              active_cfi->second_input_projections.push_back(input_on_active_modified_addrs());
+              project_input_on_active_modified_addrs();
+              active_cfi->second_input_projections.push_back(input_on_active_modified_addrs);
             }
+#if defined(ENABLE_FSA)
+            // because the CFI will follow new direction so the path code should be changed
+            project_input_on_active_modified_addrs();
+            path_code_t new_path_code = path_code_at_order[current_exec_order];
+            new_path_code.pop_back(); new_path_code.push_back(false);
+            explored_fsa->add_edge(ins_at_order[current_exec_order - 1],
+                                   ins_at_order[current_exec_order], new_path_code,
+                                   input_on_active_modified_addrs);
+#endif
           }
           else
           {
@@ -296,7 +311,17 @@ VOID generic_instruction(ADDRINT ins_addr, THREADID thread_id)
       {
         // the executed instruction is in the original trace, then verify if there exists active CFI
         // and the executed instruction has exceeded this CFI
-        if (active_cfi && (current_exec_order > active_cfi->exec_order)) rollback();
+        if (active_cfi && (current_exec_order > active_cfi->exec_order))
+        {
+#if defined(ENABLE_FSA)
+          project_input_on_active_modified_addrs();
+          explored_fsa->add_edge(ins_at_order[current_exec_order - 1],
+                                 ins_at_order[current_exec_order],
+                                 path_code_at_order[current_exec_order],
+                                 input_on_active_modified_addrs);
+#endif
+          rollback();
+        }
       }
     }
   }
@@ -342,7 +367,7 @@ VOID control_flow_instruction(ADDRINT ins_addr, THREADID thread_id)
                             active_cfi->exec_order, active_checkpoint->exec_order);
 #endif
                 // exists, then rollback to the new active checkpoint
-                /*used_rollback_num = 0;*/ rollback();
+                rollback();
               }
               else
               {
@@ -361,7 +386,6 @@ VOID control_flow_instruction(ADDRINT ins_addr, THREADID thread_id)
                 active_cfi.reset(); used_rollback_num = 0;
               }
             }
-
           }
         }
       }
@@ -387,11 +411,12 @@ VOID control_flow_instruction(ADDRINT ins_addr, THREADID thread_id)
           // push an input projection into the corresponding input list of the active CFI
           if (active_cfi->first_input_projections.empty())
           {
-            active_cfi->first_input_projections.push_back(input_on_active_modified_addrs());
+            project_input_on_active_modified_addrs();
+            active_cfi->first_input_projections.push_back(input_on_active_modified_addrs);
           }
 
           // and rollback to resolve the new active CFI
-          /*used_rollback_num = 0;*/ rollback();
+          rollback();
         }
       }
     }

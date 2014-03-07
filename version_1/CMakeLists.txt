@@ -69,9 +69,12 @@ set(PIN_INCLUDE_DIRS
 set(PIN_DEFS "/D TARGET_IA32 /D HOST_IA32 /D TARGET_WINDOWS /D USING_XED /D_SECURE_SCL=0 /D_ITERATOR_DEBUG_LEVEL=0")
 set(LINKER_DEFS "/D _WINDLL /D _MBCS /MT /EHsc /O2 /Ob2 /nologo")
 
+if((DEFINED ENABLE_FSA) AND (ENABLE_FSA STREQUAL "Yes"))
+set(FUNC_DEFS "/D ENABLE_FSA")
+message(STATUS "FSA reconstruction is enabled.")
+else()
 set(FUNC_DEFS "")
-if(ENABLE_FSA)
-set(FUNC_DEFS "${FUNC_DEFS} /D ENABLE_FSA")
+message(STATUS, "FSA reconstruction is disabled.")
 endif()
 
 set(PIN_LIBRARY_DIRS
@@ -131,7 +134,7 @@ add_definitions(${LINKER_DEFS})
 add_definitions(${FUNC_DEFS})
 
 #remove(CMAKE_CXX_FLAGS)
-set(CMAKE_CXX_FLAGS "${OTHER_DEFS} ${PIN_DEFS}")
+set(CMAKE_CXX_FLAGS "${FUNC_DEFS} ${OTHER_DEFS} ${PIN_DEFS}")
 set(CMAKE_SHARED_LINKER_FLAGS "/EXPORT:main /ENTRY:Ptrace_DllMainCRTStartup@12 /NODEFAULTLIB")
 
 add_library(pathexplorer SHARED ${SOURCES})

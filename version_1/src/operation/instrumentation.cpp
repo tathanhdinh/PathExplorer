@@ -10,9 +10,9 @@
 #include "tainting_phase.h"
 #include "rollbacking_phase.h"
 
-#if defined(_WIN32) || defined(_WIN64)
-#include <stdlib.h>
-#endif
+//#if defined(_WIN32) || defined(_WIN64)
+//#include <stdlib.h>
+//#endif
 
 /*================================================================================================*/
 
@@ -119,6 +119,9 @@ VOID ins_instrumenter(INS ins, VOID *data)
     {
       ins_at_addr[examined_ins->address].reset(new cond_direct_instruction(*examined_ins));
     }
+#if defined(ENABLE_FSA)
+    explored_fsa->add_vertex(ins_at_addr[examined_ins->address]);
+#endif
 
     switch (current_running_phase)
     {

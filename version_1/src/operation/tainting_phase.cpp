@@ -161,7 +161,7 @@ static inline void set_checkpoints_for_cfi(const ptr_cond_direct_ins_t& cfi)
 
 
 /**
- * @brief save new tainted CFI in this tainting phase
+ * @brief save new tainted CFIs in this tainting phase
  */
 static inline void save_detected_cfis()
 {
@@ -175,6 +175,9 @@ static inline void save_detected_cfis()
       // consider only the instruction that is not behind the exploring CFI
       if (!exploring_cfi || (exploring_cfi && (ins_iter->first > exploring_cfi->exec_order)))
       {
+#if defined(ENABLE_FSA)
+        path_code_at_order[ins_iter->first] = current_path_code;
+#endif
         if (ins_iter->second->is_cond_direct_cf)
         {
           new_cfi = pept::static_pointer_cast<cond_direct_instruction>(ins_iter->second);
@@ -189,6 +192,10 @@ static inline void save_detected_cfis()
           }
 #if !defined(NDEBUG)
           newly_detected_cfis.push_back(new_cfi);
+#endif
+#if defined(ENABLE_FSA)
+          // update the path code of the CFI
+          new_cfi->path_code = current_path_code; current_path_code.push_back(true);
 #endif
         }
       }
@@ -321,7 +328,7 @@ VOID general_instruction(ADDRINT ins_addr, THREADID thread_id)
       current_exec_order++;
       if (ins_at_addr[ins_addr]->is_cond_direct_cf)
       {
-        // duplicate a CFI
+        // duplicate a CFI (the default copy constructor is used)
         current_cfi = pept::static_pointer_cast<cond_direct_instruction>(ins_at_addr[ins_addr]);
         duplicated_cfi.reset(new cond_direct_instruction(*current_cfi));
         duplicated_cfi->exec_order = current_exec_order;
@@ -329,7 +336,7 @@ VOID general_instruction(ADDRINT ins_addr, THREADID thread_id)
       }
       else
       {
-        // duplicate an instruction
+        // duplicate an instruction (the default copy constructor is used)
         ins_at_order[current_exec_order].reset(new instruction(*ins_at_addr[ins_addr]));
       }
 #if !defined(NDEBUG)
@@ -555,12 +562,14 @@ VOID graphical_propagation(ADDRINT ins_addr, THREADID thread_id)
 /**
  * @brief initialize_tainting_phase
  */
-void initialize_tainting_phase()
+void initialize()
 {
   dta_graph.clear(); dta_outer_vertices.clear(); saved_checkpoints.clear(); ins_at_order.clear();
 #if !defined(NDEBUG)
-  newly_detected_input_dep_cfis.clear();
-  newly_detected_cfis.clear();
+  newly_detected_input_dep_cfis.clear(); newly_detected_cfis.clear();
+#endif
+#if defined(ENABLE_FSA)
+  path_code_at_order.clear();
 #endif
   return;
 }

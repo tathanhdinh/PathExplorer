@@ -21,7 +21,7 @@
 
 namespace tainting
 {
-extern void initialize_tainting_phase   ();
+extern void initialize                  ();
 
 extern VOID kernel_mapped_instruction   (ADDRINT ins_addr, THREADID thread_id);
 

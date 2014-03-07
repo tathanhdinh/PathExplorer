@@ -27,6 +27,8 @@ ptr_cond_direct_ins_t   exploring_cfi;
 UINT32                  current_exec_order;
 #if defined(ENABLE_FSA)
 path_code_t             current_path_code;
+order_path_code_map_t   path_code_at_order;
+ptr_explorer_graph_t    explored_fsa;
 #endif
 
 ADDRINT                 received_msg_addr;
@@ -92,6 +94,10 @@ VOID start_exploring(VOID *data)
   
 #if defined(__gnu_linux__)
   logged_syscall_index      = syscall_inexist;
+#endif
+
+#if defined(ENABLE_FSA)
+  explored_fsa              = explorer_graph::instance();
 #endif
 
   exploring_cfi.reset();
