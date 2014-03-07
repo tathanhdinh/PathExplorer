@@ -74,7 +74,7 @@ set(FUNC_DEFS "/D ENABLE_FSA")
 message(STATUS "FSA reconstruction is enabled.")
 else()
 set(FUNC_DEFS "")
-message(STATUS, "FSA reconstruction is disabled.")
+message(STATUS "FSA reconstruction is disabled.")
 endif()
 
 set(PIN_LIBRARY_DIRS

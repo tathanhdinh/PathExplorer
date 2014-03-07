@@ -1,10 +1,12 @@
 #include "explorer_graph.h"
 #include "cond_direct_instruction.h"
 #include "../operation/common.h"
+#include "../util/stuffs.h"
 
+#include <boost/graph/graphviz.hpp>
 #include <algorithm>
 
-typedef ptr_instruction_t                                   exp_vertex;
+typedef ADDRINT                                             exp_vertex;
 typedef std::pair<std::vector<bool>, addrint_value_maps_t>  exp_edge;
 typedef boost::adjacency_list<boost::listS, boost::vecS,
                               boost::bidirectionalS,
@@ -42,7 +44,7 @@ ptr_explorer_graph_t explorer_graph::instance()
 /**
  * @brief add a vertex into the graph
  */
-void explorer_graph::add_vertex(ptr_instruction_t& ins)
+void explorer_graph::add_vertex(ADDRINT ins)
 {
   exp_vertex_iter vertex_iter, last_vertex_iter;
   boost::tie(vertex_iter, last_vertex_iter) = boost::vertices(internal_exp_graph);
@@ -77,8 +79,8 @@ static inline bool path_codes_are_equal(path_code_t& x, path_code_t& y)
 /**
  * @brief add an edge into the graph
  */
-void explorer_graph::add_edge(ptr_instruction_t& ins_a, ptr_instruction_t& ins_b,
-                              path_code_t& edge_path_code, addrint_value_map_t& edge_addrs_values)
+void explorer_graph::add_edge(ADDRINT& ins_a, ADDRINT& ins_b, path_code_t& edge_path_code,
+                              addrint_value_map_t& edge_addrs_values)
 {
   exp_vertex_desc ins_a_desc, ins_b_desc;
   exp_vertex_iter vertex_iter, last_vertex_iter;
@@ -124,9 +126,9 @@ public:
   template<typename Vertex>
   void operator()(std::ostream& label, Vertex vertex)
   {
-    exp_vertex = internal_exp_graph[vertex];
-    tfm::format(label, "[label=\"<%s: %s>\"]", addrint_to_hexstring(exp_vertex->address),
-                exp_vertex->disassembled_name);
+    exp_vertex current_vertex = internal_exp_graph[vertex];
+    tfm::format(label, "[label=\"<%s: %s>\"]", addrint_to_hexstring(current_vertex->address),
+                current_vertex->disassembled_name);
     return;
   }
 };
@@ -138,10 +140,19 @@ public:
   template<typename Edge>
   void operator()(std::ostream& label, Edge edge)
   {
-    exp_edge = internal_exp_graph[edge];
-    tfm::format(label, "[label=\"<follow times: %d>\"]", exp_edge.second.size());
+    exp_edge current_edge = internal_exp_graph[edge];
+    tfm::format(label, "[label=\"<following times: %d>\"]", current_edge.second.size());
     return;
   }
 };
+
+
+void explorer_graph::save_to_file(std::string filename)
+{
+  std::ofstream output(filename.c_str(), std::ofstream::out | std::ofstream::trunc);
+  boost::write_graphviz(output, internal_exp_graph, exp_vertex_label_writer(),
+                        exp_edge_label_writer());
+  return;
+}
 
 

@@ -11,8 +11,8 @@ class explorer_graph
 {
 public:
   static ptr_explorer_graph_t instance(); // allow only a single instance of explorer graph
-  void add_vertex(ptr_instruction_t& ins);
-  void add_edge(ptr_instruction_t& ins_a, ptr_instruction_t& ins_b, path_code_t& edge_path_code,
+  void add_vertex(ADDRINT ins_addr);
+  void add_edge(ADDRINT ins_a, ADDRINT ins_b, path_code_t& edge_path_code,
                 addrint_value_map_t& edge_addr_value);
   void save_to_file(std::string filename);
 

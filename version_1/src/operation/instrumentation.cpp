@@ -114,13 +114,16 @@ VOID ins_instrumenter(INS ins, VOID *data)
   {
     // examining statically instructions
     ptr_instruction_t examined_ins(new instruction(ins));
-    ins_at_addr[examined_ins->address] = examined_ins;
+    ADDRINT examined_addr = examined_ins->address;
+    ins_at_addr[examined_addr] = examined_ins;
     if (examined_ins->is_cond_direct_cf)
     {
-      ins_at_addr[examined_ins->address].reset(new cond_direct_instruction(*examined_ins));
+      ins_at_addr[examined_addr].reset(new cond_direct_instruction(*examined_ins));
     }
 #if defined(ENABLE_FSA)
-    explored_fsa->add_vertex(ins_at_addr[examined_ins->address]);
+//    tfm::format(std::cerr, "instrumented (%s: %s)\n", addrint_to_hexstring(examined_ins->address),
+//                examined_ins->disassembled_name);
+    explored_fsa->add_vertex(ins_at_addr[examined_addr]);
 #endif
 
     switch (current_running_phase)

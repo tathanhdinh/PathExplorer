@@ -128,6 +128,9 @@ VOID stop_exploring(INT32 code, VOID *data)
   stop_time = std::time(0);
 
   save_static_trace("static_trace.log");
+#if defined(ENABLE_FSA)
+  explored_fsa->save_to_file("explored_fsa.dot");
+#endif
   
   UINT32 resolved_cfi_num = 0, singular_cfi_num = 0;
   ptr_cond_direct_inss_t::iterator cfi_iter = detected_input_dep_cfis.begin();
