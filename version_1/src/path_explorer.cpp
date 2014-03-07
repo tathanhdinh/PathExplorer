@@ -25,6 +25,9 @@ ptr_cond_direct_inss_t  detected_input_dep_cfis;
 ptr_cond_direct_ins_t   exploring_cfi;
 
 UINT32                  current_exec_order;
+#if defined(ENABLE_FSA)
+path_code_t             current_path_code;
+#endif
 
 ADDRINT                 received_msg_addr;
 UINT32                  received_msg_size;

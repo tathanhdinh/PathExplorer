@@ -67,8 +67,12 @@ set(PIN_INCLUDE_DIRS
 )
 
 set(PIN_DEFS "/D TARGET_IA32 /D HOST_IA32 /D TARGET_WINDOWS /D USING_XED /D_SECURE_SCL=0 /D_ITERATOR_DEBUG_LEVEL=0")
+set(LINKER_DEFS "/D _WINDLL /D _MBCS /MT /EHsc /O2 /Ob2 /nologo")
 
-set(OTHER_DEFS "/D _WINDLL /D _MBCS /MT /EHsc /O2 /Ob2 /nologo")
+set(FUNC_DEFS "")
+if(ENABLE_FSA)
+set(FUNC_DEFS "${FUNC_DEFS} /D ENABLE_FSA")
+endif()
 
 set(PIN_LIBRARY_DIRS
   ${PIN_ROOT_DIR}/extras/xed2-${PIN_CPU_ARCH_LONG}/lib
@@ -123,7 +127,8 @@ include_directories(${INCLUDE_DIRS})
 link_directories(${PIN_LIBRARY_DIRS})
 
 add_definitions(${PIN_DEFS})
-add_definitions(${OTHER_DEFS})
+add_definitions(${LINKER_DEFS})
+add_definitions(${FUNC_DEFS})
 
 #remove(CMAKE_CXX_FLAGS)
 set(CMAKE_CXX_FLAGS "${OTHER_DEFS} ${PIN_DEFS}")

@@ -24,6 +24,9 @@
 #include "../base/checkpoint.h"
 #include "../base/cond_direct_instruction.h"
 #include "../util/tinyformat.h"
+#if defined(ENABLE_FSA)
+#include "../base/explorer_graph.h"
+#endif
 
 typedef enum
 {
@@ -46,7 +49,6 @@ extern order_ins_map_t          ins_at_order;
 extern UINT32                   total_rollback_times;
 extern UINT32                   local_rollback_times;
 extern UINT32                   trace_size;
-//extern UINT32                   used_checkpoint_number;
 
 extern UINT32                   max_total_rollback_times;
 extern UINT32                   max_local_rollback_times;
@@ -58,6 +60,9 @@ extern ptr_cond_direct_inss_t   detected_input_dep_cfis;
 extern ptr_cond_direct_ins_t    exploring_cfi;
 
 extern UINT32                   current_exec_order;
+#if defined(ENABLE_FSA)
+extern path_code_t              current_path_code;
+#endif
 
 extern ADDRINT                  received_msg_addr;
 extern UINT32                   received_msg_size;
