@@ -113,18 +113,32 @@ VOID ins_instrumenter(INS ins, VOID *data)
   if (current_running_phase != capturing_phase)
   {
     // examining statically instructions
-    ptr_instruction_t examined_ins(new instruction(ins));
-    ADDRINT examined_addr = examined_ins->address;
-    ins_at_addr[examined_addr] = examined_ins;
-    if (examined_ins->is_cond_direct_cf)
+//    ptr_instruction_t examined_ins(new instruction(ins));
+    ptr_instruction_t examined_ins;
+    ADDRINT ins_addr = INS_Address(ins);
+    // verify if the instruction has been examined
+    if (ins_at_addr.find(ins_addr) == ins_at_addr.end())
     {
-      ins_at_addr[examined_addr].reset(new cond_direct_instruction(*examined_ins));
-    }
+      // not yet, then create a new instruction object
+      examined_ins.reset(new instruction(ins));
+//      ptr_instruction_t examined_ins(new instruction(ins));
+//      examined_ins = ins_at_addr[ins_addr];
+//      ADDRINT examined_addr = examined_ins->address;
+      ins_at_addr[ins_addr] = examined_ins;
+      if (examined_ins->is_cond_direct_cf)
+      {
+        ins_at_addr[ins_addr].reset(new cond_direct_instruction(*examined_ins));
+      }
 #if defined(ENABLE_FSA)
-//    tfm::format(std::cerr, "instrumented (%s: %s)\n", addrint_to_hexstring(examined_ins->address),
-//                examined_ins->disassembled_name);
-    explored_fsa->add_vertex(ins_at_addr[examined_addr]);
+      explored_fsa->add_vertex(ins_addr);
 #endif
+    }
+    else
+    {
+      // the instruction has been examined, then simply get the existed instance
+      examined_ins = ins_at_addr[ins_addr];
+    }
+
 
     switch (current_running_phase)
     {

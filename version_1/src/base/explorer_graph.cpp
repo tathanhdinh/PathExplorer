@@ -21,6 +21,7 @@ typedef boost::graph_traits<exp_graph>::edge_iterator       exp_edge_iter;
 
 static exp_graph            internal_exp_graph;
 static ptr_explorer_graph_t single_graph_instance;
+static addrint_value_map_t  default_addrs_values;
 
 /*================================================================================================*/
 /**
@@ -45,17 +46,19 @@ ptr_explorer_graph_t explorer_graph::instance()
 /**
  * @brief add a vertex into the graph
  */
-void explorer_graph::add_vertex(ADDRINT ins)
+void explorer_graph::add_vertex(ADDRINT ins_addr)
 {
-  exp_vertex_iter vertex_iter, last_vertex_iter;
-  boost::tie(vertex_iter, last_vertex_iter) = boost::vertices(internal_exp_graph);
+//  exp_vertex_iter vertex_iter, last_vertex_iter;
+//  boost::tie(vertex_iter, last_vertex_iter) = boost::vertices(internal_exp_graph);
 
-  // verify if the instruction exists in the graph
-  for (; vertex_iter != last_vertex_iter; ++vertex_iter)
-  {
-    if (internal_exp_graph[*vertex_iter] == ins) break;
-  }
-  if (vertex_iter == last_vertex_iter) boost::add_vertex(ins, internal_exp_graph);
+//  // verify if the instruction exists in the graph
+//  for (; vertex_iter != last_vertex_iter; ++vertex_iter)
+//  {
+//    if (internal_exp_graph[*vertex_iter] == ins) break;
+//  }
+//  if (vertex_iter == last_vertex_iter) boost::add_vertex(ins, internal_exp_graph);
+
+  boost::add_vertex(ins_addr, internal_exp_graph);
 
   return;
 }
@@ -80,8 +83,8 @@ static inline bool path_codes_are_equal(path_code_t& x, path_code_t& y)
 /**
  * @brief add an edge into the graph
  */
-void explorer_graph::add_edge(ADDRINT& ins_a, ADDRINT& ins_b, path_code_t& edge_path_code,
-                              addrint_value_map_t& edge_addrs_values)
+void explorer_graph::add_edge(ADDRINT ins_a_addr, ADDRINT ins_b_addr, path_code_t& edge_path_code,
+                              const addrint_value_map_t& edge_addrs_values)
 {
   exp_vertex_desc ins_a_desc, ins_b_desc;
   exp_vertex_iter vertex_iter, last_vertex_iter;
@@ -90,8 +93,8 @@ void explorer_graph::add_edge(ADDRINT& ins_a, ADDRINT& ins_b, path_code_t& edge_
   boost::tie(vertex_iter, last_vertex_iter) = boost::vertices(internal_exp_graph);
   for (; vertex_iter != last_vertex_iter; ++vertex_iter)
   {
-    if (internal_exp_graph[*vertex_iter] == ins_a) ins_a_desc = *vertex_iter;
-    if (internal_exp_graph[*vertex_iter] == ins_b) ins_b_desc = *vertex_iter;
+    if (internal_exp_graph[*vertex_iter] == ins_a_addr) ins_a_desc = *vertex_iter;
+    if (internal_exp_graph[*vertex_iter] == ins_b_addr) ins_b_desc = *vertex_iter;
   }
 
   boost::graph_traits<exp_graph>::out_edge_iterator out_edge_iter, last_out_edge_iter;
@@ -127,9 +130,9 @@ public:
   template<typename Vertex>
   void operator()(std::ostream& label, Vertex vertex)
   {
-    exp_vertex current_vertex = internal_exp_graph[vertex];
-    tfm::format(label, "[label=\"<%s: %s>\"]", addrint_to_hexstring(current_vertex->address),
-                current_vertex->disassembled_name);
+    exp_vertex vertex_ins_addr = internal_exp_graph[vertex];
+    tfm::format(label, "[label=\"<%s: %s>\"]", addrint_to_hexstring(vertex_ins_addr),
+                ins_at_addr[vertex_ins_addr]->disassembled_name);
     return;
   }
 };
@@ -142,7 +145,7 @@ public:
   void operator()(std::ostream& label, Edge edge)
   {
     exp_edge current_edge = internal_exp_graph[edge];
-    tfm::format(label, "[label=\"<following times: %d>\"]", current_edge.second.size());
+    tfm::format(label, "[label=\"%d times\"]", current_edge.second.size());
     return;
   }
 };
@@ -151,14 +154,18 @@ public:
 static inline void prune_graph()
 {
   boost::graph_traits<exp_graph>::out_edge_iterator out_e_iter, last_out_e_iter;
-  boost::graph_traits<exp_graph>::in_edge_iterator in_e_iter, last_in_e_iter,
+  boost::graph_traits<exp_graph>::in_edge_iterator in_e_iter, last_in_e_iter;
 
   exp_vertex_iter v_iter, next_v_iter, last_v_iter;
   boost::tie(v_iter, last_v_iter) = boost::vertices(internal_exp_graph);
   for (next_v_iter = v_iter; v_iter != last_v_iter; v_iter = next_v_iter)
   {
     ++next_v_iter;
+    // verify if the vertex is isolated (no in/out edges)
     boost::tie(out_e_iter, last_out_e_iter) = boost::out_edges(*v_iter, internal_exp_graph);
+    boost::tie(in_e_iter, last_in_e_iter) = boost::in_edges(*v_iter, internal_exp_graph);
+    if ((out_e_iter == last_out_e_iter) && (in_e_iter == last_in_e_iter))
+      boost::remove_vertex(*v_iter, internal_exp_graph);
   }
 }
 

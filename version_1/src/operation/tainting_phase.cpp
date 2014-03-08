@@ -333,12 +333,24 @@ VOID general_instruction(ADDRINT ins_addr, THREADID thread_id)
         duplicated_cfi.reset(new cond_direct_instruction(*current_cfi));
         duplicated_cfi->exec_order = current_exec_order;
         ins_at_order[current_exec_order] = duplicated_cfi;
+
+#if defined(ENABLE_FSA)
+        if (current_exec_order > 1)
+          explored_fsa->add_edge(ins_at_order[current_exec_order]->address,
+                                 ins_at_order[current_exec_order - 1]->address, current_path_code);
+
+        duplicated_cfi->path_code = current_path_code;
+        if (!exploring_cfi && (current_exec_order == exploring_cfi->exec_order))
+          current_path_code.push_back(true);
+        else current_path_code.push_back(false);
+#endif
       }
       else
       {
         // duplicate an instruction (the default copy constructor is used)
         ins_at_order[current_exec_order].reset(new instruction(*ins_at_addr[ins_addr]));
       }
+
 #if !defined(NDEBUG)
       tfm::format(log_file, "%-3d %-15s %-50s %-25s %-25s\n", current_exec_order,
                   addrint_to_hexstring(ins_addr), ins_at_addr[ins_addr]->disassembled_name,
@@ -565,12 +577,16 @@ VOID graphical_propagation(ADDRINT ins_addr, THREADID thread_id)
 void initialize()
 {
   dta_graph.clear(); dta_outer_vertices.clear(); saved_checkpoints.clear(); ins_at_order.clear();
+
 #if !defined(NDEBUG)
   newly_detected_input_dep_cfis.clear(); newly_detected_cfis.clear();
 #endif
+
 #if defined(ENABLE_FSA)
-  path_code_at_order.clear();
+//  path_code_at_order.clear();
+  if (!exploring_cfi) current_path_code = exploring_cfi->path_code;
 #endif
+
   return;
 }
 

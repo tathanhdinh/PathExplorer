@@ -280,13 +280,13 @@ VOID generic_instruction(ADDRINT ins_addr, THREADID thread_id)
               active_cfi->second_input_projections.push_back(input_on_active_modified_addrs);
             }
 #if defined(ENABLE_FSA)
-            // because the CFI will follow new direction so the path code should be changed
-            project_input_on_active_modified_addrs();
-            path_code_t new_path_code = path_code_at_order[current_exec_order];
-            new_path_code.pop_back(); new_path_code.push_back(false);
-            explored_fsa->add_edge(ins_at_order[current_exec_order - 1],
-                                   ins_at_order[current_exec_order], new_path_code,
-                                   input_on_active_modified_addrs);
+//            // because the CFI will follow new direction so the path code should be changed
+//            project_input_on_active_modified_addrs();
+//            path_code_t new_path_code = path_code_at_order[current_exec_order];
+//            new_path_code.pop_back(); new_path_code.push_back(false);
+//            explored_fsa->add_edge(ins_at_order[current_exec_order - 1]->address,
+//                                   ins_at_order[current_exec_order]->address, new_path_code,
+//                                   input_on_active_modified_addrs);
 #endif
           }
           else
@@ -314,11 +314,11 @@ VOID generic_instruction(ADDRINT ins_addr, THREADID thread_id)
         if (active_cfi && (current_exec_order > active_cfi->exec_order))
         {
 #if defined(ENABLE_FSA)
-          project_input_on_active_modified_addrs();
-          explored_fsa->add_edge(ins_at_order[current_exec_order - 1],
-                                 ins_at_order[current_exec_order],
-                                 path_code_at_order[current_exec_order],
-                                 input_on_active_modified_addrs);
+//          project_input_on_active_modified_addrs();
+//          explored_fsa->add_edge(ins_at_order[current_exec_order - 1]->address,
+//                                 ins_at_order[current_exec_order]->address,
+//                                 path_code_at_order[current_exec_order],
+//                                 input_on_active_modified_addrs);
 #endif
           rollback();
         }
