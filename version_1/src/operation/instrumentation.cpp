@@ -130,7 +130,7 @@ VOID ins_instrumenter(INS ins, VOID *data)
         ins_at_addr[ins_addr].reset(new cond_direct_instruction(*examined_ins));
       }
 #if defined(ENABLE_FSA)
-      explored_fsa->add_vertex(ins_addr);
+    explored_fsa->add_vertex(ins_addr);
 #endif
     }
     else
@@ -138,7 +138,6 @@ VOID ins_instrumenter(INS ins, VOID *data)
       // the instruction has been examined, then simply get the existed instance
       examined_ins = ins_at_addr[ins_addr];
     }
-
 
     switch (current_running_phase)
     {

@@ -58,6 +58,8 @@ void explorer_graph::add_vertex(ADDRINT ins_addr)
 //  }
 //  if (vertex_iter == last_vertex_iter) boost::add_vertex(ins, internal_exp_graph);
 
+  tfm::format(std::cerr, "add vertex <%s: %s>\n", addrint_to_hexstring(ins_addr),
+              ins_at_addr[ins_addr]->disassembled_name);
   boost::add_vertex(ins_addr, internal_exp_graph);
 
   return;

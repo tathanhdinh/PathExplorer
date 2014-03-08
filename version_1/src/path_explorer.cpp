@@ -128,6 +128,7 @@ VOID stop_exploring(INT32 code, VOID *data)
   stop_time = std::time(0);
 
   save_static_trace("static_trace.log");
+
 #if defined(ENABLE_FSA)
   explored_fsa->save_to_file("explored_fsa.dot");
 #endif
