@@ -12,7 +12,7 @@ class explorer_graph
 public:
   static ptr_explorer_graph_t instance(); // allow only a single instance of explorer graph
   void add_vertex(ADDRINT ins_addr);
-  void add_edge(ADDRINT ins_a_addr, ADDRINT ins_b_addr, path_code_t& edge_path_code,
+  void add_edge(ADDRINT ins_a_addr, ADDRINT ins_b_addr, const path_code_t& edge_path_code,
                 const addrint_value_map_t& edge_addrs_values = addrint_value_map_t());
   void save_to_file(std::string filename);
 

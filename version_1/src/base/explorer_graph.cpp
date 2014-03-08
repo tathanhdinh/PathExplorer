@@ -67,14 +67,14 @@ void explorer_graph::add_vertex(ADDRINT ins_addr)
 /**
  * @brief verify if two path codes are equal
  */
-static inline bool path_codes_are_equal(path_code_t& x, path_code_t& y)
+static inline bool path_codes_are_equal(const path_code_t& x, const path_code_t& y)
 {
   bool equality = false;
-  path_code_t::iterator path_iter, last_path_iter;
+  path_code_t::const_iterator x_iter, y_iter;
   if (x.size() == y.size())
   {
-    boost::tie(path_iter, last_path_iter) = std::mismatch(x.begin(), x.end(), y.begin());
-    if (path_iter == last_path_iter) equality = true;
+    boost::tie(x_iter, y_iter) = std::mismatch(x.begin(), x.end(), y.begin());
+    if ((x_iter == x.end()) && (y_iter == y.end())) equality = true;
   }
   return equality;
 }
@@ -83,7 +83,8 @@ static inline bool path_codes_are_equal(path_code_t& x, path_code_t& y)
 /**
  * @brief add an edge into the graph
  */
-void explorer_graph::add_edge(ADDRINT ins_a_addr, ADDRINT ins_b_addr, path_code_t& edge_path_code,
+void explorer_graph::add_edge(ADDRINT ins_a_addr, ADDRINT ins_b_addr,
+                              const path_code_t& edge_path_code,
                               const addrint_value_map_t& edge_addrs_values)
 {
   exp_vertex_desc ins_a_desc, ins_b_desc;
@@ -99,23 +100,27 @@ void explorer_graph::add_edge(ADDRINT ins_a_addr, ADDRINT ins_b_addr, path_code_
 
   boost::graph_traits<exp_graph>::out_edge_iterator out_edge_iter, last_out_edge_iter;
   boost::tie(out_edge_iter, last_out_edge_iter) = boost::out_edges(ins_a_desc, internal_exp_graph);
-  // verify if there exist edges from a to b
+  // iterate over out edges from a
   for (; out_edge_iter != last_out_edge_iter; ++out_edge_iter)
   {
-    // exist, then verify if the path code of this edge is also the input path code
+    // verify if there exist an edge to b
     if (boost::target(*out_edge_iter, internal_exp_graph) == ins_b_desc)
     {
-      // yes, then add the selected values and addresses into the list of this edge
+      // exist, then verify if the path code of this edge is also the input path code
       if (path_codes_are_equal(edge_path_code, internal_exp_graph[*out_edge_iter].first))
       {
-        internal_exp_graph[*out_edge_iter].second.push_back(edge_addrs_values); break;
+        // yes, then add the selected values and addresses into the list of this edge
+        if (!edge_addrs_values.empty())
+          internal_exp_graph[*out_edge_iter].second.push_back(edge_addrs_values);
+        break;
       }
     }
   }
   // there exists no such edge with the path code, then add it as a new edge
   if (out_edge_iter == last_out_edge_iter)
   {
-    addrint_value_maps_t edge_input_values; edge_input_values.push_back(edge_addrs_values);
+    addrint_value_maps_t edge_input_values;
+    if (!edge_input_values.empty()) edge_input_values.push_back(edge_addrs_values);
     boost::add_edge(ins_a_desc, ins_b_desc, std::make_pair(edge_path_code, edge_input_values),
                     internal_exp_graph);
   }
@@ -151,6 +156,9 @@ public:
 };
 
 
+/**
+ * @brief prune isolated vertices
+ */
 static inline void prune_graph()
 {
   boost::graph_traits<exp_graph>::out_edge_iterator out_e_iter, last_out_e_iter;
@@ -164,14 +172,21 @@ static inline void prune_graph()
     // verify if the vertex is isolated (no in/out edges)
     boost::tie(out_e_iter, last_out_e_iter) = boost::out_edges(*v_iter, internal_exp_graph);
     boost::tie(in_e_iter, last_in_e_iter) = boost::in_edges(*v_iter, internal_exp_graph);
+    // the isolated one (i.e. the corresponing instruction is never executed) will be prunned
     if ((out_e_iter == last_out_e_iter) && (in_e_iter == last_in_e_iter))
       boost::remove_vertex(*v_iter, internal_exp_graph);
   }
 }
 
 
+/**
+ * @brief save the graph to a dot file
+ *
+ */
 void explorer_graph::save_to_file(std::string filename)
 {
+  prune_graph();
+
   std::ofstream output(filename.c_str(), std::ofstream::out | std::ofstream::trunc);
   boost::write_graphviz(output, internal_exp_graph, exp_vertex_label_writer(),
                         exp_edge_label_writer());

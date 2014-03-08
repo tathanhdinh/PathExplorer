@@ -335,11 +335,16 @@ VOID general_instruction(ADDRINT ins_addr, THREADID thread_id)
         ins_at_order[current_exec_order] = duplicated_cfi;
 
 #if defined(ENABLE_FSA)
+        // add an empty edge from the previous to the current instruction
         if (current_exec_order > 1)
           explored_fsa->add_edge(ins_at_order[current_exec_order]->address,
                                  ins_at_order[current_exec_order - 1]->address, current_path_code);
 
         duplicated_cfi->path_code = current_path_code;
+
+        // the root path code is one of the exploring CFI: if the current instruction is the
+        // exploring CFI then "1" should be appended into the path code (because "0" has been
+        // appended in the previous tainting phase)
         if (!exploring_cfi && (current_exec_order == exploring_cfi->exec_order))
           current_path_code.push_back(true);
         else current_path_code.push_back(false);
