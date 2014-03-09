@@ -42,10 +42,6 @@ typedef enum
   syscall_recvfrom = 45
 }                                     syscall_id;
 
-//#if !defined(DISABLE_FSA)
-//typedef std::map<UINT, path_code_t>   order_path_code_map_t;
-//#endif
-
 extern addr_ins_map_t                 ins_at_addr;
 extern order_ins_map_t                ins_at_order;
 
@@ -66,7 +62,6 @@ extern UINT32                         current_exec_order;
 
 #if !defined(DISABLE_FSA)
 extern path_code_t                    current_path_code;
-//extern order_path_code_map_t          path_code_at_order;
 extern ptr_explorer_graph_t           explored_fsa;
 #endif
 
