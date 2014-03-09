@@ -4,6 +4,7 @@
 #include "../util/stuffs.h"
 
 #include <boost/graph/graphviz.hpp>
+#include <boost/graph/filtered_graph.hpp>
 #include <algorithm>
 
 typedef ADDRINT                                             exp_vertex;
@@ -146,8 +147,8 @@ void explorer_graph::add_edge(ADDRINT ins_a_addr, ADDRINT ins_b_addr,
 class exp_vertex_label_writer
 {
 public:
-  template<typename Vertex>
-  void operator()(std::ostream& label, Vertex vertex)
+//  template<typename Vertex>
+  void operator()(std::ostream& label, /*Vertex*/exp_vertex_desc vertex)
   {
     exp_vertex vertex_ins_addr = internal_exp_graph[vertex];
     tfm::format(label, "[label=\"<%s: %s>\"]", addrint_to_hexstring(vertex_ins_addr),
@@ -160,12 +161,33 @@ public:
 class exp_edge_label_writer
 {
 public:
-  template<typename Edge>
-  void operator()(std::ostream& label, Edge edge)
+//  template<typename Edge>
+  void operator()(std::ostream& label, /*Edge*/exp_edge_desc edge)
   {
     exp_edge current_edge = internal_exp_graph[edge];
     tfm::format(label, "[label=\"%s\"]", path_code_to_string(current_edge.first));
     return;
+  }
+};
+
+
+class exp_vertex_isolated_prunner
+{
+public:
+  bool operator()(exp_vertex_desc vertex) const
+  {
+    bool is_kept = true;
+    boost::graph_traits<exp_graph>::out_edge_iterator out_e_iter, last_out_e_iter;
+    boost::graph_traits<exp_graph>::in_edge_iterator in_e_iter, last_in_e_iter;
+
+    // verify if the vertex is isolated (no in/out edges)
+    boost::tie(out_e_iter, last_out_e_iter) = boost::out_edges(vertex, internal_exp_graph);
+    boost::tie(in_e_iter, last_in_e_iter) = boost::in_edges(vertex, internal_exp_graph);
+
+    // the isolated one (i.e. the corresponing instruction is never executed) will be prunned
+    if ((out_e_iter == last_out_e_iter) && (in_e_iter == last_in_e_iter)) is_kept = false;
+
+    return is_kept;
   }
 };
 
@@ -205,10 +227,13 @@ static inline void prune_graph()
  */
 void explorer_graph::save_to_file(std::string filename)
 {
-  prune_graph();
+//  prune_graph();
+  exp_vertex_isolated_prunner vertex_prunner;
+  boost::filtered_graph<exp_graph, boost::keep_all, exp_vertex_isolated_prunner>
+      isolated_prunned_graph(internal_exp_graph, boost::keep_all(), vertex_prunner);
 
   std::ofstream output(filename.c_str(), std::ofstream::out | std::ofstream::trunc);
-  boost::write_graphviz(output, internal_exp_graph, exp_vertex_label_writer(),
+  boost::write_graphviz(output, /*internal_exp_graph*/isolated_prunned_graph, exp_vertex_label_writer(),
                         exp_edge_label_writer());
   return;
 }
