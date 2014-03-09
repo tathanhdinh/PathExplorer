@@ -27,7 +27,6 @@ ptr_cond_direct_ins_t   exploring_cfi;
 UINT32                  current_exec_order;
 #if defined(ENABLE_FSA)
 path_code_t             current_path_code;
-order_path_code_map_t   path_code_at_order;
 ptr_explorer_graph_t    explored_fsa;
 #endif
 

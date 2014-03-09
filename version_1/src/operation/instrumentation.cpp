@@ -27,7 +27,7 @@ static inline void exec_tainting_phase(INS& ins, ptr_instruction_t examined_ins)
   else
   {
     // general logging
-    INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)tainting::general_instruction,
+    INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)tainting::generic_instruction,
                              IARG_INST_PTR, IARG_THREAD_ID, IARG_END);
 
     if (examined_ins->is_mem_read)
@@ -129,6 +129,7 @@ VOID ins_instrumenter(INS ins, VOID *data)
       {
         ins_at_addr[ins_addr].reset(new cond_direct_instruction(*examined_ins));
       }
+
 #if defined(ENABLE_FSA)
     explored_fsa->add_vertex(ins_addr);
 #endif

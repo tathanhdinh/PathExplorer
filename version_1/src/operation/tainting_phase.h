@@ -25,7 +25,7 @@ extern void initialize                  ();
 
 extern VOID kernel_mapped_instruction   (ADDRINT ins_addr, THREADID thread_id);
 
-extern VOID general_instruction         (ADDRINT ins_addr, THREADID thread_id);
+extern VOID generic_instruction         (ADDRINT ins_addr, THREADID thread_id);
 
 extern VOID mem_read_instruction        (ADDRINT ins_addr, ADDRINT mem_read_addr,
                                          UINT32 mem_read_size, CONTEXT* p_ctxt, THREADID thread_id);
