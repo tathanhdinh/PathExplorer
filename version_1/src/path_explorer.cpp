@@ -155,14 +155,12 @@ VOID stop_exploring(INT32 code, VOID *data)
 /* ---------------------------------------------------------------------------------------------- */
 int main(int argc, char *argv[])
 {
-  log_file << "initialize image symbol tables\n";
-  PIN_InitSymbols();
+  log_file << "initialize image symbol tables\n"; PIN_InitSymbols();
 
   log_file << "initialize Pin";
   if (PIN_Init(argc, argv))
   {
-    log_file << "Pin initialization failed\n";
-    log_file.close();
+    log_file << "Pin initialization failed\n"; log_file.close();
   }
   else
   {

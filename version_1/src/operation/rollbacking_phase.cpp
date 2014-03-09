@@ -45,7 +45,7 @@ static inline void initialize_values_at_active_modified_addrs()
   if (active_modified_addrs_values.size() == 1)
   {
     // yes, then the maximal rollback number is customized
-    max_rollback_num = std::numeric_limits<UINT8>::max();
+    max_rollback_num = std::numeric_limits<UINT8>::max() + 1;
 //    max_rollback_num = max_local_rollback.Value();
     gen_mode = sequential;
   }
