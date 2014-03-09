@@ -164,7 +164,7 @@ public:
   void operator()(std::ostream& label, Edge edge)
   {
     exp_edge current_edge = internal_exp_graph[edge];
-    tfm::format(label, "[label=\"%d times\"]", current_edge.second.size());
+    tfm::format(label, "[label=\"%s\"]", path_code_to_string(current_edge.first));
     return;
   }
 };

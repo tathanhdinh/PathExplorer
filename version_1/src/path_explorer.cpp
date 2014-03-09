@@ -25,7 +25,7 @@ ptr_cond_direct_inss_t  detected_input_dep_cfis;
 ptr_cond_direct_ins_t   exploring_cfi;
 
 UINT32                  current_exec_order;
-#if defined(ENABLE_FSA)
+#if !defined(DISABLE_FSA)
 path_code_t             current_path_code;
 ptr_explorer_graph_t    explored_fsa;
 #endif
@@ -95,7 +95,7 @@ VOID start_exploring(VOID *data)
   logged_syscall_index      = syscall_inexist;
 #endif
 
-#if defined(ENABLE_FSA)
+#if !defined(DISABLE_FSA)
   explored_fsa              = explorer_graph::instance();
 #endif
 
@@ -128,7 +128,7 @@ VOID stop_exploring(INT32 code, VOID *data)
 
   save_static_trace("static_trace.log");
 
-#if defined(ENABLE_FSA)
+#if !defined(DISABLE_FSA)
   explored_fsa->save_to_file("explored_fsa.dot");
 #endif
   

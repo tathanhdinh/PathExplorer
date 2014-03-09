@@ -69,12 +69,12 @@ set(PIN_INCLUDE_DIRS
 set(PIN_DEFS "/D TARGET_IA32 /D HOST_IA32 /D TARGET_WINDOWS /D USING_XED /D_SECURE_SCL=0 /D_ITERATOR_DEBUG_LEVEL=0")
 set(LINKER_DEFS "/D _WINDLL /D _MBCS /MT /EHsc /O2 /Ob2 /nologo")
 
-if((DEFINED ENABLE_FSA) AND (ENABLE_FSA STREQUAL "Yes"))
-set(FUNC_DEFS "/D ENABLE_FSA")
-message(STATUS "FSA reconstruction is enabled.")
-else()
 set(FUNC_DEFS "")
+if((DEFINED DISABLE_FSA) AND (DISABLE_FSA STREQUAL "Yes"))
+set(FUNC_DEFS "/D DISABLE_FSA")
 message(STATUS "FSA reconstruction is disabled.")
+else()
+message(STATUS "FSA reconstruction is enabled by default.")
 endif()
 
 set(PIN_LIBRARY_DIRS

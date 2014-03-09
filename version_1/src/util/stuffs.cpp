@@ -107,3 +107,19 @@ void save_tainting_graph(df_diagram& dta_graph, const std::string& filename)
 
   return;
 }
+
+
+#if !defined(DISABLE_FSA)
+std::string path_code_to_string(const path_code_t& path_code)
+{
+  std::string code_str = "";
+  path_code_t::const_iterator code_iter = path_code.begin();
+  for (; code_iter != path_code.end(); ++code_iter)
+  {
+    if (*code_iter) code_str.push_back('1');
+    else code_str.push_back('0');
+  }
+  return code_str;
+}
+
+#endif

@@ -19,7 +19,7 @@ typedef std::set<ADDRINT>                           addrint_set_t;
 typedef std::map<ADDRINT, UINT8>                    addrint_value_map_t;
 typedef std::vector<addrint_value_map_t>            addrint_value_maps_t;
 typedef std::pair<ptr_checkpoint_t, addrint_set_t>  checkpoint_with_modified_addrs;
-#if defined(ENABLE_FSA)
+#if !defined(DISABLE_FSA)
 typedef std::vector<bool>                           path_code_t;
 #endif
 
@@ -34,7 +34,7 @@ public:
   UINT32 used_rollback_num;
   UINT32 exec_order;
 
-#if defined(ENABLE_FSA)
+#if !defined(DISABLE_FSA)
   path_code_t path_code;
 #endif
 

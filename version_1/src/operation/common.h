@@ -24,7 +24,7 @@
 #include "../base/checkpoint.h"
 #include "../base/cond_direct_instruction.h"
 #include "../util/tinyformat.h"
-#if defined(ENABLE_FSA)
+#if !defined(DISABLE_FSA)
 #include "../base/explorer_graph.h"
 #endif
 
@@ -42,7 +42,7 @@ typedef enum
   syscall_recvfrom = 45
 }                                     syscall_id;
 
-//#if defined(ENABLE_FSA)
+//#if !defined(DISABLE_FSA)
 //typedef std::map<UINT, path_code_t>   order_path_code_map_t;
 //#endif
 
@@ -64,7 +64,7 @@ extern ptr_cond_direct_ins_t          exploring_cfi;
 
 extern UINT32                         current_exec_order;
 
-#if defined(ENABLE_FSA)
+#if !defined(DISABLE_FSA)
 extern path_code_t                    current_path_code;
 //extern order_path_code_map_t          path_code_at_order;
 extern ptr_explorer_graph_t           explored_fsa;

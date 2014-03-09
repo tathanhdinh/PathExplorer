@@ -167,7 +167,7 @@ static inline void save_detected_cfis()
 {
   if (ins_at_order.size() > 1)
   {
-#if defined(ENABLE_FSA)
+#if !defined(DISABLE_FSA)
     // the root path code is one of the exploring CFI: if the current instruction is the
     // exploring CFI then "1" should be appended into the path code (because "0" has been
     // appended in the previous tainting phase)
@@ -176,7 +176,7 @@ static inline void save_detected_cfis()
 
     ptr_cond_direct_ins_t new_cfi;
     std::map<UINT32, ptr_instruction_t>::iterator ins_iter = ins_at_order.begin();
-#if defined(ENABLE_FSA)
+#if !defined(DISABLE_FSA)
     std::map<UINT32, ptr_instruction_t>::iterator prev_ins_iter = ins_iter;
 #endif
 
@@ -185,7 +185,7 @@ static inline void save_detected_cfis()
       // consider only the instruction that is not behind the exploring CFI
       if (!exploring_cfi || (exploring_cfi && (ins_iter->first > exploring_cfi->exec_order)))
       {
-#if defined(ENABLE_FSA)
+#if !defined(DISABLE_FSA)
         explored_fsa->add_edge((prev_ins_iter->second)->address, (ins_iter->second)->address,
                                current_path_code);
 #endif
@@ -201,18 +201,17 @@ static inline void save_detected_cfis()
 #if !defined(NDEBUG)
             newly_detected_input_dep_cfis.push_back(new_cfi);
 #endif
+#if !defined(DISABLE_FSA)
+            // update the path code of the CFI
+            new_cfi->path_code = current_path_code; current_path_code.push_back(false);
+#endif
           }
 #if !defined(NDEBUG)
           newly_detected_cfis.push_back(new_cfi);
 #endif
-
-#if defined(ENABLE_FSA)
-          // update the path code of the CFI
-          new_cfi->path_code = current_path_code; current_path_code.push_back(false);
-#endif
         }
       }
-#if defined(ENABLE_FSA)
+#if !defined(DISABLE_FSA)
       prev_ins_iter = ins_iter;
 #endif
 //      else
@@ -350,7 +349,7 @@ VOID generic_instruction(ADDRINT ins_addr, THREADID thread_id)
         duplicated_cfi->exec_order = current_exec_order;
         ins_at_order[current_exec_order] = duplicated_cfi;
 
-//#if defined(ENABLE_FSA)
+//#if !defined(DISABLE_FSA)
 //        // add an empty edge from the previous to the current instruction
 //        if ((exploring_cfi && (current_exec_order > exploring_cfi->exec_order)) ||
 //            (!exploring_cfi && (current_exec_order > 1)))
@@ -604,7 +603,7 @@ void initialize()
   newly_detected_input_dep_cfis.clear(); newly_detected_cfis.clear();
 #endif
 
-#if defined(ENABLE_FSA)
+#if !defined(DISABLE_FSA)
 //  path_code_at_order.clear();
   if (exploring_cfi) current_path_code = exploring_cfi->path_code;
 #endif

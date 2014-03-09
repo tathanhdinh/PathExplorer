@@ -130,7 +130,7 @@ VOID ins_instrumenter(INS ins, VOID *data)
         ins_at_addr[ins_addr].reset(new cond_direct_instruction(*examined_ins));
       }
 
-#if defined(ENABLE_FSA)
+#if !defined(DISABLE_FSA)
     explored_fsa->add_vertex(ins_addr);
 #endif
     }

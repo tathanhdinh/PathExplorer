@@ -11,4 +11,8 @@ void        save_tainting_graph   (df_diagram& dta_graph, const std::string& fil
 
 std::string addrint_to_hexstring  (ADDRINT input);
 
+#if !defined(DISABLE_FSA)
+std::string path_code_to_string   (const path_code_t& path_code);
+#endif
+
 #endif // STUFFS_H
