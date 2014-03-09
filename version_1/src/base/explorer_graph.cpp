@@ -191,7 +191,8 @@ static inline void prune_graph()
     {
       // the isolated one (i.e. the corresponing instruction is never executed) will be prunned
       boost::remove_vertex(*v_iter, internal_exp_graph);
-      tfm::format(std::cerr, "prune <%d %s>\n", *v_iter, addrint_to_hexstring(internal_exp_graph[*v_iter]));
+//      tfm::format(std::cerr, "prune <%d %s>\n", *v_iter,
+//                  addrint_to_hexstring(internal_exp_graph[*v_iter]));
     }
   }
   return;
