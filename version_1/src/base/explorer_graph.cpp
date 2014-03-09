@@ -192,33 +192,31 @@ public:
 };
 
 
-/**
- * @brief prune isolated vertices
- */
-static inline void prune_graph()
-{
-  boost::graph_traits<exp_graph>::out_edge_iterator out_e_iter, last_out_e_iter;
-  boost::graph_traits<exp_graph>::in_edge_iterator in_e_iter, last_in_e_iter;
+///**
+// * @brief prune isolated vertices
+// */
+//static inline void prune_graph()
+//{
+//  boost::graph_traits<exp_graph>::out_edge_iterator out_e_iter, last_out_e_iter;
+//  boost::graph_traits<exp_graph>::in_edge_iterator in_e_iter, last_in_e_iter;
 
-  exp_vertex_iter v_iter, next_v_iter, last_v_iter;
-  boost::tie(v_iter, last_v_iter) = boost::vertices(internal_exp_graph);
-  for (next_v_iter = v_iter; v_iter != last_v_iter; v_iter = next_v_iter)
-  {
-    ++next_v_iter;
+//  exp_vertex_iter v_iter, next_v_iter, last_v_iter;
+//  boost::tie(v_iter, last_v_iter) = boost::vertices(internal_exp_graph);
+//  for (next_v_iter = v_iter; v_iter != last_v_iter; v_iter = next_v_iter)
+//  {
+//    ++next_v_iter;
 
-    // verify if the vertex is isolated (no in/out edges)
-    boost::tie(out_e_iter, last_out_e_iter) = boost::out_edges(*v_iter, internal_exp_graph);
-    boost::tie(in_e_iter, last_in_e_iter) = boost::in_edges(*v_iter, internal_exp_graph);
-    if ((out_e_iter == last_out_e_iter) && (in_e_iter == last_in_e_iter))
-    {
-      // the isolated one (i.e. the corresponing instruction is never executed) will be prunned
-      boost::remove_vertex(*v_iter, internal_exp_graph);
-//      tfm::format(std::cerr, "prune <%d %s>\n", *v_iter,
-//                  addrint_to_hexstring(internal_exp_graph[*v_iter]));
-    }
-  }
-  return;
-}
+//    // verify if the vertex is isolated (no in/out edges)
+//    boost::tie(out_e_iter, last_out_e_iter) = boost::out_edges(*v_iter, internal_exp_graph);
+//    boost::tie(in_e_iter, last_in_e_iter) = boost::in_edges(*v_iter, internal_exp_graph);
+//    if ((out_e_iter == last_out_e_iter) && (in_e_iter == last_in_e_iter))
+//    {
+//      // the isolated one (i.e. the corresponing instruction is never executed) will be prunned
+//      boost::remove_vertex(*v_iter, internal_exp_graph);
+//    }
+//  }
+//  return;
+//}
 
 
 /**
@@ -227,14 +225,12 @@ static inline void prune_graph()
  */
 void explorer_graph::save_to_file(std::string filename)
 {
-//  prune_graph();
-  exp_vertex_isolated_prunner vertex_prunner;
+//  exp_vertex_isolated_prunner vertex_prunner;
   boost::filtered_graph<exp_graph, boost::keep_all, exp_vertex_isolated_prunner>
-      isolated_prunned_graph(internal_exp_graph, boost::keep_all(), vertex_prunner);
+      prunned_graph(internal_exp_graph, boost::keep_all(), exp_vertex_isolated_prunner());
 
   std::ofstream output(filename.c_str(), std::ofstream::out | std::ofstream::trunc);
-  boost::write_graphviz(output, /*internal_exp_graph*/isolated_prunned_graph, exp_vertex_label_writer(),
-                        exp_edge_label_writer());
+  boost::write_graphviz(output, prunned_graph, exp_vertex_label_writer(), exp_edge_label_writer());
   return;
 }
 
