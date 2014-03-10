@@ -3,16 +3,18 @@
 
 #include "../operation/common.h"
 
-void        save_static_trace     (const std::string& filename);
+auto save_static_trace          (const std::string& filename) -> void;
 
-void        save_explored_trace   (const std::string& filename);
+auto save_explored_trace        (const std::string& filename) -> void;
 
-void        save_tainting_graph   (df_diagram& dta_graph, const std::string& filename);
+auto save_tainting_graph        (df_diagram& dta_graph, const std::string& filename) -> void;
 
-std::string addrint_to_hexstring  (ADDRINT input);
+auto addrint_to_hexstring       (ADDRINT input) -> std::string;
+
+auto rollback_bound_is_reached  () -> bool;
 
 #if !defined(DISABLE_FSA)
-std::string path_code_to_string   (const path_code_t& path_code);
+auto path_code_to_string        (const path_code_t& path_code) -> std::string;
 #endif
 
 #endif // STUFFS_H

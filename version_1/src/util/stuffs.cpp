@@ -1,7 +1,7 @@
 #include "../operation/common.h"
 #include <boost/graph/graphviz.hpp>
 
-std::string addrint_to_hexstring(ADDRINT input)
+auto addrint_to_hexstring (ADDRINT input) -> std::string
 {
   std::stringstream num_stream;
   num_stream << "0x" << std::hex << input;
@@ -9,11 +9,11 @@ std::string addrint_to_hexstring(ADDRINT input)
 }
 
 
-void save_static_trace(const std::string& filename)
+auto save_static_trace  (const std::string& filename) -> void
 {
   std::ofstream out_file(filename.c_str(), std::ofstream::out | std::ofstream::trunc);
 
-  std::map<ADDRINT, ptr_instruction_t>::iterator ins_iter = ins_at_addr.begin();
+  /*std::map<ADDRINT, ptr_instruction_t>::iterator*/auto ins_iter = ins_at_addr.begin();
   for (; ins_iter != ins_at_addr.end(); ++ins_iter)
   {
     tfm::format(out_file, "%-15s %-50s %-25s %-25s\n", addrint_to_hexstring(ins_iter->first),
@@ -26,10 +26,9 @@ void save_static_trace(const std::string& filename)
 }
 
 
-void save_explored_trace(const std::string& filename)
+auto save_explored_trace  (const std::string& filename) -> void
 {
-  std::ofstream out_file(filename.c_str(), 
-                         std::ofstream::out | std::ofstream::trunc);
+  std::ofstream out_file(filename.c_str(), std::ofstream::out | std::ofstream::trunc);
   out_file.close();
 
   return;
@@ -98,7 +97,7 @@ private:
 /**
  * @brief save the tainting graph
  */
-void save_tainting_graph(df_diagram& dta_graph, const std::string& filename)
+auto save_tainting_graph  (df_diagram& dta_graph, const std::string& filename) -> void
 {
   std::ofstream out_file(filename.c_str(), std::ofstream::out | std::ofstream::trunc);
   boost::write_graphviz(out_file, dta_graph, vertex_label_writer(dta_graph),
@@ -110,11 +109,11 @@ void save_tainting_graph(df_diagram& dta_graph, const std::string& filename)
 
 
 #if !defined(DISABLE_FSA)
-std::string path_code_to_string(const path_code_t& path_code)
+auto path_code_to_string  (const path_code_t& path_code) -> std::string
 {
   std::string code_str = "";
-  path_code_t::const_iterator code_iter = path_code.begin();
-  for (; code_iter != path_code.end(); ++code_iter)
+  /*path_code_t::const_iterator*/
+  for (auto code_iter = path_code.begin(); code_iter != path_code.end(); ++code_iter)
   {
     if (*code_iter) code_str.push_back('1');
     else code_str.push_back('0');

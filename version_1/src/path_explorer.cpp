@@ -123,7 +123,7 @@ VOID start_exploring(VOID *data)
 /**
  * @brief collect explored results
  */
-VOID stop_exploring(INT32 code, VOID *data)
+auto stop_exploring (INT32 code, VOID *data) -> VOID
 {
   stop_time = std::time(0);
 
@@ -134,12 +134,12 @@ VOID stop_exploring(INT32 code, VOID *data)
 #endif
   
   UINT32 resolved_cfi_num = 0, singular_cfi_num = 0;
-  ptr_cond_direct_inss_t::iterator cfi_iter = detected_input_dep_cfis.begin();
+  /*ptr_cond_direct_inss_t::iterator*/auto cfi_iter = detected_input_dep_cfis.begin();
   for (; cfi_iter != detected_input_dep_cfis.end(); ++cfi_iter)
   {
     if ((*cfi_iter)->is_resolved) resolved_cfi_num++;
     if ((*cfi_iter)->is_singular) singular_cfi_num++;
-    total_rollback_times += (*cfi_iter)->used_rollback_num;
+//    total_rollback_times += (*cfi_iter)->used_rollback_num;
   }
 
   tfm::format(log_file, "%d seconds elapsed, %d rollbacks used, %d/%d/%d resolved/singular/total branches.\n",

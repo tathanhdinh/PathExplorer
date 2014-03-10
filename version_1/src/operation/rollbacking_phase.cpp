@@ -22,7 +22,7 @@ static UINT32                   used_rollback_num;
 static UINT32                   tainted_trace_length;
 static addrint_set_t            active_modified_addrs;
 static addrint_value_map_t      active_modified_addrs_values;
-static addrint_value_map_t      input_on_active_modified_addrs;
+//static addrint_value_map_t      input_on_active_modified_addrs;
 //static ptr_uint8_t              fresh_input;
 static ptr_uint8_t              tainting_input;
 static input_generation_mode    gen_mode;
@@ -34,8 +34,8 @@ namespace rollbacking
 {
 static inline void initialize_values_at_active_modified_addrs()
 {
-  active_modified_addrs_values.clear(); input_on_active_modified_addrs.clear();
-  addrint_set_t::iterator addr_iter = active_modified_addrs.begin();
+  active_modified_addrs_values.clear(); /*input_on_active_modified_addrs.clear();*/
+  /*addrint_set_t::iterator*/auto addr_iter = active_modified_addrs.begin();
   for (; addr_iter != active_modified_addrs.end(); ++addr_iter)
   {
     active_modified_addrs_values[*addr_iter] = 0;
@@ -63,7 +63,7 @@ static inline void initialize_values_at_active_modified_addrs()
 
 static inline void generate_testing_values()
 {
-  addrint_value_map_t::iterator addr_iter = active_modified_addrs_values.begin();
+  /*addrint_value_map_t::iterator*/auto addr_iter = active_modified_addrs_values.begin();
   for (; addr_iter != active_modified_addrs_values.end(); ++addr_iter)
   {
     if (gen_mode == randomized) addr_iter->second = rand() % std::numeric_limits<UINT8>::max();
@@ -110,12 +110,12 @@ static inline void rollback()
  */
 static inline void get_next_active_checkpoint()
 {
-  std::vector<checkpoint_with_modified_addrs>::iterator chkpnt_iter, nx_chkpnt_iter;
+//  std::vector<checkpoint_with_modified_addrs>::iterator chkpnt_iter, nx_chkpnt_iter;
   // verify if there exist an enabled active checkpoint
   if (active_checkpoint)
   {
     // exist, then find the next checkpoint in the checkpoint list of the current active CFI
-    nx_chkpnt_iter = active_cfi->checkpoints.begin(); chkpnt_iter = nx_chkpnt_iter;
+    auto nx_chkpnt_iter = active_cfi->checkpoints.begin(); auto chkpnt_iter = nx_chkpnt_iter;
     while (++nx_chkpnt_iter != active_cfi->checkpoints.end())
     {
       if (chkpnt_iter->first->exec_order == active_checkpoint->exec_order)
@@ -215,19 +215,19 @@ static inline void prepare_new_tainting_phase()
 /**
  * @brief get a projection of input on the active modified addresses
  */
-static inline void project_input_on_active_modified_addrs()
-{
-//  input_on_active_modified_addrs.clear();
-  addrint_set_t::iterator addr_iter = active_modified_addrs.begin();
-//  addrint_value_map_t input_proj;
-  for (; addr_iter != active_modified_addrs.end(); ++addr_iter)
-  {
-//    input_proj[*addr_iter] = *(reinterpret_cast<UINT8*>(*addr_iter));
-    input_on_active_modified_addrs[*addr_iter] = *(reinterpret_cast<UINT8*>(*addr_iter));
-  }
-  return;
-//  return input_proj;
-}
+//static inline void project_input_on_active_modified_addrs()
+//{
+////  input_on_active_modified_addrs.clear();
+//  addrint_set_t::iterator addr_iter = active_modified_addrs.begin();
+////  addrint_value_map_t input_proj;
+//  for (; addr_iter != active_modified_addrs.end(); ++addr_iter)
+//  {
+////    input_proj[*addr_iter] = *(reinterpret_cast<UINT8*>(*addr_iter));
+//    input_on_active_modified_addrs[*addr_iter] = *(reinterpret_cast<UINT8*>(*addr_iter));
+//  }
+//  return;
+////  return input_proj;
+//}
 
 
 /**
@@ -381,6 +381,7 @@ VOID control_flow_instruction(ADDRINT ins_addr, THREADID thread_id)
               {
                 // the next checkpoint does not exist, all of its reserved tests have been used
                 active_cfi->is_bypassed = !active_cfi->is_resolved;
+                total_rollback_times += active_cfi->used_rollback_num;
                 if (active_cfi->is_bypassed && (active_cfi->checkpoints.size() == 1) &&
                     (gen_mode == sequential)) active_cfi->is_singular = true;
 #if !defined(NDEBUG)
