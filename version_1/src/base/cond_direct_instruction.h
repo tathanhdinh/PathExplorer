@@ -6,15 +6,15 @@
 
 #include <vector>
 
-#if __cplusplus <= 199711L
-#include <boost/shared_ptr.hpp>
-#define pept boost
-#else
-#include <memory>
-#define pept std
-#endif
+//#if __cplusplus < 199711L
+//#include <boost/shared_ptr.hpp>
+//#define pept boost
+//#else
+//#include <memory>
+//#define pept std
+//#endif
 
-typedef pept::shared_ptr<UINT8>                     ptr_uint8_t;
+typedef std::shared_ptr<UINT8>                      ptr_uint8_t;
 typedef std::set<ADDRINT>                           addrint_set_t;
 typedef std::map<ADDRINT, UINT8>                    addrint_value_map_t;
 typedef std::vector<addrint_value_map_t>            addrint_value_maps_t;
@@ -50,7 +50,7 @@ public:
   cond_direct_instruction(instruction& ins);
 };
 
-typedef pept::shared_ptr<cond_direct_instruction> ptr_cond_direct_ins_t;
+typedef std::shared_ptr<cond_direct_instruction> ptr_cond_direct_ins_t;
 typedef std::vector<ptr_cond_direct_ins_t> ptr_cond_direct_inss_t;
 
 #endif // COND_DIRECT_INSTRUCTION_H

@@ -19,16 +19,17 @@
 #endif
 #include <pin.H>
 
+#include <memory>
 #include <string>
 #include <list>
 
-#if __cplusplus <= 199711L
-#include <boost/shared_ptr.hpp>
-#define pept boost
-#else
-#include <memory>
-#define pept std
-#endif
+//#if __cplusplus < 199711L
+//#include <boost/shared_ptr.hpp>
+//#define pept boost
+//#else
+//#include <memory>
+//#define pept std
+//#endif
 
 #include <boost/variant.hpp>
 #include <boost/graph/adjacency_list.hpp>
@@ -44,7 +45,7 @@ public:
   operand(REG reg);
 };
 
-typedef pept::shared_ptr<operand>                           ptr_operand_t;
+typedef std::shared_ptr<operand>                            ptr_operand_t;
 typedef ptr_operand_t                                       df_vertex;
 typedef UINT32                                              df_edge;
 typedef boost::adjacency_list<boost::listS, boost::vecS,

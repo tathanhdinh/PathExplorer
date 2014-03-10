@@ -23,7 +23,7 @@ static UINT32                   tainted_trace_length;
 static addrint_set_t            active_modified_addrs;
 static addrint_value_map_t      active_modified_addrs_values;
 static addrint_value_map_t      input_on_active_modified_addrs;
-static ptr_uint8_t              fresh_input;
+//static ptr_uint8_t              fresh_input;
 static ptr_uint8_t              tainting_input;
 static input_generation_mode    gen_mode;
 
@@ -106,7 +106,7 @@ static inline void rollback()
 
 
 /**
- * @brief get_next_active_checkpoint
+ * @brief get the next active checkpoint and the active modified addresses
  */
 static inline void get_next_active_checkpoint()
 {
@@ -144,18 +144,23 @@ static inline void get_next_active_checkpoint()
 }
 
 
-static inline void calculate_tainting_input(ptr_uint8_t original_input,
+/**
+ * @brief calculate an input for the new tainting phase
+ */
+static inline void calculate_tainting_input(ptr_uint8_t selected_input,
                                             addrint_value_map_t& modified_addrs_with_values)
 {
-  // make a copy of the original input
-  tainting_input.reset(new UINT8[received_msg_size]);
-  std::copy(original_input.get(), original_input.get() + received_msg_size, tainting_input.get());
+  // make a copy of the selected input
+//  tainting_input.reset(new UINT8[received_msg_size]);
+//  std::copy(selected_input.get(), selected_input.get() + received_msg_size, tainting_input.get());
+  std::copy(selected_input.get(), selected_input.get() + received_msg_size, fresh_input.get());
 
   // update this copy with new values at modified addresses
   addrint_value_map_t::iterator addr_iter = modified_addrs_with_values.begin();
   for (; addr_iter != modified_addrs_with_values.end(); ++addr_iter)
   {
-    tainting_input.get()[addr_iter->first - received_msg_addr] = addr_iter->second;
+//    tainting_input.get()[addr_iter->first - received_msg_addr] = addr_iter->second;
+    fresh_input.get()[addr_iter->first - received_msg_addr] = addr_iter->second;
   }
   return;
 }
@@ -184,7 +189,7 @@ static inline void prepare_new_tainting_phase()
 
 #if !defined(NDEBUG)
     tfm::format(log_file, "%s\nexplore the CFI %s at %d, start tainting\n",
-                "================================================================================",
+                "=================================================================================",
                 exploring_cfi->disassembled_name, exploring_cfi->exec_order);
     log_file.flush();
 #endif
@@ -192,7 +197,7 @@ static inline void prepare_new_tainting_phase()
     // rollback to the first checkpoint with the new input
     PIN_RemoveInstrumentation();
     rollback_with_new_input(first_checkpoint, current_exec_order, received_msg_addr,
-                            received_msg_size, tainting_input.get());
+                            received_msg_size, /*tainting_input.get()*/fresh_input.get());
   }
   else
   {
@@ -276,8 +281,9 @@ VOID generic_instruction(ADDRINT ins_addr, THREADID thread_id)
             // push an input projection into the corresponding input list of the active CFI
             if (active_cfi->second_input_projections.empty())
             {
-              project_input_on_active_modified_addrs();
-              active_cfi->second_input_projections.push_back(input_on_active_modified_addrs);
+//              project_input_on_active_modified_addrs();
+              active_cfi->second_input_projections.push_back(active_modified_addrs_values);
+//              active_cfi->second_input_projections.push_back(input_on_active_modified_addrs);
             }
 
 #if !defined(DISABLE_FSA)
@@ -393,7 +399,7 @@ VOID control_flow_instruction(ADDRINT ins_addr, THREADID thread_id)
       else
       {
         // there is no CFI in resolving, then verify if the current CFI depends on the input
-        current_cfi = pept::static_pointer_cast<cond_direct_instruction>(
+        current_cfi = std::static_pointer_cast<cond_direct_instruction>(
               ins_at_order[current_exec_order]);
         if (!current_cfi->input_dep_addrs.empty())
         {
@@ -405,16 +411,16 @@ VOID control_flow_instruction(ADDRINT ins_addr, THREADID thread_id)
                       active_checkpoint->exec_order);
 #endif
           // make a copy of the fresh input
-          active_cfi->fresh_input.reset(new UINT8[received_msg_size]);
-          std::copy(fresh_input.get(), fresh_input.get() + received_msg_size,
-                    active_cfi->fresh_input.get());
+//          active_cfi->fresh_input.reset(new UINT8[received_msg_size]);
+//          std::copy(fresh_input.get(), fresh_input.get() + received_msg_size,
+//                    active_cfi->fresh_input.get());
 
           // push an input projection into the corresponding input list of the active CFI
-          if (active_cfi->first_input_projections.empty())
-          {
-            project_input_on_active_modified_addrs();
-            active_cfi->first_input_projections.push_back(input_on_active_modified_addrs);
-          }
+//          if (active_cfi->first_input_projections.empty())
+//          {
+//            project_input_on_active_modified_addrs();
+//            active_cfi->first_input_projections.push_back(input_on_active_modified_addrs);
+//          }
 
           // and rollback to resolve the new active CFI
           rollback();
@@ -474,11 +480,11 @@ void initialize(UINT32 trace_length_limit)
   active_modified_addrs.clear(); tainted_trace_length = trace_length_limit;
   used_rollback_num = 0; max_rollback_num = max_local_rollback.Value(); gen_mode = randomized;
 
-  // make a fresh input copy
-  fresh_input.reset(new UINT8[received_msg_size]);
-  UINT8* new_rollbacking_input = reinterpret_cast<UINT8*>(received_msg_addr);
-  if (exploring_cfi) new_rollbacking_input = exploring_cfi->fresh_input.get();
-  std::copy(new_rollbacking_input, new_rollbacking_input + received_msg_size, fresh_input.get());
+//  // keep a fresh copy of input at this rollbacking phase
+//  fresh_input.reset(new UINT8[received_msg_size]);
+//  UINT8* this_rollbacking_phase_input = reinterpret_cast<UINT8*>(received_msg_addr);
+//  if (exploring_cfi) this_rollbacking_phase_input = exploring_cfi->fresh_input.get();
+//  std::copy(this_rollbacking_phase_input, this_rollbacking_phase_input + received_msg_size, fresh_input.get());
 
   return;
 }

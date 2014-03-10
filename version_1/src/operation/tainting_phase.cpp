@@ -81,7 +81,7 @@ static inline void determine_cfi_input_dependency()
             if (ins_at_order[visited_edge_exec_order]->is_cond_direct_cf)
             {
               // then this CFI depends on the value of the memory address
-              visited_cfi = pept::static_pointer_cast<cond_direct_instruction>(
+              visited_cfi = std::static_pointer_cast<cond_direct_instruction>(
                     ins_at_order[visited_edge_exec_order]);
               visited_cfi->input_dep_addrs.insert(mem_addr);
 //#if !defined(NDEBUG)
@@ -189,14 +189,19 @@ static inline void save_detected_cfis()
         explored_fsa->add_edge((prev_ins_iter->second)->address, (ins_iter->second)->address,
                                current_path_code);
 #endif
-
+        // verify if the instruction is a CFI
         if (ins_iter->second->is_cond_direct_cf)
         {
-          new_cfi = pept::static_pointer_cast<cond_direct_instruction>(ins_iter->second);
+          new_cfi = std::static_pointer_cast<cond_direct_instruction>(ins_iter->second);
           // and depends on the input
           if (!new_cfi->input_dep_addrs.empty())
           {
-            // then set its checkpoints and save it
+            // then copy a fresh copy for it
+            new_cfi->fresh_input.reset(new UINT8[received_msg_size]);
+            std::copy(fresh_input.get(), fresh_input.get() + received_msg_size,
+                      new_cfi->fresh_input.get());
+
+            // set its checkpoints and save it
             set_checkpoints_for_cfi(new_cfi); detected_input_dep_cfis.push_back(new_cfi);
 #if !defined(NDEBUG)
             newly_detected_input_dep_cfis.push_back(new_cfi);
@@ -256,7 +261,7 @@ static inline void calculate_rollbacking_trace_length()
     if (ins_iter->second->is_cond_direct_cf)
     {
       // and this CFI depends on the input
-      last_cfi = pept::static_pointer_cast<cond_direct_instruction>(ins_iter->second);
+      last_cfi = std::static_pointer_cast<cond_direct_instruction>(ins_iter->second);
       if (!last_cfi->input_dep_addrs.empty()) break;
 //      {
 //        rollbacking_trace_length = last_cfi->exec_order;
@@ -357,7 +362,7 @@ VOID generic_instruction(ADDRINT ins_addr, THREADID thread_id)
         if (ins_at_addr[ins_addr]->is_cond_direct_cf)
         {
           // duplicate a CFI (the default copy constructor is used)
-          current_cfi = pept::static_pointer_cast<cond_direct_instruction>(ins_at_addr[ins_addr]);
+          current_cfi = std::static_pointer_cast<cond_direct_instruction>(ins_at_addr[ins_addr]);
           duplicated_cfi.reset(new cond_direct_instruction(*current_cfi));
           duplicated_cfi->exec_order = current_exec_order;
           ins_at_order[current_exec_order] = duplicated_cfi;

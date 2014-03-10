@@ -56,7 +56,7 @@ public:
   instruction(const INS& ins);
 };
 
-typedef pept::shared_ptr<instruction>         ptr_instruction_t;
+typedef std::shared_ptr<instruction>         ptr_instruction_t;
 typedef std::map<ADDRINT, ptr_instruction_t>  addr_ins_map_t;
 typedef std::map<UINT32, ptr_instruction_t>   order_ins_map_t;
 

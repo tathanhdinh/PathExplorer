@@ -33,6 +33,7 @@ ptr_explorer_graph_t    explored_fsa;
 ADDRINT                 received_msg_addr;
 UINT32                  received_msg_size;
 UINT32                  received_msg_order;
+ptr_uint8_t             fresh_input;
 
 THREADID                traced_thread_id;
 bool                    traced_thread_is_fixed;

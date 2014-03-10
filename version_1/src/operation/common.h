@@ -68,6 +68,7 @@ extern ptr_explorer_graph_t           explored_fsa;
 extern ADDRINT                        received_msg_addr;
 extern UINT32                         received_msg_size;
 extern UINT32                         received_msg_order;
+extern ptr_uint8_t                    fresh_input;
 
 extern THREADID                       traced_thread_id;
 extern bool                           traced_thread_is_fixed;

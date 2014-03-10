@@ -34,6 +34,11 @@ void initialize()
  */
 static inline void prepare_new_tainting_phase()
 {
+  // save a fresh copy of the input
+  fresh_input.reset(new UINT8[received_msg_size]);
+  std::copy(reinterpret_cast<UINT8*>(received_msg_addr),
+            reinterpret_cast<UINT8*>(received_msg_addr) + received_msg_size, fresh_input.get());
+
   // switch to the tainting state
   current_running_phase = tainting_phase; PIN_RemoveInstrumentation();
 #if !defined(NDEBUG)

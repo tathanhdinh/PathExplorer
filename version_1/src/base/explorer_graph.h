@@ -4,7 +4,7 @@
 #include "cond_direct_instruction.h"
 
 class explorer_graph;
-typedef pept::shared_ptr<explorer_graph>  ptr_explorer_graph_t;
+typedef std::shared_ptr<explorer_graph>   ptr_explorer_graph_t;
 typedef std::vector<bool>                 path_code_t;
 
 class explorer_graph
