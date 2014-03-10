@@ -42,12 +42,12 @@ instruction::instruction(const INS& ins)
   this->has_real_rep          = INS_HasRealRep(ins);
 
   // collect read/write registers
-  UINT32        register_id, register_num;
+//  UINT32        register_id, register_num;
   REG           curr_register;
   ptr_operand_t new_operand;
   
-  register_num = INS_MaxNumRRegs(ins);
-  for (register_id = 0; register_id < register_num; ++register_id) 
+  auto register_num = INS_MaxNumRRegs(ins); auto register_id = 0;
+  for (/*auto register_id = 0*/; register_id < register_num; ++register_id)
   {
     curr_register = INS_RegR(ins, register_id);
     // the source register is not considered when it is the instruction pointer, namely the control 
@@ -68,8 +68,8 @@ instruction::instruction(const INS& ins)
     }
   }
   
-  register_num = INS_MaxNumWRegs(ins);
-  for (register_id = 0; register_id < register_num; ++register_id) 
+  register_num = INS_MaxNumWRegs(ins); register_id = 0;
+  for (/*auto register_id = 0*/; register_id < register_num; ++register_id)
   {
     curr_register = INS_RegW(ins, register_id);
     if ((curr_register != REG_INST_PTR) ||

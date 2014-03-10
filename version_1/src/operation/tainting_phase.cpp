@@ -475,15 +475,15 @@ VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 me
 inline std::set<df_vertex_desc> source_variables(UINT32 ins_exec_order)
 {
   df_vertex_desc_set src_vertex_descs;
-  df_vertex_desc_set::iterator outer_vertex_iter;
-  df_vertex_desc new_vertex_desc;
-  std::set<ptr_operand_t>::iterator src_operand_iter;
-  for (src_operand_iter = ins_at_order[ins_exec_order]->src_operands.begin();
+//  df_vertex_desc_set::iterator outer_vertex_iter;
+//  df_vertex_desc new_vertex_desc;
+//  std::set<ptr_operand_t>::iterator src_operand_iter;
+  for (auto src_operand_iter = ins_at_order[ins_exec_order]->src_operands.begin();
        src_operand_iter != ins_at_order[ins_exec_order]->src_operands.end(); ++src_operand_iter)
   {
     // verify if the current source operand is
-    for (outer_vertex_iter = dta_outer_vertices.begin();
-         outer_vertex_iter != dta_outer_vertices.end(); ++outer_vertex_iter)
+    auto outer_vertex_iter = dta_outer_vertices.begin();
+    for (; outer_vertex_iter != dta_outer_vertices.end(); ++outer_vertex_iter)
     {
       // found in the outer interface
       if (((*src_operand_iter)->value.type() == dta_graph[*outer_vertex_iter]->value.type()) &&
@@ -497,7 +497,7 @@ inline std::set<df_vertex_desc> source_variables(UINT32 ins_exec_order)
     // not found
     if (outer_vertex_iter == dta_outer_vertices.end())
     {
-      new_vertex_desc = boost::add_vertex(*src_operand_iter, dta_graph);
+      auto new_vertex_desc = boost::add_vertex(*src_operand_iter, dta_graph);
       dta_outer_vertices.insert(new_vertex_desc);
       src_vertex_descs.insert(new_vertex_desc);
     }

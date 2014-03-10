@@ -147,8 +147,8 @@ static inline void get_next_active_checkpoint()
 /**
  * @brief calculate an input for the new tainting phase
  */
-static inline void calculate_tainting_input(ptr_uint8_t selected_input,
-                                            addrint_value_map_t& modified_addrs_with_values)
+static inline void calculate_tainting_fresh_input(ptr_uint8_t selected_input,
+                                                  addrint_value_map_t& modified_addrs_with_values)
 {
   // make a copy of the selected input
 //  tainting_input.reset(new UINT8[received_msg_size]);
@@ -156,7 +156,7 @@ static inline void calculate_tainting_input(ptr_uint8_t selected_input,
   std::copy(selected_input.get(), selected_input.get() + received_msg_size, fresh_input.get());
 
   // update this copy with new values at modified addresses
-  addrint_value_map_t::iterator addr_iter = modified_addrs_with_values.begin();
+  /*addrint_value_map_t::iterator*/auto addr_iter = modified_addrs_with_values.begin();
   for (; addr_iter != modified_addrs_with_values.end(); ++addr_iter)
   {
 //    tainting_input.get()[addr_iter->first - received_msg_addr] = addr_iter->second;
@@ -172,7 +172,7 @@ static inline void calculate_tainting_input(ptr_uint8_t selected_input,
 static inline void prepare_new_tainting_phase()
 {
   // verify if there exists a resolved but unexplored CFI
-  ptr_cond_direct_inss_t::iterator cfi_iter = detected_input_dep_cfis.begin();
+  /*ptr_cond_direct_inss_t::iterator*/auto cfi_iter = detected_input_dep_cfis.begin();
   for (; cfi_iter != detected_input_dep_cfis.end(); ++cfi_iter)
   {
     if ((*cfi_iter)->is_resolved && !(*cfi_iter)->is_explored) break;
@@ -182,7 +182,8 @@ static inline void prepare_new_tainting_phase()
     // exists, then set the CFI as explored
     exploring_cfi = *cfi_iter; exploring_cfi->is_explored = true;
     // calculate a new input for the next tainting phase
-    calculate_tainting_input(exploring_cfi->fresh_input, exploring_cfi->second_input_projections[0]);
+    calculate_tainting_fresh_input(exploring_cfi->fresh_input,
+                                   exploring_cfi->second_input_projections[0]);
 
     // initialize new tainting phase
     current_running_phase = tainting_phase; tainting::initialize();
@@ -342,7 +343,7 @@ VOID generic_instruction(ADDRINT ins_addr, THREADID thread_id)
  */
 VOID control_flow_instruction(ADDRINT ins_addr, THREADID thread_id)
 {
-  ptr_cond_direct_ins_t current_cfi;
+//  ptr_cond_direct_ins_t current_cfi;
 
   if (thread_id == traced_thread_id)
   {
@@ -399,7 +400,7 @@ VOID control_flow_instruction(ADDRINT ins_addr, THREADID thread_id)
       else
       {
         // there is no CFI in resolving, then verify if the current CFI depends on the input
-        current_cfi = std::static_pointer_cast<cond_direct_instruction>(
+        auto current_cfi = std::static_pointer_cast<cond_direct_instruction>(
               ins_at_order[current_exec_order]);
         if (!current_cfi->input_dep_addrs.empty())
         {
