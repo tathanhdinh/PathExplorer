@@ -102,6 +102,7 @@ void explorer_graph::add_edge(ADDRINT ins_a_addr, ADDRINT ins_b_addr,
     if (internal_exp_graph[*vertex_iter] == ins_a_addr) ins_a_desc = *vertex_iter;
     if (internal_exp_graph[*vertex_iter] == ins_b_addr) ins_b_desc = *vertex_iter;
   }
+
   boost::graph_traits<exp_graph>::out_edge_iterator out_edge_iter, last_out_edge_iter;
   boost::tie(out_edge_iter, last_out_edge_iter) = boost::out_edges(ins_a_desc, internal_exp_graph);
   // iterate over out edges from a

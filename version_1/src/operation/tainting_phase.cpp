@@ -232,7 +232,7 @@ static inline void analyze_executed_instructions()
 {
   if (!exploring_cfi)
   {
-    save_tainting_graph(dta_graph, "tainting_graph.dot");
+    save_tainting_graph(dta_graph, "path_explorer_tainting_graph.dot");
   }
   determine_cfi_input_dependency(); save_detected_cfis();
   return;
@@ -341,43 +341,40 @@ VOID generic_instruction(ADDRINT ins_addr, THREADID thread_id)
     {
       // does not exceed
       current_exec_order++;
-      if (ins_at_addr[ins_addr]->is_cond_direct_cf)
+      if (exploring_cfi && (exploring_cfi->exec_order == current_exec_order) &&
+          (exploring_cfi->address != ins_addr))
       {
-        // duplicate a CFI (the default copy constructor is used)
-        current_cfi = pept::static_pointer_cast<cond_direct_instruction>(ins_at_addr[ins_addr]);
-        duplicated_cfi.reset(new cond_direct_instruction(*current_cfi));
-        duplicated_cfi->exec_order = current_exec_order;
-        ins_at_order[current_exec_order] = duplicated_cfi;
-
-//#if !defined(DISABLE_FSA)
-//        // add an empty edge from the previous to the current instruction
-//        if ((exploring_cfi && (current_exec_order > exploring_cfi->exec_order)) ||
-//            (!exploring_cfi && (current_exec_order > 1)))
-//          explored_fsa->add_edge(ins_at_order[current_exec_order - 1]->address,
-//                                 ins_at_order[current_exec_order]->address, current_path_code);
-
-//        duplicated_cfi->path_code = current_path_code;
-
-        // the root path code is one of the exploring CFI: if the current instruction is the
-        // exploring CFI then "1" should be appended into the path code (because "0" has been
-        // appended in the previous tainting phase)
-//        if (exploring_cfi && (current_exec_order == exploring_cfi->exec_order))
-//          current_path_code.push_back(true);
-//        else current_path_code.push_back(false);
-//#endif
+#if !defined(NDEBUG)
+        tfm::format(log_file, "fatal: exploring the CFI <%s: %s> at %d but meet <%s: %s>\n",
+                    addrint_to_hexstring(exploring_cfi->address), exploring_cfi->disassembled_name,
+                    exploring_cfi->exec_order, addrint_to_hexstring(ins_addr),
+                    ins_at_addr[ins_addr]->disassembled_name);
+#endif
+        PIN_ExitApplication(1);
       }
       else
       {
-        // duplicate an instruction (the default copy constructor is used)
-        ins_at_order[current_exec_order].reset(new instruction(*ins_at_addr[ins_addr]));
-      }
+        if (ins_at_addr[ins_addr]->is_cond_direct_cf)
+        {
+          // duplicate a CFI (the default copy constructor is used)
+          current_cfi = pept::static_pointer_cast<cond_direct_instruction>(ins_at_addr[ins_addr]);
+          duplicated_cfi.reset(new cond_direct_instruction(*current_cfi));
+          duplicated_cfi->exec_order = current_exec_order;
+          ins_at_order[current_exec_order] = duplicated_cfi;
+        }
+        else
+        {
+          // duplicate an instruction (the default copy constructor is used)
+          ins_at_order[current_exec_order].reset(new instruction(*ins_at_addr[ins_addr]));
+        }
 
 #if !defined(NDEBUG)
-      tfm::format(log_file, "%-3d %-15s %-50s %-25s %-25s\n", current_exec_order,
-                  addrint_to_hexstring(ins_addr), ins_at_addr[ins_addr]->disassembled_name,
-                  ins_at_addr[ins_addr]->contained_image, ins_at_addr[ins_addr]->contained_function);
-      //    log_file.flush();
+        tfm::format(log_file, "%-3d %-15s %-50s %-25s %-25s\n", current_exec_order,
+                    addrint_to_hexstring(ins_addr), ins_at_addr[ins_addr]->disassembled_name,
+                    ins_at_addr[ins_addr]->contained_image, ins_at_addr[ins_addr]->contained_function);
+        //    log_file.flush();
 #endif
+      }
     }
     else
     {

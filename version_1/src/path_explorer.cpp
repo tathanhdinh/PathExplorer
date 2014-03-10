@@ -126,10 +126,10 @@ VOID stop_exploring(INT32 code, VOID *data)
 {
   stop_time = std::time(0);
 
-  save_static_trace("static_trace.log");
+  save_static_trace("path_explorer_static_trace.log");
 
 #if !defined(DISABLE_FSA)
-  explored_fsa->save_to_file("explored_fsa.dot");
+  explored_fsa->save_to_file("path_explorer_explored_fsa.dot");
 #endif
   
   UINT32 resolved_cfi_num = 0, singular_cfi_num = 0;
