@@ -20,9 +20,9 @@
 
 #include <pin.H>
 
-extern VOID ins_instrumenter              (INS ins, VOID *data);
+extern auto ins_instrumenter        (INS ins, VOID *data)         -> VOID;
 
-extern VOID image_load_instrumenter       (IMG loaded_img, VOID *data);
+extern auto image_load_instrumenter (IMG loaded_img, VOID *data)  -> VOID;
 
 //extern BOOL process_create_instrumenter   (CHILD_PROCESS created_process, VOID* data);
 

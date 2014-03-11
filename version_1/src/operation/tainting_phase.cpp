@@ -39,20 +39,20 @@ public:
  * @brief for each executed instruction in this tainting phase, determine the set of input memory
  * addresses that affect to the instruction.
  */
-static inline void determine_cfi_input_dependency()
+static inline auto determine_cfi_input_dependency() -> void
 {
-  df_vertex_iter vertex_iter;
-  df_vertex_iter last_vertex_iter;
+  df_vertex_iter vertex_iter, last_vertex_iter;
+//  df_vertex_iter last_vertex_iter;
   df_bfs_visitor df_visitor;
-  std::vector<df_edge_desc>::iterator visited_edge_iter;
+//  std::vector<df_edge_desc>::iterator visited_edge_iter;
 
-  ADDRINT mem_addr;
+//  ADDRINT mem_addr;
 
-  UINT32 visited_edge_exec_order;
-  ptr_cond_direct_ins_t visited_cfi;
+//  UINT32 visited_edge_exec_order;
+//  ptr_cond_direct_ins_t visited_cfi;
 
   // get the set of vertices in the tainting graph
-  boost::tie(vertex_iter, last_vertex_iter) = boost::vertices(dta_graph);
+  std::tie(vertex_iter, last_vertex_iter) = boost::vertices(dta_graph);
   // for each vertice of the tainting graph
   for (; vertex_iter != last_vertex_iter; ++vertex_iter)
   {
@@ -60,7 +60,7 @@ static inline void determine_cfi_input_dependency()
     if (dta_graph[*vertex_iter]->value.type() == typeid(ADDRINT))
     {
       // and this memory address belongs to the input
-      mem_addr = boost::get<ADDRINT>(dta_graph[*vertex_iter]->value);
+      auto mem_addr = boost::get<ADDRINT>(dta_graph[*vertex_iter]->value);
       if ((received_msg_addr <= mem_addr) && (mem_addr < received_msg_addr + received_msg_size))
       {
         // take a BFS from this vertice
@@ -68,11 +68,11 @@ static inline void determine_cfi_input_dependency()
         boost::breadth_first_search(dta_graph, *vertex_iter, boost::visitor(df_visitor));
 
         // for each visited edge
-        for (visited_edge_iter = visited_edges.begin();
+        for (auto visited_edge_iter = visited_edges.begin();
              visited_edge_iter != visited_edges.end(); ++visited_edge_iter)
         {
           // the value of the edge is the execution order of the corresponding instruction
-          visited_edge_exec_order = dta_graph[*visited_edge_iter];
+          auto visited_edge_exec_order = dta_graph[*visited_edge_iter];
           // consider only the instruction that is beyond the exploring CFI
           if (!exploring_cfi ||
               (exploring_cfi && (visited_edge_exec_order > exploring_cfi->exec_order)))
@@ -81,7 +81,7 @@ static inline void determine_cfi_input_dependency()
             if (ins_at_order[visited_edge_exec_order]->is_cond_direct_cf)
             {
               // then this CFI depends on the value of the memory address
-              visited_cfi = std::static_pointer_cast<cond_direct_instruction>(
+              auto visited_cfi = std::static_pointer_cast<cond_direct_instruction>(
                     ins_at_order[visited_edge_exec_order]);
               visited_cfi->input_dep_addrs.insert(mem_addr);
 //#if !defined(NDEBUG)
@@ -104,21 +104,22 @@ static inline void determine_cfi_input_dependency()
  * rollback from the checkpoint with the modification on the affecting input addresses may change
  * the CFI's decision.
  */
-static inline void set_checkpoints_for_cfi(const ptr_cond_direct_ins_t& cfi)
+static inline auto set_checkpoints_for_cfi(const ptr_cond_direct_ins_t& cfi) -> void
 {
-  addrint_set_t dep_addrs = cfi->input_dep_addrs;
-  addrint_set_t input_dep_addrs, new_dep_addrs, intersected_addrs;
+  /*addrint_set_t*/auto dep_addrs = cfi->input_dep_addrs;
+  /*addrint_set_t*/decltype(dep_addrs) input_dep_addrs, new_dep_addrs, intersected_addrs;
   checkpoint_with_modified_addrs checkpoint_with_input_addrs;
 
-  ptr_checkpoints_t::iterator chkpnt_iter = saved_checkpoints.begin();
-  for (; chkpnt_iter != saved_checkpoints.end(); ++chkpnt_iter)
+//  ptr_checkpoints_t::iterator chkpnt_iter = saved_checkpoints.begin();
+  for (auto chkpnt_iter = saved_checkpoints.begin(); chkpnt_iter != saved_checkpoints.end();
+       ++chkpnt_iter)
   {
     // consider only checkpoints before the CFI
     if ((*chkpnt_iter)->exec_order <= cfi->exec_order)
     {
       // find the input addresses of the checkpoint
       input_dep_addrs.clear();
-      addrint_value_map_t::iterator addr_iter = (*chkpnt_iter)->input_dep_original_values.begin();
+      /*addrint_value_map_t::iterator*/auto addr_iter = (*chkpnt_iter)->input_dep_original_values.begin();
       for (; addr_iter != (*chkpnt_iter)->input_dep_original_values.end(); ++addr_iter)
       {
         input_dep_addrs.insert(addr_iter->first);
@@ -163,7 +164,7 @@ static inline void set_checkpoints_for_cfi(const ptr_cond_direct_ins_t& cfi)
 /**
  * @brief save new tainted CFIs in this tainting phase
  */
-static inline void save_detected_cfis()
+static inline auto save_detected_cfis() -> void
 {
   if (ins_at_order.size() > 1)
   {
@@ -174,10 +175,10 @@ static inline void save_detected_cfis()
     if (exploring_cfi) current_path_code.push_back(true);
 #endif
 
-    ptr_cond_direct_ins_t new_cfi;
-    std::map<UINT32, ptr_instruction_t>::iterator ins_iter = ins_at_order.begin();
+//    ptr_cond_direct_ins_t new_cfi;
+    /*std::map<UINT32, ptr_instruction_t>::iterator*/auto ins_iter = ins_at_order.begin();
 #if !defined(DISABLE_FSA)
-    std::map<UINT32, ptr_instruction_t>::iterator prev_ins_iter = ins_iter;
+    /*std::map<UINT32, ptr_instruction_t>::iterator*/decltype(ins_iter) prev_ins_iter = ins_iter;
 #endif
 
     for (++ins_iter; ins_iter != ins_at_order.end(); ++ins_iter)
@@ -192,7 +193,7 @@ static inline void save_detected_cfis()
         // verify if the instruction is a CFI
         if (ins_iter->second->is_cond_direct_cf)
         {
-          new_cfi = std::static_pointer_cast<cond_direct_instruction>(ins_iter->second);
+          auto new_cfi = std::static_pointer_cast<cond_direct_instruction>(ins_iter->second);
           // and depends on the input
           if (!new_cfi->input_dep_addrs.empty())
           {
@@ -248,10 +249,10 @@ static inline void analyze_executed_instructions()
  * @brief calculate a new limit trace length for the next rollbacking phase, this limit is the
  * execution order of the last input dependent CFI in the tainting phase.
  */
-static inline void calculate_rollbacking_trace_length()
+static inline auto calculate_rollbacking_trace_length() -> void
 {
   rollbacking_trace_length = 0;
-  order_ins_map_t::reverse_iterator ins_iter = ins_at_order.rbegin();
+  /*order_ins_map_t::reverse_iterator*/auto ins_iter = ins_at_order.rbegin();
   ptr_cond_direct_ins_t last_cfi;
 
   // reverse iterate in the list of executed instructions
@@ -281,7 +282,7 @@ static inline void calculate_rollbacking_trace_length()
 /**
  * @brief prepare_new_rollbacking_phase
  */
-inline void prepare_new_rollbacking_phase()
+static inline auto prepare_new_rollbacking_phase() -> void
 {
   if (saved_checkpoints.empty())
   {
@@ -323,7 +324,7 @@ inline void prepare_new_rollbacking_phase()
 /**
  * @brief analysis functions applied for syscall instructions
  */
-VOID kernel_mapped_instruction(ADDRINT ins_addr, THREADID thread_id)
+auto kernel_mapped_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
 {
   // the tainting phase always finishes when a kernel mapped instruction is met
   if (thread_id == traced_thread_id) prepare_new_rollbacking_phase();
@@ -334,9 +335,9 @@ VOID kernel_mapped_instruction(ADDRINT ins_addr, THREADID thread_id)
 /**
  * @brief analysis function applied for all instructions
  */
-VOID generic_instruction(ADDRINT ins_addr, THREADID thread_id)
+auto generic_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
 {
-  ptr_cond_direct_ins_t current_cfi, duplicated_cfi;
+//  ptr_cond_direct_ins_t current_cfi, duplicated_cfi;
 
   if (thread_id == traced_thread_id)
   {
@@ -362,7 +363,8 @@ VOID generic_instruction(ADDRINT ins_addr, THREADID thread_id)
         if (ins_at_addr[ins_addr]->is_cond_direct_cf)
         {
           // duplicate a CFI (the default copy constructor is used)
-          current_cfi = std::static_pointer_cast<cond_direct_instruction>(ins_at_addr[ins_addr]);
+          auto current_cfi = std::static_pointer_cast<cond_direct_instruction>(ins_at_addr[ins_addr]);
+          decltype(current_cfi) duplicated_cfi;
           duplicated_cfi.reset(new cond_direct_instruction(*current_cfi));
           duplicated_cfi->exec_order = current_exec_order;
           ins_at_order[current_exec_order] = duplicated_cfi;
@@ -420,7 +422,7 @@ VOID mem_read_instruction(ADDRINT ins_addr, ADDRINT mem_read_addr, UINT32 mem_re
 
     // update source operands
     ptr_operand_t mem_operand;
-    for (UINT32 addr_offset = 0; addr_offset < mem_read_size; ++addr_offset)
+    for (/*UINT32*/auto addr_offset = 0; addr_offset < mem_read_size; ++addr_offset)
     {
       mem_operand.reset(new operand(mem_read_addr + addr_offset));
       ins_at_order[current_exec_order]->src_operands.insert(mem_operand);
@@ -435,8 +437,8 @@ VOID mem_read_instruction(ADDRINT ins_addr, ADDRINT mem_read_addr, UINT32 mem_re
  *  save orginal values of overwritten memory addresses, and
  *  update destination operands of the instruction as written memory addresses.
  */
-VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 mem_written_size,
-                           THREADID thread_id)
+auto mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 mem_written_size,
+                           THREADID thread_id) -> VOID
 {
   if (thread_id == traced_thread_id)
   {
@@ -456,7 +458,7 @@ VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 me
 
     // update destination operands
     ptr_operand_t mem_operand;
-    for (UINT32 addr_offset = 0; addr_offset < mem_written_size; ++addr_offset)
+    for (/*UINT32*/auto addr_offset = 0; addr_offset < mem_written_size; ++addr_offset)
     {
       mem_operand.reset(new operand(mem_written_addr + addr_offset));
       ins_at_order[current_exec_order]->dst_operands.insert(mem_operand);
@@ -472,7 +474,7 @@ VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 me
  * @param idx
  * @return
  */
-inline std::set<df_vertex_desc> source_variables(UINT32 ins_exec_order)
+static inline auto source_variables(UINT32 ins_exec_order) -> std::set<df_vertex_desc>
 {
   df_vertex_desc_set src_vertex_descs;
 //  df_vertex_desc_set::iterator outer_vertex_iter;
@@ -512,20 +514,20 @@ inline std::set<df_vertex_desc> source_variables(UINT32 ins_exec_order)
  * @param idx
  * @return
  */
-inline std::set<df_vertex_desc> destination_variables(UINT32 idx)
+static inline auto destination_variables(UINT32 idx) -> std::set<df_vertex_desc>
 {
   std::set<df_vertex_desc> dst_vertex_descs;
-  df_vertex_desc new_vertex_desc;
-  df_vertex_desc_set::iterator outer_vertex_iter;
-  df_vertex_desc_set::iterator next_vertex_iter;
-  std::set<ptr_operand_t>::iterator dst_operand_iter;
+//  df_vertex_desc new_vertex_desc;
+//  df_vertex_desc_set::iterator outer_vertex_iter;
+//  df_vertex_desc_set::iterator next_vertex_iter;
+//  std::set<ptr_operand_t>::iterator dst_operand_iter;
 
-  for (dst_operand_iter = ins_at_order[idx]->dst_operands.begin();
+  for (auto dst_operand_iter = ins_at_order[idx]->dst_operands.begin();
        dst_operand_iter != ins_at_order[idx]->dst_operands.end(); ++dst_operand_iter)
   {
     // verify if the current target operand is
-    outer_vertex_iter = dta_outer_vertices.begin();
-    for (next_vertex_iter = outer_vertex_iter;
+    auto outer_vertex_iter = dta_outer_vertices.begin();
+    for (auto next_vertex_iter = outer_vertex_iter;
          outer_vertex_iter != dta_outer_vertices.end(); outer_vertex_iter = next_vertex_iter)
     {
       ++next_vertex_iter;
@@ -535,7 +537,7 @@ inline std::set<df_vertex_desc> destination_variables(UINT32 idx)
           && ((*dst_operand_iter)->name == dta_graph[*outer_vertex_iter]->name))
       {
         // then insert the current target operand into the graph
-        new_vertex_desc = boost::add_vertex(*dst_operand_iter, dta_graph);
+        auto new_vertex_desc = boost::add_vertex(*dst_operand_iter, dta_graph);
 
         // and modify the outer interface by replacing the old vertex with the new vertex
         dta_outer_vertices.erase(outer_vertex_iter);
@@ -550,7 +552,7 @@ inline std::set<df_vertex_desc> destination_variables(UINT32 idx)
     if (outer_vertex_iter == dta_outer_vertices.end())
     {
       // then insert the current target operand into the graph
-      new_vertex_desc = boost::add_vertex(*dst_operand_iter, dta_graph);
+      auto new_vertex_desc = boost::add_vertex(*dst_operand_iter, dta_graph);
 
       // and modify the outer interface by insert the new vertex
       dta_outer_vertices.insert(new_vertex_desc);
@@ -568,21 +570,21 @@ inline std::set<df_vertex_desc> destination_variables(UINT32 idx)
  * @param ins_addr
  * @return
  */
-VOID graphical_propagation(ADDRINT ins_addr, THREADID thread_id)
+auto graphical_propagation(ADDRINT ins_addr, THREADID thread_id) -> VOID
 {
   if (thread_id == traced_thread_id)
   {
-    std::set<df_vertex_desc> src_vertex_descs = source_variables(current_exec_order);
-    std::set<df_vertex_desc> dst_vertex_descs = destination_variables(current_exec_order);
+    /*std::set<df_vertex_desc>*/auto src_vertex_descs = source_variables(current_exec_order);
+    /*std::set<df_vertex_desc>*/auto dst_vertex_descs = destination_variables(current_exec_order);
 
-    std::set<df_vertex_desc>::iterator src_vertex_desc_iter;
-    std::set<df_vertex_desc>::iterator dst_vertex_desc_iter;
+//    std::set<df_vertex_desc>::iterator src_vertex_desc_iter;
+//    std::set<df_vertex_desc>::iterator dst_vertex_desc_iter;
 
     // insert the edges between each pair (source, destination) into the tainting graph
-    for (src_vertex_desc_iter = src_vertex_descs.begin();
+    for (auto src_vertex_desc_iter = src_vertex_descs.begin();
          src_vertex_desc_iter != src_vertex_descs.end(); ++src_vertex_desc_iter)
     {
-      for (dst_vertex_desc_iter = dst_vertex_descs.begin();
+      for (auto dst_vertex_desc_iter = dst_vertex_descs.begin();
            dst_vertex_desc_iter != dst_vertex_descs.end(); ++dst_vertex_desc_iter)
       {
         boost::add_edge(*src_vertex_desc_iter, *dst_vertex_desc_iter, current_exec_order, dta_graph);

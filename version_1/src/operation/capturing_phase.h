@@ -21,16 +21,16 @@
 
 namespace capturing
 {
-extern void initialize();
+extern auto initialize      ()                                            -> void;
 
 #if defined(_WIN32) || defined(_WIN64)
-extern VOID before_recvs      (ADDRINT msg_addr, THREADID thread_id);
+extern auto before_recvs    (ADDRINT msg_addr, THREADID thread_id)        -> VOID;
 
-extern VOID after_recvs       (UINT32 msg_length, THREADID thread_id);
+extern auto after_recvs     (UINT32 msg_length, THREADID thread_id)       -> VOID;
 
-extern VOID before_wsarecvs   (ADDRINT msg_struct_addr, THREADID thread_id);
+extern auto before_wsarecvs (ADDRINT msg_struct_addr, THREADID thread_id) -> VOID;
 
-extern VOID after_wsarecvs    (THREADID thread_id);
+extern auto after_wsarecvs  (THREADID thread_id)                          -> VOID;
 #elif defined(__gnu_linux__)
 extern VOID syscall_entry_analyzer(THREADID thread_id, CONTEXT* p_ctxt,
                                    SYSCALL_STANDARD syscall_std, VOID *data);

@@ -37,7 +37,7 @@ explorer_graph::explorer_graph()
 /**
  * @brief return the single instanced of the graph
  */
-ptr_explorer_graph_t explorer_graph::instance()
+auto explorer_graph::instance() -> ptr_explorer_graph_t
 {
   if (!single_graph_instance) single_graph_instance.reset(new explorer_graph());
   return single_graph_instance;
@@ -70,25 +70,24 @@ void explorer_graph::add_vertex(ADDRINT ins_addr)
 /**
  * @brief verify if two path codes are equal
  */
-static inline bool path_codes_are_equal(const path_code_t& x, const path_code_t& y)
-{
-//  bool equality = false;
-  if (x.size() == y.size())
-  {
-    path_code_t::const_iterator x_iter, y_iter;
-    std::tie(x_iter, y_iter) = std::mismatch(x.begin(), x.end(), y.begin());
-    if ((x_iter == x.end()) && (y_iter == y.end())) /*equality = true*/return true;
-  }
-  return false;
-}
+//static inline bool path_codes_are_equal(const path_code_t& x, const path_code_t& y)
+//{
+//  if (x.size() == y.size())
+//  {
+//    path_code_t::const_iterator x_iter, y_iter;
+//    std::tie(x_iter, y_iter) = std::mismatch(x.begin(), x.end(), y.begin());
+//    if ((x_iter == x.end()) && (y_iter == y.end())) return true;
+//  }
+//  return false;
+//}
 
 
 /**
  * @brief add an edge into the graph
  */
-void explorer_graph::add_edge(ADDRINT ins_a_addr, ADDRINT ins_b_addr,
+auto explorer_graph::add_edge(ADDRINT ins_a_addr, ADDRINT ins_b_addr,
                               const path_code_t& edge_path_code,
-                              const addrint_value_map_t& edge_addrs_values)
+                              const addrint_value_map_t& edge_addrs_values) -> void
 {
 //  tfm::format(std::cerr, "add edge <%s -> %s>\n", addrint_to_hexstring(ins_a_addr),
 //              addrint_to_hexstring(ins_b_addr));
@@ -111,6 +110,17 @@ void explorer_graph::add_edge(ADDRINT ins_a_addr, ADDRINT ins_b_addr,
     // verify if there exist an edge to b
     if (boost::target(*out_edge_iter, internal_exp_graph) == ins_b_desc)
     {
+      // lambda to verify if two path codes are equal
+      auto path_codes_are_equal = [](const path_code_t& x, const path_code_t& y) -> bool
+      {
+        if (x.size() == y.size())
+        {
+          path_code_t::const_iterator x_iter, y_iter;
+          std::tie(x_iter, y_iter) = std::mismatch(x.begin(), x.end(), y.begin());
+          if ((x_iter == x.end()) && (y_iter == y.end())) return true;
+        }
+        return false;
+      };
       // exist, then verify if the path code of this edge is also the input path code
       if (path_codes_are_equal(edge_path_code, internal_exp_graph[*out_edge_iter].first))
       {
@@ -121,6 +131,7 @@ void explorer_graph::add_edge(ADDRINT ins_a_addr, ADDRINT ins_b_addr,
       }
     }
   }
+
   // there exists no such edge with the path code, then add it as a new edge
   if (out_edge_iter == last_out_edge_iter)
   {
@@ -241,7 +252,7 @@ public:
  * @brief save the graph to a dot file
  *
  */
-void explorer_graph::save_to_file(std::string filename)
+auto explorer_graph::save_to_file(std::string filename) -> void
 {
 //  exp_vertex_isolated_prunner vertex_prunner;
   boost::filtered_graph<exp_graph, boost::keep_all, exp_vertex_isolated_prunner>

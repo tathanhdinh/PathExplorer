@@ -11,8 +11,8 @@ checkpoint::checkpoint(UINT32 existing_exec_order, CONTEXT* p_ctxt,
 
   this->exec_order = existing_exec_order;
 
-  UINT32 mem_offset; UINT8 single_byte;
-  for (mem_offset = 0; mem_offset < input_mem_read_size; ++mem_offset)
+  /*UINT32 mem_offset;*/ UINT8 single_byte;
+  for (auto mem_offset = 0; mem_offset < input_mem_read_size; ++mem_offset)
   {
     PIN_SafeCopy(&single_byte,
                  reinterpret_cast<UINT8*>(input_mem_read_addr + mem_offset), sizeof(UINT8));
@@ -27,7 +27,7 @@ checkpoint::checkpoint(UINT32 existing_exec_order, CONTEXT* p_ctxt,
 void checkpoint::mem_write_tracking(ADDRINT mem_addr, UINT32 mem_size)
 {
   UINT8 single_byte;
-  for (UINT32 offset = 0; offset < mem_size; ++offset)
+  for (/*UINT32*/auto offset = 0; offset < mem_size; ++offset)
   {
     // this address is written for the first time,
     if (mem_written_log.find(mem_addr + offset) == mem_written_log.end())
@@ -53,7 +53,7 @@ static inline void generic_restore(UINT32& existing_exec_order, UINT32 checkpoin
   existing_exec_order = checkpoint_exec_order - 1;
 
   // restore values of written memory addresses
-  addrint_value_map_t::iterator mem_iter = checkpoint_mem_written_log.begin();
+  /*addrint_value_map_t::iterator*/auto mem_iter = checkpoint_mem_written_log.begin();
   for (; mem_iter != checkpoint_mem_written_log.end(); ++mem_iter)
   {
     PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_iter->first), &mem_iter->second, sizeof(UINT8));

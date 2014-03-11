@@ -21,18 +21,19 @@
 
 namespace tainting
 {
-extern void initialize                  ();
+extern auto initialize                ()                                            -> void;
 
-extern VOID kernel_mapped_instruction   (ADDRINT ins_addr, THREADID thread_id);
+extern auto kernel_mapped_instruction (ADDRINT ins_addr, THREADID thread_id)        -> VOID;
 
-extern VOID generic_instruction         (ADDRINT ins_addr, THREADID thread_id);
+extern auto generic_instruction       (ADDRINT ins_addr, THREADID thread_id)        -> VOID;
 
-extern VOID mem_read_instruction        (ADDRINT ins_addr, ADDRINT mem_read_addr,
-                                         UINT32 mem_read_size, CONTEXT* p_ctxt, THREADID thread_id);
+extern auto mem_read_instruction      (ADDRINT ins_addr, ADDRINT mem_read_addr,
+                                       UINT32 mem_read_size, CONTEXT* p_ctxt,
+                                       THREADID thread_id)                          -> VOID;
 
-extern VOID mem_write_instruction       (ADDRINT ins_addr, ADDRINT mem_written_addr,
-                                         UINT32 mem_written_size, THREADID thread_id);
+extern auto mem_write_instruction     (ADDRINT ins_addr, ADDRINT mem_written_addr,
+                                       UINT32 mem_written_size, THREADID thread_id) -> VOID;
 
-extern VOID graphical_propagation       (ADDRINT ins_addr, THREADID thread_id);
+extern auto graphical_propagation     (ADDRINT ins_addr, THREADID thread_id)        -> VOID;
 } // end of tainting namespace
 #endif

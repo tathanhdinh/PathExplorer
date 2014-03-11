@@ -49,7 +49,8 @@ UINT64                  executed_ins_number;
 UINT64                  econed_ins_number;
 
 time_t                  start_time;
-time_t                  stop_time;
+decltype(start_time)    stop_time;
+//time_t                  stop_time;
 
 std::ofstream           log_file;
 

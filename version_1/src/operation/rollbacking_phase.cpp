@@ -32,7 +32,7 @@ static input_generation_mode    gen_mode;
 
 namespace rollbacking
 {
-static inline void initialize_values_at_active_modified_addrs()
+static inline auto initialize_values_at_active_modified_addrs() -> void
 {
   active_modified_addrs_values.clear(); /*input_on_active_modified_addrs.clear();*/
   /*addrint_set_t::iterator*/auto addr_iter = active_modified_addrs.begin();
@@ -327,7 +327,6 @@ VOID generic_instruction(ADDRINT ins_addr, THREADID thread_id)
 //                                 ins_at_order[current_exec_order]->address, new_path_code,
 //                                 input_on_active_modified_addrs);
 #endif
-
           rollback();
         }
       }

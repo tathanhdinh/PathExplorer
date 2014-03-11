@@ -16,7 +16,7 @@
 
 /*================================================================================================*/
 
-static inline void exec_tainting_phase(INS& ins, ptr_instruction_t examined_ins)
+static inline auto exec_tainting_phase(INS& ins, ptr_instruction_t examined_ins) -> void
 {
   /* taint logging */
   if (examined_ins->is_mapped_from_kernel)
@@ -65,7 +65,7 @@ static inline void exec_tainting_phase(INS& ins, ptr_instruction_t examined_ins)
 /**
  * @brief instrument codes executed in rollbacking phase
  */
-static inline void exec_rollbacking_phase(INS& ins, ptr_instruction_t examined_ins)
+static inline auto exec_rollbacking_phase(INS& ins, ptr_instruction_t examined_ins) -> void
 {
 //  if (examined_ins->is_mapped_from_kernel)
 //  {
@@ -108,7 +108,7 @@ static inline void exec_rollbacking_phase(INS& ins, ptr_instruction_t examined_i
  * 
  * @param ins current examined instruction (data is not used)
  */
-VOID ins_instrumenter(INS ins, VOID *data)
+auto ins_instrumenter(INS ins, VOID *data) -> VOID
 {
   if (current_running_phase != capturing_phase)
   {
@@ -162,7 +162,7 @@ VOID ins_instrumenter(INS ins, VOID *data)
 /**
  * @brief instrument recv and recvfrom functions
  */
-static inline void instrument_recvs(RTN& recv_function)
+static inline auto instrument_recvs(RTN& recv_function) -> void
 {
   RTN_Open(recv_function);
 
