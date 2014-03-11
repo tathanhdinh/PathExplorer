@@ -57,17 +57,17 @@ std::ofstream           log_file;
 /* ---------------------------------------------------------------------------------------------- */
 /*                                         input handler functions                                */
 /* ---------------------------------------------------------------------------------------------- */
-KNOB<UINT32> max_local_rollback       (KNOB_MODE_WRITEONCE, "pintool", "r", "7000",
-                                       "specify the maximum local number of rollback" );
+KNOB<UINT32> max_local_rollback_knob       (KNOB_MODE_WRITEONCE, "pintool", "r", "7000",
+                                            "specify the maximum local number of rollback" );
 
-KNOB<UINT32> max_total_rollback       (KNOB_MODE_WRITEONCE, "pintool", "t", "4000000000",
-                                       "specify the maximum total number of rollback" );
+KNOB<UINT32> max_total_rollback_knob       (KNOB_MODE_WRITEONCE, "pintool", "t", "90000",
+                                            "specify the maximum total number of rollback" );
 
-KNOB<UINT32> max_trace_length         (KNOB_MODE_WRITEONCE, "pintool", "l", "100",
-                                       "specify the length of the longest trace" );
+KNOB<UINT32> max_trace_length_knob         (KNOB_MODE_WRITEONCE, "pintool", "l", "100",
+                                           "specify the length of the longest trace" );
 
-KNOB<UINT32> interested_input_order   (KNOB_MODE_WRITEONCE, "pintool", "i", "1",
-                                       "specify the order of the treated input");
+KNOB<UINT32> interested_input_order_knob   (KNOB_MODE_WRITEONCE, "pintool", "i", "1",
+                                            "specify the order of the treated input");
 
 /* ---------------------------------------------------------------------------------------------- */
 /*                                  basic instrumentation functions                               */
@@ -75,20 +75,18 @@ KNOB<UINT32> interested_input_order   (KNOB_MODE_WRITEONCE, "pintool", "i", "1",
 /**
  * @brief initialize input variables
  */
-VOID start_exploring(VOID *data)
+auto start_exploring(VOID *data) -> VOID
 {
-  start_time                = std::time(0);
-
-  max_trace_size            = max_trace_length.Value();
+  max_trace_size            = max_trace_length_knob.Value();
   trace_size                = 0;
   current_exec_order        = 0;
 
   total_rollback_times      = 0;
   local_rollback_times      = 0;
 
-  max_total_rollback_times  = max_total_rollback.Value();
-  max_local_rollback_times  = max_local_rollback.Value();
-  received_msg_order        = interested_input_order.Value();
+  max_total_rollback_times  = max_total_rollback_knob.Value();
+  max_local_rollback_times  = max_local_rollback_knob.Value();
+  received_msg_order        = interested_input_order_knob.Value();
   
   executed_ins_number       = 0;
   econed_ins_number         = 0;
@@ -109,13 +107,26 @@ VOID start_exploring(VOID *data)
 
   ::srand(static_cast<unsigned int>(::time(0)));
 
+  tfm::format(log_file, "total rollback %d, local rollback %d, trace depth %d, ",
+              max_total_rollback_times, max_local_rollback_times, max_trace_size);
+
 #if !defined(ENABLE_FAST_ROLLBACK)
-  tfm::format(log_file, "local rollback %d, trace depth %d, fast rollback disabled\n",
-              max_local_rollback_times, max_trace_size);
+  log_file << "fast rollback disabled, ";
+//  tfm::format(log_file, "local rollback %d, trace depth %d, fast rollback disabled\n",
+//              max_local_rollback_times, max_trace_size);
 #else
-  tfm::format(log_file, "local rollback %d, trace depth %d, fast rollback enabled\n",
-              max_local_rollback_times, max_trace_size);
+  log_file << "fast rollback enabled, ";
+//  tfm::format(log_file, "local rollback %d, trace depth %d, fast rollback enabled\n",
+//              max_local_rollback_times, max_trace_size);
 #endif
+
+#if !defined(DISABLE_FSA)
+  log_file << "FSA reconstruction enabled\n";
+#elif
+  log_file << "FSA reconstruction disabled\n";
+#endif
+
+  start_time                = std::time(0);
 
   return;
 }

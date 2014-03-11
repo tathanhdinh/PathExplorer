@@ -180,7 +180,7 @@ static inline auto instrument_recvs(RTN& recv_function) -> void
 /**
  * @brief instrument WSARecv and WSARecvFrom functions
  */
-static inline void instrument_wsarecvs(RTN& wsarecv_function)
+static inline auto instrument_wsarecvs(RTN& wsarecv_function) -> void
 {
   RTN_Open(wsarecv_function);
 
@@ -198,7 +198,7 @@ static inline void instrument_wsarecvs(RTN& wsarecv_function)
 /**
  * @brief detect loaded images
  */
-VOID image_load_instrumenter(IMG loaded_img, VOID *data)
+auto image_load_instrumenter(IMG loaded_img, VOID *data) -> VOID
 {
 #if !defined(NDEBUG)
   tfm::format(log_file, "module %s is loaded at %s\n",
@@ -207,14 +207,14 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
 
 #if defined(_WIN32) || defined(_WIN64)
   // verify if the winsock2 module is loaded
-  std::string loaded_img_full_name = IMG_Name(loaded_img);
+  /*std::string*/auto loaded_img_full_name = IMG_Name(loaded_img);
   if (loaded_img_full_name.find("WS2_32.dll") != std::string::npos)
   {
 #if !defined(NDEBUG)
     log_file << "winsock2 module is found, instrumenting message receiving functions\n";
 #endif
 
-    RTN recv_func = RTN_FindByName(loaded_img, "recv");
+    /*RTN*/auto recv_func = RTN_FindByName(loaded_img, "recv");
     if (RTN_Valid(recv_func))
     {
 #if !defined(NDEBUG)
@@ -224,7 +224,7 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
       instrument_recvs(recv_func);
     }
 
-    RTN recvfrom_func = RTN_FindByName(loaded_img, "recvfrom");
+    /*RTN*/auto recvfrom_func = RTN_FindByName(loaded_img, "recvfrom");
     if (RTN_Valid(recvfrom_func))
     {
 #if !defined(NDEBUG)
@@ -234,7 +234,7 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
       instrument_recvs(recvfrom_func);
     }
 
-    RTN wsarecv_func = RTN_FindByName(loaded_img, "WSARecv");
+    /*RTN*/auto wsarecv_func = RTN_FindByName(loaded_img, "WSARecv");
     if (RTN_Valid(wsarecv_func))
     {
 #if !defined(NDEBUG)
@@ -244,7 +244,7 @@ VOID image_load_instrumenter(IMG loaded_img, VOID *data)
       instrument_wsarecvs(wsarecv_func);
     }
 
-    RTN wsarecvfrom_func = RTN_FindByName(loaded_img, "WSARecvFrom");
+    /*RTN*/auto wsarecvfrom_func = RTN_FindByName(loaded_img, "WSARecvFrom");
     if (RTN_Valid(wsarecvfrom_func))
     {
 #if !defined(NDEBUG)

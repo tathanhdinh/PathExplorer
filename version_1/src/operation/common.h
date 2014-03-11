@@ -52,7 +52,7 @@ extern UINT32                         trace_size;
 extern UINT32                         max_total_rollback_times;
 extern UINT32                         max_local_rollback_times;
 extern UINT32                         max_trace_size;
-extern UINT32                         used_rollback_times;
+//extern UINT32                         used_rollback_times;
 
 extern ptr_checkpoints_t              saved_checkpoints;
 
@@ -84,9 +84,9 @@ extern running_phase                  current_running_phase;
 extern UINT64                         executed_ins_number;
 extern UINT64                         econed_ins_number;
 
-extern KNOB<UINT32>                   max_total_rollback;
-extern KNOB<UINT32>                   max_local_rollback;
-extern KNOB<UINT32>                   max_trace_length;
+extern KNOB<UINT32>                   max_total_rollback_knob;
+extern KNOB<UINT32>                   max_local_rollback_knob;
+extern KNOB<UINT32>                   max_trace_length_knob;
 
 extern std::ofstream                  log_file;
 

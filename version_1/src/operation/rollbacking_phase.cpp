@@ -52,7 +52,7 @@ static inline auto initialize_values_at_active_modified_addrs() -> void
   else
   {
     // no, set as default
-    max_rollback_num = max_local_rollback.Value();
+    max_rollback_num = max_local_rollback_knob.Value();
     gen_mode = randomized;
   }
 
@@ -115,7 +115,8 @@ static inline void get_next_active_checkpoint()
   if (active_checkpoint)
   {
     // exist, then find the next checkpoint in the checkpoint list of the current active CFI
-    auto nx_chkpnt_iter = active_cfi->checkpoints.begin(); auto chkpnt_iter = nx_chkpnt_iter;
+    auto nx_chkpnt_iter = active_cfi->checkpoints.begin();
+    decltype(nx_chkpnt_iter) chkpnt_iter = nx_chkpnt_iter;
     while (++nx_chkpnt_iter != active_cfi->checkpoints.end())
     {
       if (chkpnt_iter->first->exec_order == active_checkpoint->exec_order)
@@ -147,8 +148,8 @@ static inline void get_next_active_checkpoint()
 /**
  * @brief calculate an input for the new tainting phase
  */
-static inline void calculate_tainting_fresh_input(ptr_uint8_t selected_input,
-                                                  addrint_value_map_t& modified_addrs_with_values)
+static inline auto calculate_tainting_fresh_input(ptr_uint8_t selected_input,
+                                                  addrint_value_map_t& modified_addrs_with_values) -> void
 {
   // make a copy of the selected input
 //  tainting_input.reset(new UINT8[received_msg_size]);
@@ -169,36 +170,49 @@ static inline void calculate_tainting_fresh_input(ptr_uint8_t selected_input,
 /**
  * @brief prepare_new_tainting_phase
  */
-static inline void prepare_new_tainting_phase()
+static inline auto prepare_new_tainting_phase() -> void
 {
-  // verify if there exists a resolved but unexplored CFI
+
   /*ptr_cond_direct_inss_t::iterator*/auto cfi_iter = detected_input_dep_cfis.begin();
+  // verify if there exists a resolved but unexplored CFI
   for (; cfi_iter != detected_input_dep_cfis.end(); ++cfi_iter)
   {
     if ((*cfi_iter)->is_resolved && !(*cfi_iter)->is_explored) break;
   }
   if (cfi_iter != detected_input_dep_cfis.end())
   {
-    // exists, then set the CFI as explored
-    exploring_cfi = *cfi_iter; exploring_cfi->is_explored = true;
-    // calculate a new input for the next tainting phase
-    calculate_tainting_fresh_input(exploring_cfi->fresh_input,
-                                   exploring_cfi->second_input_projections[0]);
+    // exists, then verify if the number of used rollback time has exceeded its bounded value
+    if (total_rollback_times >= max_total_rollback_times)
+    {
+      // exceeded, then stop exploring
+#if !defined(NDEBUG)
+      log_file << "stop exploring, number of used rollbacks exceeds its bounded value\n";
+#endif
+      PIN_ExitApplication(0);
+    }
+    else
+    {
+      // not exceeded yet, then set the CFI as explored
+      exploring_cfi = *cfi_iter; exploring_cfi->is_explored = true;
+      // calculate a new input for the next tainting phase
+      calculate_tainting_fresh_input(exploring_cfi->fresh_input,
+                                     exploring_cfi->second_input_projections[0]);
 
-    // initialize new tainting phase
-    current_running_phase = tainting_phase; tainting::initialize();
+      // initialize new tainting phase
+      current_running_phase = tainting_phase; tainting::initialize();
 
 #if !defined(NDEBUG)
-    tfm::format(log_file, "%s\nexplore the CFI %s at %d, start tainting\n",
-                "=================================================================================",
-                exploring_cfi->disassembled_name, exploring_cfi->exec_order);
-    log_file.flush();
+      tfm::format(log_file, "%s\nexplore the CFI %s at %d, start tainting\n",
+                  "=================================================================================",
+                  exploring_cfi->disassembled_name, exploring_cfi->exec_order);
+      log_file.flush();
 #endif
 
-    // rollback to the first checkpoint with the new input
-    PIN_RemoveInstrumentation();
-    rollback_with_new_input(first_checkpoint, current_exec_order, received_msg_addr,
-                            received_msg_size, /*tainting_input.get()*/fresh_input.get());
+      // rollback to the first checkpoint with the new input
+      PIN_RemoveInstrumentation();
+      rollback_with_new_input(first_checkpoint, current_exec_order, received_msg_addr,
+                              received_msg_size, /*tainting_input.get()*/fresh_input.get());
+    }
   }
   else
   {
@@ -241,7 +255,7 @@ static inline void prepare_new_tainting_phase()
  * @param ins_addr: the address of the current examined instruction.
  * @return no return value.
  */
-VOID generic_instruction(ADDRINT ins_addr, THREADID thread_id)
+auto generic_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
 {
   if (thread_id == traced_thread_id)
   {
@@ -340,7 +354,7 @@ VOID generic_instruction(ADDRINT ins_addr, THREADID thread_id)
 /**
  * @brief control_flow_instruction
  */
-VOID control_flow_instruction(ADDRINT ins_addr, THREADID thread_id)
+auto control_flow_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
 {
 //  ptr_cond_direct_ins_t current_cfi;
 
@@ -437,8 +451,8 @@ VOID control_flow_instruction(ADDRINT ins_addr, THREADID thread_id)
 /**
  * @brief tracking instructions that write memory
  */
-VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length,
-                           THREADID thread_id)
+auto mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length,
+                           THREADID thread_id) -> VOID
 {
   if (thread_id == traced_thread_id)
   {
@@ -474,12 +488,12 @@ VOID mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length
 /**
  * @brief initialize_rollbacking_phase
  */
-void initialize(UINT32 trace_length_limit)
+auto initialize(UINT32 trace_length_limit) -> void
 {
   // reinitialize some local variables
   active_cfi.reset(); active_checkpoint.reset(); first_checkpoint = saved_checkpoints[0];
-  active_modified_addrs.clear(); tainted_trace_length = trace_length_limit;
-  used_rollback_num = 0; max_rollback_num = max_local_rollback.Value(); gen_mode = randomized;
+  active_modified_addrs.clear(); tainted_trace_length = trace_length_limit; used_rollback_num = 0;
+  max_rollback_num = max_local_rollback_knob.Value(); gen_mode = randomized;
 
 //  // keep a fresh copy of input at this rollbacking phase
 //  fresh_input.reset(new UINT8[received_msg_size]);

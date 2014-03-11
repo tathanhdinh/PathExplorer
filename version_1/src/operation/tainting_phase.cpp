@@ -41,8 +41,8 @@ public:
  */
 static inline auto determine_cfi_input_dependency() -> void
 {
-  df_vertex_iter vertex_iter, last_vertex_iter;
-//  df_vertex_iter last_vertex_iter;
+//  df_vertex_iter vertex_iter, last_vertex_iter;
+  df_vertex_iter last_vertex_iter;
   df_bfs_visitor df_visitor;
 //  std::vector<df_edge_desc>::iterator visited_edge_iter;
 
@@ -52,27 +52,31 @@ static inline auto determine_cfi_input_dependency() -> void
 //  ptr_cond_direct_ins_t visited_cfi;
 
   // get the set of vertices in the tainting graph
-  std::tie(vertex_iter, last_vertex_iter) = boost::vertices(dta_graph);
+//  std::tie(vertex_iter, last_vertex_iter) = boost::vertices(dta_graph);
   // for each vertice of the tainting graph
-  for (; vertex_iter != last_vertex_iter; ++vertex_iter)
+
+  decltype(last_vertex_iter) first_vertex_iter;
+  std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(dta_graph);
+  std::for_each(first_vertex_iter, last_vertex_iter,
+                [df_visitor](decltype(*first_vertex_iter) vertex_desc)
   {
     // if it represents some memory address
-    if (dta_graph[*vertex_iter]->value.type() == typeid(ADDRINT))
+    if (dta_graph[vertex_desc]->value.type() == typeid(ADDRINT))
     {
       // and this memory address belongs to the input
-      auto mem_addr = boost::get<ADDRINT>(dta_graph[*vertex_iter]->value);
+      auto mem_addr = boost::get<ADDRINT>(dta_graph[vertex_desc]->value);
       if ((received_msg_addr <= mem_addr) && (mem_addr < received_msg_addr + received_msg_size))
       {
         // take a BFS from this vertice
         visited_edges.clear();
-        boost::breadth_first_search(dta_graph, *vertex_iter, boost::visitor(df_visitor));
+        boost::breadth_first_search(dta_graph, vertex_desc, boost::visitor(df_visitor));
 
         // for each visited edge
-        for (auto visited_edge_iter = visited_edges.begin();
-             visited_edge_iter != visited_edges.end(); ++visited_edge_iter)
+        std::for_each(visited_edges.begin(), visited_edges.end(),
+                      [mem_addr](df_edge_desc visited_edge_desc)
         {
           // the value of the edge is the execution order of the corresponding instruction
-          auto visited_edge_exec_order = dta_graph[*visited_edge_iter];
+          auto visited_edge_exec_order = dta_graph[visited_edge_desc];
           // consider only the instruction that is beyond the exploring CFI
           if (!exploring_cfi ||
               (exploring_cfi && (visited_edge_exec_order > exploring_cfi->exec_order)))
@@ -90,10 +94,76 @@ static inline auto determine_cfi_input_dependency() -> void
 //#endif
             }
           }
-        }
+        });
+
+//        // for each visited edge
+//        for (auto visited_edge_iter = visited_edges.begin();
+//             visited_edge_iter != visited_edges.end(); ++visited_edge_iter)
+//        {
+//          // the value of the edge is the execution order of the corresponding instruction
+//          auto visited_edge_exec_order = dta_graph[*visited_edge_iter];
+//          // consider only the instruction that is beyond the exploring CFI
+//          if (!exploring_cfi ||
+//              (exploring_cfi && (visited_edge_exec_order > exploring_cfi->exec_order)))
+//          {
+//            // and is some CFI
+//            if (ins_at_order[visited_edge_exec_order]->is_cond_direct_cf)
+//            {
+//              // then this CFI depends on the value of the memory address
+//              auto visited_cfi = std::static_pointer_cast<cond_direct_instruction>(
+//                    ins_at_order[visited_edge_exec_order]);
+//              visited_cfi->input_dep_addrs.insert(mem_addr);
+////#if !defined(NDEBUG)
+////              tfm::format(log_file, "the cfi at %d depends on the address %s\n",
+////                          visited_cfi->exec_order, addrint_to_hexstring(mem_addr));
+////#endif
+//            }
+//          }
+//        }
       }
     }
-  }
+  });
+
+//  for (; vertex_iter != last_vertex_iter; ++vertex_iter)
+//  {
+//    // if it represents some memory address
+//    if (dta_graph[*vertex_iter]->value.type() == typeid(ADDRINT))
+//    {
+//      // and this memory address belongs to the input
+//      auto mem_addr = boost::get<ADDRINT>(dta_graph[*vertex_iter]->value);
+//      if ((received_msg_addr <= mem_addr) && (mem_addr < received_msg_addr + received_msg_size))
+//      {
+//        // take a BFS from this vertice
+//        visited_edges.clear();
+//        boost::breadth_first_search(dta_graph, *vertex_iter, boost::visitor(df_visitor));
+
+//        // for each visited edge
+//        for (auto visited_edge_iter = visited_edges.begin();
+//             visited_edge_iter != visited_edges.end(); ++visited_edge_iter)
+//        {
+//          // the value of the edge is the execution order of the corresponding instruction
+//          auto visited_edge_exec_order = dta_graph[*visited_edge_iter];
+//          // consider only the instruction that is beyond the exploring CFI
+//          if (!exploring_cfi ||
+//              (exploring_cfi && (visited_edge_exec_order > exploring_cfi->exec_order)))
+//          {
+//            // and is some CFI
+//            if (ins_at_order[visited_edge_exec_order]->is_cond_direct_cf)
+//            {
+//              // then this CFI depends on the value of the memory address
+//              auto visited_cfi = std::static_pointer_cast<cond_direct_instruction>(
+//                    ins_at_order[visited_edge_exec_order]);
+//              visited_cfi->input_dep_addrs.insert(mem_addr);
+////#if !defined(NDEBUG)
+////              tfm::format(log_file, "the cfi at %d depends on the address %s\n",
+////                          visited_cfi->exec_order, addrint_to_hexstring(mem_addr));
+////#endif
+//            }
+//          }
+//        }
+//      }
+//    }
+//  }
 
   return;
 }
