@@ -570,8 +570,7 @@ static inline auto source_variables(UINT32 ins_exec_order) -> std::set<df_vertex
     if (outer_vertex_iter == dta_outer_vertices.end())
     {
       auto new_vertex_desc = boost::add_vertex(*src_operand_iter, dta_graph);
-      dta_outer_vertices.insert(new_vertex_desc);
-      src_vertex_descs.insert(new_vertex_desc);
+      dta_outer_vertices.insert(new_vertex_desc); src_vertex_descs.insert(new_vertex_desc);
     }
   }
 
@@ -592,8 +591,10 @@ static inline auto destination_variables(UINT32 idx) -> std::set<df_vertex_desc>
 //  df_vertex_desc_set::iterator next_vertex_iter;
 //  std::set<ptr_operand_t>::iterator dst_operand_iter;
 
-  for (auto dst_operand_iter = ins_at_order[idx]->dst_operands.begin();
-       dst_operand_iter != ins_at_order[idx]->dst_operands.end(); ++dst_operand_iter)
+//  for (auto dst_operand_iter = ins_at_order[idx]->dst_operands.begin();
+//       dst_operand_iter != ins_at_order[idx]->dst_operands.end(); ++dst_operand_iter)
+  std::for_each(ins_at_order[idx]->dst_operands.begin(), ins_at_order[idx]->dst_operands.end(),
+                [&](ptr_operand_t dst_operand)
   {
     // verify if the current target operand is
     auto outer_vertex_iter = dta_outer_vertices.begin();
@@ -603,11 +604,11 @@ static inline auto destination_variables(UINT32 idx) -> std::set<df_vertex_desc>
       ++next_vertex_iter;
 
       // found in the outer interface
-      if (((*dst_operand_iter)->value.type() == dta_graph[*outer_vertex_iter]->value.type())
-          && ((*dst_operand_iter)->name == dta_graph[*outer_vertex_iter]->name))
+      if ((/*(*dst_operand_iter)*/dst_operand->value.type() == dta_graph[*outer_vertex_iter]->value.type())
+          && (/*(*dst_operand_iter)*/dst_operand->name == dta_graph[*outer_vertex_iter]->name))
       {
         // then insert the current target operand into the graph
-        auto new_vertex_desc = boost::add_vertex(*dst_operand_iter, dta_graph);
+        auto new_vertex_desc = boost::add_vertex(/**dst_operand_iter*/dst_operand, dta_graph);
 
         // and modify the outer interface by replacing the old vertex with the new vertex
         dta_outer_vertices.erase(outer_vertex_iter);
@@ -622,14 +623,14 @@ static inline auto destination_variables(UINT32 idx) -> std::set<df_vertex_desc>
     if (outer_vertex_iter == dta_outer_vertices.end())
     {
       // then insert the current target operand into the graph
-      auto new_vertex_desc = boost::add_vertex(*dst_operand_iter, dta_graph);
+      auto new_vertex_desc = boost::add_vertex(/**dst_operand_iter*/dst_operand, dta_graph);
 
       // and modify the outer interface by insert the new vertex
       dta_outer_vertices.insert(new_vertex_desc);
 
       dst_vertex_descs.insert(new_vertex_desc);
     }
-  }
+  });
 
   return dst_vertex_descs;
 }
@@ -651,15 +652,25 @@ auto graphical_propagation(ADDRINT ins_addr, THREADID thread_id) -> VOID
 //    std::set<df_vertex_desc>::iterator dst_vertex_desc_iter;
 
     // insert the edges between each pair (source, destination) into the tainting graph
-    for (auto src_vertex_desc_iter = src_vertex_descs.begin();
-         src_vertex_desc_iter != src_vertex_descs.end(); ++src_vertex_desc_iter)
+//    for (auto src_vertex_desc_iter = src_vertex_descs.begin();
+//         src_vertex_desc_iter != src_vertex_descs.end(); ++src_vertex_desc_iter)
+//    {
+//      for (auto dst_vertex_desc_iter = dst_vertex_descs.begin();
+//           dst_vertex_desc_iter != dst_vertex_descs.end(); ++dst_vertex_desc_iter)
+//      {
+//        boost::add_edge(*src_vertex_desc_iter, *dst_vertex_desc_iter, current_exec_order, dta_graph);
+//      }
+//    }
+
+    std::for_each(src_vertex_descs.begin(), src_vertex_descs.end(),
+                  [/*dst_vertex_descs*/&](df_vertex_desc src_desc)
     {
-      for (auto dst_vertex_desc_iter = dst_vertex_descs.begin();
-           dst_vertex_desc_iter != dst_vertex_descs.end(); ++dst_vertex_desc_iter)
+      std::for_each(dst_vertex_descs.begin(), dst_vertex_descs.end(),
+                    [/*src_desc*/&](df_vertex_desc dst_desc)
       {
-        boost::add_edge(*src_vertex_desc_iter, *dst_vertex_desc_iter, current_exec_order, dta_graph);
-      }
-    }
+        boost::add_edge(src_desc, dst_desc, current_exec_order, dta_graph);
+      });
+    });
   }
 
   return;
