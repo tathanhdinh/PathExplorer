@@ -200,63 +200,67 @@ static inline auto instrument_wsarecvs(RTN& wsarecv_function) -> void
  */
 auto image_load_instrumenter(IMG loaded_img, VOID *data) -> VOID
 {
+  if (current_running_phase == capturing_phase)
+  {
 #if !defined(NDEBUG)
-  tfm::format(log_file, "module %s is loaded at %s\n",
-              IMG_Name(loaded_img), addrint_to_hexstring(IMG_StartAddress(loaded_img)));
+    tfm::format(log_file, "module %s is loaded at %s\n",
+                IMG_Name(loaded_img), addrint_to_hexstring(IMG_StartAddress(loaded_img)));
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)
-  // verify if the winsock2 module is loaded
-  /*std::string*/auto loaded_img_full_name = IMG_Name(loaded_img);
-  if (loaded_img_full_name.find("WS2_32.dll") != std::string::npos)
-  {
-#if !defined(NDEBUG)
-    log_file << "winsock2 module is found, instrumenting message receiving functions\n";
-#endif
-
-    /*RTN*/auto recv_func = RTN_FindByName(loaded_img, "recv");
-    if (RTN_Valid(recv_func))
+    // verify if the winsock2 module is loaded
+    /*std::string*/auto loaded_img_full_name = IMG_Name(loaded_img);
+    if (loaded_img_full_name.find("WS2_32.dll") != std::string::npos)
     {
 #if !defined(NDEBUG)
-      tfm::format(log_file, "recv is located at %s\n",
-                  addrint_to_hexstring(RTN_Address(recv_func)));
+      log_file << "winsock2 module is found, instrumenting message receiving functions\n";
 #endif
-      instrument_recvs(recv_func);
-    }
 
-    /*RTN*/auto recvfrom_func = RTN_FindByName(loaded_img, "recvfrom");
-    if (RTN_Valid(recvfrom_func))
-    {
+      /*RTN*/auto recv_func = RTN_FindByName(loaded_img, "recv");
+      if (RTN_Valid(recv_func))
+      {
 #if !defined(NDEBUG)
-      tfm::format(log_file, "recvfrom is located at %s\n",
-                  addrint_to_hexstring(RTN_Address(recvfrom_func)));
+        tfm::format(log_file, "recv is located at %s\n",
+                    addrint_to_hexstring(RTN_Address(recv_func)));
 #endif
-      instrument_recvs(recvfrom_func);
-    }
+        instrument_recvs(recv_func);
+      }
 
-    /*RTN*/auto wsarecv_func = RTN_FindByName(loaded_img, "WSARecv");
-    if (RTN_Valid(wsarecv_func))
-    {
+      /*RTN*/auto recvfrom_func = RTN_FindByName(loaded_img, "recvfrom");
+      if (RTN_Valid(recvfrom_func))
+      {
 #if !defined(NDEBUG)
-      tfm::format(log_file, "WSARecv is located at %s\n",
-                  addrint_to_hexstring(RTN_Address(wsarecv_func)));
+        tfm::format(log_file, "recvfrom is located at %s\n",
+                    addrint_to_hexstring(RTN_Address(recvfrom_func)));
 #endif
-      instrument_wsarecvs(wsarecv_func);
-    }
+        instrument_recvs(recvfrom_func);
+      }
 
-    /*RTN*/auto wsarecvfrom_func = RTN_FindByName(loaded_img, "WSARecvFrom");
-    if (RTN_Valid(wsarecvfrom_func))
-    {
+      /*RTN*/auto wsarecv_func = RTN_FindByName(loaded_img, "WSARecv");
+      if (RTN_Valid(wsarecv_func))
+      {
 #if !defined(NDEBUG)
-      tfm::format(log_file, "WSARecvFrom is located at %s\n",
-                  addrint_to_hexstring(RTN_Address(wsarecvfrom_func)));
+        tfm::format(log_file, "WSARecv is located at %s\n",
+                    addrint_to_hexstring(RTN_Address(wsarecv_func)));
 #endif
-      instrument_wsarecvs(wsarecvfrom_func);
-    }
+        instrument_wsarecvs(wsarecv_func);
+      }
 
-    current_running_phase = capturing_phase; capturing::initialize();
+      /*RTN*/auto wsarecvfrom_func = RTN_FindByName(loaded_img, "WSARecvFrom");
+      if (RTN_Valid(wsarecvfrom_func))
+      {
+#if !defined(NDEBUG)
+        tfm::format(log_file, "WSARecvFrom is located at %s\n",
+                    addrint_to_hexstring(RTN_Address(wsarecvfrom_func)));
+#endif
+        instrument_wsarecvs(wsarecvfrom_func);
+      }
+
+      current_running_phase = capturing_phase; capturing::initialize();
+    }
+#endif // defined(_WIN32) || defined(_WIN64)
   }
-#endif
+
   return;
 }
 

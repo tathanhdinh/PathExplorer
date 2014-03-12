@@ -48,15 +48,15 @@ public:
   bool has_mem_read2;
   bool has_real_rep;
 
-  std::set<ptr_operand_t> src_operands;
-  std::set<ptr_operand_t> dst_operands;
+  /*std::set<ptr_operand_t>*/ptr_operand_set_t src_operands;
+  /*std::set<ptr_operand_t>*/ptr_operand_set_t dst_operands;
 
 public:
   instruction();
   instruction(const INS& ins);
 };
 
-typedef std::shared_ptr<instruction>         ptr_instruction_t;
+typedef std::shared_ptr<instruction>          ptr_instruction_t;
 typedef std::map<ADDRINT, ptr_instruction_t>  addr_ins_map_t;
 typedef std::map<UINT32, ptr_instruction_t>   order_ins_map_t;
 

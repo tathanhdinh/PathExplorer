@@ -46,6 +46,7 @@ public:
 };
 
 typedef std::shared_ptr<operand>                            ptr_operand_t;
+typedef std::set<ptr_operand_t>                             ptr_operand_set_t;
 typedef ptr_operand_t                                       df_vertex;
 typedef UINT32                                              df_edge;
 typedef boost::adjacency_list<boost::listS, boost::vecS,

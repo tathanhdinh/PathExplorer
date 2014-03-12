@@ -85,22 +85,25 @@ VOID before_recvs(ADDRINT msg_addr, THREADID thread_id)
  */
 VOID after_recvs(UINT32 msg_length, THREADID thread_id)
 {
-  if (function_called && traced_thread_is_fixed && (traced_thread_id == thread_id))
+  if (traced_thread_is_fixed && (traced_thread_id == thread_id))
   {
+    if (function_called)
+    {
 #if !defined(NDEBUG)
-    tfm::format(log_file, "message is received from recv or recvfrom at thread id %d\n", thread_id);
+      tfm::format(log_file, "message is received from recv or recvfrom at thread id %d\n", thread_id);
 #endif
-    function_called = false; received_msg_size = msg_length;
-    handle_received_message();
+      function_called = false; received_msg_size = msg_length;
+      handle_received_message();
+    }
   }
-  else
-  {
-#if !defined(NDEBUG)
-    tfm::format(log_file, "fatal: message receiving function returns without being called or the thread id is changed from %d to %d\n",
-                traced_thread_id, thread_id);
-#endif
-    PIN_ExitApplication(1);
-  }
+//  else
+//  {
+//#if !defined(NDEBUG)
+//    tfm::format(log_file, "fatal: message receiving function returns without being called or the thread id is changed from %d to %d\n",
+//                traced_thread_id, thread_id);
+//#endif
+//    PIN_ExitApplication(1);
+//  }
   return;
 }
 
@@ -128,21 +131,25 @@ VOID after_wsarecvs(THREADID thread_id)
 {
   if (function_called && traced_thread_is_fixed && (traced_thread_id == thread_id))
   {
+    if (function_called)
+    {
 #if !defined(NDEBUG)
-    tfm::format(log_file, "message is received from WSARecv or WSARecvFrom at thread id %d\n", thread_id);
+      tfm::format(log_file, "message is received from WSARecv or WSARecvFrom at thread id %d\n",
+                  thread_id);
 #endif
-    function_called = false;
-    received_msg_size = (reinterpret_cast<windows::LPWSABUF>(received_msg_struct_addr))->len;
-    handle_received_message();
+      function_called = false;
+      received_msg_size = (reinterpret_cast<windows::LPWSABUF>(received_msg_struct_addr))->len;
+      handle_received_message();
+    }
   }
-  else
-  {
-#if !defined(NDEBUG)
-    tfm::format(log_file, "fatal: message receiving function returns without being called or the thread id is changed from %d to %d\n",
-                traced_thread_id, thread_id);
-#endif
-    PIN_ExitApplication(1);
-  }
+//  else
+//  {
+//#if !defined(NDEBUG)
+//    tfm::format(log_file, "fatal: message receiving function returns without being called or the thread id is changed from %d to %d\n",
+//                traced_thread_id, thread_id);
+//#endif
+//    PIN_ExitApplication(1);
+//  }
   return;
 }
 #elif defined(__gnu_linux__)

@@ -413,7 +413,8 @@ auto generic_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
   {
     // verify if the execution order exceeds the limit trace length and the executed
     // instruction is always in user-space
-    if ((current_exec_order < max_trace_size) && !ins_at_addr[ins_addr]->is_mapped_from_kernel)
+    if ((current_exec_order < max_trace_size) && !ins_at_addr[ins_addr]->is_mapped_from_kernel /*&&
+        !ins_at_addr[ins_addr]->is_in_recv_funcs*/)
     {
       // does not exceed
       current_exec_order++;
@@ -455,7 +456,8 @@ auto generic_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
     }
     else
     {
-      // exceed
+      // the execution order exceed the maximal trace size, the instruction is mapped from the
+      // kernel or located in some message receiving function
       prepare_new_rollbacking_phase();
     }
   }

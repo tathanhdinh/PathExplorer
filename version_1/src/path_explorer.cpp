@@ -146,13 +146,20 @@ auto stop_exploring (INT32 code, VOID *data) -> VOID
 #endif
   
   UINT32 resolved_cfi_num = 0, singular_cfi_num = 0;
-  /*ptr_cond_direct_inss_t::iterator*/auto cfi_iter = detected_input_dep_cfis.begin();
-  for (; cfi_iter != detected_input_dep_cfis.end(); ++cfi_iter)
+  std::for_each(detected_input_dep_cfis.begin(), detected_input_dep_cfis.end(),
+                [&](ptr_cond_direct_ins_t cfi)
   {
-    if ((*cfi_iter)->is_resolved) resolved_cfi_num++;
-    if ((*cfi_iter)->is_singular) singular_cfi_num++;
-//    total_rollback_times += (*cfi_iter)->used_rollback_num;
-  }
+    if (cfi->is_resolved) resolved_cfi_num++;
+    if (cfi->is_singular) singular_cfi_num++;
+  });
+
+//  /*ptr_cond_direct_inss_t::iterator*/auto cfi_iter = detected_input_dep_cfis.begin();
+//  for (; cfi_iter != detected_input_dep_cfis.end(); ++cfi_iter)
+//  {
+//    if ((*cfi_iter)->is_resolved) resolved_cfi_num++;
+//    if ((*cfi_iter)->is_singular) singular_cfi_num++;
+////    total_rollback_times += (*cfi_iter)->used_rollback_num;
+//  }
 
   tfm::format(log_file, "%d seconds elapsed, %d rollbacks used, %d/%d/%d resolved/singular/total branches.\n",
               (stop_time - start_time), total_rollback_times, resolved_cfi_num, singular_cfi_num,
