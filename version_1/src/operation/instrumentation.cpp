@@ -10,10 +10,6 @@
 #include "tainting_phase.h"
 #include "rollbacking_phase.h"
 
-//#if defined(_WIN32) || defined(_WIN64)
-//#include <stdlib.h>
-//#endif
-
 /*================================================================================================*/
 
 static inline auto exec_tainting_phase(INS& ins, ptr_instruction_t examined_ins) -> void
@@ -67,18 +63,6 @@ static inline auto exec_tainting_phase(INS& ins, ptr_instruction_t examined_ins)
  */
 static inline auto exec_rollbacking_phase(INS& ins, ptr_instruction_t examined_ins) -> void
 {
-//  if (examined_ins->is_mapped_from_kernel)
-//  {
-//    tfm::format(log_file,
-//                "unsafe rollbacking: a kernel mapped instruction (%s %s) will be executed at %d\n",
-//                addrint_to_hexstring(examined_ins->address), examined_ins->disassembled_name,
-//                current_exec_order + 1);
-//    PIN_ExitApplication(1);
-//  }
-//  else
-//  {
-//  }
-
   INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)rollbacking::generic_instruction,
                            IARG_INST_PTR, IARG_THREAD_ID, IARG_END);
 
@@ -195,66 +179,49 @@ static inline auto instrument_wsarecvs(RTN& wsarecv_function) -> void
 }
 
 
+static inline auto instrument_function(IMG loaded_img, std::string func_name) -> void
+{
+  auto func = RTN_FindByName(loaded_img, func_name.c_str());
+  if (RTN_Valid(func))
+  {
+#if !defined(NDEBUG)
+    tfm::format(log_file, "instrumenting function %s (mapped at %s, size %d)\n", func_name,
+                addrint_to_hexstring(RTN_Address(func)), RTN_Size(func));
+#endif
+    if ((func_name == "recv") || (func_name == "recvfrom")) instrument_recvs(func);
+    else if ((func_name == "WSARecv") || (func_name == "WSARecvFrom")) instrument_wsarecvs(func);
+  }
+  else
+#if !defined(NDEBUG)
+    tfm::format(log_file, "function %s cannot found in %s\n", func_name, IMG_Name(loaded_img));
+#endif
+  return;
+}
+
+
 /**
- * @brief detect loaded images
+ * @brief detect loaded images and instrument recv, recvfrom, WSARecv, WSARecvFrom functions
  */
 auto image_load_instrumenter(IMG loaded_img, VOID *data) -> VOID
 {
   if (current_running_phase == capturing_phase)
   {
 #if !defined(NDEBUG)
-    tfm::format(log_file, "module %s is loaded at %s\n",
-                IMG_Name(loaded_img), addrint_to_hexstring(IMG_StartAddress(loaded_img)));
+    tfm::format(log_file, "module %s is mapped at %s with size %d\n",
+                IMG_Name(loaded_img), addrint_to_hexstring(IMG_StartAddress(loaded_img)),
+                IMG_SizeMapped(loaded_img));
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)
     // verify if the winsock2 module is loaded
-    /*std::string*/auto loaded_img_full_name = IMG_Name(loaded_img);
+    auto loaded_img_full_name = IMG_Name(loaded_img);
     if (loaded_img_full_name.find("WS2_32.dll") != std::string::npos)
     {
 #if !defined(NDEBUG)
       log_file << "winsock2 module is found, instrumenting message receiving functions\n";
 #endif
-
-      /*RTN*/auto recv_func = RTN_FindByName(loaded_img, "recv");
-      if (RTN_Valid(recv_func))
-      {
-#if !defined(NDEBUG)
-        tfm::format(log_file, "recv is located at %s\n",
-                    addrint_to_hexstring(RTN_Address(recv_func)));
-#endif
-        instrument_recvs(recv_func);
-      }
-
-      /*RTN*/auto recvfrom_func = RTN_FindByName(loaded_img, "recvfrom");
-      if (RTN_Valid(recvfrom_func))
-      {
-#if !defined(NDEBUG)
-        tfm::format(log_file, "recvfrom is located at %s\n",
-                    addrint_to_hexstring(RTN_Address(recvfrom_func)));
-#endif
-        instrument_recvs(recvfrom_func);
-      }
-
-      /*RTN*/auto wsarecv_func = RTN_FindByName(loaded_img, "WSARecv");
-      if (RTN_Valid(wsarecv_func))
-      {
-#if !defined(NDEBUG)
-        tfm::format(log_file, "WSARecv is located at %s\n",
-                    addrint_to_hexstring(RTN_Address(wsarecv_func)));
-#endif
-        instrument_wsarecvs(wsarecv_func);
-      }
-
-      /*RTN*/auto wsarecvfrom_func = RTN_FindByName(loaded_img, "WSARecvFrom");
-      if (RTN_Valid(wsarecvfrom_func))
-      {
-#if !defined(NDEBUG)
-        tfm::format(log_file, "WSARecvFrom is located at %s\n",
-                    addrint_to_hexstring(RTN_Address(wsarecvfrom_func)));
-#endif
-        instrument_wsarecvs(wsarecvfrom_func);
-      }
+      instrument_function(loaded_img, "recv"); instrument_function(loaded_img, "recvfrom");
+      instrument_function(loaded_img, "WSARecv"); instrument_function(loaded_img, "WSARecvFrom");
 
       current_running_phase = capturing_phase; capturing::initialize();
     }

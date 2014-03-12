@@ -112,12 +112,8 @@ auto start_exploring(VOID *data) -> VOID
 
 #if !defined(ENABLE_FAST_ROLLBACK)
   log_file << "fast rollback disabled, ";
-//  tfm::format(log_file, "local rollback %d, trace depth %d, fast rollback disabled\n",
-//              max_local_rollback_times, max_trace_size);
 #else
   log_file << "fast rollback enabled, ";
-//  tfm::format(log_file, "local rollback %d, trace depth %d, fast rollback enabled\n",
-//              max_local_rollback_times, max_trace_size);
 #endif
 
 #if !defined(DISABLE_FSA)

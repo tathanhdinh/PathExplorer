@@ -8,7 +8,11 @@ namespace capturing
 /*================================================================================================*/
 
 static UINT32   received_msg_number;
-static bool     function_called;
+static bool     recv_is_locked;
+static bool     recvfrom_is_locked;
+static bool     wsarecv_is_locked;
+static bool     wsarecvfrom_is_locked;
+
 #if defined(_WIN32) || defined(_WIN64)
 namespace windows
 {
@@ -22,9 +26,10 @@ static ADDRINT  received_msg_struct_addr;
 /**
  * @brief initialize a new capturing phase
  */
-void initialize()
+auto initialize() -> void
 {
-  function_called = false; received_msg_number = 0;
+  recv_is_locked = false; recvfrom_is_locked = false; wsarecv_is_locked = false;
+  wsarecvfrom_is_locked = false; received_msg_number = 0;
   return;
 }
 
@@ -32,7 +37,7 @@ void initialize()
 /**
  * @brief prepare switching to a new tainting phase
  */
-static inline void prepare_new_tainting_phase()
+static inline auto prepare_new_tainting_phase() -> void
 {
   // save a fresh copy of the input
   fresh_input.reset(new UINT8[received_msg_size]);
@@ -50,16 +55,13 @@ static inline void prepare_new_tainting_phase()
 }
 
 
-static inline void handle_received_message()
+static inline auto handle_received_message() -> void
 {
-  if (received_msg_size > 0)
+  if ((received_msg_size > 0) && !recv_is_locked && !wsarecv_is_locked)
   {
     received_msg_number++;
     // verify if the received message is the interesting message
-    if (received_msg_number == received_msg_order)
-    {
-      prepare_new_tainting_phase();
-    }
+    if (received_msg_number == received_msg_order) prepare_new_tainting_phase();
   }
   return;
 }
@@ -69,12 +71,12 @@ static inline void handle_received_message()
 /**
  * @brief determine the received message address of recv or recvfrom
  */
-VOID before_recvs(ADDRINT msg_addr, THREADID thread_id)
+auto before_recvs(ADDRINT msg_addr, THREADID thread_id) -> VOID
 {
-  received_msg_addr = msg_addr; function_called = true;
-  if (!traced_thread_is_fixed)
+  if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
   {
-    traced_thread_id = thread_id; traced_thread_is_fixed = true;
+    traced_thread_id = thread_id; traced_thread_is_fixed = true; received_msg_addr = msg_addr;
+    recv_is_locked = true;
   }
   return;
 }
@@ -83,27 +85,16 @@ VOID before_recvs(ADDRINT msg_addr, THREADID thread_id)
 /**
  * @brief determine the received message length of recv or recvfrom
  */
-VOID after_recvs(UINT32 msg_length, THREADID thread_id)
+auto after_recvs(UINT32 msg_length, THREADID thread_id) -> VOID
 {
-  if (traced_thread_is_fixed && (traced_thread_id == thread_id))
+  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && recv_is_locked)
   {
-    if (function_called)
-    {
 #if !defined(NDEBUG)
-      tfm::format(log_file, "message is received from recv or recvfrom at thread id %d\n", thread_id);
+      tfm::format(log_file, "message is obtained from recv or recvfrom at thread id %d\n",
+                  thread_id);
 #endif
-      function_called = false; received_msg_size = msg_length;
-      handle_received_message();
-    }
+    received_msg_size = msg_length; recv_is_locked = false; handle_received_message();
   }
-//  else
-//  {
-//#if !defined(NDEBUG)
-//    tfm::format(log_file, "fatal: message receiving function returns without being called or the thread id is changed from %d to %d\n",
-//                traced_thread_id, thread_id);
-//#endif
-//    PIN_ExitApplication(1);
-//  }
   return;
 }
 
@@ -111,14 +102,14 @@ VOID after_recvs(UINT32 msg_length, THREADID thread_id)
 /**
  * @brief determine the address a type LPWSABUF containing the address of the received message
  */
-VOID before_wsarecvs(ADDRINT msg_struct_addr, THREADID thread_id)
+auto before_wsarecvs(ADDRINT msg_struct_addr, THREADID thread_id) -> VOID
 {
-  received_msg_struct_addr = msg_struct_addr; function_called = true;
-  received_msg_addr = reinterpret_cast<ADDRINT>((reinterpret_cast<windows::LPWSABUF>(
-                                                   received_msg_struct_addr))->buf);
-  if (!traced_thread_is_fixed)
+  if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
   {
-    traced_thread_id = thread_id; traced_thread_is_fixed = true;
+    received_msg_struct_addr = msg_struct_addr;
+    received_msg_addr = reinterpret_cast<ADDRINT>((reinterpret_cast<windows::LPWSABUF>(
+                                                     received_msg_struct_addr))->buf);
+    traced_thread_id = thread_id; traced_thread_is_fixed = true; wsarecv_is_locked = true;
   }
   return;
 }
@@ -127,29 +118,17 @@ VOID before_wsarecvs(ADDRINT msg_struct_addr, THREADID thread_id)
 /**
  * @brief determine the received message length or WSARecv or WSARecvFrom
  */
-VOID after_wsarecvs(THREADID thread_id)
+auto after_wsarecvs(THREADID thread_id) -> VOID
 {
-  if (function_called && traced_thread_is_fixed && (traced_thread_id == thread_id))
+  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && wsarecv_is_locked)
   {
-    if (function_called)
-    {
 #if !defined(NDEBUG)
-      tfm::format(log_file, "message is received from WSARecv or WSARecvFrom at thread id %d\n",
-                  thread_id);
+    tfm::format(log_file, "message is obtained from WSARecv or WSARecvFrom at thread id %d\n",
+                thread_id);
 #endif
-      function_called = false;
-      received_msg_size = (reinterpret_cast<windows::LPWSABUF>(received_msg_struct_addr))->len;
-      handle_received_message();
-    }
+    received_msg_size = (reinterpret_cast<windows::LPWSABUF>(received_msg_struct_addr))->len;
+    wsarecv_is_locked = false; handle_received_message();
   }
-//  else
-//  {
-//#if !defined(NDEBUG)
-//    tfm::format(log_file, "fatal: message receiving function returns without being called or the thread id is changed from %d to %d\n",
-//                traced_thread_id, thread_id);
-//#endif
-//    PIN_ExitApplication(1);
-//  }
   return;
 }
 #elif defined(__gnu_linux__)
