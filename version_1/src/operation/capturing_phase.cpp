@@ -132,8 +132,8 @@ auto after_wsarecvs(THREADID thread_id) -> VOID
   return;
 }
 #elif defined(__gnu_linux__)
-VOID syscall_entry_analyzer(THREADID thread_id,
-                            CONTEXT* p_ctxt, SYSCALL_STANDARD syscall_std, VOID *data)
+VOID syscall_entry_analyzer(THREADID thread_id, CONTEXT* p_ctxt, SYSCALL_STANDARD syscall_std,
+                            VOID *data)
 {
   if (current_running_phase == capturing_phase)
   {

@@ -97,41 +97,38 @@ auto ins_instrumenter(INS ins, VOID *data) -> VOID
   if (current_running_phase != capturing_phase)
   {
     // examining statically instructions
-//    ptr_instruction_t examined_ins(new instruction(ins));
-    ptr_instruction_t examined_ins;
-    ADDRINT ins_addr = INS_Address(ins);
+    /*ptr_instruction_t examined_ins;*/ auto ins_addr = INS_Address(ins);
+
     // verify if the instruction has been examined
     if (ins_at_addr.find(ins_addr) == ins_at_addr.end())
     {
       // not yet, then create a new instruction object
-      examined_ins.reset(new instruction(ins));
-//      ptr_instruction_t examined_ins(new instruction(ins));
-//      examined_ins = ins_at_addr[ins_addr];
-//      ADDRINT examined_addr = examined_ins->address;
-      ins_at_addr[ins_addr] = examined_ins;
-      if (examined_ins->is_cond_direct_cf)
+//      examined_ins.reset(new instruction(ins)); ins_at_addr[ins_addr] = examined_ins;
+      ins_at_addr[ins_addr] = std::make_shared<instruction>(ins);
+      if (/*examined_ins*/ins_at_addr[ins_addr]->is_cond_direct_cf)
       {
-        ins_at_addr[ins_addr].reset(new cond_direct_instruction(*examined_ins));
+//        ins_at_addr[ins_addr].reset(new cond_direct_instruction(*examined_ins));
+        ins_at_addr[ins_addr] = std::make_shared<cond_direct_instruction>(*ins_at_addr[ins_addr]);
       }
 
 #if !defined(DISABLE_FSA)
-    explored_fsa->add_vertex(ins_addr);
+      explored_fsa->add_vertex(ins_addr);
 #endif
     }
-    else
-    {
-      // the instruction has been examined, then simply get the existed instance
-      examined_ins = ins_at_addr[ins_addr];
-    }
+//    else
+//    {
+//      // the instruction has been examined, then simply get the existed instance
+//      examined_ins = ins_at_addr[ins_addr];
+//    }
 
     switch (current_running_phase)
     {
     case tainting_phase:
-      exec_tainting_phase(ins, examined_ins);
+      exec_tainting_phase(ins, /*examined_ins*/ins_at_addr[ins_addr]);
       break;
 
     case rollbacking_phase:
-      exec_rollbacking_phase(ins, examined_ins);
+      exec_rollbacking_phase(ins, /*examined_ins*/ins_at_addr[ins_addr]);
       break;
 
     default:
@@ -233,10 +230,10 @@ auto image_load_instrumenter(IMG loaded_img, VOID *data) -> VOID
 
 /*================================================================================================*/
 
-//BOOL process_create_instrumenter(CHILD_PROCESS created_process, VOID* data)
-//{
-//#if !defined(NDEBUG)
-//  tfm::format(log_file, "new process created with id %d\n", CHILD_PROCESS_GetId(created_process));
-//#endif
-//  return TRUE;
-//}
+BOOL process_create_instrumenter(CHILD_PROCESS created_process, VOID* data)
+{
+#if !defined(NDEBUG)
+  tfm::format(log_file, "new process created with id %d\n", CHILD_PROCESS_GetId(created_process));
+#endif
+  return TRUE;
+}

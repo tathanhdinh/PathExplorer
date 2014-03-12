@@ -17,13 +17,12 @@
 #define USING_XED
 #endif
 #endif
-
 #include <pin.H>
 
-extern auto ins_instrumenter        (INS ins, VOID *data)         -> VOID;
+extern auto ins_instrumenter            (INS ins, VOID *data)                       -> VOID;
 
-extern auto image_load_instrumenter (IMG loaded_img, VOID *data)  -> VOID;
+extern auto image_load_instrumenter     (IMG loaded_img, VOID *data)                -> VOID;
 
-//extern BOOL process_create_instrumenter   (CHILD_PROCESS created_process, VOID* data);
+extern auto process_create_instrumenter (CHILD_PROCESS created_process, VOID* data) -> BOOL;
 
 #endif

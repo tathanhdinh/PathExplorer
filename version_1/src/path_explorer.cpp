@@ -104,6 +104,7 @@ auto start_exploring(VOID *data) -> VOID
   traced_thread_is_fixed    = false;
 
   log_file.open("path_explorer.log", std::ofstream::out | std::ofstream::trunc);
+  if (!log_file) PIN_ExitApplication(1);
 
   ::srand(static_cast<unsigned int>(::time(0)));
 
@@ -149,14 +150,6 @@ auto stop_exploring (INT32 code, VOID *data) -> VOID
     if (cfi->is_singular) singular_cfi_num++;
   });
 
-//  /*ptr_cond_direct_inss_t::iterator*/auto cfi_iter = detected_input_dep_cfis.begin();
-//  for (; cfi_iter != detected_input_dep_cfis.end(); ++cfi_iter)
-//  {
-//    if ((*cfi_iter)->is_resolved) resolved_cfi_num++;
-//    if ((*cfi_iter)->is_singular) singular_cfi_num++;
-////    total_rollback_times += (*cfi_iter)->used_rollback_num;
-//  }
-
   tfm::format(log_file, "%d seconds elapsed, %d rollbacks used, %d/%d/%d resolved/singular/total branches.\n",
               (stop_time - start_time), total_rollback_times, resolved_cfi_num, singular_cfi_num,
               detected_input_dep_cfis.size());
@@ -188,8 +181,8 @@ int main(int argc, char *argv[])
     log_file << "activate image-load instrumenter\n";
     IMG_AddInstrumentFunction(image_load_instrumenter, 0);
     
-//    log_file << "activate process-fork instrumenter\n";
-//    PIN_AddFollowChildProcessFunction(process_create_instrumenter, 0);
+    log_file << "activate process-fork instrumenter\n";
+    PIN_AddFollowChildProcessFunction(process_create_instrumenter, 0);
 
     log_file << "activate instruction instrumenters\n";
     INS_AddInstrumentFunction(ins_instrumenter, 0);
