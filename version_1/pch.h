@@ -29,6 +29,7 @@
 #include <ctime>
 #include <cstdlib>
 #include <memory>
+#include <functional>
 
 //#if __cplusplus <= 199711L
 //#include <boost/shared_ptr.hpp>

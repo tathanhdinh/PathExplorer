@@ -16,7 +16,7 @@
 #ifndef USING_XED
 #define USING_XED
 #endif
-#endif
+#endif // defined(_WIN32) || defined(_WIN64)
 #include <pin.H>
 
 extern auto ins_instrumenter            (INS ins, VOID *data)                       -> VOID;
@@ -24,5 +24,7 @@ extern auto ins_instrumenter            (INS ins, VOID *data)                   
 extern auto image_load_instrumenter     (IMG loaded_img, VOID *data)                -> VOID;
 
 extern auto process_create_instrumenter (CHILD_PROCESS created_process, VOID* data) -> BOOL;
+
+extern auto initialize_instrumenter     ()                                          -> void;
 
 #endif

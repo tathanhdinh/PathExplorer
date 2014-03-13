@@ -35,6 +35,9 @@ UINT32                  received_msg_size;
 UINT32                  received_msg_order;
 ptr_uint8_t             fresh_input;
 
+INT                     process_id;
+std::string             process_id_str;
+
 THREADID                traced_thread_id;
 bool                    traced_thread_is_fixed;
 
@@ -50,7 +53,6 @@ UINT64                  econed_ins_number;
 
 time_t                  start_time;
 decltype(start_time)    stop_time;
-//time_t                  stop_time;
 
 std::ofstream           log_file;
 
@@ -103,8 +105,11 @@ auto start_exploring(VOID *data) -> VOID
   current_running_phase     = capturing_phase;
   traced_thread_is_fixed    = false;
 
-  log_file.open("path_explorer.log", std::ofstream::out | std::ofstream::trunc);
-  if (!log_file) PIN_ExitApplication(1);
+  process_id         = PIN_GetPid();
+  process_id_str     = std::to_string(static_cast<long long>(process_id));
+
+  log_file.open(process_id_str + "_path_explorer.log", std::ofstream::out | std::ofstream::trunc);
+  if (!log_file) PIN_ExitProcess(1);
 
   ::srand(static_cast<unsigned int>(::time(0)));
 
@@ -136,10 +141,10 @@ auto stop_exploring (INT32 code, VOID *data) -> VOID
 {
   stop_time = std::time(0);
 
-  save_static_trace("path_explorer_static_trace.log");
+  save_static_trace(process_id_str + "_path_explorer_static_trace.log");
 
 #if !defined(DISABLE_FSA)
-  explored_fsa->save_to_file("path_explorer_explored_fsa.dot");
+  explored_fsa->save_to_file(process_id_str + "_path_explorer_explored_fsa.dot");
 #endif
   
   UINT32 resolved_cfi_num = 0, singular_cfi_num = 0;
@@ -150,7 +155,7 @@ auto stop_exploring (INT32 code, VOID *data) -> VOID
     if (cfi->is_singular) singular_cfi_num++;
   });
 
-  tfm::format(log_file, "%d seconds elapsed, %d rollbacks used, %d/%d/%d resolved/singular/total branches.\n",
+  tfm::format(log_file, "%d seconds elapsed, %d rollbacks used, %d/%d/%d resolved/singular/total CFI.\n",
               (stop_time - start_time), total_rollback_times, resolved_cfi_num, singular_cfi_num,
               detected_input_dep_cfis.size());
 
@@ -164,27 +169,29 @@ auto stop_exploring (INT32 code, VOID *data) -> VOID
 /* ---------------------------------------------------------------------------------------------- */
 int main(int argc, char *argv[])
 {
-  log_file << "initialize image symbol tables\n"; PIN_InitSymbols();
+  std::cerr << "initialize image symbol tables\n"; PIN_InitSymbols();
 
   log_file << "initialize Pin";
   if (PIN_Init(argc, argv))
   {
-    log_file << "Pin initialization failed\n"; log_file.close();
+    std::cerr << "Pin initialization failed\n"; log_file.close(); PIN_ExitProcess(1);
   }
   else
   {
-    log_file << "Pin initialization success\n";
+    std::cerr << "Pin initialization success\n";
 
-    log_file << "activate Pintool data-initialization\n";
+    std::cerr << "activate Pintool data-initialization\n";
     PIN_AddApplicationStartFunction(start_exploring, 0);  // 0 is the (unused) input data
 
-    log_file << "activate image-load instrumenter\n";
+    initialize_instrumenter();
+
+    std::cerr << "activate image-load instrumenter\n";
     IMG_AddInstrumentFunction(image_load_instrumenter, 0);
     
-    log_file << "activate process-fork instrumenter\n";
+    std::cerr << "activate process-fork instrumenter\n";
     PIN_AddFollowChildProcessFunction(process_create_instrumenter, 0);
 
-    log_file << "activate instruction instrumenters\n";
+    std::cerr << "activate instruction instrumenters\n";
     INS_AddInstrumentFunction(ins_instrumenter, 0);
 
     // In Windows environment, the input tracing is through socket api instead of system call
@@ -193,8 +200,10 @@ int main(int argc, char *argv[])
     PIN_AddSyscallExitFunction(capturing::syscall_exit_analyzer, 0);
 #endif
 
-    log_file << "activate Pintool data-finalization\n";
+    std::cerr << "activate Pintool data-finalization\n";
     PIN_AddFiniFunction(stop_exploring, 0);
+
+    log_file.flush();
 
     // now the control is passed to pin, so the main function will never return
     PIN_StartProgram();

@@ -52,7 +52,6 @@ extern UINT32                         trace_size;
 extern UINT32                         max_total_rollback_times;
 extern UINT32                         max_local_rollback_times;
 extern UINT32                         max_trace_size;
-//extern UINT32                         used_rollback_times;
 
 extern ptr_checkpoints_t              saved_checkpoints;
 
@@ -71,6 +70,7 @@ extern UINT32                         received_msg_size;
 extern UINT32                         received_msg_order;
 extern ptr_uint8_t                    fresh_input;
 
+extern INT                            process_id;
 extern THREADID                       traced_thread_id;
 extern bool                           traced_thread_is_fixed;
 
