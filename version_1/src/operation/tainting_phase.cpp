@@ -534,10 +534,12 @@ auto mem_read_instruction (ADDRINT ins_addr, ADDRINT mem_read_addr, UINT32 mem_r
       saved_checkpoints.push_back(new_ptr_checkpoint);
 
 #if !defined(NDEBUG)
-      tfm::format(log_file, "checkpoint detected at %d (%s: %s) because memory is read (%s: %d)\n",
-                  new_ptr_checkpoint->exec_order, addrint_to_hexstring(ins_addr),
-                  ins_at_addr[ins_addr]->disassembled_name, addrint_to_hexstring(mem_read_addr),
-                  *(reinterpret_cast<UINT8*>(mem_read_addr)));
+      tfm::format(log_file, "checkpoint detected at %d because memory is read ",
+                  new_ptr_checkpoint->exec_order);
+      for (auto mem_idx = 0; mem_idx < mem_read_size; ++mem_idx)
+        tfm::format(log_file, "(%s: %d)", addrint_to_hexstring(mem_read_addr + mem_idx),
+                    *(reinterpret_cast<UINT8*>(mem_read_addr + mem_idx)));
+      log_file << "\n";
 #endif
     }
 
