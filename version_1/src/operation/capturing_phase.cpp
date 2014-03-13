@@ -2,6 +2,8 @@
 #include "common.h"
 #include "../util/stuffs.h"
 
+#include <algorithm>
+
 namespace capturing 
 {
 
@@ -12,10 +14,12 @@ static bool     recv_is_locked;
 static bool     recvfrom_is_locked;
 static bool     wsarecv_is_locked;
 static bool     wsarecvfrom_is_locked;
+//static bool     interested_msg_is_received;
 
 #if defined(_WIN32) || defined(_WIN64)
 namespace windows
 {
+#define NOMINMAX
 #include <WinSock2.h>
 #include <Windows.h>
 };
@@ -29,7 +33,7 @@ static ADDRINT  received_msg_struct_addr;
 auto initialize() -> void
 {
   recv_is_locked = false; recvfrom_is_locked = false; wsarecv_is_locked = false;
-  wsarecvfrom_is_locked = false; received_msg_number = 0;
+  wsarecvfrom_is_locked = false; received_msg_number = 0; interested_msg_is_received = false;
   return;
 }
 
@@ -55,13 +59,21 @@ static inline auto prepare_new_tainting_phase() -> void
 }
 
 
+/**
+ * @brief handle_received_message
+ */
 static inline auto handle_received_message() -> void
 {
   if ((received_msg_size > 0) && !recv_is_locked && !wsarecv_is_locked)
   {
     received_msg_number++;
     // verify if the received message is the interesting message
-    if (received_msg_number == received_msg_order) prepare_new_tainting_phase();
+    if (received_msg_number == received_msg_order)
+    {
+      // yes, then remove the current instrumentation for message receiving functions
+      interested_msg_is_received = true; PIN_RemoveInstrumentation();
+    }
+//      prepare_new_tainting_phase();
   }
   return;
 }
@@ -131,7 +143,9 @@ auto after_wsarecvs(THREADID thread_id) -> VOID
   }
   return;
 }
+
 #elif defined(__gnu_linux__)
+
 VOID syscall_entry_analyzer(THREADID thread_id, CONTEXT* p_ctxt, SYSCALL_STANDARD syscall_std,
                             VOID *data)
 {
@@ -183,5 +197,27 @@ VOID syscall_exit_analyzer(THREADID thread_id,
   }
   return;
 }
-#endif
+
+#endif // defined(__gnu_linux__)
+
+
+/**
+ * @brief handle memory read instructions in the capturing phase
+ */
+auto mem_read_instruction (ADDRINT ins_addr, ADDRINT r_mem_addr, UINT32 r_mem_size, CONTEXT* p_ctxt,
+                           THREADID thread_id) -> VOID
+{
+  if (thread_id == traced_thread_id)
+  {
+    // verify if the instruction read some addresses in the input buffer
+    if (std::max(r_mem_addr, received_msg_addr) <
+        std::min(r_mem_addr + r_mem_size, received_msg_addr + received_msg_size))
+    {
+      // yes, then start the tainting phase
+      prepare_new_tainting_phase(); PIN_ExecuteAt(p_ctxt);
+    }
+  }
+  return;
+}
+
 } // end of capturing namespace

@@ -88,10 +88,10 @@ static inline auto determine_cfi_input_dependency() -> void
               auto visited_cfi = std::static_pointer_cast<cond_direct_instruction>(
                     ins_at_order[visited_edge_exec_order]);
               visited_cfi->input_dep_addrs.insert(mem_addr);
-//#if !defined(NDEBUG)
-//              tfm::format(log_file, "the cfi at %d depends on the address %s\n",
+#if !defined(NDEBUG)
+//              tfm::format(std::cerr, "the cfi at %d depends on the address %s\n",
 //                          visited_cfi->exec_order, addrint_to_hexstring(mem_addr));
-//#endif
+#endif
             }
           }
         });
@@ -180,6 +180,7 @@ static inline auto set_checkpoints_for_cfi(const ptr_cond_direct_ins_t& cfi) -> 
   /*addrint_set_t*/decltype(dep_addrs) input_dep_addrs, new_dep_addrs, intersected_addrs;
   checkpoint_with_modified_addrs checkpoint_with_input_addrs;
 
+//  tfm::format(std::cerr, "set checkpoint for the CFI at %d\n", cfi->exec_order);
 //  ptr_checkpoints_t::iterator chkpnt_iter = saved_checkpoints.begin();
   for (auto chkpnt_iter = saved_checkpoints.begin(); chkpnt_iter != saved_checkpoints.end();
        ++chkpnt_iter)
@@ -209,10 +210,10 @@ static inline auto set_checkpoints_for_cfi(const ptr_cond_direct_ins_t& cfi) -> 
         // value at the address of the intersected addrs
         checkpoint_with_input_addrs = std::make_pair(*chkpnt_iter, intersected_addrs);
         cfi->checkpoints.push_back(checkpoint_with_input_addrs);
-//#if !defined(NDEBUG)
-//        tfm::format(log_file, "the cfi at %d has a checkpoint at %d\n", cfi->exec_order,
+#if !defined(NDEBUG)
+//        tfm::format(std::cerr, "the cfi at %d has a checkpoint at %d\n", cfi->exec_order,
 //                    (*chkpnt_iter)->exec_order);
-//#endif
+#endif
 
         // the addrs in the intersected set are subtracted from the original dep_addrs
         new_dep_addrs.clear();
@@ -245,29 +246,31 @@ static inline auto save_detected_cfis() -> void
     if (exploring_cfi) current_path_code.push_back(true);
 #endif
 
-//    ptr_cond_direct_ins_t new_cfi;
-    /*std::map<UINT32, ptr_instruction_t>::iterator*/auto ins_iter = ins_at_order.begin();
-#if !defined(DISABLE_FSA)
-    /*std::map<UINT32, ptr_instruction_t>::iterator*/decltype(ins_iter) prev_ins_iter = ins_iter;
-#endif
+//    auto ins_iter = ins_at_order.begin();
+//#if !defined(DISABLE_FSA)
+//    decltype(ins_iter) prev_ins_iter = ins_iter;
+//#endif
 
-    for (++ins_iter; ins_iter != ins_at_order.end(); ++ins_iter)
+    std::pair<UINT32, ptr_instruction_t> prev_order_ins;
+    std::for_each(ins_at_order.begin(), ins_at_order.end(), [&](decltype(prev_order_ins) order_ins)
     {
       // consider only the instruction that is not behind the exploring CFI
-      if (!exploring_cfi || (exploring_cfi && (ins_iter->first > exploring_cfi->exec_order)))
+      if (!exploring_cfi || (exploring_cfi && (order_ins.first > exploring_cfi->exec_order)))
       {
 #if !defined(DISABLE_FSA)
-        explored_fsa->add_edge((prev_ins_iter->second)->address, (ins_iter->second)->address,
-                               current_path_code);
+        if (prev_order_ins.second)
+          explored_fsa->add_edge(prev_order_ins.second->address, order_ins.second->address,
+                                 current_path_code);
 #endif
         // verify if the instruction is a CFI
-        if (ins_iter->second->is_cond_direct_cf)
+        if (order_ins.second->is_cond_direct_cf)
         {
-          auto new_cfi = std::static_pointer_cast<cond_direct_instruction>(ins_iter->second);
+          // recast it as a CFI
+          auto new_cfi = std::static_pointer_cast<cond_direct_instruction>(order_ins.second);
           // and depends on the input
           if (!new_cfi->input_dep_addrs.empty())
           {
-            // then copy a fresh copy for it
+            // then copy a fresh input for it
             new_cfi->fresh_input.reset(new UINT8[received_msg_size]);
             std::copy(fresh_input.get(), fresh_input.get() + received_msg_size,
                       new_cfi->fresh_input.get());
@@ -288,13 +291,51 @@ static inline auto save_detected_cfis() -> void
         }
       }
 #if !defined(DISABLE_FSA)
-      prev_ins_iter = ins_iter;
+      prev_order_ins = order_ins;
+//      prev_ins_iter = ins_iter;
 #endif
-//      else
+    });
+
+//    for (ins_iter; ins_iter != ins_at_order.end(); ++ins_iter)
+//    {
+//      // consider only the instruction that is not behind the exploring CFI
+//      if (!exploring_cfi || (exploring_cfi && (ins_iter->first > exploring_cfi->exec_order)))
 //      {
-//        break;
+//#if !defined(DISABLE_FSA)
+//        explored_fsa->add_edge((prev_ins_iter->second)->address, (ins_iter->second)->address,
+//                               current_path_code);
+//#endif
+//        // verify if the instruction is a CFI
+//        if (ins_iter->second->is_cond_direct_cf)
+//        {
+//          auto new_cfi = std::static_pointer_cast<cond_direct_instruction>(ins_iter->second);
+//          // and depends on the input
+//          if (!new_cfi->input_dep_addrs.empty())
+//          {
+//            // then copy a fresh copy for it
+//            new_cfi->fresh_input.reset(new UINT8[received_msg_size]);
+//            std::copy(fresh_input.get(), fresh_input.get() + received_msg_size,
+//                      new_cfi->fresh_input.get());
+
+//            // set its checkpoints and save it
+//            set_checkpoints_for_cfi(new_cfi); detected_input_dep_cfis.push_back(new_cfi);
+//#if !defined(NDEBUG)
+//            newly_detected_input_dep_cfis.push_back(new_cfi);
+//#endif
+//#if !defined(DISABLE_FSA)
+//            // update the path code of the CFI
+//            new_cfi->path_code = current_path_code; current_path_code.push_back(false);
+//#endif
+//          }
+//#if !defined(NDEBUG)
+//          newly_detected_cfis.push_back(new_cfi);
+//#endif
+//        }
 //      }
-    }
+//#if !defined(DISABLE_FSA)
+//      prev_ins_iter = ins_iter;
+//#endif
+//    }
   }
 
   return;
@@ -396,6 +437,9 @@ static inline auto prepare_new_rollbacking_phase() -> void
  */
 auto kernel_mapped_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
 {
+//  tfm::format(std::cerr, "kernel mapped instruction %d <%s: %s> %s %s\n", current_exec_order,
+//              addrint_to_hexstring(ins_addr), ins_at_addr[ins_addr]->disassembled_name,
+//              ins_at_addr[ins_addr]->contained_image, ins_at_addr[ins_addr]->contained_function);
   // the tainting phase always finishes when a kernel mapped instruction is met
   if (thread_id == traced_thread_id) prepare_new_rollbacking_phase();
   return;
@@ -409,11 +453,15 @@ auto generic_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
 {
 //  ptr_cond_direct_ins_t current_cfi, duplicated_cfi;
 
+//  std::cerr << "thread id " << thread_id << "\n";
   if (thread_id == traced_thread_id)
   {
+//    tfm::format(std::cerr, "%d <%s: %s>\n", current_exec_order + 1, addrint_to_hexstring(ins_addr),
+//                ins_at_addr[ins_addr]->disassembled_name);
+
     // verify if the execution order exceeds the limit trace length and the executed
     // instruction is always in user-space
-    if ((current_exec_order < max_trace_size) && !ins_at_addr[ins_addr]->is_mapped_from_kernel)
+    if ((current_exec_order < max_trace_size) /*&& !ins_at_addr[ins_addr]->is_mapped_from_kernel*/)
     {
       // does not exceed
       current_exec_order++;
@@ -469,8 +517,8 @@ auto generic_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
  *  save a checkpoint each time the instruction read some memory addresses in the input buffer, and
  *  update source operands of the instruction as read memory addresses.
  */
-VOID mem_read_instruction(ADDRINT ins_addr, ADDRINT mem_read_addr, UINT32 mem_read_size,
-                          CONTEXT* p_ctxt, THREADID thread_id)
+auto mem_read_instruction (ADDRINT ins_addr, ADDRINT mem_read_addr, UINT32 mem_read_size,
+                           CONTEXT* p_ctxt, THREADID thread_id) -> VOID
 {
   if (thread_id == traced_thread_id)
   {
@@ -499,6 +547,9 @@ VOID mem_read_instruction(ADDRINT ins_addr, ADDRINT mem_read_addr, UINT32 mem_re
       ins_at_order[current_exec_order]->src_operands.insert(mem_operand);
     }
   }
+
+//  tfm::format(std::cerr, "memory read instrumentation %d <%s: %s>\n", current_exec_order,
+//              addrint_to_hexstring(ins_addr), ins_at_addr[ins_addr]->disassembled_name);
   return;
 }
 
@@ -535,6 +586,9 @@ auto mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 me
       ins_at_order[current_exec_order]->dst_operands.insert(mem_operand);
     }
   }
+
+//  tfm::format(std::cerr, "memory write instrumentation %d <%s: %s>\n", current_exec_order,
+//              addrint_to_hexstring(ins_addr), ins_at_addr[ins_addr]->disassembled_name);
 
   return;
 }
@@ -673,6 +727,9 @@ auto graphical_propagation(ADDRINT ins_addr, THREADID thread_id) -> VOID
       });
     });
   }
+
+//  tfm::format(std::cerr, "graphical propagation %d <%s: %s>\n", current_exec_order,
+//              addrint_to_hexstring(ins_addr), ins_at_addr[ins_addr]->disassembled_name);
 
   return;
 }

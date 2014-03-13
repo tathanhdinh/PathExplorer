@@ -33,6 +33,7 @@ ptr_explorer_graph_t    explored_fsa;
 ADDRINT                 received_msg_addr;
 UINT32                  received_msg_size;
 UINT32                  received_msg_order;
+bool                    interested_msg_is_received;
 ptr_uint8_t             fresh_input;
 
 INT                     process_id;
@@ -77,7 +78,7 @@ KNOB<UINT32> interested_input_order_knob   (KNOB_MODE_WRITEONCE, "pintool", "i",
 /**
  * @brief initialize input variables
  */
-auto start_exploring(VOID *data) -> VOID
+auto start_exploring (VOID *data) -> VOID
 {
   max_trace_size            = max_trace_length_knob.Value();
   trace_size                = 0;
@@ -102,16 +103,13 @@ auto start_exploring(VOID *data) -> VOID
 #endif
 
   exploring_cfi.reset();
-  current_running_phase     = capturing_phase;
   traced_thread_is_fixed    = false;
 
-  process_id         = PIN_GetPid();
-  process_id_str     = std::to_string(static_cast<long long>(process_id));
+  process_id                = PIN_GetPid();
+  process_id_str            = std::to_string(static_cast<long long>(process_id));
 
   log_file.open(process_id_str + "_path_explorer.log", std::ofstream::out | std::ofstream::trunc);
   if (!log_file) PIN_ExitProcess(1);
-
-  ::srand(static_cast<unsigned int>(::time(0)));
 
   tfm::format(log_file, "total rollback %d, local rollback %d, trace depth %d, ",
               max_total_rollback_times, max_local_rollback_times, max_trace_size);
@@ -127,8 +125,11 @@ auto start_exploring(VOID *data) -> VOID
 #elif
   log_file << "FSA reconstruction disabled\n";
 #endif
+  log_file << "=================================================================================\n";
 
-  start_time                = std::time(0);
+  initialize_instrumenter();
+
+  start_time = std::time(0); std::srand(static_cast<unsigned int>(start_time));
 
   return;
 }
@@ -182,8 +183,6 @@ int main(int argc, char *argv[])
 
     std::cerr << "activate Pintool data-initialization\n";
     PIN_AddApplicationStartFunction(start_exploring, 0);  // 0 is the (unused) input data
-
-    initialize_instrumenter();
 
     std::cerr << "activate image-load instrumenter\n";
     IMG_AddInstrumentFunction(image_load_instrumenter, 0);

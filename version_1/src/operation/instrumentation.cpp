@@ -17,7 +17,31 @@ typedef std::function<void(RTN&)> instrument_func_t;
 static std::map<std::string, instrument_func_t> instrument_func_of_name;
 
 /*================================================================================================*/
+/**
+ * @brief exec_capturing_phase
+ */
+static inline auto exec_capturing_phase (INS& ins) -> void
+{
+  if (INS_IsMemoryRead(ins))
+  {
+    INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)capturing::mem_read_instruction,
+                             IARG_INST_PTR, IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE, IARG_CONTEXT,
+                             IARG_THREAD_ID, IARG_END);
 
+    if (INS_HasMemoryRead2(ins))
+    {
+      INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)capturing::mem_read_instruction,
+                               IARG_INST_PTR, IARG_MEMORYREAD2_EA, IARG_MEMORYREAD_SIZE,
+                               IARG_CONTEXT, IARG_THREAD_ID, IARG_END);
+    }
+  }
+  return;
+}
+
+
+/**
+ * @brief exec_tainting_phase
+ */
 static inline auto exec_tainting_phase (INS& ins, ptr_instruction_t examined_ins) -> void
 {
   /* taint logging */
@@ -139,6 +163,10 @@ auto ins_instrumenter (INS ins, VOID *data) -> VOID
       break;
     }
   }
+  else
+  {
+    if (interested_msg_is_received) exec_capturing_phase(ins);
+  }
 
   return;
 }
@@ -218,7 +246,7 @@ auto image_load_instrumenter (IMG loaded_img, VOID *data) -> VOID
       instrument_function(loaded_img, "recv"); instrument_function(loaded_img, "recvfrom");
       instrument_function(loaded_img, "WSARecv"); instrument_function(loaded_img, "WSARecvFrom");
 
-      /*current_running_phase = capturing_phase;*/ capturing::initialize();
+      /*current_running_phase = capturing_phase;*/ /*capturing::initialize();*/
     }
 #endif // defined(_WIN32) || defined(_WIN64)
   }
@@ -239,11 +267,16 @@ auto process_create_instrumenter (CHILD_PROCESS created_process, VOID* data) -> 
 }
 
 
+/**
+ * @brief initialize_instrumenter
+ */
 auto initialize_instrumenter () -> void
 {
   instrument_func_of_name["recv"] = instrument_recvs;
   instrument_func_of_name["recvfrom"] = instrument_recvs;
   instrument_func_of_name["WSARecv"] = instrument_wsarecvs;
   instrument_func_of_name["WSARecvFrom"] = instrument_wsarecvs;
+
+  current_running_phase = capturing_phase; capturing::initialize();
   return;
 }

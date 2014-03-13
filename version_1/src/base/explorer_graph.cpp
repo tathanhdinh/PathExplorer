@@ -104,6 +104,7 @@ auto explorer_graph::add_edge(ADDRINT ins_a_addr, ADDRINT ins_b_addr,
 
   boost::graph_traits<exp_graph>::out_edge_iterator out_edge_iter, last_out_edge_iter;
   std::tie(out_edge_iter, last_out_edge_iter) = boost::out_edges(ins_a_desc, internal_exp_graph);
+
   // iterate over out edges from a
   for (; out_edge_iter != last_out_edge_iter; ++out_edge_iter)
   {
@@ -135,21 +136,22 @@ auto explorer_graph::add_edge(ADDRINT ins_a_addr, ADDRINT ins_b_addr,
   // there exists no such edge with the path code, then add it as a new edge
   if (out_edge_iter == last_out_edge_iter)
   {
-    if (current_running_phase == rollbacking_phase)
+    if ((current_running_phase == rollbacking_phase) && !edge_path_code.empty() &&
+        !edge_path_code.back())
     {
-//      bool last_code = edge_path_code.back();
-      if (/*!last_code*/!edge_path_code.back())
-      {
-        tfm::format(std::cerr, "fatal edge <%s->%s> %d\n", addrint_to_hexstring(ins_a_addr),
-                    addrint_to_hexstring(ins_b_addr), edge_path_code.size());
-        PIN_ExitApplication(1);
-      }
+#if !defined(NDEBUG)
+      tfm::format(std::cerr, "fatal: edge <%s->%s> %d\n", addrint_to_hexstring(ins_a_addr),
+                  addrint_to_hexstring(ins_b_addr), edge_path_code.size());
+#endif
+      PIN_ExitApplication(1);
     }
-
-    addrint_value_maps_t edge_input_values;
-    if (!edge_input_values.empty()) edge_input_values.push_back(edge_addrs_values);
-    boost::add_edge(ins_a_desc, ins_b_desc, std::make_pair(edge_path_code, edge_input_values),
-                    internal_exp_graph);
+    else
+    {
+      addrint_value_maps_t edge_input_values;
+      if (!edge_input_values.empty()) edge_input_values.push_back(edge_addrs_values);
+      boost::add_edge(ins_a_desc, ins_b_desc, std::make_pair(edge_path_code, edge_input_values),
+                      internal_exp_graph);
+    }
   }
 //  std::cerr << "out add edge\n";
   return;
