@@ -210,10 +210,10 @@ static inline auto set_checkpoints_for_cfi(const ptr_cond_direct_ins_t& cfi) -> 
         // value at the address of the intersected addrs
         checkpoint_with_input_addrs = std::make_pair(*chkpnt_iter, intersected_addrs);
         cfi->checkpoints.push_back(checkpoint_with_input_addrs);
-#if !defined(NDEBUG)
+//#if !defined(NDEBUG)
 //        tfm::format(std::cerr, "the cfi at %d has a checkpoint at %d\n", cfi->exec_order,
 //                    (*chkpnt_iter)->exec_order);
-#endif
+//#endif
 
         // the addrs in the intersected set are subtracted from the original dep_addrs
         new_dep_addrs.clear();
@@ -251,11 +251,13 @@ static inline auto save_detected_cfis() -> void
 //    decltype(ins_iter) prev_ins_iter = ins_iter;
 //#endif
 
+    auto last_order_ins = *ins_at_order.rbegin();
     std::pair<UINT32, ptr_instruction_t> prev_order_ins;
     std::for_each(ins_at_order.begin(), ins_at_order.end(), [&](decltype(prev_order_ins) order_ins)
     {
       // consider only the instruction that is not behind the exploring CFI
-      if (!exploring_cfi || (exploring_cfi && (order_ins.first > exploring_cfi->exec_order)))
+      if ((!exploring_cfi || (exploring_cfi && (order_ins.first > exploring_cfi->exec_order))) &&
+          (order_ins.first < last_order_ins.first))
       {
 #if !defined(DISABLE_FSA)
         if (prev_order_ins.second)
