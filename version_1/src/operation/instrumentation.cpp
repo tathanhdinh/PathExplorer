@@ -25,14 +25,14 @@ static inline auto exec_capturing_phase (INS& ins) -> void
   if (INS_IsMemoryRead(ins))
   {
     INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)capturing::mem_read_instruction,
-                             IARG_INST_PTR, IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE, IARG_CONTEXT,
-                             IARG_THREAD_ID, IARG_END);
+                             IARG_INST_PTR, IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE,
+                             IARG_CONST_CONTEXT, IARG_THREAD_ID, IARG_END);
 
     if (INS_HasMemoryRead2(ins))
     {
       INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)capturing::mem_read_instruction,
                                IARG_INST_PTR, IARG_MEMORYREAD2_EA, IARG_MEMORYREAD_SIZE,
-                               IARG_CONTEXT, IARG_THREAD_ID, IARG_END);
+                               IARG_CONST_CONTEXT, IARG_THREAD_ID, IARG_END);
     }
   }
   return;
@@ -61,14 +61,14 @@ static inline auto exec_tainting_phase (INS& ins, ptr_instruction_t examined_ins
       // memory read logging
       INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)tainting::mem_read_instruction,
                                IARG_INST_PTR, IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE,
-                               IARG_CONTEXT, IARG_THREAD_ID, IARG_END);
+                               IARG_CONST_CONTEXT, IARG_THREAD_ID, IARG_END);
 
       if (examined_ins->has_mem_read2)
       {
         // memory read2 (e.g. rep cmpsb instruction)
         INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)tainting::mem_read_instruction,
                                  IARG_INST_PTR, IARG_MEMORYREAD2_EA, IARG_MEMORYREAD_SIZE,
-                                 IARG_CONTEXT, IARG_THREAD_ID, IARG_END);
+                                 IARG_CONST_CONTEXT, IARG_THREAD_ID, IARG_END);
       }
     }
 

@@ -3,11 +3,11 @@
 #include "../util/stuffs.h"
 
 
-checkpoint::checkpoint(UINT32 existing_exec_order, CONTEXT* p_ctxt,
+checkpoint::checkpoint(UINT32 existing_exec_order, const CONTEXT* p_ctxt,
                        ADDRINT input_mem_read_addr, UINT32 input_mem_read_size)
 {
-  this->context.reset(new CONTEXT);
-  PIN_SaveContext(p_ctxt, this->context.get());
+//  this->context.reset(new CONTEXT);
+  this->context = std::make_shared<CONTEXT>(); PIN_SaveContext(p_ctxt, this->context.get());
 
   this->exec_order = existing_exec_order;
 

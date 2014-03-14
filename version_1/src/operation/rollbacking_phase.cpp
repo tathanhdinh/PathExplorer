@@ -188,7 +188,7 @@ static inline auto prepare_new_tainting_phase() -> void
 #if !defined(NDEBUG)
       log_file << "stop exploring, number of used rollbacks exceeds its bounded value\n";
 #endif
-      PIN_ExitApplication(0);
+      PIN_ExitApplication(process_id);
     }
     else
     {
@@ -220,7 +220,7 @@ static inline auto prepare_new_tainting_phase() -> void
 #if !defined(NDEBUG)
     log_file << "stop exploring, all CFI have been explored\n";
 #endif
-    PIN_ExitApplication(0);
+    PIN_ExitApplication(process_id);
   }
   return;
 }
