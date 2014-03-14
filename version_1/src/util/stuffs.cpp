@@ -3,13 +3,15 @@
 
 auto addrint_to_hexstring (ADDRINT input) -> std::string
 {
-  std::stringstream num_stream;
-  num_stream << "0x" << std::hex << input;
-  return num_stream.str();
+//  std::stringstream num_stream;
+//  num_stream << "0x" << std::hex << input;
+//  return num_stream.str();
+  return static_cast<std::ostringstream*>(&(std::ostringstream()
+                                            << "0x" << std::hex << input))->str();
 }
 
 
-auto save_static_trace  (const std::string& filename) -> void
+auto save_static_trace (const std::string& filename) -> void
 {
   std::ofstream out_file(filename.c_str(), std::ofstream::out | std::ofstream::trunc);
 
@@ -26,7 +28,7 @@ auto save_static_trace  (const std::string& filename) -> void
 }
 
 
-auto save_explored_trace  (const std::string& filename) -> void
+auto save_explored_trace (const std::string& filename) -> void
 {
   std::ofstream out_file(filename.c_str(), std::ofstream::out | std::ofstream::trunc);
   out_file.close();
@@ -83,8 +85,8 @@ public:
   void operator()(std::ostream& edge_label, Edge edge)
   {
     df_edge current_edge = tainting_graph[edge];
-    tfm::format(edge_label, "[label=\"%s: %s\"]",
-                current_edge, ins_at_order[current_edge]->disassembled_name);
+    tfm::format(edge_label, "[label=\"%s: %s\"]", current_edge,
+                ins_at_order[current_edge]->disassembled_name);
 //    edge_label << boost::format("[label=\"%s: %s\"]")
 //                  % current_edge % ins_at_order[current_edge]->disassembled_name;
   }

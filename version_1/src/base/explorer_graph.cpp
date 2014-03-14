@@ -21,6 +21,7 @@ typedef boost::graph_traits<exp_graph>::edge_iterator       exp_edge_iter;
 /*================================================================================================*/
 
 static exp_graph            internal_exp_graph;
+static exp_graph            internal_exp_graph_simple;
 static ptr_explorer_graph_t single_graph_instance;
 static addrint_value_map_t  default_addrs_values;
 
@@ -30,7 +31,7 @@ static addrint_value_map_t  default_addrs_values;
  */
 explorer_graph::explorer_graph()
 {
-  internal_exp_graph.clear();
+  internal_exp_graph.clear(); internal_exp_graph_simple.clear();
 }
 
 
@@ -62,6 +63,7 @@ void explorer_graph::add_vertex(ADDRINT ins_addr)
 //  tfm::format(std::cerr, "add vertex <%s: %s>\n", addrint_to_hexstring(ins_addr),
 //              ins_at_addr[ins_addr]->disassembled_name);
   boost::add_vertex(ins_addr, internal_exp_graph);
+  boost::add_vertex(ins_addr, internal_exp_graph_simple);
 
   return;
 }
@@ -153,7 +155,24 @@ auto explorer_graph::add_edge(ADDRINT ins_a_addr, ADDRINT ins_b_addr,
                       internal_exp_graph);
     }
   }
-//  std::cerr << "out add edge\n";
+
+  // add a edge with empty label into the simple graph
+
+  // look for descriptors of instruction a and b
+  std::tie(vertex_iter, last_vertex_iter) = boost::vertices(internal_exp_graph_simple);
+  for (; vertex_iter != last_vertex_iter; ++vertex_iter)
+  {
+    if (internal_exp_graph_simple[*vertex_iter] == ins_a_addr) ins_a_desc = *vertex_iter;
+    if (internal_exp_graph_simple[*vertex_iter] == ins_b_addr) ins_b_desc = *vertex_iter;
+  }
+
+  // verify if the edge from a to b exists
+  /*exp_edge_desc ab_edge;*/ bool edge_exists;
+  std::tie(std::ignore, edge_exists) = boost::edge(ins_a_desc, ins_b_desc, internal_exp_graph_simple);
+  // no, then add a new edge with empty label
+  if (!edge_exists) boost::add_edge(ins_a_desc, ins_b_desc,
+                                    std::make_pair(std::vector<bool>(), addrint_value_maps_t()),
+                                    internal_exp_graph_simple);
   return;
 }
 
@@ -162,10 +181,12 @@ extern ptr_cond_direct_inss_t detected_input_dep_cfis;
 class exp_vertex_label_writer
 {
 public:
+  exp_vertex_label_writer(exp_graph& input_graph) : internal_graph(input_graph) {}
+
 //  template<typename Vertex>
   void operator()(std::ostream& label, /*Vertex*/exp_vertex_desc vertex)
   {
-    /*exp_vertex*/auto vertex_ins_addr = internal_exp_graph[vertex];
+    /*exp_vertex*/auto vertex_ins_addr = internal_graph[vertex];
     // verify if the instruction at this address is a input dependent CFI
     auto cfi_iter = detected_input_dep_cfis.begin();
     for (; cfi_iter != detected_input_dep_cfis.end(); ++cfi_iter)
@@ -186,40 +207,52 @@ public:
 
     return;
   }
+
+private:
+  exp_graph internal_graph;
 };
 
 
 class exp_edge_label_writer
 {
 public:
+  exp_edge_label_writer(exp_graph& input_graph) : internal_graph(input_graph) {}
+
 //  template<typename Edge>
   void operator()(std::ostream& label, /*Edge*/exp_edge_desc edge)
   {
-    /*exp_edge*/auto current_edge = internal_exp_graph[edge];
+    /*exp_edge*/auto current_edge = internal_graph[edge];
     tfm::format(label, "[label=\"%s\"]", path_code_to_string(current_edge.first));
     return;
   }
+
+private:
+  exp_graph internal_graph;
 };
 
 
 class exp_vertex_isolated_prunner
 {
 public:
+  exp_vertex_isolated_prunner() : internal_graph(internal_exp_graph) {}
+
   bool operator()(exp_vertex_desc vertex) const
   {
-//    bool is_kept = true;
     boost::graph_traits<exp_graph>::out_edge_iterator out_e_iter, last_out_e_iter;
     boost::graph_traits<exp_graph>::in_edge_iterator in_e_iter, last_in_e_iter;
 
     // verify if the vertex is isolated (no in/out edges)
-    std::tie(out_e_iter, last_out_e_iter) = boost::out_edges(vertex, internal_exp_graph);
-    std::tie(in_e_iter, last_in_e_iter) = boost::in_edges(vertex, internal_exp_graph);
+    std::tie(out_e_iter, last_out_e_iter) = boost::out_edges(vertex, internal_graph);
+    std::tie(in_e_iter, last_in_e_iter) = boost::in_edges(vertex, internal_graph);
 
     // the isolated one (i.e. the corresponing instruction is never executed) will be prunned
     if ((out_e_iter == last_out_e_iter) && (in_e_iter == last_in_e_iter)) /*is_kept = false*/return false;
 
     return true;
   }
+
+private:
+  exp_graph internal_graph;
 };
 
 
@@ -259,9 +292,19 @@ auto explorer_graph::save_to_file(std::string filename) -> void
 //  exp_vertex_isolated_prunner vertex_prunner;
   boost::filtered_graph<exp_graph, boost::keep_all, exp_vertex_isolated_prunner>
       prunned_graph(internal_exp_graph, boost::keep_all(), exp_vertex_isolated_prunner());
-
   std::ofstream output(filename.c_str(), std::ofstream::out | std::ofstream::trunc);
-  boost::write_graphviz(output, prunned_graph, exp_vertex_label_writer(), exp_edge_label_writer());
+  boost::write_graphviz(output, prunned_graph,
+                        exp_vertex_label_writer(internal_exp_graph),
+                        exp_edge_label_writer(internal_exp_graph));
+
+  boost::filtered_graph<exp_graph, boost::keep_all, exp_vertex_isolated_prunner>
+      prunned_graph_simple(internal_exp_graph_simple, boost::keep_all(), exp_vertex_isolated_prunner());
+  std::ofstream output_simple(("simple_" + filename).c_str(),
+                              std::ofstream::out | std::ofstream::trunc);
+  boost::write_graphviz(output_simple, prunned_graph_simple,
+                        exp_vertex_label_writer(internal_exp_graph_simple),
+                        exp_edge_label_writer(internal_exp_graph_simple));
+
   return;
 }
 

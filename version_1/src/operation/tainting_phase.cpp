@@ -437,7 +437,7 @@ static inline auto prepare_new_rollbacking_phase() -> void
 /**
  * @brief analysis functions applied for syscall instructions
  */
-auto kernel_mapped_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
+auto kernel_mapped_instruction (ADDRINT ins_addr, THREADID thread_id) -> VOID
 {
 //  tfm::format(std::cerr, "kernel mapped instruction %d <%s: %s> %s %s\n", current_exec_order,
 //              addrint_to_hexstring(ins_addr), ins_at_addr[ins_addr]->disassembled_name,
@@ -451,7 +451,7 @@ auto kernel_mapped_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
 /**
  * @brief analysis function applied for all instructions
  */
-auto generic_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
+auto generic_instruction (ADDRINT ins_addr, const CONTEXT* p_ctxt, THREADID thread_id) -> VOID
 {
 //  ptr_cond_direct_ins_t current_cfi, duplicated_cfi;
 
@@ -496,10 +496,20 @@ auto generic_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
         }
 
 #if !defined(NDEBUG)
-        tfm::format(log_file, "%-3d %-15s %-50s %-25s %-25s\n", current_exec_order,
-                    addrint_to_hexstring(ins_addr), ins_at_addr[ins_addr]->disassembled_name,
-                    ins_at_addr[ins_addr]->contained_image, ins_at_addr[ins_addr]->contained_function);
-        //    log_file.flush();
+        tfm::format(log_file, "%-4d %-15s %-50s ", current_exec_order,
+                    addrint_to_hexstring(ins_addr), ins_at_addr[ins_addr]->disassembled_name);
+        std::for_each(ins_at_addr[ins_addr]->src_operands.begin(),
+                      ins_at_addr[ins_addr]->src_operands.end(), [&](ptr_operand_t opr)
+        {
+          if (opr->value.type() == typeid(REG))
+          {
+            tfm::format(log_file, "(%s: %s)", opr->name,
+                        addrint_to_hexstring(PIN_GetContextReg(p_ctxt, boost::get<REG>(opr->value))));
+          }
+        });
+
+        tfm::format(log_file, " %-25s %-25s\n", ins_at_addr[ins_addr]->contained_image,
+                    ins_at_addr[ins_addr]->contained_function);
 #endif
       }
     }
@@ -520,7 +530,7 @@ auto generic_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
  *  update source operands of the instruction as read memory addresses.
  */
 auto mem_read_instruction (ADDRINT ins_addr, ADDRINT mem_read_addr, UINT32 mem_read_size,
-                           CONTEXT* p_ctxt, THREADID thread_id) -> VOID
+                           const CONTEXT* p_ctxt, THREADID thread_id) -> VOID
 {
   if (thread_id == traced_thread_id)
   {
@@ -609,16 +619,40 @@ static inline auto source_variables(UINT32 ins_exec_order) -> std::set<df_vertex
 //  df_vertex_desc_set::iterator outer_vertex_iter;
 //  df_vertex_desc new_vertex_desc;
 //  std::set<ptr_operand_t>::iterator src_operand_iter;
-  for (auto src_operand_iter = ins_at_order[ins_exec_order]->src_operands.begin();
-       src_operand_iter != ins_at_order[ins_exec_order]->src_operands.end(); ++src_operand_iter)
+//  for (auto src_operand_iter = ins_at_order[ins_exec_order]->src_operands.begin();
+//       src_operand_iter != ins_at_order[ins_exec_order]->src_operands.end(); ++src_operand_iter)
+//  {
+//    // verify if the current source operand is
+//    auto outer_vertex_iter = dta_outer_vertices.begin();
+//    for (; outer_vertex_iter != dta_outer_vertices.end(); ++outer_vertex_iter)
+//    {
+//      // found in the outer interface
+//      if (((*src_operand_iter)->value.type() == dta_graph[*outer_vertex_iter]->value.type()) &&
+//          ((*src_operand_iter)->name == dta_graph[*outer_vertex_iter]->name))
+//      {
+//        src_vertex_descs.insert(*outer_vertex_iter);
+//        break;
+//      }
+//    }
+
+//    // not found
+//    if (outer_vertex_iter == dta_outer_vertices.end())
+//    {
+//      auto new_vertex_desc = boost::add_vertex(*src_operand_iter, dta_graph);
+//      dta_outer_vertices.insert(new_vertex_desc); src_vertex_descs.insert(new_vertex_desc);
+//    }
+//  }
+
+  std::for_each(ins_at_order[ins_exec_order]->src_operands.begin(),
+                ins_at_order[ins_exec_order]->src_operands.end(), [&](ptr_operand_t opr)
   {
     // verify if the current source operand is
     auto outer_vertex_iter = dta_outer_vertices.begin();
     for (; outer_vertex_iter != dta_outer_vertices.end(); ++outer_vertex_iter)
     {
       // found in the outer interface
-      if (((*src_operand_iter)->value.type() == dta_graph[*outer_vertex_iter]->value.type()) &&
-          ((*src_operand_iter)->name == dta_graph[*outer_vertex_iter]->name))
+      if ((opr->value.type() == dta_graph[*outer_vertex_iter]->value.type()) &&
+          (opr->name == dta_graph[*outer_vertex_iter]->name))
       {
         src_vertex_descs.insert(*outer_vertex_iter);
         break;
@@ -628,10 +662,10 @@ static inline auto source_variables(UINT32 ins_exec_order) -> std::set<df_vertex
     // not found
     if (outer_vertex_iter == dta_outer_vertices.end())
     {
-      auto new_vertex_desc = boost::add_vertex(*src_operand_iter, dta_graph);
+      auto new_vertex_desc = boost::add_vertex(opr, dta_graph);
       dta_outer_vertices.insert(new_vertex_desc); src_vertex_descs.insert(new_vertex_desc);
     }
-  }
+  });
 
   return src_vertex_descs;
 }
@@ -657,8 +691,8 @@ static inline auto destination_variables(UINT32 idx) -> std::set<df_vertex_desc>
   {
     // verify if the current target operand is
     auto outer_vertex_iter = dta_outer_vertices.begin();
-    for (auto next_vertex_iter = outer_vertex_iter;
-         outer_vertex_iter != dta_outer_vertices.end(); outer_vertex_iter = next_vertex_iter)
+    for (auto next_vertex_iter = outer_vertex_iter; outer_vertex_iter != dta_outer_vertices.end();
+         outer_vertex_iter = next_vertex_iter)
     {
       ++next_vertex_iter;
 

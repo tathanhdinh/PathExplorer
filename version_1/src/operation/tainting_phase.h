@@ -25,10 +25,11 @@ extern auto initialize                ()                                        
 
 extern auto kernel_mapped_instruction (ADDRINT ins_addr, THREADID thread_id)        -> VOID;
 
-extern auto generic_instruction       (ADDRINT ins_addr, THREADID thread_id)        -> VOID;
+extern auto generic_instruction       (ADDRINT ins_addr, const CONTEXT* p_ctxt,
+                                       THREADID thread_id)                          -> VOID;
 
 extern auto mem_read_instruction      (ADDRINT ins_addr, ADDRINT mem_read_addr,
-                                       UINT32 mem_read_size, CONTEXT* p_ctxt,
+                                       UINT32 mem_read_size, const CONTEXT* p_ctxt,
                                        THREADID thread_id)                          -> VOID;
 
 extern auto mem_write_instruction     (ADDRINT ins_addr, ADDRINT mem_written_addr,
