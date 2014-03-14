@@ -156,9 +156,9 @@ auto stop_exploring (INT32 code, VOID *data) -> VOID
     if (cfi->is_singular) singular_cfi_num++;
   });
 
-  tfm::format(log_file, "%d seconds elapsed, %d rollbacks used, %d/%d/%d resolved/singular/total CFI.\n",
-              (stop_time - start_time), total_rollback_times, resolved_cfi_num, singular_cfi_num,
-              detected_input_dep_cfis.size());
+  tfm::format(log_file, "%d seconds elapsed, %d rollbacks used, %d/%d/%d resolved/singular/total \
+              CFI.\n", (stop_time - start_time), total_rollback_times, resolved_cfi_num,
+              singular_cfi_num, detected_input_dep_cfis.size());
 
   log_file.close();
   return;

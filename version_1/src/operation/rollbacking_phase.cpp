@@ -384,8 +384,8 @@ auto control_flow_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
               if (active_checkpoint)
               {
 #if !defined(NDEBUG)
-                tfm::format(log_file, "the cfi at %d is still actived, its next checkpoint is at %d\n",
-                            active_cfi->exec_order, active_checkpoint->exec_order);
+                tfm::format(log_file, "the cfi at %d is still actived, its next checkpoint is \
+                            at %d\n", active_cfi->exec_order, active_checkpoint->exec_order);
 #endif
                 // exists, then rollback to the new active checkpoint
                 rollback();

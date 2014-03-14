@@ -419,9 +419,10 @@ static inline auto prepare_new_rollbacking_phase() -> void
     rollbacking::initialize(rollbacking_trace_length);
 
 #if !defined(NDEBUG)
-    tfm::format(log_file, "stop analyzing, %d checkpoints, %d/%d branches detected; start rollbacking with limit trace %d\n",
-                saved_checkpoints.size(), newly_detected_input_dep_cfis.size(),
-                newly_detected_cfis.size(), rollbacking_trace_length);
+    tfm::format(log_file, "stop analyzing, %d checkpoints, %d/%d branches detected; start \
+                rollbacking with limit trace %d\n", saved_checkpoints.size(),
+                newly_detected_input_dep_cfis.size(), newly_detected_cfis.size(),
+                rollbacking_trace_length);
     log_file.flush();
 #endif
 
@@ -504,7 +505,8 @@ auto generic_instruction (ADDRINT ins_addr, const CONTEXT* p_ctxt, THREADID thre
           if (opr->value.type() == typeid(REG))
           {
             tfm::format(log_file, "(%s: %s)", opr->name,
-                        addrint_to_hexstring(PIN_GetContextReg(p_ctxt, boost::get<REG>(opr->value))));
+                        addrint_to_hexstring(PIN_GetContextReg(p_ctxt,
+                                                               boost::get<REG>(opr->value))));
           }
         });
 
@@ -579,7 +581,7 @@ auto mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 me
   if (thread_id == traced_thread_id)
   {
 #if !defined(ENABLE_FAST_ROLLBACK)
-    // the first saved checkpoint tracks memory write operations so that we can always rollback to it
+    // the first saved checkpoint tracks memory write operations so that we can always rollback to
     if (!saved_checkpoints.empty())
     {
       saved_checkpoints[0]->mem_write_tracking(mem_written_addr, mem_written_size);
