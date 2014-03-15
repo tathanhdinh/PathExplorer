@@ -39,6 +39,7 @@ class operand
 public:
   std::string name;
   boost::variant<ADDRINT, REG>  value;
+  boost::variant<ADDRINT, REG>  exact_value;
   
 public:
   operand(ADDRINT mem_addr);

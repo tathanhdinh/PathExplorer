@@ -32,14 +32,22 @@ static input_generation_mode    gen_mode;
 
 namespace rollbacking
 {
-static inline auto initialize_values_at_active_modified_addrs() -> void
+static inline auto initialize_values_at_active_modified_addrs () -> void
 {
-  active_modified_addrs_values.clear(); /*input_on_active_modified_addrs.clear();*/
-  /*addrint_set_t::iterator*/auto addr_iter = active_modified_addrs.begin();
-  for (; addr_iter != active_modified_addrs.end(); ++addr_iter)
+//  active_modified_addrs_values.clear(); /*input_on_active_modified_addrs.clear();*/
+//  /*addrint_set_t::iterator*/auto addr_iter = active_modified_addrs.begin();
+//  for (; addr_iter != active_modified_addrs.end(); ++addr_iter)
+//  {
+//    active_modified_addrs_values[*addr_iter] = 0;
+//  }
+
+  active_modified_addrs_values.clear();
+  typedef decltype(active_modified_addrs) active_modified_addrs_t;
+  std::for_each(active_modified_addrs.begin(), active_modified_addrs.end(),
+                [&](active_modified_addrs_t::value_type addr)
   {
-    active_modified_addrs_values[*addr_iter] = 0;
-  }
+    active_modified_addrs_values[addr] = 0;
+  });
 
   // verify if the set of modified address is small
   if (active_modified_addrs_values.size() == 1)
@@ -52,8 +60,7 @@ static inline auto initialize_values_at_active_modified_addrs() -> void
   else
   {
     // no, set as default
-    max_rollback_num = max_local_rollback_knob.Value();
-    gen_mode = randomized;
+    max_rollback_num = max_local_rollback_knob.Value(); gen_mode = randomized;
   }
 
   used_rollback_num = 0;
@@ -61,14 +68,55 @@ static inline auto initialize_values_at_active_modified_addrs() -> void
 }
 
 
-static inline void generate_testing_values()
+static inline auto generate_testing_values () -> void
 {
   /*addrint_value_map_t::iterator*/auto addr_iter = active_modified_addrs_values.begin();
   for (; addr_iter != active_modified_addrs_values.end(); ++addr_iter)
   {
-    if (gen_mode == randomized) addr_iter->second = rand() % std::numeric_limits<UINT8>::max();
-    else addr_iter->second++;
+    switch (gen_mode)
+    {
+    case randomized:
+      addr_iter->second = rand() % std::numeric_limits<UINT8>::max(); break;
+    case sequential:
+      addr_iter->second++; break;
+    default:
+      break;
+    }
+
+//    if (gen_mode == randomized) addr_iter->second = rand() % std::numeric_limits<UINT8>::max();
+//    else addr_iter->second++;
   }
+
+//  static auto exec_randomized_generator = [&]()
+//  {
+//    typedef decltype(active_modified_addrs_values) active_modified_addrs_values_t;
+//    std::for_each(active_modified_addrs_values.begin(), active_modified_addrs_values.end(),
+//                  [&](active_modified_addrs_values_t::value_type addr_value)
+//    {
+//      addr_value.second = rand() % std::numeric_limits<UINT8>::max();
+//    });
+//  };
+
+//  static auto exec_sequential_generator = [&]()
+//  {
+//    typedef decltype(active_modified_addrs_values) active_modified_addrs_values_t;
+//    std::for_each(active_modified_addrs_values.begin(), active_modified_addrs_values.end(),
+//                  [&](active_modified_addrs_values_t::value_type addr_value)
+//    {
+//      addr_value.second++;
+//    });
+//  };
+
+//  switch (gen_mode)
+//  {
+//  case randomized:
+//    exec_randomized_generator(); break;
+//  case sequential:
+//    exec_sequential_generator(); break;
+//  default:
+//    break;
+//  }
+
   return;
 }
 

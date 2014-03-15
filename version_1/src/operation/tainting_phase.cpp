@@ -573,11 +573,12 @@ auto generic_instruction (ADDRINT ins_addr, const CONTEXT* p_ctxt, THREADID thre
         std::for_each(ins_at_addr[ins_addr]->src_operands.begin(),
                       ins_at_addr[ins_addr]->src_operands.end(), [&](ptr_operand_t opr)
         {
-          if (opr->value.type() == typeid(REG))
+          if ((opr->value.type() == typeid(REG)) &&
+              !REG_is_x87_reg(boost::get<REG>(opr->exact_value)))
           {
             tfm::format(log_file, "(%s: %s)", opr->name,
                         addrint_to_hexstring(PIN_GetContextReg(p_ctxt,
-                                                               boost::get<REG>(opr->value))));
+                                                               boost::get<REG>(opr->exact_value))));
           }
         });
 
