@@ -235,7 +235,7 @@ static inline auto set_checkpoints_for_cfi(const ptr_cond_direct_ins_t& cfi) -> 
 /**
  * @brief save new tainted CFIs in this tainting phase
  */
-static inline auto save_detected_cfis() -> void
+static inline auto save_detected_cfis () -> void
 {
   if (ins_at_order.size() > 1)
   {
@@ -358,10 +358,26 @@ static inline auto save_detected_cfis() -> void
 }
 
 
+#if !defined(DISABLE_FSA)
+/**
+ * @brief update the explored instructions into the explorer graph
+ */
+static inline auto update_explorer_graph () -> void
+{
+  typedef decltype(ins_at_order) ins_at_order_t;
+  std::for_each(ins_at_order.begin(), ins_at_order.end(), [&](ins_at_order_t::value_type ins_order)
+  {
+
+  });
+  return;
+}
+#endif
+
+
 /**
  * @brief analyze_executed_instructions
  */
-static inline void analyze_executed_instructions()
+static inline auto analyze_executed_instructions () -> void
 {
   if (!exploring_cfi)
   {
