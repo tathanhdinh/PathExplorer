@@ -82,41 +82,7 @@ static inline auto generate_testing_values () -> void
     default:
       break;
     }
-
-//    if (gen_mode == randomized) addr_iter->second = rand() % std::numeric_limits<UINT8>::max();
-//    else addr_iter->second++;
   }
-
-//  static auto exec_randomized_generator = [&]()
-//  {
-//    typedef decltype(active_modified_addrs_values) active_modified_addrs_values_t;
-//    std::for_each(active_modified_addrs_values.begin(), active_modified_addrs_values.end(),
-//                  [&](active_modified_addrs_values_t::value_type addr_value)
-//    {
-//      addr_value.second = rand() % std::numeric_limits<UINT8>::max();
-//    });
-//  };
-
-//  static auto exec_sequential_generator = [&]()
-//  {
-//    typedef decltype(active_modified_addrs_values) active_modified_addrs_values_t;
-//    std::for_each(active_modified_addrs_values.begin(), active_modified_addrs_values.end(),
-//                  [&](active_modified_addrs_values_t::value_type addr_value)
-//    {
-//      addr_value.second++;
-//    });
-//  };
-
-//  switch (gen_mode)
-//  {
-//  case randomized:
-//    exec_randomized_generator(); break;
-//  case sequential:
-//    exec_sequential_generator(); break;
-//  default:
-//    break;
-//  }
-
   return;
 }
 
@@ -303,7 +269,7 @@ static inline auto prepare_new_tainting_phase() -> void
  * @param ins_addr: the address of the current examined instruction.
  * @return no return value.
  */
-auto generic_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
+auto generic_instruction (ADDRINT ins_addr, THREADID thread_id) -> VOID
 {
   if (thread_id == traced_thread_id)
   {
@@ -349,14 +315,14 @@ auto generic_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
 //              active_cfi->second_input_projections.push_back(input_on_active_modified_addrs);
             }
 
-#if !defined(DISABLE_FSA)
+//#if !defined(DISABLE_FSA)
 //            // because the CFI will follow new direction so the path code should be changed
 //            project_input_on_active_modified_addrs();
 //            path_code_t new_path_code = active_cfi->path_code; new_path_code.push_back(true);
 //            explored_fsa->add_edge(ins_at_order[current_exec_order - 1]->address,
 //                                   ins_at_order[current_exec_order]->address, new_path_code,
 //                                   input_on_active_modified_addrs);
-#endif
+//#endif
           }
           else
           {
@@ -382,13 +348,13 @@ auto generic_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
         // and the executed instruction has exceeded this CFI
         if (active_cfi && (current_exec_order > active_cfi->exec_order))
         {
-#if !defined(DISABLE_FSA)
+//#if !defined(DISABLE_FSA)
 //          project_input_on_active_modified_addrs();
 //          path_code_t new_path_code = active_cfi->path_code; new_path_code.push_back(false);
 //          explored_fsa->add_edge(ins_at_order[current_exec_order - 1]->address,
 //                                 ins_at_order[current_exec_order]->address, new_path_code,
 //                                 input_on_active_modified_addrs);
-#endif
+//#endif
           rollback();
         }
       }

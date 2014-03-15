@@ -66,8 +66,16 @@ instruction::instruction(const INS& ins)
       }
       else 
       {
-        new_operand.reset(new operand(r_reg));
-        this->src_operands.insert(new_operand);
+        // add the segment registers filter
+        if ((REG_SEG_BASE <= r_reg) && (r_reg <= REG_SEG_LAST))
+        {
+          // do nothing: the segment registers are obsolete
+        }
+        else
+        {
+          new_operand.reset(new operand(r_reg));
+          this->src_operands.insert(new_operand);
+        }
       }
     }
   }
@@ -84,8 +92,16 @@ instruction::instruction(const INS& ins)
       }
       else
       {
-        new_operand.reset(new operand(w_reg));
-        this->dst_operands.insert(new_operand);
+        // add the segment registers filter
+        if ((REG_SEG_BASE <= w_reg) && (w_reg <= REG_SEG_LAST))
+        {
+          // do nothing: see above
+        }
+        else
+        {
+          new_operand.reset(new operand(w_reg));
+          this->dst_operands.insert(new_operand);
+        }
       }
     }
     else
