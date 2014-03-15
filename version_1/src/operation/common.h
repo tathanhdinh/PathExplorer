@@ -72,6 +72,7 @@ extern bool                     interested_msg_is_received;
 extern ptr_uint8_t              fresh_input;
 
 extern INT                      process_id;
+extern std::string              process_id_str;
 extern THREADID                 traced_thread_id;
 extern bool                     traced_thread_is_fixed;
 

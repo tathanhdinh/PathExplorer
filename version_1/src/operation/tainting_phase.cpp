@@ -239,45 +239,46 @@ static inline auto save_detected_cfis () -> void
 {
   if (ins_at_order.size() > 1)
   {
-#if !defined(DISABLE_FSA)
-    // the root path code is one of the exploring CFI: if the current instruction is the
-    // exploring CFI then "1" should be appended into the path code (because "0" has been
-    // appended in the previous tainting phase)
-    if (exploring_cfi) current_path_code.push_back(true);
-#endif
+//#if !defined(DISABLE_FSA)
+//    // the root path code is one of the exploring CFI: if the current instruction is the
+//    // exploring CFI then "1" should be appended into the path code (because "0" has been
+//    // appended in the previous tainting phase)
+//    if (exploring_cfi) current_path_code.push_back(true);
+//#endif
 
 //    auto ins_iter = ins_at_order.begin();
 //#if !defined(DISABLE_FSA)
 //    decltype(ins_iter) prev_ins_iter = ins_iter;
 //#endif
 
+    typedef decltype(ins_at_order) ins_at_order_t;
     auto last_order_ins = *ins_at_order.rbegin();
-    std::pair<UINT32, ptr_instruction_t> prev_order_ins;
-    std::for_each(ins_at_order.begin(), ins_at_order.end(), [&](decltype(prev_order_ins) order_ins)
+//    std::pair<UINT32, ptr_instruction_t> prev_order_ins;
+    std::for_each(ins_at_order.begin(), ins_at_order.end(), [&](ins_at_order_t::value_type order_ins)
     {
       // consider only the instruction that is not behind the exploring CFI
       if ((!exploring_cfi || (exploring_cfi && (order_ins.first > exploring_cfi->exec_order))) &&
           (order_ins.first < last_order_ins.first))
       {
-#if !defined(DISABLE_FSA)
-        explored_fsa->add_vertex(order_ins.second);
-        if (prev_order_ins.second)
-        {
-          explored_fsa->add_edge(prev_order_ins.second->address, order_ins.second->address,
-                                 current_path_code);
-          explored_fsa->add_edge(prev_order_ins.second, order_ins.second, current_path_code);
-        }
-        else
-        {
-          if (exploring_cfi)
-          {
-            explored_fsa->add_edge(exploring_cfi->address, order_ins.second->address,
-                                   current_path_code);
-            explored_fsa->add_edge(std::dynamic_pointer_cast<instruction>(exploring_cfi),
-                                   order_ins.second, current_path_code);
-          }
-        }
-#endif
+//#if !defined(DISABLE_FSA)
+//        explored_fsa->add_vertex(order_ins.second);
+//        if (prev_order_ins.second)
+//        {
+//          explored_fsa->add_edge(prev_order_ins.second->address, order_ins.second->address,
+//                                 current_path_code);
+//          explored_fsa->add_edge(prev_order_ins.second, order_ins.second, current_path_code);
+//        }
+//        else
+//        {
+//          if (exploring_cfi)
+//          {
+//            explored_fsa->add_edge(exploring_cfi->address, order_ins.second->address,
+//                                   current_path_code);
+//            explored_fsa->add_edge(std::dynamic_pointer_cast<instruction>(exploring_cfi),
+//                                   order_ins.second, current_path_code);
+//          }
+//        }
+//#endif
         // verify if the instruction is a CFI
         if (order_ins.second->is_cond_direct_cf)
         {
@@ -296,20 +297,19 @@ static inline auto save_detected_cfis () -> void
 #if !defined(NDEBUG)
             newly_detected_input_dep_cfis.push_back(new_cfi);
 #endif
-#if !defined(DISABLE_FSA)
-            // update the path code of the CFI
-            new_cfi->path_code = current_path_code; current_path_code.push_back(false);
-#endif
+//#if !defined(DISABLE_FSA)
+//            // update the path code of the CFI
+//            new_cfi->path_code = current_path_code; current_path_code.push_back(false);
+//#endif
           }
 #if !defined(NDEBUG)
           newly_detected_cfis.push_back(new_cfi);
 #endif
         }
       }
-#if !defined(DISABLE_FSA)
-      prev_order_ins = order_ins;
-//      prev_ins_iter = ins_iter;
-#endif
+//#if !defined(DISABLE_FSA)
+//      prev_order_ins = order_ins;
+//#endif
     });
 
 //    for (ins_iter; ins_iter != ins_at_order.end(); ++ins_iter)
@@ -364,11 +364,50 @@ static inline auto save_detected_cfis () -> void
  */
 static inline auto update_explorer_graph () -> void
 {
-  typedef decltype(ins_at_order) ins_at_order_t;
-  std::for_each(ins_at_order.begin(), ins_at_order.end(), [&](ins_at_order_t::value_type ins_order)
+  if (ins_at_order.size() > 1)
   {
+    // the root path code is one of the exploring CFI: if the current instruction is the
+    // exploring CFI then "1" should be appended into the path code (because "0" has been
+    // appended in the previous tainting phase)
+    if (exploring_cfi) current_path_code.push_back(true);
 
-  });
+    typedef decltype(ins_at_order) ins_at_order_t;
+    ins_at_order_t::mapped_type prev_ins;
+    std::for_each(ins_at_order.begin(), ins_at_order.end(), [&](ins_at_order_t::value_type order_ins)
+    {
+      if (!exploring_cfi || (exploring_cfi && (order_ins.first > exploring_cfi->exec_order)))
+      {
+        explored_fsa->add_vertex(order_ins.second);
+        if (prev_ins)
+        {
+          explored_fsa->add_edge(prev_ins->address, order_ins.second->address, current_path_code);
+          explored_fsa->add_edge(prev_ins, order_ins.second, current_path_code);
+        }
+        else
+        {
+          if (exploring_cfi)
+          {
+            explored_fsa->add_edge(exploring_cfi->address, order_ins.second->address,
+                                   current_path_code);
+            explored_fsa->add_edge(std::dynamic_pointer_cast<instruction>(exploring_cfi),
+                                   order_ins.second, current_path_code);
+          }
+        }
+
+        // update the path code
+        if (order_ins.second->is_cond_direct_cf)
+        {
+          auto current_cfi = std::static_pointer_cast<cond_direct_instruction>(order_ins.second);
+          if (!current_cfi->input_dep_addrs.empty())
+          {
+            current_cfi->path_code = current_path_code; current_path_code.push_back(false);
+          }
+        }
+        prev_ins = order_ins.second;
+      }
+    });
+  }
+
   return;
 }
 #endif
@@ -381,9 +420,12 @@ static inline auto analyze_executed_instructions () -> void
 {
   if (!exploring_cfi)
   {
-    save_tainting_graph(dta_graph, "path_explorer_tainting_graph.dot");
+    save_tainting_graph(dta_graph, process_id_str + "_path_explorer_tainting_graph.dot");
   }
   determine_cfi_input_dependency(); save_detected_cfis();
+#if !defined(DISABLE_FSA)
+  update_explorer_graph();
+#endif
   return;
 }
 
@@ -449,10 +491,9 @@ static inline auto prepare_new_rollbacking_phase() -> void
     rollbacking::initialize(rollbacking_trace_length);
 
 #if !defined(NDEBUG)
-    tfm::format(log_file, "stop analyzing, %d checkpoints, %d/%d branches detected; start \
-                rollbacking with limit trace %d\n", saved_checkpoints.size(),
-                newly_detected_input_dep_cfis.size(), newly_detected_cfis.size(),
-                rollbacking_trace_length);
+    tfm::format(log_file, "stop analyzing, %d checkpoints, %d/%d branches detected; start rollbacking with limit trace %d\n",
+                saved_checkpoints.size(), newly_detected_input_dep_cfis.size(),
+                newly_detected_cfis.size(), rollbacking_trace_length);
     log_file.flush();
 #endif
 
@@ -766,7 +807,7 @@ static inline auto destination_variables(UINT32 idx) -> std::set<df_vertex_desc>
  * @param ins_addr
  * @return
  */
-auto graphical_propagation(ADDRINT ins_addr, THREADID thread_id) -> VOID
+auto graphical_propagation (ADDRINT ins_addr, THREADID thread_id) -> VOID
 {
   if (thread_id == traced_thread_id)
   {
