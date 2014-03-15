@@ -260,9 +260,23 @@ static inline auto save_detected_cfis() -> void
           (order_ins.first < last_order_ins.first))
       {
 #if !defined(DISABLE_FSA)
+        explored_fsa->add_vertex(order_ins.second);
         if (prev_order_ins.second)
+        {
           explored_fsa->add_edge(prev_order_ins.second->address, order_ins.second->address,
                                  current_path_code);
+          explored_fsa->add_edge(prev_order_ins.second, order_ins.second, current_path_code);
+        }
+        else
+        {
+          if (exploring_cfi)
+          {
+            explored_fsa->add_edge(exploring_cfi->address, order_ins.second->address,
+                                   current_path_code);
+            explored_fsa->add_edge(std::dynamic_pointer_cast<instruction>(exploring_cfi),
+                                   order_ins.second, current_path_code);
+          }
+        }
 #endif
         // verify if the instruction is a CFI
         if (order_ins.second->is_cond_direct_cf)

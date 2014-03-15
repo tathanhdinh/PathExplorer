@@ -12,11 +12,22 @@ typedef std::pair<std::vector<bool>, addrint_value_maps_t>  exp_edge;
 typedef boost::adjacency_list<boost::listS, boost::vecS,
                               boost::bidirectionalS,
                               exp_vertex, exp_edge>         exp_graph;
-
 typedef boost::graph_traits<exp_graph>::vertex_descriptor   exp_vertex_desc;
 typedef boost::graph_traits<exp_graph>::edge_descriptor     exp_edge_desc;
 typedef boost::graph_traits<exp_graph>::vertex_iterator     exp_vertex_iter;
 typedef boost::graph_traits<exp_graph>::edge_iterator       exp_edge_iter;
+
+typedef ptr_instruction_t                                   exp_tree_vertex;
+typedef path_code_t                                         exp_tree_edge;
+typedef boost::adjacency_list<boost::listS, boost::vecS,
+                              boost::bidirectionalS,
+                              exp_tree_vertex,
+                              exp_tree_edge>                exp_tree;
+typedef boost::graph_traits<exp_tree>::vertex_descriptor    exp_tree_vertex_desc;
+typedef boost::graph_traits<exp_tree>::edge_descriptor      exp_tree_edge_desc;
+typedef boost::graph_traits<exp_tree>::vertex_iterator      exp_tree_vertex_iter;
+typedef boost::graph_traits<exp_tree>::edge_iterator        exp_tree_edge_iter;
+
 
 /*================================================================================================*/
 
@@ -25,13 +36,15 @@ static exp_graph            internal_exp_graph_simple;
 static ptr_explorer_graph_t single_graph_instance;
 static addrint_value_map_t  default_addrs_values;
 
+static exp_tree             internal_exp_tree;
+
 /*================================================================================================*/
 /**
  * @brief private constructor of the explorer graph
  */
 explorer_graph::explorer_graph()
 {
-  internal_exp_graph.clear(); internal_exp_graph_simple.clear();
+  internal_exp_graph.clear(); internal_exp_graph_simple.clear(); internal_exp_tree.clear();
 }
 
 
@@ -46,25 +59,23 @@ auto explorer_graph::instance() -> ptr_explorer_graph_t
 
 
 /**
- * @brief add a vertex into the graph
+ * @brief add a vertex into the explorer graph
  */
-void explorer_graph::add_vertex(ADDRINT ins_addr)
+auto explorer_graph::add_vertex(ADDRINT ins_addr) -> void
 {
-//  exp_vertex_iter vertex_iter, last_vertex_iter;
-//  boost::tie(vertex_iter, last_vertex_iter) = boost::vertices(internal_exp_graph);
-
-//  // verify if the instruction exists in the graph
-//  for (; vertex_iter != last_vertex_iter; ++vertex_iter)
-//  {
-//    if (internal_exp_graph[*vertex_iter] == ins) break;
-//  }
-//  if (vertex_iter == last_vertex_iter) boost::add_vertex(ins, internal_exp_graph);
-
-//  tfm::format(std::cerr, "add vertex <%s: %s>\n", addrint_to_hexstring(ins_addr),
-//              ins_at_addr[ins_addr]->disassembled_name);
   boost::add_vertex(ins_addr, internal_exp_graph);
   boost::add_vertex(ins_addr, internal_exp_graph_simple);
 
+  return;
+}
+
+
+/**
+ * @brief add a vertex into the explorer tree
+ */
+auto explorer_graph::add_vertex(ptr_instruction_t& ins) -> void
+{
+  boost::add_vertex(ins, internal_exp_tree);
   return;
 }
 
@@ -85,7 +96,7 @@ void explorer_graph::add_vertex(ADDRINT ins_addr)
 
 
 /**
- * @brief add an edge into the graph
+ * @brief add an edge into the explorer graph
  */
 auto explorer_graph::add_edge(ADDRINT ins_a_addr, ADDRINT ins_b_addr,
                               const path_code_t& edge_path_code,
@@ -177,6 +188,27 @@ auto explorer_graph::add_edge(ADDRINT ins_a_addr, ADDRINT ins_b_addr,
 }
 
 
+/**
+ * @brief add an edge into the explorer tree
+ */
+auto explorer_graph::add_edge(ptr_instruction_t& ins_a, ptr_instruction_t& ins_b,
+                              const path_code_t& edge_path_code) -> void
+{
+  exp_tree_vertex_desc vertex_a_desc, vertex_b_desc;
+  exp_tree_vertex_iter first_vertex_tree_iter, last_vertex_tree_iter;
+
+  std::tie(first_vertex_tree_iter, last_vertex_tree_iter) = boost::vertices(internal_exp_tree);
+  std::for_each(first_vertex_tree_iter, last_vertex_tree_iter, [&](exp_tree_vertex_desc vertex_desc)
+  {
+    if (internal_exp_tree[vertex_desc] == ins_a) vertex_a_desc = vertex_desc;
+    if (internal_exp_tree[vertex_desc] == ins_b) vertex_b_desc = vertex_desc;
+  });
+  boost::add_edge(vertex_a_desc, vertex_b_desc, edge_path_code, internal_exp_tree);
+
+  return;
+}
+
+
 extern ptr_cond_direct_inss_t detected_input_dep_cfis;
 class exp_vertex_label_writer
 {
@@ -213,6 +245,35 @@ private:
 };
 
 
+template <typename exp_t>
+class generic_exp_vertex_label_writer
+{
+public:
+  generic_exp_vertex_label_writer(exp_t& input_graph) : internal_graph(input_graph) {};
+
+  void operator()(std::ostream& label,
+                  typename boost::graph_traits<exp_t>::vertex_descriptor vertex_desc)
+  {
+    auto current_vertex = internal_graph[vertex_desc];
+    auto vertex_is_cfi = false;
+    std::for_each(detected_input_dep_cfis.begin(), detected_input_dep_cfis.end(),
+                  [&](ptr_cond_direct_ins_t cfi)
+    {
+      if (cfi->address == current_vertex->address) vertex_is_cfi = true;
+    });
+    if (vertex_is_cfi) tfm::format(label, "[label=\"<%s: %s>\",style=filled,fillcolor=slateblue]",
+                                   addrint_to_hexstring(current_vertex->address),
+                                   current_vertex->disassembled_name);
+    else tfm::format(label, "[label=\"<%s: %s>\"]", addrint_to_hexstring(current_vertex->address),
+                     current_vertex->disassembled_name);
+    return;
+  }
+
+private:
+  exp_t internal_graph;
+};
+
+
 class exp_edge_label_writer
 {
 public:
@@ -228,6 +289,25 @@ public:
 
 private:
   exp_graph internal_graph;
+};
+
+
+template <typename exp_t>
+class generic_exp_edge_label_writer
+{
+public:
+  generic_exp_edge_label_writer(exp_t& input_graph) : internal_graph(input_graph) {};
+
+  void operator()(std::ostream& label,
+                  typename boost::graph_traits<exp_t>::edge_descriptor edge_desc)
+  {
+    auto current_edge = internal_graph[edge_desc];
+    tfm::format(label, "[label=\"%s\"]", path_code_to_string(current_edge));
+    return;
+  }
+
+private:
+  exp_t internal_graph;
 };
 
 
@@ -304,6 +384,11 @@ auto explorer_graph::save_to_file(std::string filename) -> void
   boost::write_graphviz(output_simple, prunned_graph_simple,
                         exp_vertex_label_writer(internal_exp_graph_simple),
                         exp_edge_label_writer(internal_exp_graph_simple));
+
+  std::ofstream output_tree(("tree_" + filename).c_str(), std::ofstream::out | std::ofstream::trunc);
+  boost::write_graphviz(output_tree, internal_exp_tree,
+                        generic_exp_vertex_label_writer<exp_tree>(internal_exp_tree),
+                        generic_exp_edge_label_writer<exp_tree>(internal_exp_tree));
 
   return;
 }
