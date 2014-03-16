@@ -38,6 +38,77 @@ std::function<void()>           generate_testing_values;
 
 namespace rollbacking
 {
+/**
+ * @brief randomized_generator
+ */
+static auto randomized_generator () -> void
+{
+  for (auto addr_iter = active_modified_addrs_values.begin();
+       addr_iter != active_modified_addrs_values.end(); ++addr_iter)
+  {
+    addr_iter->second = rand() % std::numeric_limits<UINT8>::max();
+  }
+  return;
+}
+
+
+/**
+ * @brief sequential_generator
+ */
+static auto sequential_generator () -> void
+{
+  for (auto addr_iter = active_modified_addrs_values.begin();
+       addr_iter != active_modified_addrs_values.end(); ++addr_iter)
+  {
+    addr_iter->second++;
+  }
+  return;
+}
+
+
+/**
+ * @brief byte_sequential_generator
+ */
+static auto byte_sequential_generator () -> void
+{
+  active_modified_addrs_values.begin()->second = byte_testing_value;
+  byte_testing_value++;
+  return;
+}
+
+
+/**
+ * @brief word_sequential_generator
+ */
+static auto word_sequential_generator () -> void
+{
+  active_modified_addrs_values.begin()->second        = word_testing_value & 0x00FF;
+  std::next(
+        active_modified_addrs_values.begin())->second = word_testing_value >> 8;
+  word_testing_value++;
+  return;
+}
+
+
+/**
+ * @brief dword_sequential_generator
+ */
+static auto dword_sequential_generator () -> void
+{
+  active_modified_addrs_values.begin()->second              = dword_testing_value & 0x000000FF;
+  std::next(
+        active_modified_addrs_values.begin())->second       = (dword_testing_value >> 8) & 0x000000FF;
+  std::next(
+        std::next(
+          active_modified_addrs_values.begin()))->second    = (dword_testing_value >> 16) & 0x000000FF;
+  std::next(
+        std::next(
+          std::next(
+            active_modified_addrs_values.begin())))->second = (dword_testing_value >> 24) & 0x000000FF;
+  dword_testing_value++;
+  return;
+}
+
 static inline auto initialize_values_at_active_modified_addrs () -> void
 {
 //  active_modified_addrs_values.clear(); /*input_on_active_modified_addrs.clear();*/
@@ -47,46 +118,6 @@ static inline auto initialize_values_at_active_modified_addrs () -> void
 //    active_modified_addrs_values[*addr_iter] = 0;
 //  }
 
-  auto randomized_generator = [&]()
-  {
-    for (auto addr_iter = active_modified_addrs_values.begin();
-         addr_iter != active_modified_addrs_values.end(); ++addr_iter)
-    {
-      addr_iter->second = rand() % std::numeric_limits<UINT8>::max();
-    }
-  };
-
-  auto sequential_generator = [&]()
-  {
-    for (auto addr_iter = active_modified_addrs_values.begin();
-         addr_iter != active_modified_addrs_values.end(); ++addr_iter)
-    {
-      addr_iter->second++;
-    }
-  };
-
-  auto byte_sequential_generator = [&]()
-  {
-    byte_testing_value++;
-    active_modified_addrs_values.begin()->second = byte_testing_value;
-  };
-
-  auto word_sequential_generator = [&]()
-  {
-    word_testing_value++;
-    active_modified_addrs_values.begin()->second = word_testing_value & 0x00FF;
-    std::next(active_modified_addrs_values.begin())->second = word_testing_value >> 8;
-  };
-
-  auto dword_sequential_generator = [&]()
-  {
-    dword_testing_value++;
-    active_modified_addrs_values.begin()->second = dword_testing_value & 0x00FF;
-    std::next(active_modified_addrs_values.begin())->second = (dword_testing_value >> 8) & 0x000000FF;
-    std::next(std::next(active_modified_addrs_values.begin()))->second = (dword_testing_value >> 16) & 0x000000FF;
-    std::next(std::next(std::next(active_modified_addrs_values.begin())))->second = (dword_testing_value >> 24) & 0x000000FF;
-  };
-
   active_modified_addrs_values.clear();
   typedef decltype(active_modified_addrs) active_modified_addrs_t;
   std::for_each(active_modified_addrs.begin(), active_modified_addrs.end(),
@@ -95,20 +126,6 @@ static inline auto initialize_values_at_active_modified_addrs () -> void
     active_modified_addrs_values[addr] = 0;
     byte_testing_value = 0; word_testing_value = 0; dword_testing_value = 0;
   });
-
-//  // verify if the set of modified address is small
-//  if (active_modified_addrs_values.size() == 1)
-//  {
-//    // yes, then the maximal rollback number is customized
-//    max_rollback_num = std::numeric_limits<UINT8>::max() + 1;
-//    gen_mode = sequential; generate_testing_values = sequential_generator;
-//  }
-//  else
-//  {
-//    // no, set as default
-//    max_rollback_num = max_local_rollback_knob.Value();
-//    gen_mode = randomized; generate_testing_values = randomized_generator;
-//  }
 
   switch (active_modified_addrs_values.size())
   {
@@ -468,8 +485,8 @@ auto control_flow_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
               if (active_checkpoint)
               {
 #if !defined(NDEBUG)
-                tfm::format(log_file, "the cfi at %d is still actived, its next checkpoint is at %d\n",
-                            active_cfi->exec_order, active_checkpoint->exec_order);
+                tfm::format(log_file, "the cfi at %d is still actived, its next checkpoint is at %d, modified addresses size %d\n",
+                            active_cfi->exec_order, active_checkpoint->exec_order, active_modified_addrs.size());
 #endif
                 // exists, then rollback to the new active checkpoint
                 rollback();
@@ -505,9 +522,9 @@ auto control_flow_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
           // yes, then set it as the active CFI
           active_cfi = current_cfi; get_next_active_checkpoint();
 #if !defined(NDEBUG)
-          tfm::format(log_file, "the CFI %s at %d is activated, its first checkpoint is at %d\n",
+          tfm::format(log_file, "the CFI %s at %d is activated, its first checkpoint is at %d, modified addresses size %d\n",
                       active_cfi->disassembled_name, active_cfi->exec_order,
-                      active_checkpoint->exec_order);
+                      active_checkpoint->exec_order, active_modified_addrs.size());
 #endif
           // make a copy of the fresh input
 //          active_cfi->fresh_input.reset(new UINT8[received_msg_size]);

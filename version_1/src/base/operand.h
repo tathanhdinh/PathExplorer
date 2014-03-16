@@ -39,6 +39,8 @@ class operand
 public:
   std::string name;
   boost::variant<ADDRINT, REG>  value;
+
+  std::string exact_name;
   boost::variant<ADDRINT, REG>  exact_value;
   
 public:
