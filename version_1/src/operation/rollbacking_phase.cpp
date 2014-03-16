@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <limits>
 #include <algorithm>
+#include <functional>
 
 /*================================================================================================*/
 
@@ -27,6 +28,9 @@ static addrint_value_map_t      active_modified_addrs_values;
 static ptr_uint8_t              tainting_input;
 static input_generation_mode    gen_mode;
 
+//typedef std::function<void()>   no_param_no_ret_t;
+std::function<void()>           generate_testing_values;
+
 
 /*================================================================================================*/
 
@@ -41,6 +45,24 @@ static inline auto initialize_values_at_active_modified_addrs () -> void
 //    active_modified_addrs_values[*addr_iter] = 0;
 //  }
 
+  auto randomized_generator = [&]()
+  {
+    for (auto addr_iter = active_modified_addrs_values.begin();
+         addr_iter != active_modified_addrs_values.end(); ++addr_iter)
+    {
+      addr_iter->second = rand() % std::numeric_limits<UINT8>::max();
+    }
+  };
+
+  auto sequential_generator = [&]()
+  {
+    for (auto addr_iter = active_modified_addrs_values.begin();
+         addr_iter != active_modified_addrs_values.end(); ++addr_iter)
+    {
+      addr_iter->second++;
+    }
+  };
+
   active_modified_addrs_values.clear();
   typedef decltype(active_modified_addrs) active_modified_addrs_t;
   std::for_each(active_modified_addrs.begin(), active_modified_addrs.end(),
@@ -54,13 +76,13 @@ static inline auto initialize_values_at_active_modified_addrs () -> void
   {
     // yes, then the maximal rollback number is customized
     max_rollback_num = std::numeric_limits<UINT8>::max() + 1;
-//    max_rollback_num = max_local_rollback.Value();
-    gen_mode = sequential;
+    gen_mode = sequential; generate_testing_values = sequential_generator;
   }
   else
   {
     // no, set as default
-    max_rollback_num = max_local_rollback_knob.Value(); gen_mode = randomized;
+    max_rollback_num = max_local_rollback_knob.Value();
+    gen_mode = randomized; generate_testing_values = randomized_generator;
   }
 
   used_rollback_num = 0;
@@ -68,23 +90,23 @@ static inline auto initialize_values_at_active_modified_addrs () -> void
 }
 
 
-static inline auto generate_testing_values () -> void
-{
-  /*addrint_value_map_t::iterator*/auto addr_iter = active_modified_addrs_values.begin();
-  for (; addr_iter != active_modified_addrs_values.end(); ++addr_iter)
-  {
-    switch (gen_mode)
-    {
-    case randomized:
-      addr_iter->second = rand() % std::numeric_limits<UINT8>::max(); break;
-    case sequential:
-      addr_iter->second++; break;
-    default:
-      break;
-    }
-  }
-  return;
-}
+//static inline auto generate_testing_values () -> void
+//{
+//  /*addrint_value_map_t::iterator*/auto addr_iter = active_modified_addrs_values.begin();
+//  for (; addr_iter != active_modified_addrs_values.end(); ++addr_iter)
+//  {
+//    switch (gen_mode)
+//    {
+//    case randomized:
+//      addr_iter->second = rand() % std::numeric_limits<UINT8>::max(); break;
+//    case sequential:
+//      addr_iter->second++; break;
+//    default:
+//      break;
+//    }
+//  }
+//  return;
+//}
 
 
 static inline void rollback()
