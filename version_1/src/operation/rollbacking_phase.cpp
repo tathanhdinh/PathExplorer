@@ -28,7 +28,9 @@ static addrint_value_map_t      active_modified_addrs_values;
 static ptr_uint8_t              tainting_input;
 static input_generation_mode    gen_mode;
 
-//typedef std::function<void()>   no_param_no_ret_t;
+UINT8                           byte_testing_value;
+UINT16                          word_testing_value;
+UINT32                          dword_testing_value;
 std::function<void()>           generate_testing_values;
 
 
@@ -63,26 +65,72 @@ static inline auto initialize_values_at_active_modified_addrs () -> void
     }
   };
 
+  auto byte_sequential_generator = [&]()
+  {
+    byte_testing_value++;
+    active_modified_addrs_values.begin()->second = byte_testing_value;
+  };
+
+  auto word_sequential_generator = [&]()
+  {
+    word_testing_value++;
+    active_modified_addrs_values.begin()->second = word_testing_value & 0x00FF;
+    std::next(active_modified_addrs_values.begin())->second = word_testing_value >> 8;
+  };
+
+  auto dword_sequential_generator = [&]()
+  {
+    dword_testing_value++;
+    active_modified_addrs_values.begin()->second = dword_testing_value & 0x00FF;
+    std::next(active_modified_addrs_values.begin())->second = (dword_testing_value >> 8) & 0x000000FF;
+    std::next(std::next(active_modified_addrs_values.begin()))->second = (dword_testing_value >> 16) & 0x000000FF;
+    std::next(std::next(std::next(active_modified_addrs_values.begin())))->second = (dword_testing_value >> 24) & 0x000000FF;
+  };
+
   active_modified_addrs_values.clear();
   typedef decltype(active_modified_addrs) active_modified_addrs_t;
   std::for_each(active_modified_addrs.begin(), active_modified_addrs.end(),
                 [&](active_modified_addrs_t::value_type addr)
   {
     active_modified_addrs_values[addr] = 0;
+    byte_testing_value = 0; word_testing_value = 0; dword_testing_value = 0;
   });
 
-  // verify if the set of modified address is small
-  if (active_modified_addrs_values.size() == 1)
+//  // verify if the set of modified address is small
+//  if (active_modified_addrs_values.size() == 1)
+//  {
+//    // yes, then the maximal rollback number is customized
+//    max_rollback_num = std::numeric_limits<UINT8>::max() + 1;
+//    gen_mode = sequential; generate_testing_values = sequential_generator;
+//  }
+//  else
+//  {
+//    // no, set as default
+//    max_rollback_num = max_local_rollback_knob.Value();
+//    gen_mode = randomized; generate_testing_values = randomized_generator;
+//  }
+
+  switch (active_modified_addrs_values.size())
   {
-    // yes, then the maximal rollback number is customized
+  case 1:
     max_rollback_num = std::numeric_limits<UINT8>::max() + 1;
-    gen_mode = sequential; generate_testing_values = sequential_generator;
-  }
-  else
-  {
-    // no, set as default
+    gen_mode = sequential; generate_testing_values = byte_sequential_generator;
+    break;
+
+  case 2:
+    max_rollback_num = std::numeric_limits<UINT16>::max() + 1;
+    gen_mode = sequential; generate_testing_values = word_sequential_generator;
+    break;
+
+  case 4:
+    max_rollback_num = max_local_rollback_knob.Value();
+    gen_mode = randomized; generate_testing_values = dword_sequential_generator;
+    break;
+
+  default:
     max_rollback_num = max_local_rollback_knob.Value();
     gen_mode = randomized; generate_testing_values = randomized_generator;
+    break;
   }
 
   used_rollback_num = 0;
@@ -420,8 +468,8 @@ auto control_flow_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
               if (active_checkpoint)
               {
 #if !defined(NDEBUG)
-                tfm::format(log_file, "the cfi at %d is still actived, its next checkpoint is \
-                            at %d\n", active_cfi->exec_order, active_checkpoint->exec_order);
+                tfm::format(log_file, "the cfi at %d is still actived, its next checkpoint is at %d\n",
+                            active_cfi->exec_order, active_checkpoint->exec_order);
 #endif
                 // exists, then rollback to the new active checkpoint
                 rollback();
@@ -503,7 +551,7 @@ auto mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length
     {
       // no, namely we are now in normal "forward" execution, so all checkpoint until the current
       // execution order need to track memory write instructions
-      ptr_checkpoints_t::iterator chkpnt_iter = saved_checkpoints.begin();
+      /*ptr_checkpoints_t::iterator*/auto chkpnt_iter = saved_checkpoints.begin();
       for (; chkpnt_iter != saved_checkpoints.end(); ++chkpnt_iter)
       {
         if ((*chkpnt_iter)->exec_order <= current_exec_order)
