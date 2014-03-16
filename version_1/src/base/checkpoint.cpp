@@ -11,13 +11,20 @@ checkpoint::checkpoint(UINT32 existing_exec_order, const CONTEXT* p_ctxt,
 
   this->exec_order = existing_exec_order;
 
-  /*UINT32 mem_offset;*/ UINT8 single_byte;
-  for (auto mem_offset = 0; mem_offset < input_mem_read_size; ++mem_offset)
+  UINT8 mem_buffer[sizeof(std::size_t)];
+  PIN_SafeCopy(mem_buffer, reinterpret_cast<UINT8*>(input_mem_read_addr), input_mem_read_size);
+  for (auto mem_idx = 0; mem_idx < input_mem_read_size; ++mem_idx)
   {
-    PIN_SafeCopy(&single_byte,
-                 reinterpret_cast<UINT8*>(input_mem_read_addr + mem_offset), sizeof(UINT8));
-    this->input_dep_original_values[input_mem_read_addr + mem_offset] = single_byte;
+    this->input_dep_original_values[input_mem_read_addr + mem_idx] = mem_buffer[mem_idx];
   }
+
+//  /*UINT32 mem_offset;*/ UINT8 single_byte;
+//  for (auto mem_offset = 0; mem_offset < input_mem_read_size; ++mem_offset)
+//  {
+//    PIN_SafeCopy(&single_byte,
+//                 reinterpret_cast<UINT8*>(input_mem_read_addr + mem_offset), sizeof(UINT8));
+//    this->input_dep_original_values[input_mem_read_addr + mem_offset] = single_byte;
+//  }
 }
 
 
@@ -26,16 +33,16 @@ checkpoint::checkpoint(UINT32 existing_exec_order, const CONTEXT* p_ctxt,
  */
 void checkpoint::mem_write_tracking(ADDRINT mem_addr, UINT32 mem_size)
 {
-  UINT8 single_byte;
-  for (/*UINT32*/auto offset = 0; offset < mem_size; ++offset)
+  for (/*UINT32*/auto mem_idx = 0; mem_idx < mem_size; ++mem_idx)
   {
     // this address is written for the first time,
-    if (mem_written_log.find(mem_addr + offset) == mem_written_log.end())
+    if (mem_written_log.find(mem_addr + mem_idx) == mem_written_log.end())
     {
       // then the original value is logged.
 //       mem_written_log[mem_addr + offset] = *(reinterpret_cast<UINT8*>(mem_addr + offset));
-      PIN_SafeCopy(&single_byte, reinterpret_cast<UINT8*>(mem_addr + offset), sizeof(UINT8));
-      mem_written_log[mem_addr + offset] = single_byte;
+      UINT8 single_byte;
+      PIN_SafeCopy(&single_byte, reinterpret_cast<UINT8*>(mem_addr + mem_idx), sizeof(UINT8));
+      mem_written_log[mem_addr + mem_idx] = single_byte;
     }
   }
   return;
