@@ -577,8 +577,7 @@ auto generic_instruction (ADDRINT ins_addr, const CONTEXT* p_ctxt, THREADID thre
               !REG_is_fr_or_x87(boost::get<REG>(opr->exact_value)))
           {
             tfm::format(log_file, "(%s: %s)", opr->name,
-                        addrint_to_hexstring(PIN_GetContextReg(p_ctxt,
-                                                               boost::get<REG>(opr->value))));
+                        addrint_to_hexstring(PIN_GetContextReg(p_ctxt, boost::get<REG>(opr->value))));
           }
         });
 

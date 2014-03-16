@@ -123,3 +123,11 @@ auto path_code_to_string  (const path_code_t& path_code) -> std::string
   return code_str;
 }
 #endif
+
+
+auto show_exploring_progress () -> void
+{
+  tfm::format(std::cout, "[");
+
+  return;
+}
