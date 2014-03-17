@@ -66,48 +66,65 @@ static auto sequential_generator () -> void
 }
 
 
-/**
- * @brief byte_sequential_generator
- */
-static auto byte_sequential_generator () -> void
+///**
+// * @brief byte_sequential_generator
+// */
+//static auto byte_sequential_generator () -> void
+//{
+//  active_modified_addrs_values.begin()->second = byte_testing_value;
+//  byte_testing_value++;
+//  return;
+//}
+
+
+///**
+// * @brief word_sequential_generator
+// */
+//static auto word_sequential_generator () -> void
+//{
+//  active_modified_addrs_values.begin()->second = word_testing_value & 0x00FF;
+//  std::next(
+//        active_modified_addrs_values.begin())->second = word_testing_value >> 8;
+//  word_testing_value++;
+//  return;
+//}
+
+
+///**
+// * @brief dword_sequential_generator
+// */
+//static auto dword_sequential_generator () -> void
+//{
+//  active_modified_addrs_values.begin()->second = dword_testing_value & 0x000000FF;
+//  std::next(
+//        active_modified_addrs_values.begin())->second = (dword_testing_value >> 8) & 0x000000FF;
+//  std::next(
+//        std::next(
+//          active_modified_addrs_values.begin()))->second = (dword_testing_value >> 16) & 0x000000FF;
+//  std::next(
+//        std::next(
+//          std::next(
+//            active_modified_addrs_values.begin())))->second = (dword_testing_value >> 24) & 0x000000FF;
+//  dword_testing_value++;
+//  return;
+//}
+
+
+template <typename T>
+static auto generic_sequential_generator () -> void
 {
-  active_modified_addrs_values.begin()->second = byte_testing_value;
-  byte_testing_value++;
+  static T generic_testing_value = 0;
+
+  auto addr_value = active_modified_addrs_values.begin();
+  for (auto idx = 0; idx < sizeof(T); ++idx)
+  {
+    addr_value->second = (generic_testing_value >> (idx * 8)) & 0xFF;
+    addr_value = std::next(addr_value);
+  }
+  generic_testing_value++;
   return;
 }
 
-
-/**
- * @brief word_sequential_generator
- */
-static auto word_sequential_generator () -> void
-{
-  active_modified_addrs_values.begin()->second        = word_testing_value & 0x00FF;
-  std::next(
-        active_modified_addrs_values.begin())->second = word_testing_value >> 8;
-  word_testing_value++;
-  return;
-}
-
-
-/**
- * @brief dword_sequential_generator
- */
-static auto dword_sequential_generator () -> void
-{
-  active_modified_addrs_values.begin()->second              = dword_testing_value & 0x000000FF;
-  std::next(
-        active_modified_addrs_values.begin())->second       = (dword_testing_value >> 8) & 0x000000FF;
-  std::next(
-        std::next(
-          active_modified_addrs_values.begin()))->second    = (dword_testing_value >> 16) & 0x000000FF;
-  std::next(
-        std::next(
-          std::next(
-            active_modified_addrs_values.begin())))->second = (dword_testing_value >> 24) & 0x000000FF;
-  dword_testing_value++;
-  return;
-}
 
 static inline auto initialize_values_at_active_modified_addrs () -> void
 {
@@ -124,24 +141,27 @@ static inline auto initialize_values_at_active_modified_addrs () -> void
                 [&](active_modified_addrs_t::value_type addr)
   {
     active_modified_addrs_values[addr] = 0;
-    byte_testing_value = 0; word_testing_value = 0; dword_testing_value = 0;
+//    byte_testing_value = 0; word_testing_value = 0; dword_testing_value = 0;
   });
 
   switch (active_modified_addrs_values.size())
   {
   case 1:
     max_rollback_num = std::numeric_limits<UINT8>::max() + 1;
-    gen_mode = sequential; generate_testing_values = byte_sequential_generator;
+    gen_mode = sequential; /*generate_testing_values = byte_sequential_generator;*/
+    generate_testing_values = generic_sequential_generator<UINT8>;
     break;
 
   case 2:
     max_rollback_num = std::numeric_limits<UINT16>::max() + 1;
-    gen_mode = sequential; generate_testing_values = word_sequential_generator;
+    gen_mode = sequential; /*generate_testing_values = word_sequential_generator;*/
+    generate_testing_values = generic_sequential_generator<UINT16>;
     break;
 
   case 4:
     max_rollback_num = max_local_rollback_knob.Value();
-    gen_mode = randomized; generate_testing_values = dword_sequential_generator;
+    gen_mode = randomized; /*generate_testing_values = dword_sequential_generator;*/
+    generate_testing_values = generic_sequential_generator<UINT32>;
     break;
 
   default:
@@ -273,6 +293,7 @@ static inline auto calculate_tainting_fresh_input(ptr_uint8_t selected_input,
  */
 static inline auto prepare_new_tainting_phase() -> void
 {
+  show_exploring_progress();
 
   /*ptr_cond_direct_inss_t::iterator*/auto cfi_iter = detected_input_dep_cfis.begin();
   // verify if there exists a resolved but unexplored CFI

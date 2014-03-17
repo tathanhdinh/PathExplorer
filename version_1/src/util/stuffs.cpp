@@ -1,5 +1,6 @@
 #include "../operation/common.h"
 #include <boost/graph/graphviz.hpp>
+#include <cstdint>
 
 auto addrint_to_hexstring (ADDRINT input) -> std::string
 {
@@ -125,9 +126,34 @@ auto path_code_to_string  (const path_code_t& path_code) -> std::string
 #endif
 
 
+/**
+ * @brief inspired from http://goo.gl/mz9fex
+ */
 auto show_exploring_progress () -> void
 {
-  tfm::format(std::cout, "[");
+  UINT32 resolved_cfi_num = 0, singular_cfi_num = 0, explored_cfi_num = 0;
+  std::for_each(detected_input_dep_cfis.begin(), detected_input_dep_cfis.end(),
+                [&](ptr_cond_direct_ins_t cfi)
+  {
+    if (cfi->is_resolved) resolved_cfi_num++;
+    if (cfi->is_singular) singular_cfi_num++;
+    if (cfi->is_explored) explored_cfi_num++;
+  });
+
+  static uint32_t progress_bar_length = 80;
+  decltype(progress_bar_length) current_progress =
+      (progress_bar_length * total_rollback_times) / max_total_rollback_times;
+
+  tfm::printf("[");
+  for (auto idx = 0; idx < progress_bar_length; ++idx)
+  {
+    if (idx < current_progress) tfm::printf("=");
+    else if (idx == current_progress) tfm::printf(">");
+    else tfm::printf(" ");
+  }
+  tfm::format(std::cout, "] (%d/%d/%d/%d) resolved/explored/singular/total CFI\n", resolved_cfi_num,
+              explored_cfi_num, singular_cfi_num, detected_input_dep_cfis.size());
+  std::cout.flush();
 
   return;
 }
