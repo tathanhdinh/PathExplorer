@@ -46,7 +46,7 @@ static auto randomized_generator () -> void
   for (auto addr_iter = active_modified_addrs_values.begin();
        addr_iter != active_modified_addrs_values.end(); ++addr_iter)
   {
-    addr_iter->second = rand() % std::numeric_limits<UINT8>::max();
+    addr_iter->second = std::rand() % std::numeric_limits<UINT8>::max();
   }
   return;
 }
@@ -126,6 +126,21 @@ static auto generic_sequential_generator () -> void
 }
 
 
+template <typename T>
+static auto generic_randomized_generator () -> void
+{
+  static T generic_testing_value = 0;
+
+  auto addr_value = active_modified_addrs_values.begin();
+  for (auto idx = 0; idx < sizeof(T); ++idx)
+  {
+    addr_value->second = (generic_testing_value >> (idx * 8)) & 0xFF;
+    addr_value = std::next(addr_value);
+  }
+  generic_testing_value = std::rand() % std::numeric_limits<T>::max();
+}
+
+
 static inline auto initialize_values_at_active_modified_addrs () -> void
 {
 //  active_modified_addrs_values.clear(); /*input_on_active_modified_addrs.clear();*/
@@ -161,7 +176,8 @@ static inline auto initialize_values_at_active_modified_addrs () -> void
   case 4:
     max_rollback_num = max_local_rollback_knob.Value();
     gen_mode = randomized; /*generate_testing_values = dword_sequential_generator;*/
-    generate_testing_values = generic_sequential_generator<UINT32>;
+//    generate_testing_values = generic_sequential_generator<UINT32>;
+    generate_testing_values = generic_randomized_generator<UINT32>;
     break;
 
   default:

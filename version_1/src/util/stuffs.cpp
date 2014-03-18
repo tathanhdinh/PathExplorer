@@ -140,19 +140,20 @@ auto show_exploring_progress () -> void
     if (cfi->is_explored) explored_cfi_num++;
   });
 
-  static uint32_t progress_bar_length = 80;
-  decltype(progress_bar_length) current_progress =
-      (progress_bar_length * total_rollback_times) / max_total_rollback_times;
+  static uint32_t total_progress = 80;
+  decltype(total_progress) current_progress =
+      (total_progress * total_rollback_times) / max_total_rollback_times;
 
   tfm::printf("[");
-  for (auto idx = 0; idx < progress_bar_length; ++idx)
+  for (auto idx = 0; idx < total_progress; ++idx)
   {
     if (idx < current_progress) tfm::printf("=");
     else if (idx == current_progress) tfm::printf(">");
     else tfm::printf(" ");
   }
-  tfm::format(std::cout, "] (%d/%d/%d/%d) resolved/explored/singular/total CFI\n", resolved_cfi_num,
-              explored_cfi_num, singular_cfi_num, detected_input_dep_cfis.size());
+  tfm::format(std::cout, "] %4f%% (%d/%d/%d/%d) resolved/explored/singular/total CFI\n",
+              100.0 * static_cast<double>(total_rollback_times) / static_cast<double>(max_total_rollback_times),
+              resolved_cfi_num, explored_cfi_num, singular_cfi_num, detected_input_dep_cfis.size());
   std::cout.flush();
 
   return;

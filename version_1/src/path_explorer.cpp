@@ -115,19 +115,19 @@ auto start_exploring (VOID *data) -> VOID
               max_total_rollback_times, max_local_rollback_times, max_trace_size);
 
 #if !defined(ENABLE_FAST_ROLLBACK)
-  log_file << "fast rollback disabled, ";
+  tfm::format(log_file, "fast rollback disabled, ");
 #else
-  log_file << "fast rollback enabled, ";
+  tfm::format(log_file, "fast rollback enabled, ");
 #endif
 
 #if !defined(DISABLE_FSA)
-  log_file << "FSA reconstruction enabled\n";
+  tfm::format(log_file, "FSA reconstruction enabled\n");
 #elif
-  log_file << "FSA reconstruction disabled\n";
+  tfm::format(log_file, "FSA reconstruction disabled\n");
 #endif
   log_file << "=================================================================================\n";
 
-  initialize_instrumenter();
+  instrumentation::initialize();
 
   start_time = std::time(0); std::srand(static_cast<unsigned int>(start_time));
 
@@ -170,28 +170,32 @@ auto stop_exploring (INT32 code, VOID *data) -> VOID
 /* ---------------------------------------------------------------------------------------------- */
 int main(int argc, char *argv[])
 {
-  std::cerr << "initialize image symbol tables\n"; PIN_InitSymbols();
+  tfm::format(std::cerr, "initialize image symbol tables\n"); PIN_InitSymbols();
 
-  log_file << "initialize Pin";
+  tfm::format(std::cerr, "initialize Pin\n");
   if (PIN_Init(argc, argv))
   {
-    std::cerr << "Pin initialization failed\n"; log_file.close(); PIN_ExitProcess(1);
+    tfm::format(std::cerr, "Pin initialization failed\n");
+    log_file.close(); PIN_ExitProcess(1);
   }
   else
   {
-    std::cerr << "Pin initialization success\n";
+    tfm::format(std::cerr, "Pin initialization success\n");
 
-    std::cerr << "activate Pintool data-initialization\n";
+    tfm::format(std::cerr, "activate Pintool data-initialization\n");
     PIN_AddApplicationStartFunction(start_exploring, 0);  // 0 is the (unused) input data
 
-    std::cerr << "activate image-load instrumenter\n";
-    IMG_AddInstrumentFunction(image_load_instrumenter, 0);
-    
-    std::cerr << "activate process-fork instrumenter\n";
-    PIN_AddFollowChildProcessFunction(process_create_instrumenter, 0);
+    tfm::format(std::cerr, "activate image-loading instrumenter\n");
+    IMG_AddInstrumentFunction(instrumentation::image_loading, 0);
 
-    std::cerr << "activate instruction instrumenters\n";
-    INS_AddInstrumentFunction(ins_instrumenter, 0);
+//    tfm::format(std::cerr, "activate routine-calling instrumenters\n");
+//    RTN_AddInstrumentFunction(instrumentation::routine_calling, 0);
+
+    tfm::format(std::cerr, "activate instruction-executing instrumenters\n");
+    INS_AddInstrumentFunction(instrumentation::instruction_executing, 0);
+
+    tfm::format(std::cerr, "activate process-creating instrumenter\n");
+    PIN_AddFollowChildProcessFunction(instrumentation::process_creating, 0);
 
     // In Windows environment, the input tracing is through socket api instead of system call
 #if defined(__gnu_linux__)
@@ -199,7 +203,7 @@ int main(int argc, char *argv[])
     PIN_AddSyscallExitFunction(capturing::syscall_exit_analyzer, 0);
 #endif
 
-    std::cerr << "activate Pintool data-finalization\n";
+    tfm::format(std::cerr, "activate Pintool data-finalization\n");
     PIN_AddFiniFunction(stop_exploring, 0);
 
     log_file.flush();

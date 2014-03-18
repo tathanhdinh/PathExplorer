@@ -17,14 +17,15 @@ static bool     wsarecvfrom_is_locked;
 //static bool     interested_msg_is_received;
 
 #if defined(_WIN32) || defined(_WIN64)
-namespace windows
-{
-#define NOMINMAX
-#include <WinSock2.h>
-#include <Windows.h>
-};
+//namespace windows
+//{
+//#define NOMINMAX
+//#include <WinSock2.h>
+//#include <Windows.h>
+//};
 static ADDRINT  received_msg_struct_addr;
 #endif
+
 
 /*================================================================================================*/
 /**
@@ -32,8 +33,11 @@ static ADDRINT  received_msg_struct_addr;
  */
 auto initialize() -> void
 {
+#if defined(_WIN32) || defined(_WIN64)
   recv_is_locked = false; recvfrom_is_locked = false; wsarecv_is_locked = false;
-  wsarecvfrom_is_locked = false; received_msg_number = 0; interested_msg_is_received = false;
+  wsarecvfrom_is_locked = false;
+#endif
+  received_msg_number = 0; interested_msg_is_received = false;
   return;
 }
 
@@ -73,7 +77,6 @@ static inline auto handle_received_message() -> void
       // yes, then remove the current instrumentation for message receiving functions
       interested_msg_is_received = true; PIN_RemoveInstrumentation();
     }
-//      prepare_new_tainting_phase();
   }
   return;
 }
@@ -83,7 +86,7 @@ static inline auto handle_received_message() -> void
 /**
  * @brief determine the received message address of recv or recvfrom
  */
-auto before_recvs(ADDRINT msg_addr, THREADID thread_id) -> VOID
+auto recvs_interceptor_before(ADDRINT msg_addr, THREADID thread_id) -> VOID
 {
   if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
   {
@@ -97,7 +100,7 @@ auto before_recvs(ADDRINT msg_addr, THREADID thread_id) -> VOID
 /**
  * @brief determine the received message length of recv or recvfrom
  */
-auto after_recvs(UINT32 msg_length, THREADID thread_id) -> VOID
+auto recvs_interceptor_after(UINT32 msg_length, THREADID thread_id) -> VOID
 {
   if (traced_thread_is_fixed && (thread_id == traced_thread_id) && recv_is_locked)
   {
@@ -114,7 +117,7 @@ auto after_recvs(UINT32 msg_length, THREADID thread_id) -> VOID
 /**
  * @brief determine the address a type LPWSABUF containing the address of the received message
  */
-auto before_wsarecvs(ADDRINT msg_struct_addr, THREADID thread_id) -> VOID
+auto wsarecvs_interceptor_before(ADDRINT msg_struct_addr, THREADID thread_id) -> VOID
 {
   if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
   {
@@ -130,7 +133,7 @@ auto before_wsarecvs(ADDRINT msg_struct_addr, THREADID thread_id) -> VOID
 /**
  * @brief determine the received message length or WSARecv or WSARecvFrom
  */
-auto after_wsarecvs(THREADID thread_id) -> VOID
+auto wsarecvs_interceptor_after(THREADID thread_id) -> VOID
 {
   if (traced_thread_is_fixed && (thread_id == traced_thread_id) && wsarecv_is_locked)
   {
@@ -142,6 +145,157 @@ auto after_wsarecvs(THREADID thread_id) -> VOID
     wsarecv_is_locked = false; handle_received_message();
   }
   return;
+}
+
+
+
+/**
+ * @brief recv wrapper
+ */
+auto recv_wrapper(AFUNPTR recv_origin, windows::SOCKET s, char* buf, int len, int flags,
+                  CONTEXT* p_ctxt, THREADID thread_id) -> int
+{
+  int result;
+
+  if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
+  {
+    received_msg_addr = reinterpret_cast<ADDRINT>(buf);
+    traced_thread_id = thread_id; traced_thread_is_fixed = true; recv_is_locked = true;
+  }
+
+  PIN_CallApplicationFunction(p_ctxt, thread_id, CALLINGSTD_DEFAULT, recv_origin,
+                              PIN_PARG(int), &result,
+                              PIN_PARG(windows::SOCKET), s,
+                              PIN_PARG(char*), buf,
+                              PIN_PARG(int), len,
+                              PIN_PARG(int), flags);
+
+  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && recv_is_locked)
+  {
+#if !defined(NDEBUG)
+    tfm::format(log_file, "message is obtained from recv at thread id %d\n", thread_id);
+#endif
+    received_msg_size = result; recv_is_locked = false; handle_received_message();
+  }
+
+  return result;
+}
+
+
+/**
+ * @brief recvfrom wrapper
+ */
+auto recvfrom_wrapper(AFUNPTR recvfrom_origin, windows::SOCKET s, char* buf, int len, int flags,
+                      windows::sockaddr* from, int* fromlen,
+                      CONTEXT* p_ctxt, THREADID thread_id) -> int
+{
+  int result;
+
+  if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
+  {
+    received_msg_addr = reinterpret_cast<ADDRINT>(buf);
+    traced_thread_id = thread_id; traced_thread_is_fixed = true; recv_is_locked = true;
+  }
+
+  PIN_CallApplicationFunction(p_ctxt, thread_id, CALLINGSTD_DEFAULT, recvfrom_origin,
+                              PIN_PARG(int), &result,
+                              PIN_PARG(char*), buf,
+                              PIN_PARG(int), len,
+                              PIN_PARG(int), flags,
+                              PIN_PARG(windows::sockaddr*), from,
+                              PIN_PARG(int*), fromlen);
+
+  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && recv_is_locked)
+  {
+#if !defined(NDEBUG)
+    tfm::format(log_file, "message is obtained from recvfrom at thread id %d\n", thread_id);
+#endif
+    received_msg_size = result; recv_is_locked = false; handle_received_message();
+  }
+
+  return result;
+}
+
+/**
+ * @brief WSARecv wrapper
+ */
+auto wsarecv_wrapper(AFUNPTR wsarecv_origin, windows::SOCKET s, windows::LPWSABUF lpBuffers,
+                     windows::DWORD dwBufferCount, windows::LPDWORD lpNumberOfBytesRecvd,
+                     windows::LPDWORD lpFlags, windows::LPWSAOVERLAPPED lpOverlapped,
+                     windows::LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine,
+                     CONTEXT* p_ctxt, THREADID thread_id) -> int
+{
+  int result;
+
+  if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
+  {
+    received_msg_addr = reinterpret_cast<ADDRINT>(lpBuffers->buf);
+    traced_thread_id = thread_id; traced_thread_is_fixed = true; wsarecv_is_locked = true;
+  }
+
+  PIN_CallApplicationFunction(p_ctxt, thread_id, CALLINGSTD_DEFAULT, wsarecv_origin,
+                              PIN_PARG(int), &result,
+                              PIN_PARG(windows::SOCKET), s,
+                              PIN_PARG(windows::LPWSABUF), lpBuffers,
+                              PIN_PARG(windows::DWORD), dwBufferCount,
+                              PIN_PARG(windows::LPDWORD), lpNumberOfBytesRecvd,
+                              PIN_PARG(windows::LPDWORD), lpFlags,
+                              PIN_PARG(windows::LPWSAOVERLAPPED), lpOverlapped,
+                              PIN_PARG(windows::LPWSAOVERLAPPED_COMPLETION_ROUTINE), lpCompletionRoutine,
+                              PIN_PARG_END());
+
+  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && wsarecv_is_locked)
+  {
+#if !defined(NDEBUG)
+    tfm::format(log_file, "message is obtained from WSARecv at thread id %d\n", thread_id);
+#endif
+    received_msg_size = *lpNumberOfBytesRecvd; wsarecv_is_locked = false; handle_received_message();
+  }
+
+  return result;
+}
+
+
+/**
+ * @brief WSARecvFrom wrapper
+ */
+auto wsarecvfrom_wrapper(AFUNPTR wsarecvfrom_origin, windows::SOCKET s, windows::LPWSABUF lpBuffers,
+                         windows::DWORD dwBufferCount, windows::LPDWORD lpNumberOfBytesRecvd,
+                         windows::LPDWORD lpFlags, windows::sockaddr* lpFrom,
+                         windows::LPINT lpFromlen, windows::LPWSAOVERLAPPED lpOverlapped,
+                         windows::LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine,
+                         CONTEXT* p_ctxt, THREADID thread_id) -> int
+{
+  int result;
+
+  if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
+  {
+    received_msg_addr = reinterpret_cast<ADDRINT>(lpBuffers->buf);
+    traced_thread_id = thread_id; traced_thread_is_fixed = true; wsarecv_is_locked = true;
+  }
+
+  PIN_CallApplicationFunction(p_ctxt, thread_id, CALLINGSTD_DEFAULT, wsarecvfrom_origin,
+                              PIN_PARG(int), &result,
+                              PIN_PARG(windows::SOCKET), s,
+                              PIN_PARG(windows::LPWSABUF), lpBuffers,
+                              PIN_PARG(windows::DWORD), dwBufferCount,
+                              PIN_PARG(windows::LPDWORD), lpNumberOfBytesRecvd,
+                              PIN_PARG(windows::LPDWORD), lpFlags,
+                              PIN_PARG(windows::sockaddr*), lpFrom,
+                              PIN_PARG(windows::LPINT), lpFromlen,
+                              PIN_PARG(windows::LPWSAOVERLAPPED), lpOverlapped,
+                              PIN_PARG(windows::LPWSAOVERLAPPED_COMPLETION_ROUTINE), lpCompletionRoutine,
+                              PIN_PARG_END());
+
+  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && wsarecv_is_locked)
+  {
+#if !defined(NDEBUG)
+    tfm::format(log_file, "message is obtained from WSARecvFrom at thread id %d\n", thread_id);
+#endif
+    received_msg_size = *lpNumberOfBytesRecvd; wsarecv_is_locked = false; handle_received_message();
+  }
+
+  return result;
 }
 
 #elif defined(__gnu_linux__)

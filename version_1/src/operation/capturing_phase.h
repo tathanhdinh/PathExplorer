@@ -19,19 +19,65 @@
 #endif
 #include <pin.H>
 
+#if defined(_WIN32) || defined(_WIN64)
+namespace windows
+{
+#define NOMINMAX
+#include <WinSock2.h>
+#include <Windows.h>
+};
+#endif
+
 namespace capturing
 {
-extern auto initialize            ()                                            -> void;
+extern auto initialize                  ()                                                -> void;
 
 #if defined(_WIN32) || defined(_WIN64)
+extern auto recvs_interceptor_before    (ADDRINT msg_addr, THREADID thread_id)            -> VOID;
 
-extern auto before_recvs          (ADDRINT msg_addr, THREADID thread_id)        -> VOID;
+extern auto recvs_interceptor_after     (UINT32 msg_length, THREADID thread_id)           -> VOID;
 
-extern auto after_recvs           (UINT32 msg_length, THREADID thread_id)       -> VOID;
+extern auto wsarecvs_interceptor_before (ADDRINT msg_struct_addr, THREADID thread_id)     -> VOID;
 
-extern auto before_wsarecvs       (ADDRINT msg_struct_addr, THREADID thread_id) -> VOID;
+extern auto wsarecvs_interceptor_after  (THREADID thread_id)                              -> VOID;
 
-extern auto after_wsarecvs        (THREADID thread_id)                          -> VOID;
+extern auto recv_wrapper                (AFUNPTR recv_origin,
+                                         windows::SOCKET s,
+                                         char* buf,
+                                         int len,
+                                         int flags,
+                                         CONTEXT* p_ctxt, THREADID thread_id)             -> int;
+
+extern auto recvfrom_wrapper            (AFUNPTR recvfrom_origin,
+                                         windows::SOCKET s,
+                                         char* buf,
+                                         int len,
+                                         int flags,
+                                         windows::sockaddr* from,
+                                         int* fromlen,
+                                         CONTEXT* p_ctxt, THREADID thread_id)              -> int;
+
+extern auto wsarecv_wrapper             (AFUNPTR wsarecv_origin,
+                                         windows::SOCKET s,
+                                         windows::LPWSABUF lpBuffers,
+                                         windows::DWORD dwBufferCount,
+                                         windows::LPDWORD lpNumberOfBytesRecvd,
+                                         windows::LPDWORD lpFlags,
+                                         windows::LPWSAOVERLAPPED lpOverlapped,
+                                         windows::LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine,
+                                         CONTEXT* p_ctxt, THREADID thread_id)             -> int;
+
+extern auto wsarecvfrom_wrapper         (AFUNPTR wsarecvfrom_origin,
+                                         windows::SOCKET s,
+                                         windows::LPWSABUF lpBuffers,
+                                         windows::DWORD dwBufferCount,
+                                         windows::LPDWORD lpNumberOfBytesRecvd,
+                                         windows::LPDWORD lpFlags,
+                                         windows::sockaddr* lpFrom,
+                                         windows::LPINT lpFromlen,
+                                         windows::LPWSAOVERLAPPED lpOverlapped,
+                                         windows::LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine,
+                                         CONTEXT* p_ctxt, THREADID thread_id)             -> int;
 
 #elif defined(__gnu_linux__)
 
