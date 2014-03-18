@@ -21,6 +21,11 @@ instruction::instruction(const INS& ins)
   this->is_mapped_from_kernel = ((this->contained_image.find("ntdll.dll") != std::string::npos) ||
                                  (this->contained_image.find("kernel32") != std::string::npos) ||
                                  (this->contained_image.find("KERNELBASE.dll") != std::string::npos));
+
+  this->is_in_msg_receiving   = ((this->contained_function == "WSARecv") ||
+                                 (this->contained_function == "WSARecvFrom") ||
+                                 (this->contained_function == "recv") ||
+                                 (this->contained_function == "recvfrom"));
 #elif defined(__gnu_linux__)
   this->is_mapped_from_kernel = (this->contained_image.empty() || this->is_syscall);
 #endif

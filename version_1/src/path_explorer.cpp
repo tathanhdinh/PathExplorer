@@ -188,8 +188,8 @@ int main(int argc, char *argv[])
     tfm::format(std::cerr, "activate image-loading instrumenter\n");
     IMG_AddInstrumentFunction(instrumentation::image_loading, 0);
 
-//    tfm::format(std::cerr, "activate routine-calling instrumenters\n");
-//    RTN_AddInstrumentFunction(instrumentation::routine_calling, 0);
+    tfm::format(std::cerr, "activate routine-calling instrumenters\n");
+    RTN_AddInstrumentFunction(instrumentation::routine_calling, 0);
 
     tfm::format(std::cerr, "activate instruction-executing instrumenters\n");
     INS_AddInstrumentFunction(instrumentation::instruction_executing, 0);

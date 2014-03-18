@@ -163,12 +163,14 @@ auto recv_wrapper(AFUNPTR recv_origin, windows::SOCKET s, char* buf, int len, in
     traced_thread_id = thread_id; traced_thread_is_fixed = true; recv_is_locked = true;
   }
 
+  std::cerr << "recv wrapper\n";
   PIN_CallApplicationFunction(p_ctxt, thread_id, CALLINGSTD_DEFAULT, recv_origin,
                               PIN_PARG(int), &result,
                               PIN_PARG(windows::SOCKET), s,
                               PIN_PARG(char*), buf,
                               PIN_PARG(int), len,
-                              PIN_PARG(int), flags);
+                              PIN_PARG(int), flags,
+                              PIN_PARG_END());
 
   if (traced_thread_is_fixed && (thread_id == traced_thread_id) && recv_is_locked)
   {
@@ -191,6 +193,7 @@ auto recvfrom_wrapper(AFUNPTR recvfrom_origin, windows::SOCKET s, char* buf, int
 {
   int result;
 
+  std::cerr << "recvfrom wrapper\n";
   if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
   {
     received_msg_addr = reinterpret_cast<ADDRINT>(buf);
@@ -203,7 +206,8 @@ auto recvfrom_wrapper(AFUNPTR recvfrom_origin, windows::SOCKET s, char* buf, int
                               PIN_PARG(int), len,
                               PIN_PARG(int), flags,
                               PIN_PARG(windows::sockaddr*), from,
-                              PIN_PARG(int*), fromlen);
+                              PIN_PARG(int*), fromlen,
+                              PIN_PARG_END());
 
   if (traced_thread_is_fixed && (thread_id == traced_thread_id) && recv_is_locked)
   {
@@ -227,6 +231,7 @@ auto wsarecv_wrapper(AFUNPTR wsarecv_origin, windows::SOCKET s, windows::LPWSABU
 {
   int result;
 
+  std::cerr << "wsarecv wrapper\n";
   if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
   {
     received_msg_addr = reinterpret_cast<ADDRINT>(lpBuffers->buf);
@@ -268,6 +273,7 @@ auto wsarecvfrom_wrapper(AFUNPTR wsarecvfrom_origin, windows::SOCKET s, windows:
 {
   int result;
 
+  std::cerr << "wsarecvfrom wrapper\n";
   if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
   {
     received_msg_addr = reinterpret_cast<ADDRINT>(lpBuffers->buf);

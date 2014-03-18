@@ -48,6 +48,10 @@ public:
   bool has_mem_read2;
   bool has_real_rep;
 
+#if defined(_WIN32) || defined(_WIN64)
+  bool is_in_msg_receiving;
+#endif
+
   /*std::set<ptr_operand_t>*/ptr_operand_set_t src_operands;
   /*std::set<ptr_operand_t>*/ptr_operand_set_t dst_operands;
 

@@ -45,7 +45,11 @@ static inline auto exec_capturing_phase (INS& ins) -> void
 static inline auto exec_tainting_phase (INS& ins, ptr_instruction_t examined_ins) -> void
 {
   /* taint logging */
-  if (examined_ins->is_mapped_from_kernel)
+  if (examined_ins->is_mapped_from_kernel
+    #if defined(_WIN32) || defined(_WIN64)
+      || examined_ins->is_in_msg_receiving
+    #endif
+      )
   {
     INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)tainting::kernel_mapped_instruction,
                              IARG_INST_PTR, IARG_THREAD_ID, IARG_END);
@@ -197,10 +201,11 @@ static inline auto wsarecvs_interceptor (RTN& rtn) -> void
 
 
 /**
- * @brief replace recv function
+ * @brief replace recv function (quite boring C++ type traits get type of parameter)
  */
 static inline auto recv_replacer (RTN& rtn) -> void
 {
+  std::cerr << "recv\n";
   // replacement approach
   auto recv_proto = PROTO_Allocate(PIN_PARG(int), CALLINGSTD_DEFAULT, "recv",
                                    PIN_PARG(windows::SOCKET), PIN_PARG(char*), PIN_PARG(int),
@@ -217,6 +222,7 @@ static inline auto recv_replacer (RTN& rtn) -> void
 
 static inline auto recvfrom_replacer (RTN& rtn) -> void
 {
+  std::cerr << "recvfrom\n";
   // replacement approach
   auto recvfrom_proto = PROTO_Allocate(PIN_PARG(int), CALLINGSTD_DEFAULT, "recvfrom",
                                        PIN_PARG(windows::SOCKET), PIN_PARG(char*), PIN_PARG(int),
@@ -235,6 +241,7 @@ static inline auto recvfrom_replacer (RTN& rtn) -> void
  */
 static inline auto wsarecv_replacer (RTN& rtn) -> void
 {
+  std::cerr << "wsarecv\n";
   // replacement approach
   auto wsarecv_proto = PROTO_Allocate(PIN_PARG(int), CALLINGSTD_DEFAULT, "WSARecv",
                                       PIN_PARG(windows::SOCKET), PIN_PARG(windows::LPWSABUF),
@@ -260,6 +267,7 @@ static inline auto wsarecv_replacer (RTN& rtn) -> void
  */
 static inline auto wsarecvfrom_replacer (RTN& rtn) -> void
 {
+  std::cerr << "wsarecvfrom\n";
   // replacement approach
   auto wsarecvfrom_proto = PROTO_Allocate(PIN_PARG(int), CALLINGSTD_DEFAULT, "WSARecvFrom",
                                           PIN_PARG(windows::SOCKET), PIN_PARG(windows::LPWSABUF),
@@ -284,29 +292,31 @@ static inline auto wsarecvfrom_replacer (RTN& rtn) -> void
 
 
 //#if !defined(NDEBUG)
-//static std::map<ADDRINT, std::string> routine_at_addr;
+static std::map<ADDRINT, std::string> routine_at_addr;
 
-//static auto before_other(ADDRINT rtn_addr) -> VOID
-//{
-//  tfm::format(log_file, "%s is called\n", routine_at_addr[rtn_addr]);
-//  return;
-//}
+static auto generic_routine_before_inteceptor(ADDRINT rtn_addr, THREADID thread_id) -> VOID
+{
+  tfm::format(log_file, "<%d: %s> is called\n", thread_id, routine_at_addr[rtn_addr]);
+  return;
+}
 
 
-//static auto after_other(ADDRINT rtn_addr) -> VOID
-//{
-//  tfm::format(log_file, "%s returns\n", routine_at_addr[rtn_addr]);
-//  return;
-//}
+static auto generic_routine_after_interceptor(ADDRINT rtn_addr, THREADID thread_id) -> VOID
+{
+  tfm::format(log_file, "<%d: %s> returns\n", thread_id, routine_at_addr[rtn_addr]);
+  return;
+}
 
-//static inline auto instrument_generic (RTN& rtn) -> void
-//{
-//  RTN_Open(rtn);
-//  RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)before_other, IARG_ADDRINT, RTN_Address(rtn), IARG_END);
-//  RTN_InsertCall(rtn, IPOINT_AFTER, (AFUNPTR)after_other, IARG_ADDRINT, RTN_Address(rtn), IARG_END);
-//  RTN_Close(rtn);
-//  return;
-//}
+static inline auto generic_routine_interceptor (RTN& rtn) -> void
+{
+  RTN_Open(rtn);
+  RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)generic_routine_before_inteceptor, IARG_ADDRINT,
+                 RTN_Address(rtn), IARG_THREAD_ID, IARG_END);
+  RTN_InsertCall(rtn, IPOINT_AFTER, (AFUNPTR)generic_routine_after_interceptor, IARG_ADDRINT,
+                 RTN_Address(rtn), IARG_THREAD_ID, IARG_END);
+  RTN_Close(rtn);
+  return;
+}
 //#endif
 
 
@@ -317,9 +327,11 @@ auto routine_calling(RTN rtn, VOID* data) -> VOID
 {
   if ((current_running_phase == capturing_phase) && !interested_msg_is_received)
   {
-    auto rtn_name = RTN_Name(rtn);
-    if (intercept_func_of_name.find(rtn_name) != intercept_func_of_name.end())
-      intercept_func_of_name[rtn_name](rtn);
+    auto rtn_name = RTN_Name(rtn); routine_at_addr[RTN_Address(rtn)] = rtn_name;
+    generic_routine_interceptor(rtn);
+
+//    if (intercept_func_of_name.find(rtn_name) != intercept_func_of_name.end())
+//      intercept_func_of_name[rtn_name](rtn);
   }
   return;
 }
