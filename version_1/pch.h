@@ -43,5 +43,6 @@
 #include <boost/graph/breadth_first_search.hpp>
 #include <boost/graph/filtered_graph.hpp>
 #include <boost/graph/lookup_edge.hpp>
+#include <boost/type_traits/function_traits.hpp>
 
 #endif // PCH_H

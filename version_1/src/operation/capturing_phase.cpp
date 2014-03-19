@@ -152,7 +152,11 @@ auto wsarecvs_interceptor_after(THREADID thread_id) -> VOID
 /**
  * @brief recv wrapper
  */
-auto recv_wrapper(AFUNPTR recv_origin, windows::SOCKET s, char* buf, int len, int flags,
+auto recv_wrapper(AFUNPTR recv_origin,
+                  windows::SOCKET s,
+                  char* buf,
+                  int len,
+                  int flags,
                   CONTEXT* p_ctxt, THREADID thread_id) -> int
 {
   int result;
@@ -187,8 +191,13 @@ auto recv_wrapper(AFUNPTR recv_origin, windows::SOCKET s, char* buf, int len, in
 /**
  * @brief recvfrom wrapper
  */
-auto recvfrom_wrapper(AFUNPTR recvfrom_origin, windows::SOCKET s, char* buf, int len, int flags,
-                      windows::sockaddr* from, int* fromlen,
+auto recvfrom_wrapper(AFUNPTR recvfrom_origin,
+                      windows::SOCKET s,
+                      char* buf,
+                      int len,
+                      int flags,
+                      windows::sockaddr* from,
+                      int* fromlen,
                       CONTEXT* p_ctxt, THREADID thread_id) -> int
 {
   int result;
@@ -223,9 +232,13 @@ auto recvfrom_wrapper(AFUNPTR recvfrom_origin, windows::SOCKET s, char* buf, int
 /**
  * @brief WSARecv wrapper
  */
-auto wsarecv_wrapper(AFUNPTR wsarecv_origin, windows::SOCKET s, windows::LPWSABUF lpBuffers,
-                     windows::DWORD dwBufferCount, windows::LPDWORD lpNumberOfBytesRecvd,
-                     windows::LPDWORD lpFlags, windows::LPWSAOVERLAPPED lpOverlapped,
+auto wsarecv_wrapper(AFUNPTR wsarecv_origin,
+                     windows::SOCKET s,
+                     windows::LPWSABUF lpBuffers,
+                     windows::DWORD dwBufferCount,
+                     windows::LPDWORD lpNumberOfBytesRecvd,
+                     windows::LPDWORD lpFlags,
+                     windows::LPWSAOVERLAPPED lpOverlapped,
                      windows::LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine,
                      CONTEXT* p_ctxt, THREADID thread_id) -> int
 {
