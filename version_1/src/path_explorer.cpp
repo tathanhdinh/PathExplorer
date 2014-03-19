@@ -185,8 +185,8 @@ int main(int argc, char *argv[])
     tfm::format(std::cerr, "activate Pintool data-initialization\n");
     PIN_AddApplicationStartFunction(start_exploring, 0);  // 0 is the (unused) input data
 
-    tfm::format(std::cerr, "activate image-loading instrumenter\n");
-    IMG_AddInstrumentFunction(instrumentation::image_loading, 0);
+//    tfm::format(std::cerr, "activate image-loading instrumenter\n");
+//    IMG_AddInstrumentFunction(instrumentation::image_loading, 0);
 
     tfm::format(std::cerr, "activate routine-calling instrumenters\n");
     RTN_AddInstrumentFunction(instrumentation::routine_calling, 0);

@@ -2,6 +2,8 @@
 #include "common.h"
 #include "../util/stuffs.h"
 
+#include <boost/type_traits/function_traits.hpp>
+
 #include <algorithm>
 
 namespace capturing 
@@ -153,13 +155,13 @@ auto wsarecvs_interceptor_after(THREADID thread_id) -> VOID
  * @brief recv wrapper
  */
 auto recv_wrapper(AFUNPTR recv_origin,
-                  windows::SOCKET s,
-                  char* buf,
-                  int len,
-                  int flags,
-                  CONTEXT* p_ctxt, THREADID thread_id) -> int
+                  recv_traits_t::arg1_type s,          // windows::SOCKET
+                  recv_traits_t::arg2_type buf,        // char*
+                  recv_traits_t::arg3_type len,        // int
+                  recv_traits_t::arg4_type flags,      // int
+                  CONTEXT* p_ctxt, THREADID thread_id) -> recv_traits_t::result_type
 {
-  int result;
+  recv_traits_t::result_type result;
 
   if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
   {
@@ -169,11 +171,11 @@ auto recv_wrapper(AFUNPTR recv_origin,
 
   std::cerr << "recv wrapper\n";
   PIN_CallApplicationFunction(p_ctxt, thread_id, CALLINGSTD_DEFAULT, recv_origin,
-                              PIN_PARG(int), &result,
-                              PIN_PARG(windows::SOCKET), s,
-                              PIN_PARG(char*), buf,
-                              PIN_PARG(int), len,
-                              PIN_PARG(int), flags,
+                              PIN_PARG(recv_traits_t::result_type), &result,  // int
+                              PIN_PARG(recv_traits_t::arg1_type), s,          // windows::SOCKET
+                              PIN_PARG(recv_traits_t::arg2_type), buf,        // char*
+                              PIN_PARG(recv_traits_t::arg3_type), len,        // int
+                              PIN_PARG(recv_traits_t::arg4_type), flags,      // int
                               PIN_PARG_END());
 
   if (traced_thread_is_fixed && (thread_id == traced_thread_id) && recv_is_locked)
@@ -192,15 +194,15 @@ auto recv_wrapper(AFUNPTR recv_origin,
  * @brief recvfrom wrapper
  */
 auto recvfrom_wrapper(AFUNPTR recvfrom_origin,
-                      windows::SOCKET s,
-                      char* buf,
-                      int len,
-                      int flags,
-                      windows::sockaddr* from,
-                      int* fromlen,
-                      CONTEXT* p_ctxt, THREADID thread_id) -> int
+                      recvfrom_traits_t::arg1_type s,       // windows::SOCKET
+                      recvfrom_traits_t::arg2_type buf,     // char*
+                      recvfrom_traits_t::arg3_type len,     // int
+                      recvfrom_traits_t::arg4_type flags,   // int
+                      recvfrom_traits_t::arg5_type from,    // windows::sockaddr*
+                      recvfrom_traits_t::arg6_type fromlen, // int*
+                      CONTEXT* p_ctxt, THREADID thread_id) -> recvfrom_traits_t::result_type
 {
-  int result;
+  recvfrom_traits_t::result_type result;
 
   std::cerr << "recvfrom wrapper\n";
   if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
@@ -210,12 +212,13 @@ auto recvfrom_wrapper(AFUNPTR recvfrom_origin,
   }
 
   PIN_CallApplicationFunction(p_ctxt, thread_id, CALLINGSTD_DEFAULT, recvfrom_origin,
-                              PIN_PARG(int), &result,
-                              PIN_PARG(char*), buf,
-                              PIN_PARG(int), len,
-                              PIN_PARG(int), flags,
-                              PIN_PARG(windows::sockaddr*), from,
-                              PIN_PARG(int*), fromlen,
+                              PIN_PARG(recvfrom_traits_t::result_type), &result,  // int
+                              PIN_PARG(recvfrom_traits_t::arg1_type), s,          // windows::SOCKET
+                              PIN_PARG(recvfrom_traits_t::arg2_type), buf,        // char*
+                              PIN_PARG(recvfrom_traits_t::arg3_type), len,        // int
+                              PIN_PARG(recvfrom_traits_t::arg4_type), flags,      // int
+                              PIN_PARG(recvfrom_traits_t::arg5_type), from,       // windows::sockaddr*
+                              PIN_PARG(recvfrom_traits_t::arg6_type), fromlen,    // int*
                               PIN_PARG_END());
 
   if (traced_thread_is_fixed && (thread_id == traced_thread_id) && recv_is_locked)
@@ -233,16 +236,16 @@ auto recvfrom_wrapper(AFUNPTR recvfrom_origin,
  * @brief WSARecv wrapper
  */
 auto wsarecv_wrapper(AFUNPTR wsarecv_origin,
-                     windows::SOCKET s,
-                     windows::LPWSABUF lpBuffers,
-                     windows::DWORD dwBufferCount,
-                     windows::LPDWORD lpNumberOfBytesRecvd,
-                     windows::LPDWORD lpFlags,
-                     windows::LPWSAOVERLAPPED lpOverlapped,
-                     windows::LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine,
-                     CONTEXT* p_ctxt, THREADID thread_id) -> int
+                     wsarecv_traits_t::arg1_type s,                     // windows::SOCKET
+                     wsarecv_traits_t::arg2_type lpBuffers,             // windows::LPWSABUF
+                     wsarecv_traits_t::arg3_type dwBufferCount,         // ewindows::DWORD
+                     wsarecv_traits_t::arg4_type lpNumberOfBytesRecvd,  // windows::LPDWORD
+                     wsarecv_traits_t::arg5_type lpFlags,               // windows::LPDWORD
+                     wsarecv_traits_t::arg6_type lpOverlapped,          // windows::LPWSAOVERLAPPED
+                     wsarecv_traits_t::arg7_type lpCompletionRoutine,   // windows::LPWSAOVERLAPPED_COMPLETION_ROUTINE
+                     CONTEXT* p_ctxt, THREADID thread_id) -> wsarecv_traits_t::result_type
 {
-  int result;
+  wsarecv_traits_t::result_type result;
 
   std::cerr << "wsarecv wrapper\n";
   if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
@@ -252,14 +255,14 @@ auto wsarecv_wrapper(AFUNPTR wsarecv_origin,
   }
 
   PIN_CallApplicationFunction(p_ctxt, thread_id, CALLINGSTD_DEFAULT, wsarecv_origin,
-                              PIN_PARG(int), &result,
-                              PIN_PARG(windows::SOCKET), s,
-                              PIN_PARG(windows::LPWSABUF), lpBuffers,
-                              PIN_PARG(windows::DWORD), dwBufferCount,
-                              PIN_PARG(windows::LPDWORD), lpNumberOfBytesRecvd,
-                              PIN_PARG(windows::LPDWORD), lpFlags,
-                              PIN_PARG(windows::LPWSAOVERLAPPED), lpOverlapped,
-                              PIN_PARG(windows::LPWSAOVERLAPPED_COMPLETION_ROUTINE), lpCompletionRoutine,
+                              PIN_PARG(wsarecv_traits_t::result_type), &result,
+                              PIN_PARG(wsarecv_traits_t::arg1_type), s,
+                              PIN_PARG(wsarecv_traits_t::arg2_type), lpBuffers,
+                              PIN_PARG(wsarecv_traits_t::arg3_type), dwBufferCount,
+                              PIN_PARG(wsarecv_traits_t::arg4_type), lpNumberOfBytesRecvd,
+                              PIN_PARG(wsarecv_traits_t::arg5_type), lpFlags,
+                              PIN_PARG(wsarecv_traits_t::arg6_type), lpOverlapped,
+                              PIN_PARG(wsarecv_traits_t::arg7_type), lpCompletionRoutine,
                               PIN_PARG_END());
 
   if (traced_thread_is_fixed && (thread_id == traced_thread_id) && wsarecv_is_locked)
@@ -277,14 +280,19 @@ auto wsarecv_wrapper(AFUNPTR wsarecv_origin,
 /**
  * @brief WSARecvFrom wrapper
  */
-auto wsarecvfrom_wrapper(AFUNPTR wsarecvfrom_origin, windows::SOCKET s, windows::LPWSABUF lpBuffers,
-                         windows::DWORD dwBufferCount, windows::LPDWORD lpNumberOfBytesRecvd,
-                         windows::LPDWORD lpFlags, windows::sockaddr* lpFrom,
-                         windows::LPINT lpFromlen, windows::LPWSAOVERLAPPED lpOverlapped,
-                         windows::LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine,
-                         CONTEXT* p_ctxt, THREADID thread_id) -> int
+auto wsarecvfrom_wrapper(AFUNPTR wsarecvfrom_origin,
+                         wsarecvfrom_traits_t::arg1_type s,                     // windows::SOCKET
+                         wsarecvfrom_traits_t::arg2_type lpBuffers,             // windows::LPWSABUF
+                         wsarecvfrom_traits_t::arg3_type dwBufferCount,         // windows::DWORD
+                         wsarecvfrom_traits_t::arg4_type lpNumberOfBytesRecvd,  // windows::LPDWORD
+                         wsarecvfrom_traits_t::arg5_type lpFlags,               // windows::LPDWORD
+                         wsarecvfrom_traits_t::arg6_type lpFrom,                // windows::sockaddr*
+                         wsarecvfrom_traits_t::arg7_type lpFromlen,             // windows::LPINT
+                         wsarecvfrom_traits_t::arg8_type lpOverlapped,          // windows::LPWSAOVERLAPPED
+                         wsarecvfrom_traits_t::arg9_type lpCompletionRoutine,   // windows::LPWSAOVERLAPPED_COMPLETION_ROUTINE
+                         CONTEXT* p_ctxt, THREADID thread_id) -> wsarecvfrom_traits_t::result_type
 {
-  int result;
+  wsarecvfrom_traits_t::result_type result;
 
   std::cerr << "wsarecvfrom wrapper\n";
   if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
@@ -294,16 +302,16 @@ auto wsarecvfrom_wrapper(AFUNPTR wsarecvfrom_origin, windows::SOCKET s, windows:
   }
 
   PIN_CallApplicationFunction(p_ctxt, thread_id, CALLINGSTD_DEFAULT, wsarecvfrom_origin,
-                              PIN_PARG(int), &result,
-                              PIN_PARG(windows::SOCKET), s,
-                              PIN_PARG(windows::LPWSABUF), lpBuffers,
-                              PIN_PARG(windows::DWORD), dwBufferCount,
-                              PIN_PARG(windows::LPDWORD), lpNumberOfBytesRecvd,
-                              PIN_PARG(windows::LPDWORD), lpFlags,
-                              PIN_PARG(windows::sockaddr*), lpFrom,
-                              PIN_PARG(windows::LPINT), lpFromlen,
-                              PIN_PARG(windows::LPWSAOVERLAPPED), lpOverlapped,
-                              PIN_PARG(windows::LPWSAOVERLAPPED_COMPLETION_ROUTINE), lpCompletionRoutine,
+                              PIN_PARG(wsarecvfrom_traits_t::result_type), &result,
+                              PIN_PARG(wsarecvfrom_traits_t::arg1_type), s,
+                              PIN_PARG(wsarecvfrom_traits_t::arg2_type), lpBuffers,
+                              PIN_PARG(wsarecvfrom_traits_t::arg3_type), dwBufferCount,
+                              PIN_PARG(wsarecvfrom_traits_t::arg4_type), lpNumberOfBytesRecvd,
+                              PIN_PARG(wsarecvfrom_traits_t::arg5_type), lpFlags,
+                              PIN_PARG(wsarecvfrom_traits_t::arg6_type), lpFrom,
+                              PIN_PARG(wsarecvfrom_traits_t::arg7_type), lpFromlen,
+                              PIN_PARG(wsarecvfrom_traits_t::arg8_type), lpOverlapped,
+                              PIN_PARG(wsarecvfrom_traits_t::arg9_type), lpCompletionRoutine,
                               PIN_PARG_END());
 
   if (traced_thread_is_fixed && (thread_id == traced_thread_id) && wsarecv_is_locked)

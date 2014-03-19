@@ -20,7 +20,7 @@
 #include <pin.H>
 
 //#include <functional>
-#include <boost/type_traits/function_traits.hpp>
+//#include <boost/type_traits/function_traits.hpp>
 
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -49,6 +49,7 @@ struct wrapper<R(T1, T2, T3, T4)>
   typedef R result_type;
   typedef R (type)(AFUNPTR, T1, T2, T3, T4, CONTEXT*, THREADID);
 };
+
 
 template <typename R, typename T1, typename T2, typename T3, typename T4, typename T5, typename T6>
 struct wrapper<R(T1, T2, T3, T4, T5, T6)>
@@ -95,10 +96,8 @@ extern auto wsarecvs_interceptor_after  (THREADID thread_id)                    
 //                                         recv_traits::arg3_type len,          // int
 //                                         recv_traits::arg4_type flags,        // int
 //                                         CONTEXT* p_ctxt, THREADID thread_id) -> recv_traits::result_type;
-
-//typedef wrapper<windows::recv_t>::type recv_wrapper_t;
-//extern recv_wrapper_t recv_wrapper;
 extern wrapper<windows::recv_t>::type recv_wrapper;
+typedef boost::function_traits<windows::recv_t> recv_traits_t;
 
 
 //typedef boost::function_traits<windows::recvfrom_t> recvfrom_traits;
@@ -111,6 +110,7 @@ extern wrapper<windows::recv_t>::type recv_wrapper;
 //                                         recvfrom_traits::arg6_type fromlen,  // int*
 //                                         CONTEXT* p_ctxt, THREADID thread_id) -> recvfrom_traits::result_type;
 extern wrapper<windows::recvfrom_t>::type recvfrom_wrapper;
+typedef boost::function_traits<windows::recvfrom_t> recvfrom_traits_t;
 
 //typedef boost::function_traits<windows::wsarecv_t> wsarecvfrom_traits;
 //extern auto wsarecv_wrapper             (AFUNPTR wsarecv_origin,
@@ -123,6 +123,7 @@ extern wrapper<windows::recvfrom_t>::type recvfrom_wrapper;
 //                                         wsarecvfrom_traits::arg7_type lpCompletionRoutine,   // windows::LPWSAOVERLAPPED_COMPLETION_ROUTINE
 //                                         CONTEXT* p_ctxt, THREADID thread_id)             -> int;
 extern wrapper<windows::wsarecv_t>::type wsarecv_wrapper;
+typedef boost::function_traits<windows::wsarecv_t> wsarecv_traits_t;
 
 //extern auto wsarecvfrom_wrapper         (AFUNPTR wsarecvfrom_origin,
 //                                         windows::SOCKET s,
@@ -136,6 +137,7 @@ extern wrapper<windows::wsarecv_t>::type wsarecv_wrapper;
 //                                         windows::LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine,
 //                                         CONTEXT* p_ctxt, THREADID thread_id)             -> int;
 extern wrapper<windows::wsarecvfrom_t>::type wsarecvfrom_wrapper;
+typedef boost::function_traits<windows::wsarecvfrom_t> wsarecvfrom_traits_t;
 
 #elif defined(__gnu_linux__)
 

@@ -207,9 +207,14 @@ static inline auto recv_replacer (RTN& rtn) -> void
 {
   std::cerr << "recv\n";
   // replacement approach
-  auto recv_proto = PROTO_Allocate(PIN_PARG(int), CALLINGSTD_DEFAULT, "recv",
-                                   PIN_PARG(windows::SOCKET), PIN_PARG(char*), PIN_PARG(int),
-                                   PIN_PARG(int), PIN_PARG_END());
+  auto recv_proto = PROTO_Allocate(PIN_PARG(capturing::recv_traits_t::result_type),
+                                   CALLINGSTD_DEFAULT, "recv",
+                                   PIN_PARG(capturing::recv_traits_t::arg1_type),  // windows::SOCKET
+                                   PIN_PARG(capturing::recv_traits_t::arg2_type),  // char*
+                                   PIN_PARG(capturing::recv_traits_t::arg3_type),  // int
+                                   PIN_PARG(capturing::recv_traits_t::arg4_type),  // int
+                                   PIN_PARG_END());
+
   RTN_ReplaceSignature(rtn, AFUNPTR(capturing::recv_wrapper), IARG_PROTOTYPE, recv_proto, IARG_ORIG_FUNCPTR,
                        IARG_FUNCARG_ENTRYPOINT_VALUE, 0, IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
                        IARG_FUNCARG_ENTRYPOINT_VALUE, 2, IARG_FUNCARG_ENTRYPOINT_VALUE, 3,
@@ -224,10 +229,16 @@ static inline auto recvfrom_replacer (RTN& rtn) -> void
 {
   std::cerr << "recvfrom\n";
   // replacement approach
-  auto recvfrom_proto = PROTO_Allocate(PIN_PARG(int), CALLINGSTD_DEFAULT, "recvfrom",
-                                       PIN_PARG(windows::SOCKET), PIN_PARG(char*), PIN_PARG(int),
-                                       PIN_PARG(int), PIN_PARG(windows::sockaddr*), PIN_PARG(int*),
+  auto recvfrom_proto = PROTO_Allocate(PIN_PARG(capturing::recvfrom_traits_t::result_type),
+                                       CALLINGSTD_DEFAULT, "recvfrom",
+                                       PIN_PARG(capturing::recvfrom_traits_t::arg1_type),  // windows::SOCKET
+                                       PIN_PARG(capturing::recvfrom_traits_t::arg2_type),  // char*
+                                       PIN_PARG(capturing::recvfrom_traits_t::arg3_type),  // int
+                                       PIN_PARG(capturing::recvfrom_traits_t::arg4_type),  // int
+                                       PIN_PARG(capturing::recvfrom_traits_t::arg5_type),  // windows::sockaddr*
+                                       PIN_PARG(capturing::recvfrom_traits_t::arg6_type),  // int*
                                        PIN_PARG_END());
+
   RTN_ReplaceSignature(rtn, AFUNPTR(capturing::recvfrom_wrapper), IARG_PROTOTYPE, recvfrom_proto, IARG_ORIG_FUNCPTR,
                        IARG_FUNCARG_ENTRYPOINT_VALUE, 0, IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
                        IARG_FUNCARG_ENTRYPOINT_VALUE, 2, IARG_FUNCARG_ENTRYPOINT_VALUE, 3,
@@ -243,13 +254,17 @@ static inline auto wsarecv_replacer (RTN& rtn) -> void
 {
   std::cerr << "wsarecv\n";
   // replacement approach
-  auto wsarecv_proto = PROTO_Allocate(PIN_PARG(int), CALLINGSTD_DEFAULT, "WSARecv",
-                                      PIN_PARG(windows::SOCKET), PIN_PARG(windows::LPWSABUF),
-                                      PIN_PARG(windows::DWORD), PIN_PARG(windows::LPDWORD),
-                                      PIN_PARG(windows::LPDWORD),
-                                      PIN_PARG(windows::LPWSAOVERLAPPED),
-                                      PIN_PARG(windows::LPWSAOVERLAPPED_COMPLETION_ROUTINE),
+  auto wsarecv_proto = PROTO_Allocate(PIN_PARG(capturing::wsarecv_traits_t::result_type),
+                                      CALLINGSTD_DEFAULT, "WSARecv",
+                                      PIN_PARG(capturing::wsarecv_traits_t::arg1_type),
+                                      PIN_PARG(capturing::wsarecv_traits_t::arg2_type),
+                                      PIN_PARG(capturing::wsarecv_traits_t::arg3_type),
+                                      PIN_PARG(capturing::wsarecv_traits_t::arg4_type),
+                                      PIN_PARG(capturing::wsarecv_traits_t::arg5_type),
+                                      PIN_PARG(capturing::wsarecv_traits_t::arg6_type),
+                                      PIN_PARG(capturing::wsarecv_traits_t::arg7_type),
                                       PIN_PARG_END());
+
   RTN_ReplaceSignature(rtn, AFUNPTR(capturing::wsarecv_wrapper), IARG_PROTOTYPE, wsarecv_proto, IARG_ORIG_FUNCPTR,
                        IARG_FUNCARG_ENTRYPOINT_VALUE, 0, IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
                        IARG_FUNCARG_ENTRYPOINT_VALUE, 2, IARG_FUNCARG_ENTRYPOINT_VALUE, 3,
@@ -269,14 +284,19 @@ static inline auto wsarecvfrom_replacer (RTN& rtn) -> void
 {
   std::cerr << "wsarecvfrom\n";
   // replacement approach
-  auto wsarecvfrom_proto = PROTO_Allocate(PIN_PARG(int), CALLINGSTD_DEFAULT, "WSARecvFrom",
-                                          PIN_PARG(windows::SOCKET), PIN_PARG(windows::LPWSABUF),
-                                          PIN_PARG(windows::DWORD), PIN_PARG(windows::LPDWORD),
-                                          PIN_PARG(windows::LPDWORD),
-                                          PIN_PARG(windows::sockaddr*), PIN_PARG(windows::LPINT),
-                                          PIN_PARG(windows::LPWSAOVERLAPPED),
-                                          PIN_PARG(windows::LPWSAOVERLAPPED_COMPLETION_ROUTINE),
+  auto wsarecvfrom_proto = PROTO_Allocate(PIN_PARG(capturing::wsarecvfrom_traits_t::result_type),
+                                          CALLINGSTD_DEFAULT, "WSARecvFrom",
+                                          PIN_PARG(capturing::wsarecvfrom_traits_t::arg1_type),
+                                          PIN_PARG(capturing::wsarecvfrom_traits_t::arg2_type),
+                                          PIN_PARG(capturing::wsarecvfrom_traits_t::arg3_type),
+                                          PIN_PARG(capturing::wsarecvfrom_traits_t::arg4_type),
+                                          PIN_PARG(capturing::wsarecvfrom_traits_t::arg5_type),
+                                          PIN_PARG(capturing::wsarecvfrom_traits_t::arg6_type),
+                                          PIN_PARG(capturing::wsarecvfrom_traits_t::arg7_type),
+                                          PIN_PARG(capturing::wsarecvfrom_traits_t::arg8_type),
+                                          PIN_PARG(capturing::wsarecvfrom_traits_t::arg9_type),
                                           PIN_PARG_END());
+
   RTN_ReplaceSignature(rtn, AFUNPTR(capturing::wsarecvfrom_wrapper), IARG_PROTOTYPE,
                        wsarecvfrom_proto, IARG_ORIG_FUNCPTR,
                        IARG_FUNCARG_ENTRYPOINT_VALUE, 0, IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
@@ -327,11 +347,11 @@ auto routine_calling(RTN rtn, VOID* data) -> VOID
 {
   if ((current_running_phase == capturing_phase) && !interested_msg_is_received)
   {
-    auto rtn_name = RTN_Name(rtn); routine_at_addr[RTN_Address(rtn)] = rtn_name;
-    generic_routine_interceptor(rtn);
+    auto rtn_name = RTN_Name(rtn);
+//    routine_at_addr[RTN_Address(rtn)] = rtn_name; generic_routine_interceptor(rtn);
 
-//    if (intercept_func_of_name.find(rtn_name) != intercept_func_of_name.end())
-//      intercept_func_of_name[rtn_name](rtn);
+    if (intercept_func_of_name.find(rtn_name) != intercept_func_of_name.end())
+      intercept_func_of_name[rtn_name](rtn);
   }
   return;
 }
