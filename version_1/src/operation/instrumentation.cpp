@@ -348,7 +348,7 @@ auto routine_calling(RTN rtn, VOID* data) -> VOID
   if ((current_running_phase == capturing_phase) && !interested_msg_is_received)
   {
     auto rtn_name = RTN_Name(rtn);
-//    routine_at_addr[RTN_Address(rtn)] = rtn_name; generic_routine_interceptor(rtn);
+    routine_at_addr[RTN_Address(rtn)] = rtn_name; generic_routine_interceptor(rtn);
 
     if (intercept_func_of_name.find(rtn_name) != intercept_func_of_name.end())
       intercept_func_of_name[rtn_name](rtn);

@@ -30,7 +30,6 @@ namespace windows
 #include <WinSock2.h>
 #include <Windows.h>
 
-// workaround since the calling convention __stdcall is added always for Windows APIs
 // the follows should be declared more elegantly by: typedef decltype(function_name) function_name_t
 typedef int recv_t        (SOCKET, char*, int, int);
 typedef int recvfrom_t    (SOCKET, char*, int, int, struct sockaddr*, int*);
@@ -38,7 +37,7 @@ typedef int wsarecv_t     (SOCKET, LPWSABUF, DWORD, LPDWORD, LPDWORD, LPWSAOVERL
                            LPWSAOVERLAPPED_COMPLETION_ROUTINE);
 typedef int wsarecvfrom_t (SOCKET, LPWSABUF, DWORD, LPDWORD, LPDWORD, struct sockaddr*, LPINT,
                            LPWSAOVERLAPPED, LPWSAOVERLAPPED_COMPLETION_ROUTINE);
-};
+}
 #endif
 
 template <typename F> struct wrapper;
@@ -49,6 +48,11 @@ struct wrapper<R(T1, T2, T3, T4)>
   typedef R result_type;
   typedef R (type)(AFUNPTR, T1, T2, T3, T4, CONTEXT*, THREADID);
 };
+
+//typedef decltype(windows::recv) recv_tt;
+//typedef int F(windows::SOCKET, char *,int,int);
+typedef wrapper<decltype(windows::recv)>::type zezer;
+//typedef wrapper<int (windows::SOCKET,char *,int,int)>::type sdfsdf;
 
 
 template <typename R, typename T1, typename T2, typename T3, typename T4, typename T5, typename T6>
@@ -89,53 +93,16 @@ extern auto wsarecvs_interceptor_before (ADDRINT msg_struct_addr, THREADID threa
 
 extern auto wsarecvs_interceptor_after  (THREADID thread_id)                              -> VOID;
 
-//typedef boost::function_traits<windows::recv_t> recv_traits;
-//extern auto recv_wrapper                (AFUNPTR recv_origin,
-//                                         recv_traits::arg1_type s,            // windows::SOCKET
-//                                         recv_traits::arg2_type buf,          // char*
-//                                         recv_traits::arg3_type len,          // int
-//                                         recv_traits::arg4_type flags,        // int
-//                                         CONTEXT* p_ctxt, THREADID thread_id) -> recv_traits::result_type;
+
 extern wrapper<windows::recv_t>::type recv_wrapper;
 typedef boost::function_traits<windows::recv_t> recv_traits_t;
 
-
-//typedef boost::function_traits<windows::recvfrom_t> recvfrom_traits;
-//extern auto recvfrom_wrapper            (AFUNPTR recvfrom_origin,
-//                                         recvfrom_traits::arg1_type s,        // windows::SOCKET
-//                                         recvfrom_traits::arg2_type buf,      // char*
-//                                         recvfrom_traits::arg3_type len,      // int
-//                                         recvfrom_traits::arg4_type flags,    // int
-//                                         recvfrom_traits::arg5_type from,     // windows::sockaddr*
-//                                         recvfrom_traits::arg6_type fromlen,  // int*
-//                                         CONTEXT* p_ctxt, THREADID thread_id) -> recvfrom_traits::result_type;
 extern wrapper<windows::recvfrom_t>::type recvfrom_wrapper;
 typedef boost::function_traits<windows::recvfrom_t> recvfrom_traits_t;
 
-//typedef boost::function_traits<windows::wsarecv_t> wsarecvfrom_traits;
-//extern auto wsarecv_wrapper             (AFUNPTR wsarecv_origin,
-//                                         wsarecvfrom_traits::arg1_type s,                     // windows::SOCKET
-//                                         wsarecvfrom_traits::arg2_type lpBuffers,             // windows::LPWSABUF
-//                                         wsarecvfrom_traits::arg3_type dwBufferCount,         // windows::DWORD
-//                                         wsarecvfrom_traits::arg4_type lpNumberOfBytesRecvd,  // windows::LPDWORD
-//                                         wsarecvfrom_traits::arg5_type lpFlags,               // windows::LPDWORD
-//                                         wsarecvfrom_traits::arg6_type lpOverlapped,          // windows::LPWSAOVERLAPPED
-//                                         wsarecvfrom_traits::arg7_type lpCompletionRoutine,   // windows::LPWSAOVERLAPPED_COMPLETION_ROUTINE
-//                                         CONTEXT* p_ctxt, THREADID thread_id)             -> int;
 extern wrapper<windows::wsarecv_t>::type wsarecv_wrapper;
 typedef boost::function_traits<windows::wsarecv_t> wsarecv_traits_t;
 
-//extern auto wsarecvfrom_wrapper         (AFUNPTR wsarecvfrom_origin,
-//                                         windows::SOCKET s,
-//                                         windows::LPWSABUF lpBuffers,
-//                                         windows::DWORD dwBufferCount,
-//                                         windows::LPDWORD lpNumberOfBytesRecvd,
-//                                         windows::LPDWORD lpFlags,
-//                                         windows::sockaddr* lpFrom,
-//                                         windows::LPINT lpFromlen,
-//                                         windows::LPWSAOVERLAPPED lpOverlapped,
-//                                         windows::LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine,
-//                                         CONTEXT* p_ctxt, THREADID thread_id)             -> int;
 extern wrapper<windows::wsarecvfrom_t>::type wsarecvfrom_wrapper;
 typedef boost::function_traits<windows::wsarecvfrom_t> wsarecvfrom_traits_t;
 
