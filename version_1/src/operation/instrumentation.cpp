@@ -200,6 +200,36 @@ static inline auto wsarecvs_interceptor (RTN& rtn) -> void
 }
 
 
+static inline auto InternetReadFile_interceptor (RTN& rtn) -> void
+{
+  // insertion approach
+  RTN_Open(rtn);
+  RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)capturing::InternetReadFile_inserter_before,
+                 IARG_FUNCARG_ENTRYPOINT_VALUE, 0, IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
+                 IARG_FUNCARG_ENTRYPOINT_VALUE, 2, IARG_FUNCARG_ENTRYPOINT_VALUE, 3,
+                 IARG_THREAD_ID, IARG_END);
+  RTN_InsertCall(rtn, IPOINT_AFTER, (AFUNPTR)capturing::InternetReadFile_inserter_after,
+                 IARG_FUNCRET_EXITPOINT_VALUE, IARG_THREAD_ID, IARG_END);
+  RTN_Close(rtn);
+  return;
+}
+
+
+static inline auto InternetReadFileEx_interceptor (RTN& rtn) -> void
+{
+  // insertion approach
+  RTN_Open(rtn);
+  RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)capturing::InternetReadFileEx_inserter_before,
+                 IARG_FUNCARG_ENTRYPOINT_VALUE, 0, IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
+                 IARG_FUNCARG_ENTRYPOINT_VALUE, 2, IARG_FUNCARG_ENTRYPOINT_VALUE, 3,
+                 IARG_THREAD_ID, IARG_END);
+  RTN_InsertCall(rtn, IPOINT_AFTER, (AFUNPTR)capturing::InternetReadFileEx_inserter_after,
+                 IARG_FUNCRET_EXITPOINT_VALUE, IARG_THREAD_ID, IARG_END);
+  RTN_Close(rtn);
+  return;
+}
+
+
 /**
  * @brief replace recv function (quite boring C++ type traits get type of parameter)
  */
@@ -312,31 +342,31 @@ static inline auto wsarecvfrom_replacer (RTN& rtn) -> void
 
 
 //#if !defined(NDEBUG)
-static std::map<ADDRINT, std::string> routine_at_addr;
+//static std::map<ADDRINT, std::string> routine_at_addr;
 
-static auto generic_routine_before_inteceptor(ADDRINT rtn_addr, THREADID thread_id) -> VOID
-{
-  tfm::format(log_file, "<%d: %s> is called\n", thread_id, routine_at_addr[rtn_addr]);
-  return;
-}
+//static auto generic_routine_before_inteceptor(ADDRINT rtn_addr, THREADID thread_id) -> VOID
+//{
+//  tfm::format(log_file, "<%d: %s> is called\n", thread_id, routine_at_addr[rtn_addr]);
+//  return;
+//}
 
 
-static auto generic_routine_after_interceptor(ADDRINT rtn_addr, THREADID thread_id) -> VOID
-{
-  tfm::format(log_file, "<%d: %s> returns\n", thread_id, routine_at_addr[rtn_addr]);
-  return;
-}
+//static auto generic_routine_after_interceptor(ADDRINT rtn_addr, THREADID thread_id) -> VOID
+//{
+//  tfm::format(log_file, "<%d: %s> returns\n", thread_id, routine_at_addr[rtn_addr]);
+//  return;
+//}
 
-static inline auto generic_routine_interceptor (RTN& rtn) -> void
-{
-  RTN_Open(rtn);
-  RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)generic_routine_before_inteceptor, IARG_ADDRINT,
-                 RTN_Address(rtn), IARG_THREAD_ID, IARG_END);
-  RTN_InsertCall(rtn, IPOINT_AFTER, (AFUNPTR)generic_routine_after_interceptor, IARG_ADDRINT,
-                 RTN_Address(rtn), IARG_THREAD_ID, IARG_END);
-  RTN_Close(rtn);
-  return;
-}
+//static inline auto generic_routine_interceptor (RTN& rtn) -> void
+//{
+//  RTN_Open(rtn);
+//  RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)generic_routine_before_inteceptor, IARG_ADDRINT,
+//                 RTN_Address(rtn), IARG_THREAD_ID, IARG_END);
+//  RTN_InsertCall(rtn, IPOINT_AFTER, (AFUNPTR)generic_routine_after_interceptor, IARG_ADDRINT,
+//                 RTN_Address(rtn), IARG_THREAD_ID, IARG_END);
+//  RTN_Close(rtn);
+//  return;
+//}
 //#endif
 
 
@@ -348,10 +378,15 @@ auto routine_calling(RTN rtn, VOID* data) -> VOID
   if ((current_running_phase == capturing_phase) && !interested_msg_is_received)
   {
     auto rtn_name = RTN_Name(rtn);
-    routine_at_addr[RTN_Address(rtn)] = rtn_name; generic_routine_interceptor(rtn);
+//    routine_at_addr[RTN_Address(rtn)] = rtn_name; generic_routine_interceptor(rtn);
 
     if (intercept_func_of_name.find(rtn_name) != intercept_func_of_name.end())
+    {
+//#if !defined(NDEBUG)
+//      tfm::format(std::cerr, "intercepting %s function\n", rtn_name);
+//#endif
       intercept_func_of_name[rtn_name](rtn);
+    }
   }
   return;
 }
@@ -445,6 +480,8 @@ auto initialize () -> void
   intercept_func_of_name["recvfrom"] = recvs_interceptor;
   intercept_func_of_name["WSARecv"] = wsarecvs_interceptor;
   intercept_func_of_name["WSARecvFrom"] = wsarecvs_interceptor;
+  intercept_func_of_name["InternetReadFile"] = InternetReadFile_interceptor;
+  intercept_func_of_name["InternetReadFileEx"] = InternetReadFileEx_interceptor;
 
   replace_func_of_name["recv"] = recv_replacer;
   replace_func_of_name["recvfrom"] = recvfrom_replacer;

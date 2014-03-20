@@ -2,9 +2,8 @@
 #include "common.h"
 #include "../util/stuffs.h"
 
-#include <boost/type_traits/function_traits.hpp>
-
 #include <algorithm>
+#include <numeric>
 
 namespace capturing 
 {
@@ -14,12 +13,6 @@ namespace capturing
 static UINT32   received_msg_number;
 
 #if defined(_WIN32) || defined(_WIN64)
-//namespace windows
-//{
-//#define NOMINMAX
-//#include <WinSock2.h>
-//#include <Windows.h>
-//};
 static ADDRINT  received_msg_struct_addr;
 static bool     recv_is_locked;
 static bool     recvfrom_is_locked;
@@ -42,6 +35,7 @@ auto initialize() -> void
 
   is_locked["recv"] = false; is_locked["recvfrom"] = false; is_locked["WSARecv"] = false;
   is_locked["WSARecvFrom"] = false; is_locked["InternetReadFile"] = false;
+  is_locked["InternetReadFileEx"] = false;
 #endif
   received_msg_number = 0; interested_msg_is_received = false;
   return;
@@ -74,7 +68,25 @@ static inline auto prepare_new_tainting_phase() -> void
  */
 static inline auto handle_received_message() -> void
 {
-  if ((received_msg_size > 0) && !recv_is_locked && !wsarecv_is_locked)
+  auto all_lock_released = [&]() -> bool
+  {
+//    typedef decltype(is_locked) is_locked_t; bool released = true;
+//    std::for_each(is_locked.begin(), is_locked.end(), [&](is_locked_t::value_type name_value)
+//    {
+//      released &= !name_value.second;
+//    });
+//    return released;
+
+    auto func_locked_iter = is_locked.begin();
+    for (; func_locked_iter != is_locked.end(); ++func_locked_iter)
+    {
+      if (func_locked_iter->second) break;
+    }
+    return (func_locked_iter == is_locked.end());
+
+  };
+
+  if ((received_msg_size > 0) && all_lock_released() /*!recv_is_locked && !wsarecv_is_locked*/)
   {
     received_msg_number++;
     // verify if the received message is the interesting message
@@ -96,8 +108,9 @@ auto recvs_interceptor_before(ADDRINT msg_addr, THREADID thread_id) -> VOID
 {
   if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
   {
+    recv_is_locked = true; is_locked["recv"] = true; is_locked["recvfrom"] = false;
+
     traced_thread_id = thread_id; traced_thread_is_fixed = true; received_msg_addr = msg_addr;
-    recv_is_locked = true;
   }
   return;
 }
@@ -110,11 +123,13 @@ auto recvs_interceptor_after(UINT32 msg_length, THREADID thread_id) -> VOID
 {
   if (traced_thread_is_fixed && (thread_id == traced_thread_id) && recv_is_locked)
   {
+    recv_is_locked = false; is_locked["recv"] = false; is_locked["recvfrom"] = false;
+
 #if !defined(NDEBUG)
-      tfm::format(log_file, "message is obtained from recv or recvfrom at thread id %d\n",
-                  thread_id);
+    tfm::format(log_file, "message is obtained from recv or recvfrom at thread id %d\n",
+                thread_id);
 #endif
-    received_msg_size = msg_length; recv_is_locked = false; handle_received_message();
+    received_msg_size = msg_length; handle_received_message();
   }
   return;
 }
@@ -127,10 +142,13 @@ auto wsarecvs_interceptor_before(ADDRINT msg_struct_addr, THREADID thread_id) ->
 {
   if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
   {
+    // lock the message receiving with WSARecv or WSARecvFrom
+    wsarecv_is_locked = true; is_locked["WSARecv"] = true; is_locked["WSARecvFrom"] = true;
+
     received_msg_struct_addr = msg_struct_addr;
     received_msg_addr = reinterpret_cast<ADDRINT>((reinterpret_cast<windows::LPWSABUF>(
                                                      received_msg_struct_addr))->buf);
-    traced_thread_id = thread_id; traced_thread_is_fixed = true; wsarecv_is_locked = true;
+    traced_thread_id = thread_id; traced_thread_is_fixed = true;
   }
   return;
 }
@@ -143,47 +161,101 @@ auto wsarecvs_interceptor_after(THREADID thread_id) -> VOID
 {
   if (traced_thread_is_fixed && (thread_id == traced_thread_id) && wsarecv_is_locked)
   {
+    // unlock the message receiving with WSARecv or WSARecvFrom
+    wsarecv_is_locked = false; is_locked["WSARecv"] = false; is_locked["WSARecvFrom"] = false;
+
 #if !defined(NDEBUG)
     tfm::format(log_file, "message is obtained from WSARecv or WSARecvFrom at thread id %d\n",
                 thread_id);
 #endif
     received_msg_size = (reinterpret_cast<windows::LPWSABUF>(received_msg_struct_addr))->len;
-    wsarecv_is_locked = false; handle_received_message();
+    handle_received_message();
   }
   return;
 }
 
 
-auto InternetReadFile_inserter_before(InternetReadFile_traits_t::arg1_type hFile,                 // HINTERNET
-                                      InternetReadFile_traits_t::arg2_type lpBuffer,              // LPVOID
-                                      InternetReadFile_traits_t::arg3_type dwNumberOfBytesToRead, // DWORD
-                                      InternetReadFile_traits_t::arg4_type lpdwNumberOfBytesRead, // LPDWORD
+auto InternetReadFile_inserter_before(ADDRINT hFile,                 // HINTERNET
+                                      ADDRINT lpBuffer,              // LPVOID
+                                      ADDRINT dwNumberOfBytesToRead, // DWORD
+                                      ADDRINT lpdwNumberOfBytesRead, // LPDWORD
                                       THREADID thread_id) -> VOID
 {
   if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
   {
-    received_msg_addr = reinterpret_cast<ADDRINT>(lpBuffer);
-    received_msg_struct_addr = reinterpret_cast<ADDRINT>(lpdwNumberOfBytesRead);
+    // lock the message receiving with InternetReadFile
+    is_locked["InternetReadFile"] = true;
+
+    received_msg_addr = lpBuffer;
+    received_msg_struct_addr = lpdwNumberOfBytesRead;
 
     traced_thread_id = thread_id; traced_thread_is_fixed = true;
-    is_locked["InternetReadFile"] = true;
   }
   return;
 }
 
 
-auto InternetReadFile_inserter_after(InternetReadFile_traits_t::result_type is_successful, // BOOL
+auto InternetReadFile_inserter_after(ADDRINT is_successful, // BOOL
                                      THREADID thread_id) -> VOID
 {
   if (traced_thread_is_fixed && (thread_id == traced_thread_id) && is_locked["InternetReadFile"])
   {
+    // unlock the message receiving with InternetReadFile
+    is_locked["InternetReadFile"] = false;
+
 #if !defined(NDEBUG)
     tfm::format(log_file, "message is obtained from InternetReadFile at thread id %d\n", thread_id);
 #endif
-    is_locked["InternetReadFile"] = false;
-    if (is_successful)
+
+    if (static_cast<InternetReadFile_traits_t::result_type>/*BOOL*/(is_successful))
     {
-      received_msg_size = *(reinterpret_cast<InternetReadFile_traits_t::arg4_type>(received_msg_struct_addr));
+      received_msg_size = *(reinterpret_cast<InternetReadFile_traits_t::arg4_type>/*LPDWORD*/(
+                              received_msg_struct_addr));
+      handle_received_message();
+    }
+  }
+  return;
+}
+
+
+auto InternetReadFileEx_inserter_before(ADDRINT hFile,        // HINTERNET
+                                        ADDRINT lpBuffersOut, // LPINTERNET_BUFFERS
+                                        ADDRINT dwFlags,      // DWORD
+                                        ADDRINT dwContext,    // DWORD_PTR
+                                        THREADID thread_id) -> VOID
+{
+  if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
+  {
+    // lock the message receiving with InternetReadFileEx
+    is_locked["InternetReadFileEx"] = true;
+
+    received_msg_addr = reinterpret_cast<ADDRINT>(
+          (reinterpret_cast<InternetReadFileEx_traits_t::arg2_type>/*LPINTERNET_BUFFERS*/(
+             lpBuffersOut))->lpvBuffer);
+    received_msg_struct_addr = lpBuffersOut;
+//    received_msg_size = (reinterpret_cast<InternetReadFileEx_traits_t::arg2_type>(lpBuffersOut))->dwBufferLength;
+
+    traced_thread_id = thread_id; traced_thread_is_fixed = true;
+  }
+  return;
+}
+
+
+auto InternetReadFileEx_inserter_after(ADDRINT is_successful, THREADID thread_id) -> VOID
+{
+  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && is_locked["InternetReadFileEx"])
+  {
+    // unlock the message receiving with InternetReadFileEx
+    is_locked["InternetReadFileEx"] = false;
+
+#if !defined(NDEBUG)
+    tfm::format(log_file, "message is obtained from InternetReadFileEx at thread id %d\n", thread_id);
+#endif
+
+    if (static_cast<InternetReadFileEx_traits_t::result_type>/*BOOL*/(is_successful))
+    {
+      received_msg_size = (reinterpret_cast<InternetReadFileEx_traits_t::arg2_type>(
+                             received_msg_struct_addr))->dwBufferLength;
       handle_received_message();
     }
   }

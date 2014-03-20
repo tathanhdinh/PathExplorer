@@ -20,7 +20,7 @@
 #include <pin.H>
 
 //#include <functional>
-//#include <boost/type_traits/function_traits.hpp>
+#include <boost/type_traits/function_traits.hpp>
 
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -43,9 +43,14 @@ typedef int WSARecvFrom_t (SOCKET, LPWSABUF, DWORD, LPDWORD, LPDWORD, struct soc
                            LPWSAOVERLAPPED, LPWSAOVERLAPPED_COMPLETION_ROUTINE);
 
 typedef BOOL InternetReadFile_t (HINTERNET, LPVOID, DWORD, LPDWORD);
+
+typedef BOOL InternetReadFileEx_t (HINTERNET, LPINTERNET_BUFFERS, DWORD, DWORD_PTR);
 }
 #endif
 
+/**
+ * template for wrappers
+ */
 template <typename F> struct wrapper;
 
 template <typename R, typename T1, typename T2, typename T3, typename T4>
@@ -79,12 +84,15 @@ struct wrapper<R(T1, T2, T3, T4, T5, T6, T7, T8, T9)>
 };
 
 
+/**
+ * template for inserters
+ */
 template <typename F> struct inserter_before;
 
 template <typename R, typename T1, typename T2, typename T3, typename T4>
 struct inserter_before<R(T1, T2, T3, T4)>
 {
-  typedef VOID (type)(T1, T2, T3, T4, THREADID);
+  typedef VOID (type)(ADDRINT, ADDRINT, ADDRINT, ADDRINT, THREADID);
 };
 
 template <typename F> struct inserter_after;
@@ -92,7 +100,7 @@ template <typename F> struct inserter_after;
 template <typename R, typename T1, typename T2, typename T3, typename T4>
 struct inserter_after<R(T1, T2, T3, T4)>
 {
-  typedef VOID (type)(R, THREADID);
+  typedef VOID (type)(ADDRINT, THREADID);
 };
 
 
@@ -113,6 +121,10 @@ extern auto wsarecvs_interceptor_after  (THREADID thread_id)                    
 extern inserter_before<windows::InternetReadFile_t>::type InternetReadFile_inserter_before;
 extern inserter_after<windows::InternetReadFile_t>::type InternetReadFile_inserter_after;
 typedef boost::function_traits<windows::InternetReadFile_t> InternetReadFile_traits_t;
+
+extern inserter_before<windows::InternetReadFileEx_t>::type InternetReadFileEx_inserter_before;
+extern inserter_after<windows::InternetReadFileEx_t>::type InternetReadFileEx_inserter_after;
+typedef boost::function_traits<windows::InternetReadFileEx_t> InternetReadFileEx_traits_t;
 
 extern wrapper<windows::recv_t>::type recv_wrapper;
 typedef boost::function_traits<windows::recv_t> recv_traits_t;
