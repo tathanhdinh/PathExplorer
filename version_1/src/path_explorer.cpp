@@ -67,7 +67,7 @@ KNOB<UINT32> max_total_rollback_knob       (KNOB_MODE_WRITEONCE, "pintool", "t",
                                             "specify the maximum total number of rollback" );
 
 KNOB<UINT32> max_trace_length_knob         (KNOB_MODE_WRITEONCE, "pintool", "l", "100",
-                                           "specify the length of the longest trace" );
+                                            "specify the length of the longest trace" );
 
 KNOB<UINT32> interested_input_order_knob   (KNOB_MODE_WRITEONCE, "pintool", "i", "1",
                                             "specify the order of the treated input");
@@ -185,11 +185,11 @@ int main(int argc, char *argv[])
     tfm::format(std::cerr, "activate Pintool data-initialization\n");
     PIN_AddApplicationStartFunction(start_exploring, 0);  // 0 is the (unused) input data
 
-//    tfm::format(std::cerr, "activate image-loading instrumenter\n");
-//    IMG_AddInstrumentFunction(instrumentation::image_loading, 0);
+    tfm::format(std::cerr, "activate image-loading instrumenter\n");
+    IMG_AddInstrumentFunction(instrumentation::image_loading, 0);
 
-    tfm::format(std::cerr, "activate routine-calling instrumenters\n");
-    RTN_AddInstrumentFunction(instrumentation::routine_calling, 0);
+//    tfm::format(std::cerr, "activate routine-calling instrumenters\n");
+//    RTN_AddInstrumentFunction(instrumentation::routine_calling, 0);
 
     tfm::format(std::cerr, "activate instruction-executing instrumenters\n");
     INS_AddInstrumentFunction(instrumentation::instruction_executing, 0);

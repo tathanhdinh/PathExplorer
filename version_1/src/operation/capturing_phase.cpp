@@ -70,13 +70,6 @@ static inline auto handle_received_message() -> void
 {
   auto all_lock_released = [&]() -> bool
   {
-//    typedef decltype(is_locked) is_locked_t; bool released = true;
-//    std::for_each(is_locked.begin(), is_locked.end(), [&](is_locked_t::value_type name_value)
-//    {
-//      released &= !name_value.second;
-//    });
-//    return released;
-
     auto func_locked_iter = is_locked.begin();
     for (; func_locked_iter != is_locked.end(); ++func_locked_iter)
     {
@@ -346,17 +339,17 @@ auto recvfrom_wrapper(AFUNPTR recvfrom_origin,
 /**
  * @brief WSARecv wrapper
  */
-auto wsarecv_wrapper(AFUNPTR wsarecv_origin,
-                     wsarecv_traits_t::arg1_type s,                     // windows::SOCKET
-                     wsarecv_traits_t::arg2_type lpBuffers,             // windows::LPWSABUF
-                     wsarecv_traits_t::arg3_type dwBufferCount,         // ewindows::DWORD
-                     wsarecv_traits_t::arg4_type lpNumberOfBytesRecvd,  // windows::LPDWORD
-                     wsarecv_traits_t::arg5_type lpFlags,               // windows::LPDWORD
-                     wsarecv_traits_t::arg6_type lpOverlapped,          // windows::LPWSAOVERLAPPED
-                     wsarecv_traits_t::arg7_type lpCompletionRoutine,   // windows::LPWSAOVERLAPPED_COMPLETION_ROUTINE
-                     CONTEXT* p_ctxt, THREADID thread_id) -> wsarecv_traits_t::result_type
+auto WSARecv_wrapper(AFUNPTR wsarecv_origin,
+                     WSARecv_traits_t::arg1_type s,                     // windows::SOCKET
+                     WSARecv_traits_t::arg2_type lpBuffers,             // windows::LPWSABUF
+                     WSARecv_traits_t::arg3_type dwBufferCount,         // ewindows::DWORD
+                     WSARecv_traits_t::arg4_type lpNumberOfBytesRecvd,  // windows::LPDWORD
+                     WSARecv_traits_t::arg5_type lpFlags,               // windows::LPDWORD
+                     WSARecv_traits_t::arg6_type lpOverlapped,          // windows::LPWSAOVERLAPPED
+                     WSARecv_traits_t::arg7_type lpCompletionRoutine,   // windows::LPWSAOVERLAPPED_COMPLETION_ROUTINE
+                     CONTEXT* p_ctxt, THREADID thread_id) -> WSARecv_traits_t::result_type
 {
-  wsarecv_traits_t::result_type result;
+  WSARecv_traits_t::result_type result;
 
   std::cerr << "wsarecv wrapper\n";
   if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
@@ -366,14 +359,14 @@ auto wsarecv_wrapper(AFUNPTR wsarecv_origin,
   }
 
   PIN_CallApplicationFunction(p_ctxt, thread_id, CALLINGSTD_DEFAULT, wsarecv_origin,
-                              PIN_PARG(wsarecv_traits_t::result_type), &result,
-                              PIN_PARG(wsarecv_traits_t::arg1_type), s,
-                              PIN_PARG(wsarecv_traits_t::arg2_type), lpBuffers,
-                              PIN_PARG(wsarecv_traits_t::arg3_type), dwBufferCount,
-                              PIN_PARG(wsarecv_traits_t::arg4_type), lpNumberOfBytesRecvd,
-                              PIN_PARG(wsarecv_traits_t::arg5_type), lpFlags,
-                              PIN_PARG(wsarecv_traits_t::arg6_type), lpOverlapped,
-                              PIN_PARG(wsarecv_traits_t::arg7_type), lpCompletionRoutine,
+                              PIN_PARG(WSARecv_traits_t::result_type), &result,
+                              PIN_PARG(WSARecv_traits_t::arg1_type), s,
+                              PIN_PARG(WSARecv_traits_t::arg2_type), lpBuffers,
+                              PIN_PARG(WSARecv_traits_t::arg3_type), dwBufferCount,
+                              PIN_PARG(WSARecv_traits_t::arg4_type), lpNumberOfBytesRecvd,
+                              PIN_PARG(WSARecv_traits_t::arg5_type), lpFlags,
+                              PIN_PARG(WSARecv_traits_t::arg6_type), lpOverlapped,
+                              PIN_PARG(WSARecv_traits_t::arg7_type), lpCompletionRoutine,
                               PIN_PARG_END());
 
   if (traced_thread_is_fixed && (thread_id == traced_thread_id) && wsarecv_is_locked)
@@ -391,38 +384,37 @@ auto wsarecv_wrapper(AFUNPTR wsarecv_origin,
 /**
  * @brief WSARecvFrom wrapper
  */
-auto wsarecvfrom_wrapper(AFUNPTR wsarecvfrom_origin,
-                         wsarecvfrom_traits_t::arg1_type s,                     // windows::SOCKET
-                         wsarecvfrom_traits_t::arg2_type lpBuffers,             // windows::LPWSABUF
-                         wsarecvfrom_traits_t::arg3_type dwBufferCount,         // windows::DWORD
-                         wsarecvfrom_traits_t::arg4_type lpNumberOfBytesRecvd,  // windows::LPDWORD
-                         wsarecvfrom_traits_t::arg5_type lpFlags,               // windows::LPDWORD
-                         wsarecvfrom_traits_t::arg6_type lpFrom,                // windows::sockaddr*
-                         wsarecvfrom_traits_t::arg7_type lpFromlen,             // windows::LPINT
-                         wsarecvfrom_traits_t::arg8_type lpOverlapped,          // windows::LPWSAOVERLAPPED
-                         wsarecvfrom_traits_t::arg9_type lpCompletionRoutine,   // windows::LPWSAOVERLAPPED_COMPLETION_ROUTINE
-                         CONTEXT* p_ctxt, THREADID thread_id) -> wsarecvfrom_traits_t::result_type
+auto WSARecvFrom_wrapper(AFUNPTR origin_func,
+                         WSARecvFrom_traits_t::arg1_type s,                     // windows::SOCKET
+                         WSARecvFrom_traits_t::arg2_type lpBuffers,             // windows::LPWSABUF
+                         WSARecvFrom_traits_t::arg3_type dwBufferCount,         // windows::DWORD
+                         WSARecvFrom_traits_t::arg4_type lpNumberOfBytesRecvd,  // windows::LPDWORD
+                         WSARecvFrom_traits_t::arg5_type lpFlags,               // windows::LPDWORD
+                         WSARecvFrom_traits_t::arg6_type lpFrom,                // windows::sockaddr*
+                         WSARecvFrom_traits_t::arg7_type lpFromlen,             // windows::LPINT
+                         WSARecvFrom_traits_t::arg8_type lpOverlapped,          // windows::LPWSAOVERLAPPED
+                         WSARecvFrom_traits_t::arg9_type lpCompletionRoutine,   // windows::LPWSAOVERLAPPED_COMPLETION_ROUTINE
+                         CONTEXT* p_ctxt, THREADID thread_id) -> WSARecvFrom_traits_t::result_type
 {
-  wsarecvfrom_traits_t::result_type result;
+  WSARecvFrom_traits_t::result_type result;
 
-  std::cerr << "wsarecvfrom wrapper\n";
   if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
   {
-    received_msg_addr = reinterpret_cast<ADDRINT>(lpBuffers->buf);
-    traced_thread_id = thread_id; traced_thread_is_fixed = true; wsarecv_is_locked = true;
+    wsarecv_is_locked = true; is_locked["WSARecv"] = true;
+    traced_thread_id = thread_id; traced_thread_is_fixed = true;
   }
 
-  PIN_CallApplicationFunction(p_ctxt, thread_id, CALLINGSTD_DEFAULT, wsarecvfrom_origin,
-                              PIN_PARG(wsarecvfrom_traits_t::result_type), &result,
-                              PIN_PARG(wsarecvfrom_traits_t::arg1_type), s,
-                              PIN_PARG(wsarecvfrom_traits_t::arg2_type), lpBuffers,
-                              PIN_PARG(wsarecvfrom_traits_t::arg3_type), dwBufferCount,
-                              PIN_PARG(wsarecvfrom_traits_t::arg4_type), lpNumberOfBytesRecvd,
-                              PIN_PARG(wsarecvfrom_traits_t::arg5_type), lpFlags,
-                              PIN_PARG(wsarecvfrom_traits_t::arg6_type), lpFrom,
-                              PIN_PARG(wsarecvfrom_traits_t::arg7_type), lpFromlen,
-                              PIN_PARG(wsarecvfrom_traits_t::arg8_type), lpOverlapped,
-                              PIN_PARG(wsarecvfrom_traits_t::arg9_type), lpCompletionRoutine,
+  PIN_CallApplicationFunction(p_ctxt, thread_id, CALLINGSTD_DEFAULT, origin_func,
+                              PIN_PARG(WSARecvFrom_traits_t::result_type), &result,
+                              PIN_PARG(WSARecvFrom_traits_t::arg1_type), s,
+                              PIN_PARG(WSARecvFrom_traits_t::arg2_type), lpBuffers,
+                              PIN_PARG(WSARecvFrom_traits_t::arg3_type), dwBufferCount,
+                              PIN_PARG(WSARecvFrom_traits_t::arg4_type), lpNumberOfBytesRecvd,
+                              PIN_PARG(WSARecvFrom_traits_t::arg5_type), lpFlags,
+                              PIN_PARG(WSARecvFrom_traits_t::arg6_type), lpFrom,
+                              PIN_PARG(WSARecvFrom_traits_t::arg7_type), lpFromlen,
+                              PIN_PARG(WSARecvFrom_traits_t::arg8_type), lpOverlapped,
+                              PIN_PARG(WSARecvFrom_traits_t::arg9_type), lpCompletionRoutine,
                               PIN_PARG_END());
 
   if (traced_thread_is_fixed && (thread_id == traced_thread_id) && wsarecv_is_locked)
@@ -430,7 +422,51 @@ auto wsarecvfrom_wrapper(AFUNPTR wsarecvfrom_origin,
 #if !defined(NDEBUG)
     tfm::format(log_file, "message is obtained from WSARecvFrom at thread id %d\n", thread_id);
 #endif
-    received_msg_size = *lpNumberOfBytesRecvd; wsarecv_is_locked = false; handle_received_message();
+    wsarecv_is_locked = false; is_locked["WSARecvFrom"] = false;
+    received_msg_addr = reinterpret_cast<ADDRINT>(lpBuffers->buf);
+    received_msg_size = *lpNumberOfBytesRecvd;
+    handle_received_message();
+  }
+
+  return result;
+}
+
+
+/**
+ * @brief InternetReadFile wrapper
+ */
+auto InternetReadFile_wrapper(AFUNPTR origin_func,
+                              InternetReadFile_traits_t::arg1_type hFile,                 // windows::HINTERNET
+                              InternetReadFile_traits_t::arg2_type lpBuffer,              // windows::LPVOID
+                              InternetReadFile_traits_t::arg3_type dwNumberOfBytesToRead, // windows::DWORD
+                              InternetReadFile_traits_t::arg4_type lpdwNumberOfBytesRead, // windows::LPWORD
+                              CONTEXT *p_ctxt, THREADID thread_id) -> InternetReadFile_traits_t::result_type
+{
+  InternetReadFile_traits_t::result_type result;
+
+  if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
+  {
+    is_locked["InternetReadFile"] = true;
+    traced_thread_id = thread_id; traced_thread_is_fixed = true;
+  }
+
+  PIN_CallApplicationFunction(p_ctxt, thread_id, CALLINGSTD_DEFAULT, origin_func,
+                              PIN_PARG(InternetReadFile_traits_t::result_type), &result,
+                              PIN_PARG(InternetReadFile_traits_t::arg1_type), hFile,
+                              PIN_PARG(InternetReadFile_traits_t::arg2_type), lpBuffer,
+                              PIN_PARG(InternetReadFile_traits_t::arg3_type), dwNumberOfBytesToRead,
+                              PIN_PARG(InternetReadFile_traits_t::arg4_type), lpdwNumberOfBytesRead,
+                              PIN_PARG_END());
+
+  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && is_locked["InternetReadFile"])
+  {
+#if !defined(NDEBUG)
+    tfm::format(log_file, "message is obtained from InternetReadFile at thread id %d\n", thread_id);
+#endif
+    is_locked["InternetReadFile"] = false;
+    received_msg_addr = reinterpret_cast<ADDRINT>(lpBuffer);
+    received_msg_size = *lpdwNumberOfBytesRead;
+    handle_received_message();
   }
 
   return result;
