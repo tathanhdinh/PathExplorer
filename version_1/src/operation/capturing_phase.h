@@ -39,6 +39,7 @@ typedef int recvfrom_t    (SOCKET, char*, int, int, struct sockaddr*, int*);
 
 typedef int WSARecv_t     (SOCKET, LPWSABUF, DWORD, LPDWORD, LPDWORD, LPWSAOVERLAPPED,
                            LPWSAOVERLAPPED_COMPLETION_ROUTINE);
+
 typedef int WSARecvFrom_t (SOCKET, LPWSABUF, DWORD, LPDWORD, LPDWORD, struct sockaddr*, LPINT,
                            LPWSAOVERLAPPED, LPWSAOVERLAPPED_COMPLETION_ROUTINE);
 
@@ -59,6 +60,8 @@ struct wrapper<R(T1, T2, T3, T4)>
   typedef R result_type;
   typedef R (type)(AFUNPTR, T1, T2, T3, T4, CONTEXT*, THREADID);
 };
+template <typename R, typename T1, typename T2, typename T3, typename T4>
+struct wrapper<R(__stdcall*)(T1, T2, T3, T4)> : public wrapper<R(T1, T2, T3, T4)> {};
 
 template <typename R, typename T1, typename T2, typename T3, typename T4, typename T5, typename T6>
 struct wrapper<R(T1, T2, T3, T4, T5, T6)>
@@ -138,6 +141,7 @@ typedef boost::function_traits<windows::recv_t> recv_traits_t;
 extern wrapper<windows::recvfrom_t>::type recvfrom_wrapper;
 typedef boost::function_traits<windows::recvfrom_t> recvfrom_traits_t;
 
+//typedef decltype(windows::WSARecv) WSARecv_tt;
 extern wrapper<windows::WSARecv_t>::type WSARecv_wrapper;
 typedef boost::function_traits<windows::WSARecv_t> WSARecv_traits_t;
 

@@ -30,6 +30,7 @@
 #include <cstdlib>
 #include <memory>
 #include <functional>
+#include <locale>
 
 //#if __cplusplus <= 199711L
 //#include <boost/shared_ptr.hpp>
@@ -44,5 +45,6 @@
 #include <boost/graph/filtered_graph.hpp>
 #include <boost/graph/lookup_edge.hpp>
 #include <boost/type_traits/function_traits.hpp>
+#include <boost/algorithm/string/find.hpp>
 
 #endif // PCH_H

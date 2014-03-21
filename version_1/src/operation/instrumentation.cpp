@@ -3,6 +3,7 @@
 #include <map>
 #include <set>
 #include <functional>
+#include <locale>
 
 #include "../util/stuffs.h"
 #include "common.h"
@@ -235,11 +236,6 @@ static inline auto InternetReadFileEx_interceptor (RTN& rtn) -> void
  */
 static inline auto recv_replacer (RTN& rtn) -> void
 {
-#if !defined(NDEBUG)
-  tfm::format(log_file, "replacing the function %s at %s\n", RTN_Name(rtn),
-              addrint_to_hexstring(RTN_Address(rtn)));
-#endif
-  // replacement approach
   auto recv_proto = PROTO_Allocate(PIN_PARG(capturing::recv_traits_t::result_type),
                                    CALLINGSTD_DEFAULT, "recv",
                                    PIN_PARG(capturing::recv_traits_t::arg1_type),  // windows::SOCKET
@@ -248,7 +244,9 @@ static inline auto recv_replacer (RTN& rtn) -> void
                                    PIN_PARG(capturing::recv_traits_t::arg4_type),  // int
                                    PIN_PARG_END());
 
-  RTN_ReplaceSignature(rtn, AFUNPTR(capturing::recv_wrapper), IARG_PROTOTYPE, recv_proto, IARG_ORIG_FUNCPTR,
+  RTN_ReplaceSignature(rtn, AFUNPTR(capturing::recv_wrapper),
+                       IARG_PROTOTYPE, recv_proto,
+                       IARG_ORIG_FUNCPTR,
                        IARG_FUNCARG_ENTRYPOINT_VALUE, 0, IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
                        IARG_FUNCARG_ENTRYPOINT_VALUE, 2, IARG_FUNCARG_ENTRYPOINT_VALUE, 3,
                        IARG_CONST_CONTEXT, IARG_THREAD_ID, IARG_END);
@@ -260,11 +258,6 @@ static inline auto recv_replacer (RTN& rtn) -> void
 
 static inline auto recvfrom_replacer (RTN& rtn) -> void
 {
-#if !defined(NDEBUG)
-  tfm::format(log_file, "replacing the function %s at %s\n", RTN_Name(rtn),
-              addrint_to_hexstring(RTN_Address(rtn)));
-#endif
-  // replacement approach
   auto recvfrom_proto = PROTO_Allocate(PIN_PARG(capturing::recvfrom_traits_t::result_type),
                                        CALLINGSTD_DEFAULT, "recvfrom",
                                        PIN_PARG(capturing::recvfrom_traits_t::arg1_type),  // windows::SOCKET
@@ -275,7 +268,9 @@ static inline auto recvfrom_replacer (RTN& rtn) -> void
                                        PIN_PARG(capturing::recvfrom_traits_t::arg6_type),  // int*
                                        PIN_PARG_END());
 
-  RTN_ReplaceSignature(rtn, AFUNPTR(capturing::recvfrom_wrapper), IARG_PROTOTYPE, recvfrom_proto, IARG_ORIG_FUNCPTR,
+  RTN_ReplaceSignature(rtn, AFUNPTR(capturing::recvfrom_wrapper),
+                       IARG_PROTOTYPE, recvfrom_proto,
+                       IARG_ORIG_FUNCPTR,
                        IARG_FUNCARG_ENTRYPOINT_VALUE, 0, IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
                        IARG_FUNCARG_ENTRYPOINT_VALUE, 2, IARG_FUNCARG_ENTRYPOINT_VALUE, 3,
                        IARG_FUNCARG_ENTRYPOINT_VALUE, 4, IARG_FUNCARG_ENTRYPOINT_VALUE, 5,
@@ -288,12 +283,7 @@ static inline auto recvfrom_replacer (RTN& rtn) -> void
  */
 static inline auto WSARecv_replacer (RTN& rtn) -> void
 {
-#if !defined(NDEBUG)
-  tfm::format(log_file, "replacing the function %s at %s\n", RTN_Name(rtn),
-              addrint_to_hexstring(RTN_Address(rtn)));
-#endif
-  // replacement approach
-  auto wsarecv_proto = PROTO_Allocate(PIN_PARG(capturing::WSARecv_traits_t::result_type),
+  auto WSARecv_proto = PROTO_Allocate(PIN_PARG(capturing::WSARecv_traits_t::result_type),
                                       CALLINGSTD_DEFAULT, "WSARecv",
                                       PIN_PARG(capturing::WSARecv_traits_t::arg1_type),
                                       PIN_PARG(capturing::WSARecv_traits_t::arg2_type),
@@ -304,13 +294,15 @@ static inline auto WSARecv_replacer (RTN& rtn) -> void
                                       PIN_PARG(capturing::WSARecv_traits_t::arg7_type),
                                       PIN_PARG_END());
 
-  RTN_ReplaceSignature(rtn, AFUNPTR(capturing::WSARecv_wrapper), IARG_PROTOTYPE, wsarecv_proto, IARG_ORIG_FUNCPTR,
+  RTN_ReplaceSignature(rtn, AFUNPTR(capturing::WSARecv_wrapper),
+                       IARG_PROTOTYPE, WSARecv_proto,
+                       IARG_ORIG_FUNCPTR,
                        IARG_FUNCARG_ENTRYPOINT_VALUE, 0, IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
                        IARG_FUNCARG_ENTRYPOINT_VALUE, 2, IARG_FUNCARG_ENTRYPOINT_VALUE, 3,
                        IARG_FUNCARG_ENTRYPOINT_VALUE, 4, IARG_FUNCARG_ENTRYPOINT_VALUE, 5,
                        IARG_FUNCARG_ENTRYPOINT_VALUE, 6,
                        IARG_CONST_CONTEXT, IARG_THREAD_ID, IARG_END);
-  PROTO_Free(wsarecv_proto);
+  PROTO_Free(WSARecv_proto);
 
   return;
 }
@@ -321,10 +313,6 @@ static inline auto WSARecv_replacer (RTN& rtn) -> void
  */
 static inline auto WSARecvFrom_replacer (RTN& rtn) -> void
 {
-#if !defined(NDEBUG)
-  tfm::format(log_file, "replacing the function %s at %s\n", RTN_Name(rtn),
-              addrint_to_hexstring(RTN_Address(rtn)));
-#endif
   auto WSARecvFrom_proto = PROTO_Allocate(PIN_PARG(capturing::WSARecvFrom_traits_t::result_type),
                                           CALLINGSTD_DEFAULT, "WSARecvFrom",
                                           PIN_PARG(capturing::WSARecvFrom_traits_t::arg1_type),
@@ -358,7 +346,7 @@ static inline auto WSARecvFrom_replacer (RTN& rtn) -> void
 static inline auto InternetReadFile_replacer (RTN& rtn) -> void
 {
 #if !defined(NDEBUG)
-  tfm::format(log_file, "replacing the function %s at %s\n", RTN_Name(rtn),
+  tfm::format(log_file, "replacing %s at %s\n", RTN_Name(rtn),
               addrint_to_hexstring(RTN_Address(rtn)));
 #endif
   auto InternetReadFile_proto = PROTO_Allocate(PIN_PARG(capturing::InternetReadFile_traits_t::result_type),
@@ -422,7 +410,7 @@ auto routine_calling(RTN rtn, VOID* data) -> VOID
   if ((current_running_phase == capturing_phase) && !interested_msg_is_received)
   {
     auto rtn_name = RTN_Name(rtn);
-    routine_at_addr[RTN_Address(rtn)] = rtn_name; generic_routine_interceptor(rtn);
+//    routine_at_addr[RTN_Address(rtn)] = rtn_name; generic_routine_interceptor(rtn);
 
     if (intercept_func_of_name.find(rtn_name) != intercept_func_of_name.end())
     {
@@ -470,25 +458,27 @@ auto image_loading (IMG loaded_img, VOID *data) -> VOID
                 addrint_to_hexstring(IMG_StartAddress(loaded_img)), IMG_SizeMapped(loaded_img));
 #endif
 
-    // verify if the winsock2 module is loaded
-    auto loaded_img_full_name = IMG_Name(loaded_img);
-    if ((loaded_img_full_name.find("WS2_32.dll") != std::string::npos) ||
-        (loaded_img_full_name.find("Wininet.dll") != std::string::npos))
+    // verify if the winsock or wininet module is loaded
+    static std::locale current_loc;
+    static auto lowercase_convertion = [&](char c) -> char { return std::tolower(c, current_loc); };
+
+    auto img_name = IMG_Name(loaded_img); std::transform(img_name.begin(), img_name.end(),
+                                                         img_name.begin(), lowercase_convertion);
+    if ((img_name.find("ws2_32.dll") != std::string::npos) ||
+        (img_name.find("wininet.dll") != std::string::npos))
     {
-#if !defined(NDEBUG)
-      log_file << "Winsock or Wininet module is found, replacing message receiving functions\n";
-#endif
       typedef decltype(replace_func_of_name) replace_func_of_name_t;
       std::for_each(replace_func_of_name.begin(), replace_func_of_name.end(),
                     [&](replace_func_of_name_t::value_type origin_replacer)
       {
+        // look for the routine corresponding with the name of the original function
         auto rtn = RTN_FindByName(loaded_img, origin_replacer.first.c_str());
         if (RTN_Valid(rtn))
         {
-//#if !defined(NDEBUG)
-//          tfm::format(log_file, "replacing function %s <%s: %d>\n", origin_replacer.first,
-//                      addrint_to_hexstring(RTN_Address(rtn)), RTN_Size(rtn));
-//#endif
+#if !defined(NDEBUG)
+          tfm::format(log_file, "replacing %s at %s\n", RTN_Name(rtn),
+                      addrint_to_hexstring(RTN_Address(rtn)));
+#endif
           origin_replacer.second(rtn);
         }
       });

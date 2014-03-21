@@ -14,11 +14,6 @@ static UINT32   received_msg_number;
 
 #if defined(_WIN32) || defined(_WIN64)
 static ADDRINT  received_msg_struct_addr;
-static bool     recv_is_locked;
-static bool     recvfrom_is_locked;
-static bool     wsarecv_is_locked;
-static bool     wsarecvfrom_is_locked;
-static bool     InternetReadFile_is_locked;
 static std::map<std::string, bool> is_locked;
 #endif
 
@@ -30,9 +25,6 @@ static std::map<std::string, bool> is_locked;
 auto initialize() -> void
 {
 #if defined(_WIN32) || defined(_WIN64)
-  recv_is_locked = false; recvfrom_is_locked = false; wsarecv_is_locked = false;
-  wsarecvfrom_is_locked = false;
-
   is_locked["recv"] = false; is_locked["recvfrom"] = false; is_locked["WSARecv"] = false;
   is_locked["WSARecvFrom"] = false; is_locked["InternetReadFile"] = false;
   is_locked["InternetReadFileEx"] = false;
@@ -79,7 +71,7 @@ static inline auto handle_received_message() -> void
 
   };
 
-  if ((received_msg_size > 0) && all_lock_released() /*!recv_is_locked && !wsarecv_is_locked*/)
+  if ((received_msg_size > 0) && all_lock_released())
   {
     received_msg_number++;
     // verify if the received message is the interesting message
@@ -101,7 +93,7 @@ auto recvs_interceptor_before(ADDRINT msg_addr, THREADID thread_id) -> VOID
 {
   if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
   {
-    recv_is_locked = true; is_locked["recv"] = true; is_locked["recvfrom"] = false;
+    is_locked["recv"] = true; is_locked["recvfrom"] = false;
 
     traced_thread_id = thread_id; traced_thread_is_fixed = true; received_msg_addr = msg_addr;
   }
@@ -114,9 +106,10 @@ auto recvs_interceptor_before(ADDRINT msg_addr, THREADID thread_id) -> VOID
  */
 auto recvs_interceptor_after(UINT32 msg_length, THREADID thread_id) -> VOID
 {
-  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && recv_is_locked)
+  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && is_locked["recv"] &&
+      is_locked["recvfrom"])
   {
-    recv_is_locked = false; is_locked["recv"] = false; is_locked["recvfrom"] = false;
+    is_locked["recv"] = false; is_locked["recvfrom"] = false;
 
 #if !defined(NDEBUG)
     tfm::format(log_file, "message is obtained from recv or recvfrom at thread id %d\n",
@@ -136,7 +129,7 @@ auto wsarecvs_interceptor_before(ADDRINT msg_struct_addr, THREADID thread_id) ->
   if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
   {
     // lock the message receiving with WSARecv or WSARecvFrom
-    wsarecv_is_locked = true; is_locked["WSARecv"] = true; is_locked["WSARecvFrom"] = true;
+    is_locked["WSARecv"] = true; is_locked["WSARecvFrom"] = true;
 
     received_msg_struct_addr = msg_struct_addr;
     received_msg_addr = reinterpret_cast<ADDRINT>((reinterpret_cast<windows::LPWSABUF>(
@@ -152,10 +145,11 @@ auto wsarecvs_interceptor_before(ADDRINT msg_struct_addr, THREADID thread_id) ->
  */
 auto wsarecvs_interceptor_after(THREADID thread_id) -> VOID
 {
-  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && wsarecv_is_locked)
+  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && is_locked["WSARecv"] &&
+      is_locked["WSARecvFrom"])
   {
     // unlock the message receiving with WSARecv or WSARecvFrom
-    wsarecv_is_locked = false; is_locked["WSARecv"] = false; is_locked["WSARecvFrom"] = false;
+    is_locked["WSARecv"] = false; is_locked["WSARecvFrom"] = false;
 
 #if !defined(NDEBUG)
     tfm::format(log_file, "message is obtained from WSARecv or WSARecvFrom at thread id %d\n",
@@ -200,9 +194,9 @@ auto InternetReadFile_inserter_after(ADDRINT is_successful, // BOOL
     tfm::format(log_file, "message is obtained from InternetReadFile at thread id %d\n", thread_id);
 #endif
 
-    if (static_cast<InternetReadFile_traits_t::result_type>/*BOOL*/(is_successful))
+    if (static_cast<InternetReadFile_traits_t::result_type>(is_successful))
     {
-      received_msg_size = *(reinterpret_cast<InternetReadFile_traits_t::arg4_type>/*LPDWORD*/(
+      received_msg_size = *(reinterpret_cast<InternetReadFile_traits_t::arg4_type>(
                               received_msg_struct_addr));
       handle_received_message();
     }
@@ -223,10 +217,8 @@ auto InternetReadFileEx_inserter_before(ADDRINT hFile,        // HINTERNET
     is_locked["InternetReadFileEx"] = true;
 
     received_msg_addr = reinterpret_cast<ADDRINT>(
-          (reinterpret_cast<InternetReadFileEx_traits_t::arg2_type>/*LPINTERNET_BUFFERS*/(
-             lpBuffersOut))->lpvBuffer);
+          (reinterpret_cast<InternetReadFileEx_traits_t::arg2_type>(lpBuffersOut))->lpvBuffer);
     received_msg_struct_addr = lpBuffersOut;
-//    received_msg_size = (reinterpret_cast<InternetReadFileEx_traits_t::arg2_type>(lpBuffersOut))->dwBufferLength;
 
     traced_thread_id = thread_id; traced_thread_is_fixed = true;
   }
@@ -245,7 +237,7 @@ auto InternetReadFileEx_inserter_after(ADDRINT is_successful, THREADID thread_id
     tfm::format(log_file, "message is obtained from InternetReadFileEx at thread id %d\n", thread_id);
 #endif
 
-    if (static_cast<InternetReadFileEx_traits_t::result_type>/*BOOL*/(is_successful))
+    if (static_cast<InternetReadFileEx_traits_t::result_type>(is_successful))
     {
       received_msg_size = (reinterpret_cast<InternetReadFileEx_traits_t::arg2_type>(
                              received_msg_struct_addr))->dwBufferLength;
@@ -269,11 +261,10 @@ auto recv_wrapper(AFUNPTR recv_origin,
 
   if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
   {
-    received_msg_addr = reinterpret_cast<ADDRINT>(buf);
-    traced_thread_id = thread_id; traced_thread_is_fixed = true; recv_is_locked = true;
+    is_locked["recv"] = true;
+    traced_thread_id = thread_id; traced_thread_is_fixed = true;
   }
 
-  std::cerr << "recv wrapper\n";
   PIN_CallApplicationFunction(p_ctxt, thread_id, CALLINGSTD_DEFAULT, recv_origin,
                               PIN_PARG(recv_traits_t::result_type), &result,  // int
                               PIN_PARG(recv_traits_t::arg1_type), s,          // windows::SOCKET
@@ -282,12 +273,14 @@ auto recv_wrapper(AFUNPTR recv_origin,
                               PIN_PARG(recv_traits_t::arg4_type), flags,      // int
                               PIN_PARG_END());
 
-  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && recv_is_locked)
+  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && is_locked["recv"])
   {
 #if !defined(NDEBUG)
     tfm::format(log_file, "message is obtained from recv at thread id %d\n", thread_id);
 #endif
-    received_msg_size = result; recv_is_locked = false; handle_received_message();
+    is_locked["recv"] = false;
+    received_msg_addr = reinterpret_cast<ADDRINT>(buf); received_msg_size = result;
+    handle_received_message();
   }
 
   return result;
@@ -308,11 +301,10 @@ auto recvfrom_wrapper(AFUNPTR recvfrom_origin,
 {
   recvfrom_traits_t::result_type result;
 
-  std::cerr << "recvfrom wrapper\n";
   if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
   {
-    received_msg_addr = reinterpret_cast<ADDRINT>(buf);
-    traced_thread_id = thread_id; traced_thread_is_fixed = true; recv_is_locked = true;
+    is_locked["recv"] = true;
+    traced_thread_id = thread_id; traced_thread_is_fixed = true;
   }
 
   PIN_CallApplicationFunction(p_ctxt, thread_id, CALLINGSTD_DEFAULT, recvfrom_origin,
@@ -325,12 +317,14 @@ auto recvfrom_wrapper(AFUNPTR recvfrom_origin,
                               PIN_PARG(recvfrom_traits_t::arg6_type), fromlen,    // int*
                               PIN_PARG_END());
 
-  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && recv_is_locked)
+  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && is_locked["recv"])
   {
 #if !defined(NDEBUG)
     tfm::format(log_file, "message is obtained from recvfrom at thread id %d\n", thread_id);
 #endif
-    received_msg_size = result; recv_is_locked = false; handle_received_message();
+    is_locked["recv"] = false;
+    received_msg_addr = reinterpret_cast<ADDRINT>(buf); received_msg_size = result;
+    handle_received_message();
   }
 
   return result;
@@ -351,11 +345,10 @@ auto WSARecv_wrapper(AFUNPTR wsarecv_origin,
 {
   WSARecv_traits_t::result_type result;
 
-  std::cerr << "wsarecv wrapper\n";
   if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
   {
-    received_msg_addr = reinterpret_cast<ADDRINT>(lpBuffers->buf);
-    traced_thread_id = thread_id; traced_thread_is_fixed = true; wsarecv_is_locked = true;
+    is_locked["WSARecv"] = true;
+    traced_thread_id = thread_id; traced_thread_is_fixed = true;
   }
 
   PIN_CallApplicationFunction(p_ctxt, thread_id, CALLINGSTD_DEFAULT, wsarecv_origin,
@@ -369,12 +362,14 @@ auto WSARecv_wrapper(AFUNPTR wsarecv_origin,
                               PIN_PARG(WSARecv_traits_t::arg7_type), lpCompletionRoutine,
                               PIN_PARG_END());
 
-  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && wsarecv_is_locked)
+  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && is_locked["WSARecv"])
   {
 #if !defined(NDEBUG)
     tfm::format(log_file, "message is obtained from WSARecv at thread id %d\n", thread_id);
 #endif
-    received_msg_size = *lpNumberOfBytesRecvd; wsarecv_is_locked = false; handle_received_message();
+    is_locked["WSARecv"] = false;
+    received_msg_addr = reinterpret_cast<ADDRINT>(lpBuffers->buf);
+    received_msg_size = *lpNumberOfBytesRecvd; handle_received_message();
   }
 
   return result;
@@ -400,7 +395,7 @@ auto WSARecvFrom_wrapper(AFUNPTR origin_func,
 
   if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
   {
-    wsarecv_is_locked = true; is_locked["WSARecv"] = true;
+    is_locked["WSARecvFrom"] = true;
     traced_thread_id = thread_id; traced_thread_is_fixed = true;
   }
 
@@ -417,15 +412,14 @@ auto WSARecvFrom_wrapper(AFUNPTR origin_func,
                               PIN_PARG(WSARecvFrom_traits_t::arg9_type), lpCompletionRoutine,
                               PIN_PARG_END());
 
-  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && wsarecv_is_locked)
+  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && is_locked["WSARecvFrom"])
   {
 #if !defined(NDEBUG)
     tfm::format(log_file, "message is obtained from WSARecvFrom at thread id %d\n", thread_id);
 #endif
-    wsarecv_is_locked = false; is_locked["WSARecvFrom"] = false;
+    is_locked["WSARecvFrom"] = false;
     received_msg_addr = reinterpret_cast<ADDRINT>(lpBuffers->buf);
-    received_msg_size = *lpNumberOfBytesRecvd;
-    handle_received_message();
+    received_msg_size = *lpNumberOfBytesRecvd; handle_received_message();
   }
 
   return result;
