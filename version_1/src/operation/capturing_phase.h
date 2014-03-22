@@ -110,7 +110,6 @@ namespace capturing
 extern auto initialize                  ()                                                -> void;
 
 #if defined(_WIN32) || defined(_WIN64)
-
 /**
  * @brief inserters
  */
@@ -122,8 +121,7 @@ extern auto wsarecvs_interceptor_before (ADDRINT msg_struct_addr, THREADID threa
 
 extern auto wsarecvs_interceptor_after  (THREADID thread_id)                              -> VOID;
 
-//extern auto generic_rtn_inserter_before (ADDRINT rtn_addr, THREADID thread_id) -> VOID;
-//extern auto generic_rtn_inserter_after  (ADDRINT rtn_addr, THREADID thread_id) -> VOID;
+extern auto generic_routine (RTN& rtn) -> void;
 
 extern inserter_before<windows::InternetReadFile_t>::type InternetReadFile_inserter_before;
 extern inserter_after<windows::InternetReadFile_t>::type InternetReadFile_inserter_after;

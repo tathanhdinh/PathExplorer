@@ -250,6 +250,36 @@ auto InternetReadFileEx_inserter_after(ADDRINT is_successful, THREADID thread_id
   return;
 }
 
+
+/**
+ * @brief generic inserter
+ */
+static auto generic_insertion (ADDRINT rtn_addr, THREADID thread_id, bool before_or_after) -> VOID
+{
+#if !defined(NDEBUG)
+  tfm::format(log_file, "<%d: %s> %s ", thread_id, addrint_to_hexstring(rtn_addr),
+              RTN_FindNameByAddress(rtn_addr));
+  if (before_or_after)
+    tfm::format(log_file, "is called\n");
+  else
+    tfm::format(log_file, "returns\n");
+#endif
+  return;
+};
+
+
+auto generic_routine (RTN& rtn) -> void
+{
+  RTN_Open(rtn);
+  RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)generic_insertion, IARG_ADDRINT, RTN_Address(rtn),
+                 IARG_THREAD_ID, IARG_BOOL, true, IARG_END);
+  RTN_InsertCall(rtn, IPOINT_AFTER, (AFUNPTR)generic_insertion, IARG_ADDRINT, RTN_Address(rtn),
+                 IARG_THREAD_ID, IARG_BOOL, false, IARG_END);
+  RTN_Close(rtn);
+  return;
+}
+
+
 /**
  * @brief recv wrapper
  */

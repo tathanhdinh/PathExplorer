@@ -362,54 +362,6 @@ static inline auto InternetReadFile_replacer (RTN& rtn) -> void
   return;
 }
 
-#if !defined(NDEBUG)
-static std::map<ADDRINT, std::string> routine_at_addr;
-
-static auto generic_routine_before_inteceptor(ADDRINT rtn_addr, std::string *rtn_name,
-                                              THREADID thread_id) -> VOID
-{
-  tfm::format(log_file, "<%d %s: %s> called\n", thread_id, addrint_to_hexstring(rtn_addr), *rtn_name);
-  return;
-}
-
-
-static auto generic_routine_after_interceptor(ADDRINT rtn_addr, std::string *rtn_name,
-                                              THREADID thread_id) -> VOID
-{
-  tfm::format(log_file, "<%d %s: %s> returns\n", thread_id, addrint_to_hexstring(rtn_addr),
-              *rtn_name);
-  return;
-}
-
-
-/**
- * @brief generic inserter
- */
-static auto generic_inserter (ADDRINT rtn_addr, THREADID thread_id, bool before_or_after) -> VOID
-{
-#if !defined(NDEBUG)
-  tfm::format(log_file, "<%d: %s> %s ", thread_id, addrint_to_hexstring(rtn_addr),
-              RTN_FindNameByAddress(rtn_addr));
-  if (before_or_after)
-    tfm::format(log_file, "is called\n");
-  else
-    tfm::format(log_file, "returns\n");
-#endif
-  return;
-};
-
-static inline auto generic_routine_inserter (RTN& rtn) -> void
-{
-  RTN_Open(rtn);
-  RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)generic_inserter, IARG_ADDRINT, RTN_Address(rtn),
-                 IARG_THREAD_ID, IARG_BOOL, true, IARG_END);
-  RTN_InsertCall(rtn, IPOINT_AFTER, (AFUNPTR)generic_inserter, IARG_ADDRINT, RTN_Address(rtn),
-                 IARG_THREAD_ID, IARG_BOOL, false, IARG_END);
-  RTN_Close(rtn);
-  return;
-}
-#endif
-
 
 /**
  * @brief routine instrumentation
@@ -433,28 +385,6 @@ auto routine_calling(RTN rtn, VOID* data) -> VOID
 }
 
 
-///**
-// * @brief instrument_function
-// */
-//static inline auto instrument_function (IMG loaded_img, std::string func_name) -> void
-//{
-//  auto func = RTN_FindByName(loaded_img, func_name.c_str());
-//  if (RTN_Valid(func))
-//  {
-//#if !defined(NDEBUG)
-//    tfm::format(log_file, "instrumenting function %s (mapped at %s, size %d)\n", func_name,
-//                addrint_to_hexstring(RTN_Address(func)), RTN_Size(func));
-//#endif
-//    instrument_func_of_name[func_name](func);
-//  }
-//  else
-//#if !defined(NDEBUG)
-//    tfm::format(log_file, "function %s cannot found in %s\n", func_name, IMG_Name(loaded_img));
-//#endif
-//  return;
-//}
-
-
 /**
  * @brief detect loaded images and instrument recv, recvfrom, WSARecv, WSARecvFrom functions
  */
@@ -472,38 +402,38 @@ auto image_loading (IMG loaded_img, VOID *data) -> VOID
       // iterate over routines of the section
       for (auto rtn = SEC_RtnHead(sec); RTN_Valid(rtn); rtn = RTN_Next(rtn))
       {
-        generic_routine_inserter(rtn);
+        capturing::generic_routine(rtn);
       }
     }
 
 
-    // verify if the winsock or wininet module is loaded
-    static std::locale current_loc;
-    static auto lowercase_convertion = [&](char c) -> char { return std::tolower(c, current_loc); };
+//    // verify if the winsock or wininet module is loaded
+//    static std::locale current_loc;
+//    static auto lowercase_convertion = [&](char c) -> char { return std::tolower(c, current_loc); };
 
-    auto img_name = IMG_Name(loaded_img); std::transform(img_name.begin(), img_name.end(),
-                                                         img_name.begin(), lowercase_convertion);
-    if ((img_name.find("ws2_32.dll") != std::string::npos) ||
-        (img_name.find("wininet.dll") != std::string::npos))
-    {
-      typedef decltype(replace_func_of_name) replace_func_of_name_t;
-      std::for_each(replace_func_of_name.begin(), replace_func_of_name.end(),
-                    [&](replace_func_of_name_t::value_type origin_replacer)
-      {
-        PIN_LockClient();
-        // look for the routine corresponding with the name of the original function
-        auto rtn = RTN_FindByName(loaded_img, origin_replacer.first.c_str());
-        if (RTN_Valid(rtn))
-        {
-#if !defined(NDEBUG)
-          tfm::format(log_file, "replacing %s at %s\n", RTN_Name(rtn),
-                      addrint_to_hexstring(RTN_Address(rtn)));
-#endif
-          origin_replacer.second(rtn);
-        }
-        PIN_UnlockClient();
-      });
-    }
+//    auto img_name = IMG_Name(loaded_img); std::transform(img_name.begin(), img_name.end(),
+//                                                         img_name.begin(), lowercase_convertion);
+//    if ((img_name.find("ws2_32.dll") != std::string::npos) ||
+//        (img_name.find("wininet.dll") != std::string::npos))
+//    {
+//      typedef decltype(replace_func_of_name) replace_func_of_name_t;
+//      std::for_each(replace_func_of_name.begin(), replace_func_of_name.end(),
+//                    [&](replace_func_of_name_t::value_type origin_replacer)
+//      {
+//        PIN_LockClient();
+//        // look for the routine corresponding with the name of the original function
+//        auto rtn = RTN_FindByName(loaded_img, origin_replacer.first.c_str());
+//        if (RTN_Valid(rtn))
+//        {
+//#if !defined(NDEBUG)
+//          tfm::format(log_file, "replacing %s at %s\n", RTN_Name(rtn),
+//                      addrint_to_hexstring(RTN_Address(rtn)));
+//#endif
+//          origin_replacer.second(rtn);
+//        }
+//        PIN_UnlockClient();
+//      });
+//    }
   }
 
   return;
