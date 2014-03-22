@@ -55,22 +55,22 @@ static inline auto prepare_new_tainting_phase() -> void
 }
 
 
+static inline auto all_lock_released() -> bool
+{
+  auto func_locked_iter = is_locked.begin();
+  for (; func_locked_iter != is_locked.end(); ++func_locked_iter)
+  {
+    if (func_locked_iter->second) break;
+  }
+  return (func_locked_iter == is_locked.end());
+}
+
+
 /**
  * @brief handle_received_message
  */
 static inline auto handle_received_message() -> void
 {
-  auto all_lock_released = [&]() -> bool
-  {
-    auto func_locked_iter = is_locked.begin();
-    for (; func_locked_iter != is_locked.end(); ++func_locked_iter)
-    {
-      if (func_locked_iter->second) break;
-    }
-    return (func_locked_iter == is_locked.end());
-
-  };
-
   if ((received_msg_size > 0) && all_lock_released())
   {
     received_msg_number++;
@@ -86,36 +86,82 @@ static inline auto handle_received_message() -> void
 
 
 #if defined(_WIN32) || defined(_WIN64)
-/**
- * @brief determine the received message address of recv or recvfrom
- */
-auto recvs_interceptor_before(ADDRINT msg_addr, THREADID thread_id) -> VOID
+
+static inline auto recv_inserter_before(ADDRINT s,      // SOCKET
+                                        ADDRINT buf,    // char*
+                                        ADDRINT len,    // int
+                                        ADDRINT flags,  // int
+                                        THREADID thread_id) -> VOID
 {
   if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
   {
-    is_locked["recv"] = true; is_locked["recvfrom"] = false;
+    // verify if the recv is not in the calling chain of another function
+    if (all_lock_released()) received_msg_addr = buf;
 
-    traced_thread_id = thread_id; traced_thread_is_fixed = true; received_msg_addr = msg_addr;
+    // lock recv to say that it is called
+    is_locked["recv"] = true;
+    traced_thread_id = thread_id; traced_thread_is_fixed = true;
   }
   return;
 }
 
 
-/**
- * @brief determine the received message length of recv or recvfrom
- */
-auto recvs_interceptor_after(UINT32 msg_length, THREADID thread_id) -> VOID
+static inline auto recv_inserter_after(ADDRINT numberOfBytesReceived, // int
+                                       THREADID thread_id) -> VOID
 {
-  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && is_locked["recv"] &&
-      is_locked["recvfrom"])
+  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && is_locked["recv"])
   {
-    is_locked["recv"] = false; is_locked["recvfrom"] = false;
+    is_locked["recv"] = false;
 
+    // verify if the recv is not in the calling chain of another function
+    if (all_lock_released())
+    {
 #if !defined(NDEBUG)
-    tfm::format(log_file, "message is obtained from recv or recvfrom at thread id %d\n",
-                thread_id);
+      tfm::format(log_file, "message is received from recv at the thread id %d\n", thread_id);
 #endif
-    received_msg_size = msg_length; handle_received_message();
+      received_msg_size = numberOfBytesReceived; handle_received_message();
+    }
+  }
+  return;
+}
+
+
+static inline auto recvfrom_inserter_before(ADDRINT s,        // SOCKET
+                                            ADDRINT buf,      // char*
+                                            ADDRINT len,      // len
+                                            ADDRINT flags,    // flags
+                                            ADDRINT from,     // struct sockaddr*
+                                            ADDRINT fromlen,  // int*
+                                            THREADID thread_id) -> VOID
+{
+  if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
+  {
+    // verify if the recvfrom is not in the calling chain of another function
+    if (all_lock_released()) received_msg_addr = buf;
+
+    // lock recvfrom to say that it is called
+    is_locked["recvfrom"] = true;
+    traced_thread_id = thread_id; traced_thread_is_fixed = true;
+  }
+  return;
+}
+
+
+static inline auto recvfrom_inserter_after(ADDRINT numberOfBytesReceived, // int
+                                           THREADID thread_id) -> VOID
+{
+  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && is_locked["recvfrom"])
+  {
+    is_locked["recvfrom"] = false;
+
+    // verify if the recvfrom is not in the calling chain of another function
+    if (all_lock_released())
+    {
+#if !defined(NDEBUG)
+      tfm::format(log_file, "message is received from recvfrom at the thread id %d\n", thread_id);
+#endif
+      received_msg_size = numberOfBytesReceived; handle_received_message();
+    }
   }
   return;
 }
@@ -136,6 +182,12 @@ auto wsarecvs_interceptor_before(ADDRINT msg_struct_addr, THREADID thread_id) ->
                                                      received_msg_struct_addr))->buf);
     traced_thread_id = thread_id; traced_thread_is_fixed = true;
   }
+  return;
+}
+
+
+auto WSARecv_inserter_before() -> VOID
+{
   return;
 }
 
@@ -285,6 +337,45 @@ auto generic_routine (RTN& rtn) -> void
 
 
 /**
+ * @brief recv interception
+ */
+auto recv_routine (RTN& rtn) -> void
+{
+  // insertion approach
+  RTN_Open(rtn);
+  RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)recv_inserter_before,
+                 IARG_FUNCARG_ENTRYPOINT_VALUE, 0, IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
+                 IARG_FUNCARG_ENTRYPOINT_VALUE, 2, IARG_FUNCARG_ENTRYPOINT_VALUE, 3,
+                 IARG_THREAD_ID, IARG_END);
+  RTN_InsertCall(rtn, IPOINT_AFTER, (AFUNPTR)recv_inserter_after,
+                 IARG_FUNCRET_EXITPOINT_VALUE,
+                 IARG_THREAD_ID, IARG_END);
+  RTN_Close(rtn);
+  return;
+}
+
+
+/**
+ * @brief recvfrom interception
+ */
+auto recvfrom_routine (RTN& rtn) -> void
+{
+  // insertion approach
+  RTN_Open(rtn);
+  RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)recvfrom_inserter_before,
+                 IARG_FUNCARG_ENTRYPOINT_VALUE, 0, IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
+                 IARG_FUNCARG_ENTRYPOINT_VALUE, 2, IARG_FUNCARG_ENTRYPOINT_VALUE, 3,
+                 IARG_FUNCARG_ENTRYPOINT_VALUE, 4, IARG_FUNCARG_ENTRYPOINT_VALUE, 5,
+                 IARG_THREAD_ID, IARG_END);
+  RTN_InsertCall(rtn, IPOINT_AFTER, (AFUNPTR)recvfrom_inserter_after,
+                 IARG_FUNCRET_EXITPOINT_VALUE,
+                 IARG_THREAD_ID, IARG_END);
+  RTN_Close(rtn);
+  return;
+}
+
+
+/**
  * @brief InternetReadFile interception
  */
 auto InternetReadFile_routine (RTN& rtn) -> void
@@ -298,6 +389,7 @@ auto InternetReadFile_routine (RTN& rtn) -> void
   RTN_InsertCall(rtn, IPOINT_AFTER, (AFUNPTR)InternetReadFile_inserter_after,
                  IARG_FUNCRET_EXITPOINT_VALUE, IARG_THREAD_ID, IARG_END);
   RTN_Close(rtn);
+  return;
 }
 
 /**
