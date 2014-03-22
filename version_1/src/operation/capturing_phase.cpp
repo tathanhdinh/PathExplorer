@@ -162,6 +162,9 @@ auto wsarecvs_interceptor_after(THREADID thread_id) -> VOID
 }
 
 
+/**
+ * @brief handle InternetReadFile before its execution
+ */
 auto InternetReadFile_inserter_before(ADDRINT hFile,                 // HINTERNET
                                       ADDRINT lpBuffer,              // LPVOID
                                       ADDRINT dwNumberOfBytesToRead, // DWORD
@@ -336,7 +339,7 @@ auto recvfrom_wrapper(AFUNPTR recvfrom_origin,
 auto WSARecv_wrapper(AFUNPTR wsarecv_origin,
                      WSARecv_traits_t::arg1_type s,                     // windows::SOCKET
                      WSARecv_traits_t::arg2_type lpBuffers,             // windows::LPWSABUF
-                     WSARecv_traits_t::arg3_type dwBufferCount,         // ewindows::DWORD
+                     WSARecv_traits_t::arg3_type dwBufferCount,         // windows::DWORD
                      WSARecv_traits_t::arg4_type lpNumberOfBytesRecvd,  // windows::LPDWORD
                      WSARecv_traits_t::arg5_type lpFlags,               // windows::LPDWORD
                      WSARecv_traits_t::arg6_type lpOverlapped,          // windows::LPWSAOVERLAPPED
@@ -367,10 +370,12 @@ auto WSARecv_wrapper(AFUNPTR wsarecv_origin,
 #if !defined(NDEBUG)
     tfm::format(log_file, "message is obtained from WSARecv at thread id %d\n", thread_id);
 #endif
+    log_file.flush();
     is_locked["WSARecv"] = false;
     received_msg_addr = reinterpret_cast<ADDRINT>(lpBuffers->buf);
     received_msg_size = *lpNumberOfBytesRecvd; handle_received_message();
   }
+  std::cerr << "WSARecv exists\n";
 
   return result;
 }
@@ -436,6 +441,9 @@ auto InternetReadFile_wrapper(AFUNPTR origin_func,
                               InternetReadFile_traits_t::arg4_type lpdwNumberOfBytesRead, // windows::LPWORD
                               CONTEXT *p_ctxt, THREADID thread_id) -> InternetReadFile_traits_t::result_type
 {
+#if !defined(NDEBUG)
+  tfm::format(log_file, "InternetReadFile wrapper called\n");
+#endif
   InternetReadFile_traits_t::result_type result;
 
   if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))

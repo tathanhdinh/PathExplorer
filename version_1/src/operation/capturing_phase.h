@@ -19,9 +19,7 @@
 #endif
 #include <pin.H>
 
-//#include <functional>
 #include <boost/type_traits/function_traits.hpp>
-
 
 #if defined(_WIN32) || defined(_WIN64)
 namespace windows
@@ -123,6 +121,9 @@ extern auto recvs_interceptor_after     (UINT32 msg_length, THREADID thread_id) 
 extern auto wsarecvs_interceptor_before (ADDRINT msg_struct_addr, THREADID thread_id)     -> VOID;
 
 extern auto wsarecvs_interceptor_after  (THREADID thread_id)                              -> VOID;
+
+//extern auto generic_rtn_inserter_before (ADDRINT rtn_addr, THREADID thread_id) -> VOID;
+//extern auto generic_rtn_inserter_after  (ADDRINT rtn_addr, THREADID thread_id) -> VOID;
 
 extern inserter_before<windows::InternetReadFile_t>::type InternetReadFile_inserter_before;
 extern inserter_after<windows::InternetReadFile_t>::type InternetReadFile_inserter_after;

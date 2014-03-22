@@ -345,10 +345,6 @@ static inline auto WSARecvFrom_replacer (RTN& rtn) -> void
  */
 static inline auto InternetReadFile_replacer (RTN& rtn) -> void
 {
-#if !defined(NDEBUG)
-  tfm::format(log_file, "replacing %s at %s\n", RTN_Name(rtn),
-              addrint_to_hexstring(RTN_Address(rtn)));
-#endif
   auto InternetReadFile_proto = PROTO_Allocate(PIN_PARG(capturing::InternetReadFile_traits_t::result_type),
                                                CALLINGSTD_DEFAULT, "InternetReadFile",
                                                PIN_PARG(capturing::InternetReadFile_traits_t::arg1_type),
@@ -385,17 +381,30 @@ static auto generic_routine_after_interceptor(ADDRINT rtn_addr, std::string *rtn
   return;
 }
 
-static inline auto generic_routine_interceptor (RTN& rtn) -> void
+
+/**
+ * @brief generic inserter
+ */
+static auto generic_inserter (ADDRINT rtn_addr, THREADID thread_id, bool before_or_after) -> VOID
+{
+#if !defined(NDEBUG)
+  tfm::format(log_file, "<%d: %s> %s ", thread_id, addrint_to_hexstring(rtn_addr),
+              RTN_FindNameByAddress(rtn_addr));
+  if (before_or_after)
+    tfm::format(log_file, "is called\n");
+  else
+    tfm::format(log_file, "returns\n");
+#endif
+  return;
+};
+
+static inline auto generic_routine_inserter (RTN& rtn) -> void
 {
   RTN_Open(rtn);
-  RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)generic_routine_before_inteceptor,
-                 IARG_ADDRINT, RTN_Address(rtn),
-                 IARG_PTR, new std::string(RTN_Name(rtn)),
-                 IARG_THREAD_ID, IARG_END);
-  RTN_InsertCall(rtn, IPOINT_AFTER, (AFUNPTR)generic_routine_after_interceptor,
-                 IARG_ADDRINT, RTN_Address(rtn),
-                 IARG_PTR, new std::string(RTN_Name(rtn)),
-                 IARG_THREAD_ID, IARG_END);
+  RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)generic_inserter, IARG_ADDRINT, RTN_Address(rtn),
+                 IARG_THREAD_ID, IARG_BOOL, true, IARG_END);
+  RTN_InsertCall(rtn, IPOINT_AFTER, (AFUNPTR)generic_inserter, IARG_ADDRINT, RTN_Address(rtn),
+                 IARG_THREAD_ID, IARG_BOOL, false, IARG_END);
   RTN_Close(rtn);
   return;
 }
@@ -457,6 +466,16 @@ auto image_loading (IMG loaded_img, VOID *data) -> VOID
     tfm::format(log_file, "module %s is mapped at %s with size %d\n", IMG_Name(loaded_img),
                 addrint_to_hexstring(IMG_StartAddress(loaded_img)), IMG_SizeMapped(loaded_img));
 #endif
+    // iterate over sections of the loaded image
+    for (auto sec = IMG_SecHead(loaded_img); SEC_Valid(sec); sec = SEC_Next(sec))
+    {
+      // iterate over routines of the section
+      for (auto rtn = SEC_RtnHead(sec); RTN_Valid(rtn); rtn = RTN_Next(rtn))
+      {
+        generic_routine_inserter(rtn);
+      }
+    }
+
 
     // verify if the winsock or wininet module is loaded
     static std::locale current_loc;
@@ -471,6 +490,7 @@ auto image_loading (IMG loaded_img, VOID *data) -> VOID
       std::for_each(replace_func_of_name.begin(), replace_func_of_name.end(),
                     [&](replace_func_of_name_t::value_type origin_replacer)
       {
+        PIN_LockClient();
         // look for the routine corresponding with the name of the original function
         auto rtn = RTN_FindByName(loaded_img, origin_replacer.first.c_str());
         if (RTN_Valid(rtn))
@@ -481,6 +501,7 @@ auto image_loading (IMG loaded_img, VOID *data) -> VOID
 #endif
           origin_replacer.second(rtn);
         }
+        PIN_UnlockClient();
       });
     }
   }
