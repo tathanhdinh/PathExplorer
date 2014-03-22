@@ -201,36 +201,6 @@ static inline auto wsarecvs_interceptor (RTN& rtn) -> void
 }
 
 
-static inline auto InternetReadFile_interceptor (RTN& rtn) -> void
-{
-  // insertion approach
-  RTN_Open(rtn);
-  RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)capturing::InternetReadFile_inserter_before,
-                 IARG_FUNCARG_ENTRYPOINT_VALUE, 0, IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
-                 IARG_FUNCARG_ENTRYPOINT_VALUE, 2, IARG_FUNCARG_ENTRYPOINT_VALUE, 3,
-                 IARG_THREAD_ID, IARG_END);
-  RTN_InsertCall(rtn, IPOINT_AFTER, (AFUNPTR)capturing::InternetReadFile_inserter_after,
-                 IARG_FUNCRET_EXITPOINT_VALUE, IARG_THREAD_ID, IARG_END);
-  RTN_Close(rtn);
-  return;
-}
-
-
-static inline auto InternetReadFileEx_interceptor (RTN& rtn) -> void
-{
-  // insertion approach
-  RTN_Open(rtn);
-  RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)capturing::InternetReadFileEx_inserter_before,
-                 IARG_FUNCARG_ENTRYPOINT_VALUE, 0, IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
-                 IARG_FUNCARG_ENTRYPOINT_VALUE, 2, IARG_FUNCARG_ENTRYPOINT_VALUE, 3,
-                 IARG_THREAD_ID, IARG_END);
-  RTN_InsertCall(rtn, IPOINT_AFTER, (AFUNPTR)capturing::InternetReadFileEx_inserter_after,
-                 IARG_FUNCRET_EXITPOINT_VALUE, IARG_THREAD_ID, IARG_END);
-  RTN_Close(rtn);
-  return;
-}
-
-
 /**
  * @brief replace recv function (quite boring C++ type traits get type of parameter)
  */
@@ -402,6 +372,10 @@ auto image_loading (IMG loaded_img, VOID *data) -> VOID
       // iterate over routines of the section
       for (auto rtn = SEC_RtnHead(sec); RTN_Valid(rtn); rtn = RTN_Next(rtn))
       {
+#if !defined(NDEBUG)
+        tfm::format(log_file, "intercepting %s located at %s\n", RTN_Name(rtn),
+                    addrint_to_hexstring(RTN_Address(rtn)));
+#endif
         capturing::generic_routine(rtn);
       }
     }
@@ -463,8 +437,8 @@ auto initialize () -> void
   intercept_func_of_name["recvfrom"] = recvs_interceptor;
   intercept_func_of_name["WSARecv"] = wsarecvs_interceptor;
   intercept_func_of_name["WSARecvFrom"] = wsarecvs_interceptor;
-  intercept_func_of_name["InternetReadFile"] = InternetReadFile_interceptor;
-  intercept_func_of_name["InternetReadFileEx"] = InternetReadFileEx_interceptor;
+  intercept_func_of_name["InternetReadFile"] = capturing::InternetReadFile_routine;
+  intercept_func_of_name["InternetReadFileEx"] = capturing::InternetReadFileEx_routine;
 
   replace_func_of_name["recv"] = recv_replacer;
   replace_func_of_name["recvfrom"] = recvfrom_replacer;

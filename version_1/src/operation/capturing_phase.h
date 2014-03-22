@@ -121,15 +121,19 @@ extern auto wsarecvs_interceptor_before (ADDRINT msg_struct_addr, THREADID threa
 
 extern auto wsarecvs_interceptor_after  (THREADID thread_id)                              -> VOID;
 
-extern auto generic_routine (RTN& rtn) -> void;
-
-extern inserter_before<windows::InternetReadFile_t>::type InternetReadFile_inserter_before;
-extern inserter_after<windows::InternetReadFile_t>::type InternetReadFile_inserter_after;
+//extern inserter_before<windows::InternetReadFile_t>::type InternetReadFile_inserter_before;
+//extern inserter_after<windows::InternetReadFile_t>::type InternetReadFile_inserter_after;
 typedef boost::function_traits<windows::InternetReadFile_t> InternetReadFile_traits_t;
 
-extern inserter_before<windows::InternetReadFileEx_t>::type InternetReadFileEx_inserter_before;
-extern inserter_after<windows::InternetReadFileEx_t>::type InternetReadFileEx_inserter_after;
+//extern inserter_before<windows::InternetReadFileEx_t>::type InternetReadFileEx_inserter_before;
+//extern inserter_after<windows::InternetReadFileEx_t>::type InternetReadFileEx_inserter_after;
 typedef boost::function_traits<windows::InternetReadFileEx_t> InternetReadFileEx_traits_t;
+
+extern auto generic_routine             (RTN& rtn) -> void;
+
+extern auto InternetReadFile_routine    (RTN& rtn) -> void;
+
+extern auto InternetReadFileEx_routine  (RTN& rtn) -> void;
 
 /**
  * @brief wrapper

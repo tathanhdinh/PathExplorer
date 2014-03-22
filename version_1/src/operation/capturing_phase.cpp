@@ -268,13 +268,52 @@ static auto generic_insertion (ADDRINT rtn_addr, THREADID thread_id, bool before
 };
 
 
+/**
+ * @brief generic routine interception
+ */
 auto generic_routine (RTN& rtn) -> void
 {
+  // insertion approach
   RTN_Open(rtn);
   RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)generic_insertion, IARG_ADDRINT, RTN_Address(rtn),
                  IARG_THREAD_ID, IARG_BOOL, true, IARG_END);
   RTN_InsertCall(rtn, IPOINT_AFTER, (AFUNPTR)generic_insertion, IARG_ADDRINT, RTN_Address(rtn),
                  IARG_THREAD_ID, IARG_BOOL, false, IARG_END);
+  RTN_Close(rtn);
+  return;
+}
+
+
+/**
+ * @brief InternetReadFile interception
+ */
+auto InternetReadFile_routine (RTN& rtn) -> void
+{
+  // insertion approach
+  RTN_Open(rtn);
+  RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)InternetReadFile_inserter_before,
+                 IARG_FUNCARG_ENTRYPOINT_VALUE, 0, IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
+                 IARG_FUNCARG_ENTRYPOINT_VALUE, 2, IARG_FUNCARG_ENTRYPOINT_VALUE, 3,
+                 IARG_THREAD_ID, IARG_END);
+  RTN_InsertCall(rtn, IPOINT_AFTER, (AFUNPTR)InternetReadFile_inserter_after,
+                 IARG_FUNCRET_EXITPOINT_VALUE, IARG_THREAD_ID, IARG_END);
+  RTN_Close(rtn);
+}
+
+/**
+ * @brief InternetReadFileEx interception
+ */
+auto InternetReadFileEx_routine (RTN& rtn) -> void
+{
+  // insertion approach
+  RTN_Open(rtn);
+  RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)InternetReadFileEx_inserter_before,
+                 IARG_FUNCARG_ENTRYPOINT_VALUE, 0, IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
+                 IARG_FUNCARG_ENTRYPOINT_VALUE, 2, IARG_FUNCARG_ENTRYPOINT_VALUE, 3,
+                 IARG_THREAD_ID, IARG_END);
+  RTN_InsertCall(rtn, IPOINT_AFTER, (AFUNPTR)InternetReadFileEx_inserter_after,
+                 IARG_FUNCRET_EXITPOINT_VALUE,
+                 IARG_THREAD_ID, IARG_END);
   RTN_Close(rtn);
   return;
 }
