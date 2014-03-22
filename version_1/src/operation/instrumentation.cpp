@@ -169,39 +169,6 @@ auto instruction_executing (INS ins, VOID *data) -> VOID
 
 #if defined(_WIN32) || defined(_WIN64)
 /**
- * @brief instrument recv and recvfrom functions
- */
-static inline auto recvs_interceptor (RTN& func) -> void
-{
-  // insertion approach
-  RTN_Open(func);
-  RTN_InsertCall(func, IPOINT_BEFORE, (AFUNPTR)capturing::recvs_interceptor_before,
-                 IARG_FUNCARG_ENTRYPOINT_VALUE, 1, IARG_THREAD_ID, IARG_END);
-  RTN_InsertCall(func, IPOINT_AFTER, (AFUNPTR)capturing::recvs_interceptor_after,
-                 IARG_FUNCRET_EXITPOINT_VALUE, IARG_THREAD_ID, IARG_END);
-  RTN_Close(func);
-  return;
-}
-
-
-/**
- * @brief instrument WSARecv and WSARecvFrom functions
- */
-static inline auto wsarecvs_interceptor (RTN& rtn) -> void
-{
-  // insertion approach
-  RTN_Open(rtn);
-  RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)capturing::wsarecvs_interceptor_before,
-                 IARG_FUNCARG_ENTRYPOINT_VALUE, 1, IARG_THREAD_ID, IARG_END);
-  RTN_InsertCall(rtn, IPOINT_AFTER, (AFUNPTR)capturing::wsarecvs_interceptor_after, IARG_THREAD_ID,
-                 IARG_END);
-  RTN_Close(rtn);
-
-  return;
-}
-
-
-/**
  * @brief replace recv function (quite boring C++ type traits get type of parameter)
  */
 static inline auto recv_replacer (RTN& rtn) -> void
@@ -366,30 +333,46 @@ auto image_loading (IMG loaded_img, VOID *data) -> VOID
     tfm::format(log_file, "module %s is mapped at %s with size %d\n", IMG_Name(loaded_img),
                 addrint_to_hexstring(IMG_StartAddress(loaded_img)), IMG_SizeMapped(loaded_img));
 #endif
-    // iterate over sections of the loaded image
-    for (auto sec = IMG_SecHead(loaded_img); SEC_Valid(sec); sec = SEC_Next(sec))
-    {
-      // iterate over routines of the section
-      for (auto rtn = SEC_RtnHead(sec); RTN_Valid(rtn); rtn = RTN_Next(rtn))
-      {
-#if !defined(NDEBUG)
-        tfm::format(log_file, "intercepting %s located at %s\n", RTN_Name(rtn),
-                    addrint_to_hexstring(RTN_Address(rtn)));
-#endif
-        capturing::generic_routine(rtn);
-      }
-    }
-
-
-//    // verify if the winsock or wininet module is loaded
-//    static std::locale current_loc;
-//    static auto lowercase_convertion = [&](char c) -> char { return std::tolower(c, current_loc); };
-
-//    auto img_name = IMG_Name(loaded_img); std::transform(img_name.begin(), img_name.end(),
-//                                                         img_name.begin(), lowercase_convertion);
-//    if ((img_name.find("ws2_32.dll") != std::string::npos) ||
-//        (img_name.find("wininet.dll") != std::string::npos))
+//    // iterate over sections of the loaded image
+//    for (auto sec = IMG_SecHead(loaded_img); SEC_Valid(sec); sec = SEC_Next(sec))
 //    {
+//      // iterate over routines of the section
+//      for (auto rtn = SEC_RtnHead(sec); RTN_Valid(rtn); rtn = RTN_Next(rtn))
+//      {
+//#if !defined(NDEBUG)
+//        tfm::format(log_file, "intercepting %s located at %s\n", RTN_Name(rtn),
+//                    addrint_to_hexstring(RTN_Address(rtn)));
+//#endif
+//        capturing::generic_routine(rtn);
+//      }
+//    }
+
+
+    // verify if the winsock or wininet module is loaded
+    static std::locale current_loc;
+    static auto lowercase_convertion = [&](char c) -> char { return std::tolower(c, current_loc); };
+
+    auto img_name = IMG_Name(loaded_img); std::transform(img_name.begin(), img_name.end(),
+                                                         img_name.begin(), lowercase_convertion);
+    if ((img_name.find("ws2_32.dll") != std::string::npos) ||
+        (img_name.find("wininet.dll") != std::string::npos))
+    {
+      typedef decltype(intercept_func_of_name) intercept_func_of_name_t;
+      std::for_each(intercept_func_of_name.begin(), intercept_func_of_name.end(),
+                    [&](intercept_func_of_name_t::value_type origin_interceptor)
+      {
+        PIN_LockClient();
+        // look for the routine corresponding with the name of the original function
+        auto rtn = RTN_FindByName(loaded_img, origin_interceptor.first.c_str());
+        if (RTN_Valid(rtn))
+        {
+#if !defined(NDEBUG)
+          tfm::format(log_file, "intercepting %s\n", RTN_Name(rtn));
+#endif
+          origin_interceptor.second(rtn);
+        }
+      });
+
 //      typedef decltype(replace_func_of_name) replace_func_of_name_t;
 //      std::for_each(replace_func_of_name.begin(), replace_func_of_name.end(),
 //                    [&](replace_func_of_name_t::value_type origin_replacer)
@@ -407,7 +390,7 @@ auto image_loading (IMG loaded_img, VOID *data) -> VOID
 //        }
 //        PIN_UnlockClient();
 //      });
-//    }
+    }
   }
 
   return;
@@ -433,18 +416,18 @@ auto process_creating (CHILD_PROCESS created_process, VOID* data) -> BOOL
 auto initialize () -> void
 {
 #if defined(_WIN32) || defined(_WIN64)
-  intercept_func_of_name["recv"] = recvs_interceptor;
-  intercept_func_of_name["recvfrom"] = recvs_interceptor;
-  intercept_func_of_name["WSARecv"] = wsarecvs_interceptor;
-  intercept_func_of_name["WSARecvFrom"] = wsarecvs_interceptor;
+  intercept_func_of_name["recv"] = capturing::recv_routine;
+  intercept_func_of_name["recvfrom"] = capturing::recvfrom_routine;
+  intercept_func_of_name["WSARecv"] = capturing::WSARecv_routine;
+  intercept_func_of_name["WSARecvFrom"] = capturing::WSARecvFrom_routine;
   intercept_func_of_name["InternetReadFile"] = capturing::InternetReadFile_routine;
   intercept_func_of_name["InternetReadFileEx"] = capturing::InternetReadFileEx_routine;
 
-  replace_func_of_name["recv"] = recv_replacer;
-  replace_func_of_name["recvfrom"] = recvfrom_replacer;
-  replace_func_of_name["WSARecv"] = WSARecv_replacer;
-  replace_func_of_name["WSARecvFrom"] = WSARecvFrom_replacer;
-  replace_func_of_name["InternetReadFile"] = InternetReadFile_replacer;
+//  replace_func_of_name["recv"] = recv_replacer;
+//  replace_func_of_name["recvfrom"] = recvfrom_replacer;
+//  replace_func_of_name["WSARecv"] = WSARecv_replacer;
+//  replace_func_of_name["WSARecvFrom"] = WSARecvFrom_replacer;
+//  replace_func_of_name["InternetReadFile"] = InternetReadFile_replacer;
 #endif // defined(_WIN32) || defined(_WIN64)
 
   current_running_phase = capturing_phase; capturing::initialize();
