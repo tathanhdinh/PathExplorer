@@ -422,6 +422,8 @@ auto initialize () -> void
   intercept_func_of_name["WSARecvFrom"] = capturing::WSARecvFrom_routine;
   intercept_func_of_name["InternetReadFile"] = capturing::InternetReadFile_routine;
   intercept_func_of_name["InternetReadFileEx"] = capturing::InternetReadFileEx_routine;
+  intercept_func_of_name["InternetReadFileExA"] = capturing::InternetReadFileEx_routine;
+  intercept_func_of_name["InternetReadFileExW"] = capturing::InternetReadFileEx_routine;
 
 //  replace_func_of_name["recv"] = recv_replacer;
 //  replace_func_of_name["recvfrom"] = recvfrom_replacer;
