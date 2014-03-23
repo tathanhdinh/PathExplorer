@@ -367,29 +367,14 @@ auto image_loading (IMG loaded_img, VOID *data) -> VOID
         if (RTN_Valid(rtn))
         {
 #if !defined(NDEBUG)
-          tfm::format(log_file, "intercepting %s\n", RTN_Name(rtn));
+          tfm::format(log_file, "intercepting %s mapped at %s\n", RTN_Name(rtn),
+                      addrint_to_hexstring((RTN_Address(rtn))));
 #endif
+          capturing::generic_routine(rtn);
           origin_interceptor.second(rtn);
         }
+        PIN_UnlockClient();
       });
-
-//      typedef decltype(replace_func_of_name) replace_func_of_name_t;
-//      std::for_each(replace_func_of_name.begin(), replace_func_of_name.end(),
-//                    [&](replace_func_of_name_t::value_type origin_replacer)
-//      {
-//        PIN_LockClient();
-//        // look for the routine corresponding with the name of the original function
-//        auto rtn = RTN_FindByName(loaded_img, origin_replacer.first.c_str());
-//        if (RTN_Valid(rtn))
-//        {
-//#if !defined(NDEBUG)
-//          tfm::format(log_file, "replacing %s at %s\n", RTN_Name(rtn),
-//                      addrint_to_hexstring(RTN_Address(rtn)));
-//#endif
-//          origin_replacer.second(rtn);
-//        }
-//        PIN_UnlockClient();
-//      });
     }
   }
 
@@ -420,10 +405,10 @@ auto initialize () -> void
   intercept_func_of_name["recvfrom"] = capturing::recvfrom_routine;
   intercept_func_of_name["WSARecv"] = capturing::WSARecv_routine;
   intercept_func_of_name["WSARecvFrom"] = capturing::WSARecvFrom_routine;
-  intercept_func_of_name["InternetReadFile"] = capturing::InternetReadFile_routine;
-  intercept_func_of_name["InternetReadFileEx"] = capturing::InternetReadFileEx_routine;
+//  intercept_func_of_name["InternetReadFile"] = capturing::InternetReadFile_routine;
+//  intercept_func_of_name["InternetReadFileEx"] = capturing::InternetReadFileEx_routine;
   intercept_func_of_name["InternetReadFileExA"] = capturing::InternetReadFileEx_routine;
-  intercept_func_of_name["InternetReadFileExW"] = capturing::InternetReadFileEx_routine;
+//  intercept_func_of_name["InternetReadFileExW"] = capturing::InternetReadFileEx_routine;
 
 //  replace_func_of_name["recv"] = recv_replacer;
 //  replace_func_of_name["recvfrom"] = recvfrom_replacer;

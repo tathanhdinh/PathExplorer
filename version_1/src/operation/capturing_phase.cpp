@@ -2,8 +2,9 @@
 #include "common.h"
 #include "../util/stuffs.h"
 
-#include <algorithm>
-#include <numeric>
+//#include <algorithm>
+//#include <numeric>
+//#include <array>
 
 namespace capturing 
 {
@@ -25,8 +26,11 @@ static std::map<std::string, bool> is_locked;
 auto initialize() -> void
 {
 #if defined(_WIN32) || defined(_WIN64)
-  is_locked["recv"] = false; is_locked["recvfrom"] = false; is_locked["WSARecv"] = false;
-  is_locked["WSARecvFrom"] = false; is_locked["InternetReadFile"] = false;
+  is_locked["recv"] = false;
+  is_locked["recvfrom"] = false;
+  is_locked["WSARecv"] = false;
+  is_locked["WSARecvFrom"] = false;
+  is_locked["InternetReadFile"] = false;
   is_locked["InternetReadFileEx"] = false;
 #endif
   received_msg_number = 0; interested_msg_is_received = false;
@@ -435,6 +439,9 @@ auto InternetReadFileEx_inserter_before(ADDRINT hFile,        // HINTERNET
     // lock InternetReadFileEx to note that it is called
     is_locked["InternetReadFileEx"] = true;
     traced_thread_id = thread_id; traced_thread_is_fixed = true;
+#if !defined(NDEBUG)
+    tfm::format(log_file, "InternetReadFileEx is locked\n");
+#endif
   }
   return;
 }
