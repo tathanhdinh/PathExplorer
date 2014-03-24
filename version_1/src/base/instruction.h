@@ -52,8 +52,8 @@ public:
   bool is_in_msg_receiving;
 #endif
 
-  /*std::set<ptr_operand_t>*/ptr_operand_set_t src_operands;
-  /*std::set<ptr_operand_t>*/ptr_operand_set_t dst_operands;
+  ptr_operand_set_t src_operands;
+  ptr_operand_set_t dst_operands;
 
 public:
   instruction();

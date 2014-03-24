@@ -21,9 +21,10 @@ public:
                          const path_code_t& edge_path_code,
                          const addrint_value_map_t&
                          edge_addrs_values = addrint_value_map_t()) -> void;
+
   auto add_edge         (ptr_instruction_t& ins_a,
                          ptr_instruction_t& ins_b,
-                         const path_code_t& edge_path_code)           -> void;
+                         const path_code_t& edge_path_code)         -> void;
 
   auto save_to_file     (std::string filename)                      -> void;
 

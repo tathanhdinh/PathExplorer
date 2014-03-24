@@ -2,10 +2,6 @@
 #include "common.h"
 #include "../util/stuffs.h"
 
-//#include <algorithm>
-//#include <numeric>
-//#include <array>
-
 namespace capturing 
 {
 
