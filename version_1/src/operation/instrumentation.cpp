@@ -168,155 +168,76 @@ auto instruction_executing (INS ins, VOID *data) -> VOID
 
 
 #if defined(_WIN32) || defined(_WIN64)
-/**
- * @brief replace recv function (quite boring C++ type traits get type of parameter)
- */
-static inline auto recv_replacer (RTN& rtn) -> void
+
+///**
+// * @brief routine instrumentation
+// */
+//auto routine_calling(RTN rtn, VOID* data) -> VOID
+//{
+//  if ((current_running_phase == capturing_phase) && !interested_msg_is_received)
+//  {
+//    auto rtn_name = RTN_Name(rtn);
+////    routine_at_addr[RTN_Address(rtn)] = rtn_name; generic_routine_interceptor(rtn);
+
+//    if (intercept_func_of_name.find(rtn_name) != intercept_func_of_name.end())
+//    {
+//#if !defined(NDEBUG)
+//      tfm::format(log_file, "intercepting function %s\n", rtn_name);
+//#endif
+//      intercept_func_of_name[rtn_name](rtn);
+//    }
+//  }
+//  return;
+//}
+
+static inline auto generic_intercept(IMG& loaded_img) -> void
 {
-  auto recv_proto = PROTO_Allocate(PIN_PARG(capturing::recv_traits_t::result_type),
-                                   CALLINGSTD_DEFAULT, "recv",
-                                   PIN_PARG(capturing::recv_traits_t::arg1_type),  // windows::SOCKET
-                                   PIN_PARG(capturing::recv_traits_t::arg2_type),  // char*
-                                   PIN_PARG(capturing::recv_traits_t::arg3_type),  // int
-                                   PIN_PARG(capturing::recv_traits_t::arg4_type),  // int
-                                   PIN_PARG_END());
-
-  RTN_ReplaceSignature(rtn, AFUNPTR(capturing::recv_wrapper),
-                       IARG_PROTOTYPE, recv_proto,
-                       IARG_ORIG_FUNCPTR,
-                       IARG_FUNCARG_ENTRYPOINT_VALUE, 0, IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
-                       IARG_FUNCARG_ENTRYPOINT_VALUE, 2, IARG_FUNCARG_ENTRYPOINT_VALUE, 3,
-                       IARG_CONST_CONTEXT, IARG_THREAD_ID, IARG_END);
-  PROTO_Free(recv_proto);
-
-  return;
-}
-
-
-static inline auto recvfrom_replacer (RTN& rtn) -> void
-{
-  auto recvfrom_proto = PROTO_Allocate(PIN_PARG(capturing::recvfrom_traits_t::result_type),
-                                       CALLINGSTD_DEFAULT, "recvfrom",
-                                       PIN_PARG(capturing::recvfrom_traits_t::arg1_type),  // windows::SOCKET
-                                       PIN_PARG(capturing::recvfrom_traits_t::arg2_type),  // char*
-                                       PIN_PARG(capturing::recvfrom_traits_t::arg3_type),  // int
-                                       PIN_PARG(capturing::recvfrom_traits_t::arg4_type),  // int
-                                       PIN_PARG(capturing::recvfrom_traits_t::arg5_type),  // windows::sockaddr*
-                                       PIN_PARG(capturing::recvfrom_traits_t::arg6_type),  // int*
-                                       PIN_PARG_END());
-
-  RTN_ReplaceSignature(rtn, AFUNPTR(capturing::recvfrom_wrapper),
-                       IARG_PROTOTYPE, recvfrom_proto,
-                       IARG_ORIG_FUNCPTR,
-                       IARG_FUNCARG_ENTRYPOINT_VALUE, 0, IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
-                       IARG_FUNCARG_ENTRYPOINT_VALUE, 2, IARG_FUNCARG_ENTRYPOINT_VALUE, 3,
-                       IARG_FUNCARG_ENTRYPOINT_VALUE, 4, IARG_FUNCARG_ENTRYPOINT_VALUE, 5,
-                       IARG_CONST_CONTEXT, IARG_THREAD_ID, IARG_END);
-  PROTO_Free(recvfrom_proto);
-}
-
-/**
- * @brief replace WSARecv function
- */
-static inline auto WSARecv_replacer (RTN& rtn) -> void
-{
-  auto WSARecv_proto = PROTO_Allocate(PIN_PARG(capturing::WSARecv_traits_t::result_type),
-                                      CALLINGSTD_DEFAULT, "WSARecv",
-                                      PIN_PARG(capturing::WSARecv_traits_t::arg1_type),
-                                      PIN_PARG(capturing::WSARecv_traits_t::arg2_type),
-                                      PIN_PARG(capturing::WSARecv_traits_t::arg3_type),
-                                      PIN_PARG(capturing::WSARecv_traits_t::arg4_type),
-                                      PIN_PARG(capturing::WSARecv_traits_t::arg5_type),
-                                      PIN_PARG(capturing::WSARecv_traits_t::arg6_type),
-                                      PIN_PARG(capturing::WSARecv_traits_t::arg7_type),
-                                      PIN_PARG_END());
-
-  RTN_ReplaceSignature(rtn, AFUNPTR(capturing::WSARecv_wrapper),
-                       IARG_PROTOTYPE, WSARecv_proto,
-                       IARG_ORIG_FUNCPTR,
-                       IARG_FUNCARG_ENTRYPOINT_VALUE, 0, IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
-                       IARG_FUNCARG_ENTRYPOINT_VALUE, 2, IARG_FUNCARG_ENTRYPOINT_VALUE, 3,
-                       IARG_FUNCARG_ENTRYPOINT_VALUE, 4, IARG_FUNCARG_ENTRYPOINT_VALUE, 5,
-                       IARG_FUNCARG_ENTRYPOINT_VALUE, 6,
-                       IARG_CONST_CONTEXT, IARG_THREAD_ID, IARG_END);
-  PROTO_Free(WSARecv_proto);
-
-  return;
-}
-
-
-/**
- * @brief WSARecvFrom replacer
- */
-static inline auto WSARecvFrom_replacer (RTN& rtn) -> void
-{
-  auto WSARecvFrom_proto = PROTO_Allocate(PIN_PARG(capturing::WSARecvFrom_traits_t::result_type),
-                                          CALLINGSTD_DEFAULT, "WSARecvFrom",
-                                          PIN_PARG(capturing::WSARecvFrom_traits_t::arg1_type),
-                                          PIN_PARG(capturing::WSARecvFrom_traits_t::arg2_type),
-                                          PIN_PARG(capturing::WSARecvFrom_traits_t::arg3_type),
-                                          PIN_PARG(capturing::WSARecvFrom_traits_t::arg4_type),
-                                          PIN_PARG(capturing::WSARecvFrom_traits_t::arg5_type),
-                                          PIN_PARG(capturing::WSARecvFrom_traits_t::arg6_type),
-                                          PIN_PARG(capturing::WSARecvFrom_traits_t::arg7_type),
-                                          PIN_PARG(capturing::WSARecvFrom_traits_t::arg8_type),
-                                          PIN_PARG(capturing::WSARecvFrom_traits_t::arg9_type),
-                                          PIN_PARG_END());
-
-  RTN_ReplaceSignature(rtn, AFUNPTR(capturing::WSARecvFrom_wrapper),
-                       IARG_PROTOTYPE, WSARecvFrom_proto,
-                       IARG_ORIG_FUNCPTR,
-                       IARG_FUNCARG_ENTRYPOINT_VALUE, 0, IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
-                       IARG_FUNCARG_ENTRYPOINT_VALUE, 2, IARG_FUNCARG_ENTRYPOINT_VALUE, 3,
-                       IARG_FUNCARG_ENTRYPOINT_VALUE, 4, IARG_FUNCARG_ENTRYPOINT_VALUE, 5,
-                       IARG_FUNCARG_ENTRYPOINT_VALUE, 6, IARG_FUNCARG_ENTRYPOINT_VALUE, 7,
-                       IARG_FUNCARG_ENTRYPOINT_VALUE, 8,
-                       IARG_CONST_CONTEXT, IARG_THREAD_ID, IARG_END);
-  PROTO_Free(WSARecvFrom_proto);
-  return;
-}
-
-
-/**
- * @brief InternetReadFile replacer
- */
-static inline auto InternetReadFile_replacer (RTN& rtn) -> void
-{
-  auto InternetReadFile_proto = PROTO_Allocate(PIN_PARG(capturing::InternetReadFile_traits_t::result_type),
-                                               CALLINGSTD_DEFAULT, "InternetReadFile",
-                                               PIN_PARG(capturing::InternetReadFile_traits_t::arg1_type),
-                                               PIN_PARG(capturing::InternetReadFile_traits_t::arg2_type),
-                                               PIN_PARG(capturing::InternetReadFile_traits_t::arg3_type),
-                                               PIN_PARG(capturing::InternetReadFile_traits_t::arg4_type),
-                                               PIN_PARG_END());
-  RTN_ReplaceSignature(rtn, AFUNPTR(capturing::InternetReadFile_wrapper),
-                       IARG_PROTOTYPE, InternetReadFile_proto,
-                       IARG_ORIG_FUNCPTR,
-                       IARG_FUNCARG_ENTRYPOINT_VALUE, 0, IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
-                       IARG_FUNCARG_ENTRYPOINT_VALUE, 2, IARG_FUNCARG_ENTRYPOINT_VALUE, 3,
-                       IARG_CONST_CONTEXT, IARG_THREAD_ID, IARG_END);
-  PROTO_Free(InternetReadFile_proto);
-  return;
-}
-
-
-/**
- * @brief routine instrumentation
- */
-auto routine_calling(RTN rtn, VOID* data) -> VOID
-{
-  if ((current_running_phase == capturing_phase) && !interested_msg_is_received)
+  // iterate over sections of the loaded image
+  for (auto sec = IMG_SecHead(loaded_img); SEC_Valid(sec); sec = SEC_Next(sec))
   {
-    auto rtn_name = RTN_Name(rtn);
-//    routine_at_addr[RTN_Address(rtn)] = rtn_name; generic_routine_interceptor(rtn);
-
-    if (intercept_func_of_name.find(rtn_name) != intercept_func_of_name.end())
+    // iterate over routines of the section
+    for (auto rtn = SEC_RtnHead(sec); RTN_Valid(rtn); rtn = RTN_Next(rtn))
     {
 #if !defined(NDEBUG)
-      tfm::format(log_file, "intercepting function %s\n", rtn_name);
+      tfm::format(log_file, "intercepting %s located at %s\n", RTN_Name(rtn),
+                  addrint_to_hexstring(RTN_Address(rtn)));
 #endif
-      intercept_func_of_name[rtn_name](rtn);
+      capturing::generic_routine(rtn);
     }
+  }
+  return;
+}
+
+
+static inline auto network_related_intercept(IMG& loaded_img) -> void
+{
+  // verify if the winsock or wininet module is loaded
+  static std::locale current_loc;
+  static auto lowercase_convertion = [&](char c) -> char { return std::tolower(c, current_loc); };
+
+  auto img_name = IMG_Name(loaded_img); std::transform(img_name.begin(), img_name.end(),
+                                                       img_name.begin(), lowercase_convertion);
+  if ((img_name.find("ws2_32.dll") != std::string::npos) ||
+      (img_name.find("wininet.dll") != std::string::npos))
+  {
+    typedef decltype(intercept_func_of_name) intercept_func_of_name_t;
+    std::for_each(intercept_func_of_name.begin(), intercept_func_of_name.end(),
+                  [&](intercept_func_of_name_t::value_type origin_interceptor)
+    {
+      PIN_LockClient();
+      // look for the routine corresponding with the name of the original function
+      auto rtn = RTN_FindByName(loaded_img, origin_interceptor.first.c_str());
+      if (RTN_Valid(rtn))
+      {
+#if !defined(NDEBUG)
+        tfm::format(log_file, "intercepting %s mapped at %s\n", RTN_Name(rtn),
+                    addrint_to_hexstring((RTN_Address(rtn))));
+#endif
+//          capturing::generic_routine(rtn);
+        origin_interceptor.second(rtn);
+      }
+      PIN_UnlockClient();
+    });
   }
   return;
 }
@@ -333,49 +254,7 @@ auto image_loading (IMG loaded_img, VOID *data) -> VOID
     tfm::format(log_file, "module %s is mapped at %s with size %d\n", IMG_Name(loaded_img),
                 addrint_to_hexstring(IMG_StartAddress(loaded_img)), IMG_SizeMapped(loaded_img));
 #endif
-//    // iterate over sections of the loaded image
-//    for (auto sec = IMG_SecHead(loaded_img); SEC_Valid(sec); sec = SEC_Next(sec))
-//    {
-//      // iterate over routines of the section
-//      for (auto rtn = SEC_RtnHead(sec); RTN_Valid(rtn); rtn = RTN_Next(rtn))
-//      {
-//#if !defined(NDEBUG)
-//        tfm::format(log_file, "intercepting %s located at %s\n", RTN_Name(rtn),
-//                    addrint_to_hexstring(RTN_Address(rtn)));
-//#endif
-//        capturing::generic_routine(rtn);
-//      }
-//    }
-
-
-    // verify if the winsock or wininet module is loaded
-    static std::locale current_loc;
-    static auto lowercase_convertion = [&](char c) -> char { return std::tolower(c, current_loc); };
-
-    auto img_name = IMG_Name(loaded_img); std::transform(img_name.begin(), img_name.end(),
-                                                         img_name.begin(), lowercase_convertion);
-    if ((img_name.find("ws2_32.dll") != std::string::npos) ||
-        (img_name.find("wininet.dll") != std::string::npos))
-    {
-      typedef decltype(intercept_func_of_name) intercept_func_of_name_t;
-      std::for_each(intercept_func_of_name.begin(), intercept_func_of_name.end(),
-                    [&](intercept_func_of_name_t::value_type origin_interceptor)
-      {
-        PIN_LockClient();
-        // look for the routine corresponding with the name of the original function
-        auto rtn = RTN_FindByName(loaded_img, origin_interceptor.first.c_str());
-        if (RTN_Valid(rtn))
-        {
-#if !defined(NDEBUG)
-          tfm::format(log_file, "intercepting %s mapped at %s\n", RTN_Name(rtn),
-                      addrint_to_hexstring((RTN_Address(rtn))));
-#endif
-          capturing::generic_routine(rtn);
-          origin_interceptor.second(rtn);
-        }
-        PIN_UnlockClient();
-      });
-    }
+    network_related_intercept(loaded_img);
   }
 
   return;

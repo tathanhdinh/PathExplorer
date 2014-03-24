@@ -188,14 +188,14 @@ int main(int argc, char *argv[])
     tfm::format(std::cerr, "activate image-loading instrumenter\n");
     IMG_AddInstrumentFunction(instrumentation::image_loading, 0);
 
-//    tfm::format(std::cerr, "activate routine-calling instrumenters\n");
+//    tfm::format(std::cerr, "activate routine-calling instrumenters\n"); (never active this!!!)
 //    RTN_AddInstrumentFunction(instrumentation::routine_calling, 0);
 
-//    tfm::format(std::cerr, "activate instruction-executing instrumenters\n");
-//    INS_AddInstrumentFunction(instrumentation::instruction_executing, 0);
+    tfm::format(std::cerr, "activate instruction-executing instrumenters\n");
+    INS_AddInstrumentFunction(instrumentation::instruction_executing, 0);
 
-//    tfm::format(std::cerr, "activate process-creating instrumenter\n");
-//    PIN_AddFollowChildProcessFunction(instrumentation::process_creating, 0);
+    tfm::format(std::cerr, "activate process-creating instrumenter\n");
+    PIN_AddFollowChildProcessFunction(instrumentation::process_creating, 0);
 
     // In Windows environment, the input tracing is through socket api instead of system call
 #if defined(__gnu_linux__)

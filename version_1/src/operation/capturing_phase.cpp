@@ -34,6 +34,7 @@ auto initialize() -> void
   is_locked["InternetReadFileEx"] = false;
 #endif
   received_msg_number = 0; interested_msg_is_received = false;
+  traced_thread_id = 0; traced_thread_is_fixed = true;
   return;
 }
 
@@ -90,6 +91,137 @@ static inline auto handle_received_message() -> void
 
 
 #if defined(_WIN32) || defined(_WIN64)
+
+///**
+// * @brief replace recv function (quite boring C++ type traits get type of parameter)
+// */
+//static inline auto recv_replacer (RTN& rtn) -> void
+//{
+//  auto recv_proto = PROTO_Allocate(PIN_PARG(capturing::recv_traits_t::result_type),
+//                                   CALLINGSTD_DEFAULT, "recv",
+//                                   PIN_PARG(capturing::recv_traits_t::arg1_type),  // windows::SOCKET
+//                                   PIN_PARG(capturing::recv_traits_t::arg2_type),  // char*
+//                                   PIN_PARG(capturing::recv_traits_t::arg3_type),  // int
+//                                   PIN_PARG(capturing::recv_traits_t::arg4_type),  // int
+//                                   PIN_PARG_END());
+
+//  RTN_ReplaceSignature(rtn, AFUNPTR(capturing::recv_wrapper),
+//                       IARG_PROTOTYPE, recv_proto,
+//                       IARG_ORIG_FUNCPTR,
+//                       IARG_FUNCARG_ENTRYPOINT_VALUE, 0, IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
+//                       IARG_FUNCARG_ENTRYPOINT_VALUE, 2, IARG_FUNCARG_ENTRYPOINT_VALUE, 3,
+//                       IARG_CONST_CONTEXT, IARG_THREAD_ID, IARG_END);
+//  PROTO_Free(recv_proto);
+
+//  return;
+//}
+
+
+//static inline auto recvfrom_replacer (RTN& rtn) -> void
+//{
+//  auto recvfrom_proto = PROTO_Allocate(PIN_PARG(capturing::recvfrom_traits_t::result_type),
+//                                       CALLINGSTD_DEFAULT, "recvfrom",
+//                                       PIN_PARG(capturing::recvfrom_traits_t::arg1_type),  // windows::SOCKET
+//                                       PIN_PARG(capturing::recvfrom_traits_t::arg2_type),  // char*
+//                                       PIN_PARG(capturing::recvfrom_traits_t::arg3_type),  // int
+//                                       PIN_PARG(capturing::recvfrom_traits_t::arg4_type),  // int
+//                                       PIN_PARG(capturing::recvfrom_traits_t::arg5_type),  // windows::sockaddr*
+//                                       PIN_PARG(capturing::recvfrom_traits_t::arg6_type),  // int*
+//                                       PIN_PARG_END());
+
+//  RTN_ReplaceSignature(rtn, AFUNPTR(capturing::recvfrom_wrapper),
+//                       IARG_PROTOTYPE, recvfrom_proto,
+//                       IARG_ORIG_FUNCPTR,
+//                       IARG_FUNCARG_ENTRYPOINT_VALUE, 0, IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
+//                       IARG_FUNCARG_ENTRYPOINT_VALUE, 2, IARG_FUNCARG_ENTRYPOINT_VALUE, 3,
+//                       IARG_FUNCARG_ENTRYPOINT_VALUE, 4, IARG_FUNCARG_ENTRYPOINT_VALUE, 5,
+//                       IARG_CONST_CONTEXT, IARG_THREAD_ID, IARG_END);
+//  PROTO_Free(recvfrom_proto);
+//}
+
+///**
+// * @brief replace WSARecv function
+// */
+//static inline auto WSARecv_replacer (RTN& rtn) -> void
+//{
+//  auto WSARecv_proto = PROTO_Allocate(PIN_PARG(capturing::WSARecv_traits_t::result_type),
+//                                      CALLINGSTD_DEFAULT, "WSARecv",
+//                                      PIN_PARG(capturing::WSARecv_traits_t::arg1_type),
+//                                      PIN_PARG(capturing::WSARecv_traits_t::arg2_type),
+//                                      PIN_PARG(capturing::WSARecv_traits_t::arg3_type),
+//                                      PIN_PARG(capturing::WSARecv_traits_t::arg4_type),
+//                                      PIN_PARG(capturing::WSARecv_traits_t::arg5_type),
+//                                      PIN_PARG(capturing::WSARecv_traits_t::arg6_type),
+//                                      PIN_PARG(capturing::WSARecv_traits_t::arg7_type),
+//                                      PIN_PARG_END());
+
+//  RTN_ReplaceSignature(rtn, AFUNPTR(capturing::WSARecv_wrapper),
+//                       IARG_PROTOTYPE, WSARecv_proto,
+//                       IARG_ORIG_FUNCPTR,
+//                       IARG_FUNCARG_ENTRYPOINT_VALUE, 0, IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
+//                       IARG_FUNCARG_ENTRYPOINT_VALUE, 2, IARG_FUNCARG_ENTRYPOINT_VALUE, 3,
+//                       IARG_FUNCARG_ENTRYPOINT_VALUE, 4, IARG_FUNCARG_ENTRYPOINT_VALUE, 5,
+//                       IARG_FUNCARG_ENTRYPOINT_VALUE, 6,
+//                       IARG_CONST_CONTEXT, IARG_THREAD_ID, IARG_END);
+//  PROTO_Free(WSARecv_proto);
+
+//  return;
+//}
+
+
+///**
+// * @brief WSARecvFrom replacer
+// */
+//static inline auto WSARecvFrom_replacer (RTN& rtn) -> void
+//{
+//  auto WSARecvFrom_proto = PROTO_Allocate(PIN_PARG(capturing::WSARecvFrom_traits_t::result_type),
+//                                          CALLINGSTD_DEFAULT, "WSARecvFrom",
+//                                          PIN_PARG(capturing::WSARecvFrom_traits_t::arg1_type),
+//                                          PIN_PARG(capturing::WSARecvFrom_traits_t::arg2_type),
+//                                          PIN_PARG(capturing::WSARecvFrom_traits_t::arg3_type),
+//                                          PIN_PARG(capturing::WSARecvFrom_traits_t::arg4_type),
+//                                          PIN_PARG(capturing::WSARecvFrom_traits_t::arg5_type),
+//                                          PIN_PARG(capturing::WSARecvFrom_traits_t::arg6_type),
+//                                          PIN_PARG(capturing::WSARecvFrom_traits_t::arg7_type),
+//                                          PIN_PARG(capturing::WSARecvFrom_traits_t::arg8_type),
+//                                          PIN_PARG(capturing::WSARecvFrom_traits_t::arg9_type),
+//                                          PIN_PARG_END());
+
+//  RTN_ReplaceSignature(rtn, AFUNPTR(capturing::WSARecvFrom_wrapper),
+//                       IARG_PROTOTYPE, WSARecvFrom_proto,
+//                       IARG_ORIG_FUNCPTR,
+//                       IARG_FUNCARG_ENTRYPOINT_VALUE, 0, IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
+//                       IARG_FUNCARG_ENTRYPOINT_VALUE, 2, IARG_FUNCARG_ENTRYPOINT_VALUE, 3,
+//                       IARG_FUNCARG_ENTRYPOINT_VALUE, 4, IARG_FUNCARG_ENTRYPOINT_VALUE, 5,
+//                       IARG_FUNCARG_ENTRYPOINT_VALUE, 6, IARG_FUNCARG_ENTRYPOINT_VALUE, 7,
+//                       IARG_FUNCARG_ENTRYPOINT_VALUE, 8,
+//                       IARG_CONST_CONTEXT, IARG_THREAD_ID, IARG_END);
+//  PROTO_Free(WSARecvFrom_proto);
+//  return;
+//}
+
+
+///**
+// * @brief InternetReadFile replacer
+// */
+//static inline auto InternetReadFile_replacer (RTN& rtn) -> void
+//{
+//  auto InternetReadFile_proto = PROTO_Allocate(PIN_PARG(capturing::InternetReadFile_traits_t::result_type),
+//                                               CALLINGSTD_DEFAULT, "InternetReadFile",
+//                                               PIN_PARG(capturing::InternetReadFile_traits_t::arg1_type),
+//                                               PIN_PARG(capturing::InternetReadFile_traits_t::arg2_type),
+//                                               PIN_PARG(capturing::InternetReadFile_traits_t::arg3_type),
+//                                               PIN_PARG(capturing::InternetReadFile_traits_t::arg4_type),
+//                                               PIN_PARG_END());
+//  RTN_ReplaceSignature(rtn, AFUNPTR(capturing::InternetReadFile_wrapper),
+//                       IARG_PROTOTYPE, InternetReadFile_proto,
+//                       IARG_ORIG_FUNCPTR,
+//                       IARG_FUNCARG_ENTRYPOINT_VALUE, 0, IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
+//                       IARG_FUNCARG_ENTRYPOINT_VALUE, 2, IARG_FUNCARG_ENTRYPOINT_VALUE, 3,
+//                       IARG_CONST_CONTEXT, IARG_THREAD_ID, IARG_END);
+//  PROTO_Free(InternetReadFile_proto);
+//  return;
+//}
 
 static auto recv_inserter_before (ADDRINT s,      // SOCKET
                                   ADDRINT buf,    // char*
@@ -439,9 +571,6 @@ auto InternetReadFileEx_inserter_before(ADDRINT hFile,        // HINTERNET
     // lock InternetReadFileEx to note that it is called
     is_locked["InternetReadFileEx"] = true;
     traced_thread_id = thread_id; traced_thread_is_fixed = true;
-#if !defined(NDEBUG)
-    tfm::format(log_file, "InternetReadFileEx is locked\n");
-#endif
   }
   return;
 }
@@ -513,9 +642,10 @@ auto generic_routine (RTN& rtn) -> void
 {
   // insertion approach
   RTN_Open(rtn);
-  RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)generic_insertion, IARG_ADDRINT, RTN_Address(rtn),
+  auto rtn_addr = RTN_Address(rtn);
+  RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)generic_insertion, IARG_ADDRINT, rtn_addr,
                  IARG_THREAD_ID, IARG_BOOL, true, IARG_END);
-  RTN_InsertCall(rtn, IPOINT_AFTER, (AFUNPTR)generic_insertion, IARG_ADDRINT, RTN_Address(rtn),
+  RTN_InsertCall(rtn, IPOINT_AFTER, (AFUNPTR)generic_insertion, IARG_ADDRINT, rtn_addr,
                  IARG_THREAD_ID, IARG_BOOL, false, IARG_END);
   RTN_Close(rtn);
   return;
