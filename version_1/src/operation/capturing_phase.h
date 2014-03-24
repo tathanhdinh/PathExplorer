@@ -110,16 +110,16 @@ namespace capturing
 extern auto initialize                  ()                                                -> void;
 
 #if defined(_WIN32) || defined(_WIN64)
-/**
- * @brief inserters
- */
-extern auto recvs_interceptor_before    (ADDRINT msg_addr, THREADID thread_id)            -> VOID;
+///**
+// * @brief inserters
+// */
+//extern auto recvs_interceptor_before    (ADDRINT msg_addr, THREADID thread_id)            -> VOID;
 
-extern auto recvs_interceptor_after     (UINT32 msg_length, THREADID thread_id)           -> VOID;
+//extern auto recvs_interceptor_after     (UINT32 msg_length, THREADID thread_id)           -> VOID;
 
-extern auto wsarecvs_interceptor_before (ADDRINT msg_struct_addr, THREADID thread_id)     -> VOID;
+//extern auto wsarecvs_interceptor_before (ADDRINT msg_struct_addr, THREADID thread_id)     -> VOID;
 
-extern auto wsarecvs_interceptor_after  (THREADID thread_id)                              -> VOID;
+//extern auto wsarecvs_interceptor_after  (THREADID thread_id)                              -> VOID;
 
 //extern inserter_before<windows::InternetReadFile_t>::type InternetReadFile_inserter_before;
 //extern inserter_after<windows::InternetReadFile_t>::type InternetReadFile_inserter_after;
@@ -134,19 +134,29 @@ typedef boost::function_traits<windows::WSARecvFrom_t>        WSARecvFrom_traits
 typedef boost::function_traits<windows::InternetReadFile_t>   InternetReadFile_traits_t;
 typedef boost::function_traits<windows::InternetReadFileEx_t> InternetReadFileEx_traits_t;
 
-extern auto generic_routine             (RTN& rtn) -> void;
+typedef void interceptor_t(RTN& rtn); // interceptor_t : (RTN& rtn) -> void
+extern interceptor_t generic_routine;
+extern interceptor_t recv_routine;
+extern interceptor_t recvfrom_routine;
+extern interceptor_t WSARecv_routine;
+extern interceptor_t WSARecvFrom_routine;
+extern interceptor_t InternetReadFile_routine;
+extern interceptor_t InternetReadFile_routine;
+extern interceptor_t InternetReadFileEx_routine;
 
-extern auto recv_routine                (RTN& rtn) -> void;
+//extern auto generic_routine             (RTN& rtn) -> void;
 
-extern auto recvfrom_routine            (RTN& rtn) -> void;
+//extern auto recv_routine                (RTN& rtn) -> void;
 
-extern auto WSARecv_routine             (RTN& rtn) -> void;
+//extern auto recvfrom_routine            (RTN& rtn) -> void;
 
-extern auto WSARecvFrom_routine         (RTN& rtn) -> void;
+//extern auto WSARecv_routine             (RTN& rtn) -> void;
 
-extern auto InternetReadFile_routine    (RTN& rtn) -> void;
+//extern auto WSARecvFrom_routine         (RTN& rtn) -> void;
 
-extern auto InternetReadFileEx_routine  (RTN& rtn) -> void;
+//extern auto InternetReadFile_routine    (RTN& rtn) -> void;
+
+//extern auto InternetReadFileEx_routine  (RTN& rtn) -> void;
 
 /**
  * @brief wrapper

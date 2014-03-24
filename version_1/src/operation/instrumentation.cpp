@@ -14,7 +14,7 @@
 
 namespace instrumentation
 {
-typedef std::function<void(RTN&)> instrument_func_t;
+typedef std::function</*void(RTN&)*/capturing::interceptor_t> instrument_func_t;
 static std::map<std::string, instrument_func_t> intercept_func_of_name;
 static std::map<std::string, instrument_func_t> replace_func_of_name;
 
