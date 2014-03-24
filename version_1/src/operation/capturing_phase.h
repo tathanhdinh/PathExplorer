@@ -158,27 +158,26 @@ extern interceptor_t InternetReadFileEx_routine;
 
 //extern auto InternetReadFileEx_routine  (RTN& rtn) -> void;
 
-/**
- * @brief wrapper
- */
-extern wrapper<windows::recv_t>::type recv_wrapper;
-typedef boost::function_traits<windows::recv_t> recv_traits_t;
+///**
+// * @brief wrapper
+// */
+//extern wrapper<windows::recv_t>::type recv_wrapper;
+//typedef boost::function_traits<windows::recv_t> recv_traits_t;
 
-extern wrapper<windows::recvfrom_t>::type recvfrom_wrapper;
-typedef boost::function_traits<windows::recvfrom_t> recvfrom_traits_t;
+//extern wrapper<windows::recvfrom_t>::type recvfrom_wrapper;
+//typedef boost::function_traits<windows::recvfrom_t> recvfrom_traits_t;
 
-//typedef decltype(windows::WSARecv) WSARecv_tt;
-extern wrapper<windows::WSARecv_t>::type WSARecv_wrapper;
-typedef boost::function_traits<windows::WSARecv_t> WSARecv_traits_t;
+//extern wrapper<windows::WSARecv_t>::type WSARecv_wrapper;
+//typedef boost::function_traits<windows::WSARecv_t> WSARecv_traits_t;
 
-extern wrapper<windows::WSARecvFrom_t>::type WSARecvFrom_wrapper;
-typedef boost::function_traits<windows::WSARecvFrom_t> WSARecvFrom_traits_t;
+//extern wrapper<windows::WSARecvFrom_t>::type WSARecvFrom_wrapper;
+//typedef boost::function_traits<windows::WSARecvFrom_t> WSARecvFrom_traits_t;
 
-extern wrapper<windows::InternetReadFile_t>::type InternetReadFile_wrapper;
-typedef boost::function_traits<windows::InternetReadFile_t> InternetReadFile_traits_t;
+//extern wrapper<windows::InternetReadFile_t>::type InternetReadFile_wrapper;
+//typedef boost::function_traits<windows::InternetReadFile_t> InternetReadFile_traits_t;
 
-extern wrapper<windows::InternetReadFileEx_t>::type InternetReadFileEx_wrapper;
-typedef boost::function_traits<windows::InternetReadFileEx_t> InternetReadFileEx_traits_t;
+//extern wrapper<windows::InternetReadFileEx_t>::type InternetReadFileEx_wrapper;
+//typedef boost::function_traits<windows::InternetReadFileEx_t> InternetReadFileEx_traits_t;
 
 #elif defined(__gnu_linux__)
 

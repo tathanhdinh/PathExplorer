@@ -652,229 +652,229 @@ auto generic_routine (RTN& rtn) -> void
 }
 
 
-/**
- * @brief recv wrapper
- */
-auto recv_wrapper(AFUNPTR recv_origin,
-                  recv_traits_t::arg1_type s,          // windows::SOCKET
-                  recv_traits_t::arg2_type buf,        // char*
-                  recv_traits_t::arg3_type len,        // int
-                  recv_traits_t::arg4_type flags,      // int
-                  CONTEXT* p_ctxt, THREADID thread_id) -> recv_traits_t::result_type
-{
-  recv_traits_t::result_type result;
+///**
+// * @brief recv wrapper
+// */
+//auto recv_wrapper(AFUNPTR recv_origin,
+//                  recv_traits_t::arg1_type s,          // windows::SOCKET
+//                  recv_traits_t::arg2_type buf,        // char*
+//                  recv_traits_t::arg3_type len,        // int
+//                  recv_traits_t::arg4_type flags,      // int
+//                  CONTEXT* p_ctxt, THREADID thread_id) -> recv_traits_t::result_type
+//{
+//  recv_traits_t::result_type result;
 
-  if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
-  {
-    is_locked["recv"] = true;
-    traced_thread_id = thread_id; traced_thread_is_fixed = true;
-  }
+//  if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
+//  {
+//    is_locked["recv"] = true;
+//    traced_thread_id = thread_id; traced_thread_is_fixed = true;
+//  }
 
-  PIN_CallApplicationFunction(p_ctxt, thread_id, CALLINGSTD_DEFAULT, recv_origin,
-                              PIN_PARG(recv_traits_t::result_type), &result,  // int
-                              PIN_PARG(recv_traits_t::arg1_type), s,          // windows::SOCKET
-                              PIN_PARG(recv_traits_t::arg2_type), buf,        // char*
-                              PIN_PARG(recv_traits_t::arg3_type), len,        // int
-                              PIN_PARG(recv_traits_t::arg4_type), flags,      // int
-                              PIN_PARG_END());
+//  PIN_CallApplicationFunction(p_ctxt, thread_id, CALLINGSTD_DEFAULT, recv_origin,
+//                              PIN_PARG(recv_traits_t::result_type), &result,  // int
+//                              PIN_PARG(recv_traits_t::arg1_type), s,          // windows::SOCKET
+//                              PIN_PARG(recv_traits_t::arg2_type), buf,        // char*
+//                              PIN_PARG(recv_traits_t::arg3_type), len,        // int
+//                              PIN_PARG(recv_traits_t::arg4_type), flags,      // int
+//                              PIN_PARG_END());
 
-  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && is_locked["recv"])
-  {
-#if !defined(NDEBUG)
-    tfm::format(log_file, "message is obtained from recv at thread id %d\n", thread_id);
-#endif
-    is_locked["recv"] = false;
-    received_msg_addr = reinterpret_cast<ADDRINT>(buf); received_msg_size = result;
-    handle_received_message();
-  }
+//  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && is_locked["recv"])
+//  {
+//#if !defined(NDEBUG)
+//    tfm::format(log_file, "message is obtained from recv at thread id %d\n", thread_id);
+//#endif
+//    is_locked["recv"] = false;
+//    received_msg_addr = reinterpret_cast<ADDRINT>(buf); received_msg_size = result;
+//    handle_received_message();
+//  }
 
-  return result;
-}
-
-
-/**
- * @brief recvfrom wrapper
- */
-auto recvfrom_wrapper(AFUNPTR recvfrom_origin,
-                      recvfrom_traits_t::arg1_type s,       // windows::SOCKET
-                      recvfrom_traits_t::arg2_type buf,     // char*
-                      recvfrom_traits_t::arg3_type len,     // int
-                      recvfrom_traits_t::arg4_type flags,   // int
-                      recvfrom_traits_t::arg5_type from,    // windows::sockaddr*
-                      recvfrom_traits_t::arg6_type fromlen, // int*
-                      CONTEXT* p_ctxt, THREADID thread_id) -> recvfrom_traits_t::result_type
-{
-  recvfrom_traits_t::result_type result;
-
-  if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
-  {
-    is_locked["recv"] = true;
-    traced_thread_id = thread_id; traced_thread_is_fixed = true;
-  }
-
-  PIN_CallApplicationFunction(p_ctxt, thread_id, CALLINGSTD_DEFAULT, recvfrom_origin,
-                              PIN_PARG(recvfrom_traits_t::result_type), &result,  // int
-                              PIN_PARG(recvfrom_traits_t::arg1_type), s,          // windows::SOCKET
-                              PIN_PARG(recvfrom_traits_t::arg2_type), buf,        // char*
-                              PIN_PARG(recvfrom_traits_t::arg3_type), len,        // int
-                              PIN_PARG(recvfrom_traits_t::arg4_type), flags,      // int
-                              PIN_PARG(recvfrom_traits_t::arg5_type), from,       // windows::sockaddr*
-                              PIN_PARG(recvfrom_traits_t::arg6_type), fromlen,    // int*
-                              PIN_PARG_END());
-
-  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && is_locked["recv"])
-  {
-#if !defined(NDEBUG)
-    tfm::format(log_file, "message is obtained from recvfrom at thread id %d\n", thread_id);
-#endif
-    is_locked["recv"] = false;
-    received_msg_addr = reinterpret_cast<ADDRINT>(buf); received_msg_size = result;
-    handle_received_message();
-  }
-
-  return result;
-}
-
-/**
- * @brief WSARecv wrapper
- */
-auto WSARecv_wrapper(AFUNPTR wsarecv_origin,
-                     WSARecv_traits_t::arg1_type s,                     // windows::SOCKET
-                     WSARecv_traits_t::arg2_type lpBuffers,             // windows::LPWSABUF
-                     WSARecv_traits_t::arg3_type dwBufferCount,         // windows::DWORD
-                     WSARecv_traits_t::arg4_type lpNumberOfBytesRecvd,  // windows::LPDWORD
-                     WSARecv_traits_t::arg5_type lpFlags,               // windows::LPDWORD
-                     WSARecv_traits_t::arg6_type lpOverlapped,          // windows::LPWSAOVERLAPPED
-                     WSARecv_traits_t::arg7_type lpCompletionRoutine,   // windows::LPWSAOVERLAPPED_COMPLETION_ROUTINE
-                     CONTEXT* p_ctxt, THREADID thread_id) -> WSARecv_traits_t::result_type
-{
-  WSARecv_traits_t::result_type result;
-
-  if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
-  {
-    is_locked["WSARecv"] = true;
-    traced_thread_id = thread_id; traced_thread_is_fixed = true;
-  }
-
-  PIN_CallApplicationFunction(p_ctxt, thread_id, CALLINGSTD_DEFAULT, wsarecv_origin,
-                              PIN_PARG(WSARecv_traits_t::result_type), &result,
-                              PIN_PARG(WSARecv_traits_t::arg1_type), s,
-                              PIN_PARG(WSARecv_traits_t::arg2_type), lpBuffers,
-                              PIN_PARG(WSARecv_traits_t::arg3_type), dwBufferCount,
-                              PIN_PARG(WSARecv_traits_t::arg4_type), lpNumberOfBytesRecvd,
-                              PIN_PARG(WSARecv_traits_t::arg5_type), lpFlags,
-                              PIN_PARG(WSARecv_traits_t::arg6_type), lpOverlapped,
-                              PIN_PARG(WSARecv_traits_t::arg7_type), lpCompletionRoutine,
-                              PIN_PARG_END());
-
-  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && is_locked["WSARecv"])
-  {
-#if !defined(NDEBUG)
-    tfm::format(log_file, "message is obtained from WSARecv at thread id %d\n", thread_id);
-#endif
-    log_file.flush();
-    is_locked["WSARecv"] = false;
-    received_msg_addr = reinterpret_cast<ADDRINT>(lpBuffers->buf);
-    received_msg_size = *lpNumberOfBytesRecvd; handle_received_message();
-  }
-  std::cerr << "WSARecv exists\n";
-
-  return result;
-}
+//  return result;
+//}
 
 
-/**
- * @brief WSARecvFrom wrapper
- */
-auto WSARecvFrom_wrapper(AFUNPTR origin_func,
-                         WSARecvFrom_traits_t::arg1_type s,                     // windows::SOCKET
-                         WSARecvFrom_traits_t::arg2_type lpBuffers,             // windows::LPWSABUF
-                         WSARecvFrom_traits_t::arg3_type dwBufferCount,         // windows::DWORD
-                         WSARecvFrom_traits_t::arg4_type lpNumberOfBytesRecvd,  // windows::LPDWORD
-                         WSARecvFrom_traits_t::arg5_type lpFlags,               // windows::LPDWORD
-                         WSARecvFrom_traits_t::arg6_type lpFrom,                // windows::sockaddr*
-                         WSARecvFrom_traits_t::arg7_type lpFromlen,             // windows::LPINT
-                         WSARecvFrom_traits_t::arg8_type lpOverlapped,          // windows::LPWSAOVERLAPPED
-                         WSARecvFrom_traits_t::arg9_type lpCompletionRoutine,   // windows::LPWSAOVERLAPPED_COMPLETION_ROUTINE
-                         CONTEXT* p_ctxt, THREADID thread_id) -> WSARecvFrom_traits_t::result_type
-{
-  WSARecvFrom_traits_t::result_type result;
+///**
+// * @brief recvfrom wrapper
+// */
+//auto recvfrom_wrapper(AFUNPTR recvfrom_origin,
+//                      recvfrom_traits_t::arg1_type s,       // windows::SOCKET
+//                      recvfrom_traits_t::arg2_type buf,     // char*
+//                      recvfrom_traits_t::arg3_type len,     // int
+//                      recvfrom_traits_t::arg4_type flags,   // int
+//                      recvfrom_traits_t::arg5_type from,    // windows::sockaddr*
+//                      recvfrom_traits_t::arg6_type fromlen, // int*
+//                      CONTEXT* p_ctxt, THREADID thread_id) -> recvfrom_traits_t::result_type
+//{
+//  recvfrom_traits_t::result_type result;
 
-  if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
-  {
-    is_locked["WSARecvFrom"] = true;
-    traced_thread_id = thread_id; traced_thread_is_fixed = true;
-  }
+//  if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
+//  {
+//    is_locked["recv"] = true;
+//    traced_thread_id = thread_id; traced_thread_is_fixed = true;
+//  }
 
-  PIN_CallApplicationFunction(p_ctxt, thread_id, CALLINGSTD_DEFAULT, origin_func,
-                              PIN_PARG(WSARecvFrom_traits_t::result_type), &result,
-                              PIN_PARG(WSARecvFrom_traits_t::arg1_type), s,
-                              PIN_PARG(WSARecvFrom_traits_t::arg2_type), lpBuffers,
-                              PIN_PARG(WSARecvFrom_traits_t::arg3_type), dwBufferCount,
-                              PIN_PARG(WSARecvFrom_traits_t::arg4_type), lpNumberOfBytesRecvd,
-                              PIN_PARG(WSARecvFrom_traits_t::arg5_type), lpFlags,
-                              PIN_PARG(WSARecvFrom_traits_t::arg6_type), lpFrom,
-                              PIN_PARG(WSARecvFrom_traits_t::arg7_type), lpFromlen,
-                              PIN_PARG(WSARecvFrom_traits_t::arg8_type), lpOverlapped,
-                              PIN_PARG(WSARecvFrom_traits_t::arg9_type), lpCompletionRoutine,
-                              PIN_PARG_END());
+//  PIN_CallApplicationFunction(p_ctxt, thread_id, CALLINGSTD_DEFAULT, recvfrom_origin,
+//                              PIN_PARG(recvfrom_traits_t::result_type), &result,  // int
+//                              PIN_PARG(recvfrom_traits_t::arg1_type), s,          // windows::SOCKET
+//                              PIN_PARG(recvfrom_traits_t::arg2_type), buf,        // char*
+//                              PIN_PARG(recvfrom_traits_t::arg3_type), len,        // int
+//                              PIN_PARG(recvfrom_traits_t::arg4_type), flags,      // int
+//                              PIN_PARG(recvfrom_traits_t::arg5_type), from,       // windows::sockaddr*
+//                              PIN_PARG(recvfrom_traits_t::arg6_type), fromlen,    // int*
+//                              PIN_PARG_END());
 
-  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && is_locked["WSARecvFrom"])
-  {
-#if !defined(NDEBUG)
-    tfm::format(log_file, "message is obtained from WSARecvFrom at thread id %d\n", thread_id);
-#endif
-    is_locked["WSARecvFrom"] = false;
-    received_msg_addr = reinterpret_cast<ADDRINT>(lpBuffers->buf);
-    received_msg_size = *lpNumberOfBytesRecvd; handle_received_message();
-  }
+//  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && is_locked["recv"])
+//  {
+//#if !defined(NDEBUG)
+//    tfm::format(log_file, "message is obtained from recvfrom at thread id %d\n", thread_id);
+//#endif
+//    is_locked["recv"] = false;
+//    received_msg_addr = reinterpret_cast<ADDRINT>(buf); received_msg_size = result;
+//    handle_received_message();
+//  }
 
-  return result;
-}
+//  return result;
+//}
+
+///**
+// * @brief WSARecv wrapper
+// */
+//auto WSARecv_wrapper(AFUNPTR wsarecv_origin,
+//                     WSARecv_traits_t::arg1_type s,                     // windows::SOCKET
+//                     WSARecv_traits_t::arg2_type lpBuffers,             // windows::LPWSABUF
+//                     WSARecv_traits_t::arg3_type dwBufferCount,         // windows::DWORD
+//                     WSARecv_traits_t::arg4_type lpNumberOfBytesRecvd,  // windows::LPDWORD
+//                     WSARecv_traits_t::arg5_type lpFlags,               // windows::LPDWORD
+//                     WSARecv_traits_t::arg6_type lpOverlapped,          // windows::LPWSAOVERLAPPED
+//                     WSARecv_traits_t::arg7_type lpCompletionRoutine,   // windows::LPWSAOVERLAPPED_COMPLETION_ROUTINE
+//                     CONTEXT* p_ctxt, THREADID thread_id) -> WSARecv_traits_t::result_type
+//{
+//  WSARecv_traits_t::result_type result;
+
+//  if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
+//  {
+//    is_locked["WSARecv"] = true;
+//    traced_thread_id = thread_id; traced_thread_is_fixed = true;
+//  }
+
+//  PIN_CallApplicationFunction(p_ctxt, thread_id, CALLINGSTD_DEFAULT, wsarecv_origin,
+//                              PIN_PARG(WSARecv_traits_t::result_type), &result,
+//                              PIN_PARG(WSARecv_traits_t::arg1_type), s,
+//                              PIN_PARG(WSARecv_traits_t::arg2_type), lpBuffers,
+//                              PIN_PARG(WSARecv_traits_t::arg3_type), dwBufferCount,
+//                              PIN_PARG(WSARecv_traits_t::arg4_type), lpNumberOfBytesRecvd,
+//                              PIN_PARG(WSARecv_traits_t::arg5_type), lpFlags,
+//                              PIN_PARG(WSARecv_traits_t::arg6_type), lpOverlapped,
+//                              PIN_PARG(WSARecv_traits_t::arg7_type), lpCompletionRoutine,
+//                              PIN_PARG_END());
+
+//  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && is_locked["WSARecv"])
+//  {
+//#if !defined(NDEBUG)
+//    tfm::format(log_file, "message is obtained from WSARecv at thread id %d\n", thread_id);
+//#endif
+//    log_file.flush();
+//    is_locked["WSARecv"] = false;
+//    received_msg_addr = reinterpret_cast<ADDRINT>(lpBuffers->buf);
+//    received_msg_size = *lpNumberOfBytesRecvd; handle_received_message();
+//  }
+//  std::cerr << "WSARecv exists\n";
+
+//  return result;
+//}
 
 
-/**
- * @brief InternetReadFile wrapper
- */
-auto InternetReadFile_wrapper(AFUNPTR origin_func,
-                              InternetReadFile_traits_t::arg1_type hFile,                 // windows::HINTERNET
-                              InternetReadFile_traits_t::arg2_type lpBuffer,              // windows::LPVOID
-                              InternetReadFile_traits_t::arg3_type dwNumberOfBytesToRead, // windows::DWORD
-                              InternetReadFile_traits_t::arg4_type lpdwNumberOfBytesRead, // windows::LPWORD
-                              CONTEXT *p_ctxt, THREADID thread_id) -> InternetReadFile_traits_t::result_type
-{
-#if !defined(NDEBUG)
-  tfm::format(log_file, "InternetReadFile wrapper called\n");
-#endif
-  InternetReadFile_traits_t::result_type result;
+///**
+// * @brief WSARecvFrom wrapper
+// */
+//auto WSARecvFrom_wrapper(AFUNPTR origin_func,
+//                         WSARecvFrom_traits_t::arg1_type s,                     // windows::SOCKET
+//                         WSARecvFrom_traits_t::arg2_type lpBuffers,             // windows::LPWSABUF
+//                         WSARecvFrom_traits_t::arg3_type dwBufferCount,         // windows::DWORD
+//                         WSARecvFrom_traits_t::arg4_type lpNumberOfBytesRecvd,  // windows::LPDWORD
+//                         WSARecvFrom_traits_t::arg5_type lpFlags,               // windows::LPDWORD
+//                         WSARecvFrom_traits_t::arg6_type lpFrom,                // windows::sockaddr*
+//                         WSARecvFrom_traits_t::arg7_type lpFromlen,             // windows::LPINT
+//                         WSARecvFrom_traits_t::arg8_type lpOverlapped,          // windows::LPWSAOVERLAPPED
+//                         WSARecvFrom_traits_t::arg9_type lpCompletionRoutine,   // windows::LPWSAOVERLAPPED_COMPLETION_ROUTINE
+//                         CONTEXT* p_ctxt, THREADID thread_id) -> WSARecvFrom_traits_t::result_type
+//{
+//  WSARecvFrom_traits_t::result_type result;
 
-  if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
-  {
-    is_locked["InternetReadFile"] = true;
-    traced_thread_id = thread_id; traced_thread_is_fixed = true;
-  }
+//  if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
+//  {
+//    is_locked["WSARecvFrom"] = true;
+//    traced_thread_id = thread_id; traced_thread_is_fixed = true;
+//  }
 
-  PIN_CallApplicationFunction(p_ctxt, thread_id, CALLINGSTD_DEFAULT, origin_func,
-                              PIN_PARG(InternetReadFile_traits_t::result_type), &result,
-                              PIN_PARG(InternetReadFile_traits_t::arg1_type), hFile,
-                              PIN_PARG(InternetReadFile_traits_t::arg2_type), lpBuffer,
-                              PIN_PARG(InternetReadFile_traits_t::arg3_type), dwNumberOfBytesToRead,
-                              PIN_PARG(InternetReadFile_traits_t::arg4_type), lpdwNumberOfBytesRead,
-                              PIN_PARG_END());
+//  PIN_CallApplicationFunction(p_ctxt, thread_id, CALLINGSTD_DEFAULT, origin_func,
+//                              PIN_PARG(WSARecvFrom_traits_t::result_type), &result,
+//                              PIN_PARG(WSARecvFrom_traits_t::arg1_type), s,
+//                              PIN_PARG(WSARecvFrom_traits_t::arg2_type), lpBuffers,
+//                              PIN_PARG(WSARecvFrom_traits_t::arg3_type), dwBufferCount,
+//                              PIN_PARG(WSARecvFrom_traits_t::arg4_type), lpNumberOfBytesRecvd,
+//                              PIN_PARG(WSARecvFrom_traits_t::arg5_type), lpFlags,
+//                              PIN_PARG(WSARecvFrom_traits_t::arg6_type), lpFrom,
+//                              PIN_PARG(WSARecvFrom_traits_t::arg7_type), lpFromlen,
+//                              PIN_PARG(WSARecvFrom_traits_t::arg8_type), lpOverlapped,
+//                              PIN_PARG(WSARecvFrom_traits_t::arg9_type), lpCompletionRoutine,
+//                              PIN_PARG_END());
 
-  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && is_locked["InternetReadFile"])
-  {
-#if !defined(NDEBUG)
-    tfm::format(log_file, "message is obtained from InternetReadFile at thread id %d\n", thread_id);
-#endif
-    is_locked["InternetReadFile"] = false;
-    received_msg_addr = reinterpret_cast<ADDRINT>(lpBuffer);
-    received_msg_size = *lpdwNumberOfBytesRead;
-    handle_received_message();
-  }
+//  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && is_locked["WSARecvFrom"])
+//  {
+//#if !defined(NDEBUG)
+//    tfm::format(log_file, "message is obtained from WSARecvFrom at thread id %d\n", thread_id);
+//#endif
+//    is_locked["WSARecvFrom"] = false;
+//    received_msg_addr = reinterpret_cast<ADDRINT>(lpBuffers->buf);
+//    received_msg_size = *lpNumberOfBytesRecvd; handle_received_message();
+//  }
 
-  return result;
-}
+//  return result;
+//}
+
+
+///**
+// * @brief InternetReadFile wrapper
+// */
+//auto InternetReadFile_wrapper(AFUNPTR origin_func,
+//                              InternetReadFile_traits_t::arg1_type hFile,                 // windows::HINTERNET
+//                              InternetReadFile_traits_t::arg2_type lpBuffer,              // windows::LPVOID
+//                              InternetReadFile_traits_t::arg3_type dwNumberOfBytesToRead, // windows::DWORD
+//                              InternetReadFile_traits_t::arg4_type lpdwNumberOfBytesRead, // windows::LPWORD
+//                              CONTEXT *p_ctxt, THREADID thread_id) -> InternetReadFile_traits_t::result_type
+//{
+//#if !defined(NDEBUG)
+//  tfm::format(log_file, "InternetReadFile wrapper called\n");
+//#endif
+//  InternetReadFile_traits_t::result_type result;
+
+//  if (!traced_thread_is_fixed || (traced_thread_is_fixed && (traced_thread_id == thread_id)))
+//  {
+//    is_locked["InternetReadFile"] = true;
+//    traced_thread_id = thread_id; traced_thread_is_fixed = true;
+//  }
+
+//  PIN_CallApplicationFunction(p_ctxt, thread_id, CALLINGSTD_DEFAULT, origin_func,
+//                              PIN_PARG(InternetReadFile_traits_t::result_type), &result,
+//                              PIN_PARG(InternetReadFile_traits_t::arg1_type), hFile,
+//                              PIN_PARG(InternetReadFile_traits_t::arg2_type), lpBuffer,
+//                              PIN_PARG(InternetReadFile_traits_t::arg3_type), dwNumberOfBytesToRead,
+//                              PIN_PARG(InternetReadFile_traits_t::arg4_type), lpdwNumberOfBytesRead,
+//                              PIN_PARG_END());
+
+//  if (traced_thread_is_fixed && (thread_id == traced_thread_id) && is_locked["InternetReadFile"])
+//  {
+//#if !defined(NDEBUG)
+//    tfm::format(log_file, "message is obtained from InternetReadFile at thread id %d\n", thread_id);
+//#endif
+//    is_locked["InternetReadFile"] = false;
+//    received_msg_addr = reinterpret_cast<ADDRINT>(lpBuffer);
+//    received_msg_size = *lpdwNumberOfBytesRead;
+//    handle_received_message();
+//  }
+
+//  return result;
+//}
 
 #elif defined(__gnu_linux__)
 
