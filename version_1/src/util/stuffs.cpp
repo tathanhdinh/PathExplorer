@@ -7,8 +7,9 @@ auto addrint_to_hexstring (ADDRINT input) -> std::string
 //  std::stringstream num_stream;
 //  num_stream << "0x" << std::hex << input;
 //  return num_stream.str();
-  return static_cast<std::ostringstream*>(&(std::ostringstream()
-                                            << "0x" << std::hex << input))->str();
+  return std::move(static_cast<std::ostringstream&>(std::ostringstream()
+                                                    << "0x" << std::hex << input).str());
+
 }
 
 
@@ -121,7 +122,7 @@ auto path_code_to_string  (const path_code_t& path_code) -> std::string
     if (*code_iter) code_str.push_back('1');
     else code_str.push_back('0');
   }
-  return code_str;
+  return std::move(code_str);
 }
 #endif
 

@@ -138,6 +138,7 @@ static auto generic_randomized_generator () -> void
     addr_value = std::next(addr_value);
   }
   generic_testing_value = std::rand() % std::numeric_limits<T>::max();
+  return;
 }
 
 

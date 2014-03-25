@@ -628,7 +628,7 @@ auto mem_read_instruction (ADDRINT ins_addr, ADDRINT mem_read_addr, UINT32 mem_r
 
     // update source operands
 //    ptr_operand_t mem_operand;
-    for (/*UINT32*/auto addr_offset = 0; addr_offset < mem_read_size; ++addr_offset)
+    for (auto addr_offset = 0; addr_offset < mem_read_size; ++addr_offset)
     {
 //      mem_operand.reset(new operand(mem_read_addr + addr_offset));
 //      ins_at_order[current_exec_order]->src_operands.insert(mem_operand);
@@ -667,7 +667,7 @@ auto mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 me
 
     // update destination operands
 //    ptr_operand_t mem_operand;
-    for (/*UINT32*/auto addr_offset = 0; addr_offset < mem_written_size; ++addr_offset)
+    for (auto addr_offset = 0; addr_offset < mem_written_size; ++addr_offset)
     {
 //      mem_operand.reset(new operand(mem_written_addr + addr_offset));
 //      ins_at_order[current_exec_order]->dst_operands.insert(mem_operand);
