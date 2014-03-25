@@ -190,7 +190,7 @@ auto instruction_executing (INS ins, VOID *data) -> VOID
 //  return;
 //}
 
-static inline auto generic_intercept(IMG& loaded_img) -> void
+static inline auto generic_intercept (IMG& loaded_img) -> void
 {
   // iterate over sections of the loaded image
   for (auto sec = IMG_SecHead(loaded_img); SEC_Valid(sec); sec = SEC_Next(sec))

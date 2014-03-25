@@ -43,27 +43,34 @@ namespace rollbacking
  */
 static auto randomized_generator () -> void
 {
-  for (auto addr_iter = active_modified_addrs_values.begin();
-       addr_iter != active_modified_addrs_values.end(); ++addr_iter)
+//  for (auto addr_iter = active_modified_addrs_values.begin();
+//       addr_iter != active_modified_addrs_values.end(); ++addr_iter)
+//  {
+//    addr_iter->second = std::rand() % std::numeric_limits<UINT8>::max();
+//  }
+
+  typedef decltype(active_modified_addrs_values) active_modified_addrs_values_t;
+  std::for_each(active_modified_addrs_values.begin(), active_modified_addrs_values.end(),
+                [&](active_modified_addrs_values_t::reference addr_value)
   {
-    addr_iter->second = std::rand() % std::numeric_limits<UINT8>::max();
-  }
+    addr_value.second = std::rand() % std::numeric_limits<UINT8>::max();
+  });
   return;
 }
 
 
-/**
- * @brief sequential_generator
- */
-static auto sequential_generator () -> void
-{
-  for (auto addr_iter = active_modified_addrs_values.begin();
-       addr_iter != active_modified_addrs_values.end(); ++addr_iter)
-  {
-    addr_iter->second++;
-  }
-  return;
-}
+///**
+// * @brief sequential_generator
+// */
+//static auto sequential_generator () -> void
+//{
+//  for (auto addr_iter = active_modified_addrs_values.begin();
+//       addr_iter != active_modified_addrs_values.end(); ++addr_iter)
+//  {
+//    addr_iter->second++;
+//  }
+//  return;
+//}
 
 
 ///**

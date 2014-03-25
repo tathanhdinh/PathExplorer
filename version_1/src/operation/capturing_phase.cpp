@@ -56,7 +56,7 @@ static inline auto prepare_new_tainting_phase() -> void
 }
 
 
-static inline auto all_lock_released() -> bool
+static inline auto all_lock_released () -> bool
 {
   auto func_locked_iter = is_locked.begin();
   for (; func_locked_iter != is_locked.end(); ++func_locked_iter)
@@ -70,7 +70,7 @@ static inline auto all_lock_released() -> bool
 /**
  * @brief handle_received_message
  */
-static inline auto handle_received_message() -> void
+static inline auto handle_received_message () -> void
 {
   if ((received_msg_size > 0) && all_lock_released())
   {
