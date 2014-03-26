@@ -283,7 +283,7 @@ public:
   void operator()(std::ostream& label, /*Edge*/exp_edge_desc edge)
   {
     /*exp_edge*/auto current_edge = internal_graph[edge];
-    tfm::format(label, "[label=\"%s\"]", path_code_to_string(current_edge.first));
+    tfm::format(label, "[label=\"%s\"]", /*path_code_to_string(current_edge.first)*/"");
     return;
   }
 
@@ -302,7 +302,7 @@ public:
                   typename boost::graph_traits<exp_t>::edge_descriptor edge_desc)
   {
     auto current_edge = internal_graph[edge_desc];
-    tfm::format(label, "[label=\"%s\"]", path_code_to_string(current_edge));
+    tfm::format(label, "[label=\"%s\"]", /*path_code_to_string(current_edge)*/"");
     return;
   }
 
