@@ -19,6 +19,7 @@ typedef std::set<ADDRINT>                           addrint_set_t;
 typedef std::map<ADDRINT, UINT8>                    addrint_value_map_t;
 typedef std::vector<addrint_value_map_t>            addrint_value_maps_t;
 typedef std::pair<ptr_checkpoint_t, addrint_set_t>  checkpoint_with_modified_addrs;
+
 #if !defined(DISABLE_FSA)
 typedef std::vector<bool>                           path_code_t;
 #endif
