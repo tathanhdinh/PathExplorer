@@ -201,11 +201,10 @@ static inline auto save_detected_cfis () -> void
 }
 
 
-#if !defined(DISABLE_FSA)
 /**
  * @brief update the explored instructions into the explorer graph
  */
-static inline auto update_explorer_graph () -> void
+static inline auto calculate_path_code () -> void
 {
   if (ins_at_order.size() > 1)
   {
@@ -220,6 +219,7 @@ static inline auto update_explorer_graph () -> void
     {
       if (!exploring_cfi || (exploring_cfi && (order_ins.first > exploring_cfi->exec_order)))
       {
+#if !defined(DISABLE_FSA)
         explored_fsa->add_vertex(order_ins.second);
         if (prev_ins)
         {
@@ -236,6 +236,7 @@ static inline auto update_explorer_graph () -> void
                                    order_ins.second, current_path_code);
           }
         }
+#endif
 
         // update the path code
         if (order_ins.second->is_cond_direct_cf)
@@ -253,7 +254,6 @@ static inline auto update_explorer_graph () -> void
 
   return;
 }
-#endif
 
 
 /**
@@ -266,9 +266,10 @@ static inline auto analyze_executed_instructions () -> void
     save_tainting_graph(dta_graph, process_id_str + "_path_explorer_tainting_graph.dot");
   }
   determine_cfi_input_dependency(); save_detected_cfis();
-#if !defined(DISABLE_FSA)
-  update_explorer_graph();
-#endif
+  calculate_path_code();
+
+  current_exec_path = std::make_shared<execution_path>(ins_at_order, current_path_code);
+
   return;
 }
 
@@ -613,10 +614,10 @@ auto graphical_propagation (ADDRINT ins_addr, THREADID thread_id) -> VOID
     auto dst_vertex_descs = destination_variables(current_exec_order);
 
     std::for_each(src_vertex_descs.begin(), src_vertex_descs.end(),
-                  [/*dst_vertex_descs*/&](df_vertex_desc src_desc)
+                  [&](df_vertex_desc src_desc)
     {
       std::for_each(dst_vertex_descs.begin(), dst_vertex_descs.end(),
-                    [/*src_desc*/&](df_vertex_desc dst_desc)
+                    [&](df_vertex_desc dst_desc)
       {
         boost::add_edge(src_desc, dst_desc, current_exec_order, dta_graph);
       });

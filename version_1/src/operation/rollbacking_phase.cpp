@@ -302,10 +302,9 @@ static inline auto calculate_tainting_fresh_input(ptr_uint8_t selected_input,
   std::copy(selected_input.get(), selected_input.get() + received_msg_size, fresh_input.get());
 
   // update this copy with new values at modified addresses
-  /*addrint_value_map_t::iterator*/auto addr_iter = modified_addrs_with_values.begin();
+  auto addr_iter = modified_addrs_with_values.begin();
   for (; addr_iter != modified_addrs_with_values.end(); ++addr_iter)
   {
-//    tainting_input.get()[addr_iter->first - received_msg_addr] = addr_iter->second;
     fresh_input.get()[addr_iter->first - received_msg_addr] = addr_iter->second;
   }
   return;
@@ -315,11 +314,11 @@ static inline auto calculate_tainting_fresh_input(ptr_uint8_t selected_input,
 /**
  * @brief prepare_new_tainting_phase
  */
-static inline auto prepare_new_tainting_phase() -> void
+static inline auto prepare_new_tainting_phase () -> void
 {
   show_exploring_progress();
 
-  /*ptr_cond_direct_inss_t::iterator*/auto cfi_iter = detected_input_dep_cfis.begin();
+  auto cfi_iter = detected_input_dep_cfis.begin();
   // verify if there exists a resolved but unexplored CFI
   for (; cfi_iter != detected_input_dep_cfis.end(); ++cfi_iter)
   {
@@ -357,7 +356,7 @@ static inline auto prepare_new_tainting_phase() -> void
       // rollback to the first checkpoint with the new input
       PIN_RemoveInstrumentation();
       rollback_with_new_input(first_checkpoint, current_exec_order, received_msg_addr,
-                              received_msg_size, /*tainting_input.get()*/fresh_input.get());
+                              received_msg_size, fresh_input.get());
     }
   }
   else
@@ -370,24 +369,6 @@ static inline auto prepare_new_tainting_phase() -> void
   }
   return;
 }
-
-
-/**
- * @brief get a projection of input on the active modified addresses
- */
-//static inline void project_input_on_active_modified_addrs()
-//{
-////  input_on_active_modified_addrs.clear();
-//  addrint_set_t::iterator addr_iter = active_modified_addrs.begin();
-////  addrint_value_map_t input_proj;
-//  for (; addr_iter != active_modified_addrs.end(); ++addr_iter)
-//  {
-////    input_proj[*addr_iter] = *(reinterpret_cast<UINT8*>(*addr_iter));
-//    input_on_active_modified_addrs[*addr_iter] = *(reinterpret_cast<UINT8*>(*addr_iter));
-//  }
-//  return;
-////  return input_proj;
-//}
 
 
 /**
@@ -409,6 +390,8 @@ auto generic_instruction (ADDRINT ins_addr, THREADID thread_id) -> VOID
     if (current_exec_order >= tainted_trace_length)
     {
       // exceeds, namely the rollbacking phase should stop
+      current_exec_path->calculate_condition();
+      explored_exec_paths.push_back(current_exec_path);
       prepare_new_tainting_phase();
     }
     else

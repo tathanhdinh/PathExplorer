@@ -28,8 +28,8 @@ public:
   path_code_t           code;
   addrint_value_maps_t  condition;
 
-  execution_path();
-  void normalize();
+  execution_path(const order_ins_map_t& current_path, const path_code_t& current_path_code);
+  void calculate_condition();
 };
 
 typedef std::shared_ptr<execution_path> ptr_execution_path_t;
