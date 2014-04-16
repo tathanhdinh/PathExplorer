@@ -209,7 +209,7 @@ static inline auto generic_intercept (IMG& loaded_img) -> void
 }
 
 
-static inline auto network_related_intercept(IMG& loaded_img) -> void
+static inline auto network_related_intercept (IMG& loaded_img) -> void
 {
   // verify if the winsock or wininet module is loaded
   static std::locale current_loc;

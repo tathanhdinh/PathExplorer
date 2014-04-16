@@ -41,7 +41,8 @@ auto initialize() -> void
 static inline auto prepare_new_tainting_phase() -> void
 {
   // save a fresh copy of the input
-  fresh_input.reset(new UINT8[received_msg_size]);
+//  fresh_input.reset(new UINT8[received_msg_size]);
+  fresh_input.reset(new UINT8[received_msg_size], std::default_delete<UINT8[]>());
   std::copy(reinterpret_cast<UINT8*>(received_msg_addr),
             reinterpret_cast<UINT8*>(received_msg_addr) + received_msg_size, fresh_input.get());
 

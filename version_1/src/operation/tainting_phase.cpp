@@ -179,10 +179,7 @@ static inline auto save_detected_cfis () -> void
           if (!new_cfi->input_dep_addrs.empty())
           {
             // then copy a fresh input for it
-            new_cfi->fresh_input.reset(new UINT8[received_msg_size], std::default_delete<UINT8[]>() /*[](UINT8* p)
-            {
-              delete[] p;
-            }*/);
+            new_cfi->fresh_input.reset(new UINT8[received_msg_size], std::default_delete<UINT8[]>());
             std::copy(fresh_input.get(), fresh_input.get() + received_msg_size,
                       new_cfi->fresh_input.get());
 

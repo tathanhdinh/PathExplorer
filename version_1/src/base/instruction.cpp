@@ -79,7 +79,8 @@ instruction::instruction(const INS& ins)
         }
         else
         {
-          new_operand.reset(new operand(r_reg));
+//          new_operand.reset(new operand(r_reg));
+          new_operand = std::make_shared<operand>(r_reg);
           this->src_operands.insert(new_operand);
         }
       }
@@ -105,7 +106,8 @@ instruction::instruction(const INS& ins)
         }
         else
         {
-          new_operand.reset(new operand(w_reg));
+//          new_operand.reset(new operand(w_reg));
+          new_operand = std::make_shared<operand>(w_reg);
           this->dst_operands.insert(new_operand);
         }
       }

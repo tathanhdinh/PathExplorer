@@ -42,10 +42,10 @@ static exp_tree             internal_exp_tree;
 /**
  * @brief private constructor of the explorer graph
  */
-explorer_graph::explorer_graph()
-{
-  internal_exp_graph.clear(); internal_exp_graph_simple.clear(); internal_exp_tree.clear();
-}
+//explorer_graph::explorer_graph(private_construct_key)
+//{
+//  internal_exp_graph.clear(); internal_exp_graph_simple.clear(); internal_exp_tree.clear();
+//}
 
 
 /**
@@ -53,7 +53,12 @@ explorer_graph::explorer_graph()
  */
 auto explorer_graph::instance() -> ptr_explorer_graph_t
 {
-  if (!single_graph_instance) single_graph_instance.reset(new explorer_graph());
+//  if (!single_graph_instance) single_graph_instance.reset(new explorer_graph());
+  if (!single_graph_instance)
+  {
+    single_graph_instance = std::make_shared<explorer_graph>(private_construct_key());
+    internal_exp_graph.clear(); internal_exp_graph_simple.clear(); internal_exp_tree.clear();
+  }
   return single_graph_instance;
 }
 

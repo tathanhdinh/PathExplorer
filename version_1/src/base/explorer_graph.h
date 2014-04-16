@@ -9,6 +9,10 @@ typedef std::vector<bool>                 path_code_t;
 
 class explorer_graph
 {
+private:
+  // using private structure key
+  struct private_construct_key {};
+
 public:
   // allow only a single instance of explorer graph
   static auto instance  ()                                          -> ptr_explorer_graph_t;
@@ -28,8 +32,8 @@ public:
 
   auto save_to_file     (std::string filename)                      -> void;
 
-private:
-  explorer_graph();
+public:
+  explorer_graph(const private_construct_key& priv_key) {}
 };
 
 
