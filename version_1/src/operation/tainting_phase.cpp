@@ -179,7 +179,10 @@ static inline auto save_detected_cfis () -> void
           if (!new_cfi->input_dep_addrs.empty())
           {
             // then copy a fresh input for it
-            new_cfi->fresh_input.reset(new UINT8[received_msg_size]);
+            new_cfi->fresh_input.reset(new UINT8[received_msg_size], std::default_delete<UINT8[]>() /*[](UINT8* p)
+            {
+              delete[] p;
+            }*/);
             std::copy(fresh_input.get(), fresh_input.get() + received_msg_size,
                       new_cfi->fresh_input.get());
 
@@ -371,7 +374,7 @@ auto generic_instruction (ADDRINT ins_addr, const CONTEXT* p_ctxt, THREADID thre
 
     // verify if the execution order exceeds the limit trace length and the executed
     // instruction is always in user-space
-    if ((current_exec_order < max_trace_size) /*&& !ins_at_addr[ins_addr]->is_mapped_from_kernel*/)
+    if ((current_exec_order < max_trace_size))
     {
       // does not exceed
       current_exec_order++;
@@ -392,15 +395,17 @@ auto generic_instruction (ADDRINT ins_addr, const CONTEXT* p_ctxt, THREADID thre
         {
           // duplicate a CFI (the default copy constructor is used)
           auto current_cfi = std::static_pointer_cast<cond_direct_instruction>(ins_at_addr[ins_addr]);
-          decltype(current_cfi) duplicated_cfi;
-          duplicated_cfi.reset(new cond_direct_instruction(*current_cfi));
+//          decltype(current_cfi) duplicated_cfi;
+//          duplicated_cfi.reset(new cond_direct_instruction(*current_cfi));
+          auto duplicated_cfi = std::make_shared<cond_direct_instruction>(*current_cfi);
           duplicated_cfi->exec_order = current_exec_order;
           ins_at_order[current_exec_order] = duplicated_cfi;
         }
         else
         {
           // duplicate an instruction (the default copy constructor is used)
-          ins_at_order[current_exec_order].reset(new instruction(*ins_at_addr[ins_addr]));
+//          ins_at_order[current_exec_order].reset(new instruction(*ins_at_addr[ins_addr]));
+          ins_at_order[current_exec_order] = std::make_shared<instruction>(*ins_at_addr[ins_addr]);
         }
 
 #if !defined(NDEBUG)
