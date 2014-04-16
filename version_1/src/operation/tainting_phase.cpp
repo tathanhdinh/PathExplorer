@@ -44,17 +44,8 @@ static inline auto determine_cfi_input_dependency() -> void
 //  df_vertex_iter vertex_iter, last_vertex_iter;
   df_vertex_iter last_vertex_iter;
   df_bfs_visitor df_visitor;
-//  std::vector<df_edge_desc>::iterator visited_edge_iter;
 
-//  ADDRINT mem_addr;
-
-//  UINT32 visited_edge_exec_order;
-//  ptr_cond_direct_ins_t visited_cfi;
-
-  // get the set of vertices in the tainting graph
-//  std::tie(vertex_iter, last_vertex_iter) = boost::vertices(dta_graph);
   // for each vertice of the tainting graph
-
   decltype(last_vertex_iter) first_vertex_iter;
   std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(dta_graph);
   std::for_each(first_vertex_iter, last_vertex_iter,
@@ -95,75 +86,9 @@ static inline auto determine_cfi_input_dependency() -> void
             }
           }
         });
-
-//        // for each visited edge
-//        for (auto visited_edge_iter = visited_edges.begin();
-//             visited_edge_iter != visited_edges.end(); ++visited_edge_iter)
-//        {
-//          // the value of the edge is the execution order of the corresponding instruction
-//          auto visited_edge_exec_order = dta_graph[*visited_edge_iter];
-//          // consider only the instruction that is beyond the exploring CFI
-//          if (!exploring_cfi ||
-//              (exploring_cfi && (visited_edge_exec_order > exploring_cfi->exec_order)))
-//          {
-//            // and is some CFI
-//            if (ins_at_order[visited_edge_exec_order]->is_cond_direct_cf)
-//            {
-//              // then this CFI depends on the value of the memory address
-//              auto visited_cfi = std::static_pointer_cast<cond_direct_instruction>(
-//                    ins_at_order[visited_edge_exec_order]);
-//              visited_cfi->input_dep_addrs.insert(mem_addr);
-////#if !defined(NDEBUG)
-////              tfm::format(log_file, "the cfi at %d depends on the address %s\n",
-////                          visited_cfi->exec_order, addrint_to_hexstring(mem_addr));
-////#endif
-//            }
-//          }
-//        }
       }
     }
   });
-
-//  for (; vertex_iter != last_vertex_iter; ++vertex_iter)
-//  {
-//    // if it represents some memory address
-//    if (dta_graph[*vertex_iter]->value.type() == typeid(ADDRINT))
-//    {
-//      // and this memory address belongs to the input
-//      auto mem_addr = boost::get<ADDRINT>(dta_graph[*vertex_iter]->value);
-//      if ((received_msg_addr <= mem_addr) && (mem_addr < received_msg_addr + received_msg_size))
-//      {
-//        // take a BFS from this vertice
-//        visited_edges.clear();
-//        boost::breadth_first_search(dta_graph, *vertex_iter, boost::visitor(df_visitor));
-
-//        // for each visited edge
-//        for (auto visited_edge_iter = visited_edges.begin();
-//             visited_edge_iter != visited_edges.end(); ++visited_edge_iter)
-//        {
-//          // the value of the edge is the execution order of the corresponding instruction
-//          auto visited_edge_exec_order = dta_graph[*visited_edge_iter];
-//          // consider only the instruction that is beyond the exploring CFI
-//          if (!exploring_cfi ||
-//              (exploring_cfi && (visited_edge_exec_order > exploring_cfi->exec_order)))
-//          {
-//            // and is some CFI
-//            if (ins_at_order[visited_edge_exec_order]->is_cond_direct_cf)
-//            {
-//              // then this CFI depends on the value of the memory address
-//              auto visited_cfi = std::static_pointer_cast<cond_direct_instruction>(
-//                    ins_at_order[visited_edge_exec_order]);
-//              visited_cfi->input_dep_addrs.insert(mem_addr);
-////#if !defined(NDEBUG)
-////              tfm::format(log_file, "the cfi at %d depends on the address %s\n",
-////                          visited_cfi->exec_order, addrint_to_hexstring(mem_addr));
-////#endif
-//            }
-//          }
-//        }
-//      }
-//    }
-//  }
 
   return;
 }
@@ -176,12 +101,10 @@ static inline auto determine_cfi_input_dependency() -> void
  */
 static inline auto set_checkpoints_for_cfi(const ptr_cond_direct_ins_t& cfi) -> void
 {
-  /*addrint_set_t*/auto dep_addrs = cfi->input_dep_addrs;
-  /*addrint_set_t*/decltype(dep_addrs) input_dep_addrs, new_dep_addrs, intersected_addrs;
+  auto dep_addrs = cfi->input_dep_addrs;
+  decltype(dep_addrs) input_dep_addrs, new_dep_addrs, intersected_addrs;
   checkpoint_with_modified_addrs checkpoint_with_input_addrs;
 
-//  tfm::format(std::cerr, "set checkpoint for the CFI at %d\n", cfi->exec_order);
-//  ptr_checkpoints_t::iterator chkpnt_iter = saved_checkpoints.begin();
   for (auto chkpnt_iter = saved_checkpoints.begin(); chkpnt_iter != saved_checkpoints.end();
        ++chkpnt_iter)
   {
@@ -190,7 +113,7 @@ static inline auto set_checkpoints_for_cfi(const ptr_cond_direct_ins_t& cfi) -> 
     {
       // find the input addresses of the checkpoint
       input_dep_addrs.clear();
-      /*addrint_value_map_t::iterator*/auto addr_iter = (*chkpnt_iter)->input_dep_original_values.begin();
+      auto addr_iter = (*chkpnt_iter)->input_dep_original_values.begin();
       for (; addr_iter != (*chkpnt_iter)->input_dep_original_values.end(); ++addr_iter)
       {
         input_dep_addrs.insert(addr_iter->first);
@@ -239,46 +162,14 @@ static inline auto save_detected_cfis () -> void
 {
   if (ins_at_order.size() > 1)
   {
-//#if !defined(DISABLE_FSA)
-//    // the root path code is one of the exploring CFI: if the current instruction is the
-//    // exploring CFI then "1" should be appended into the path code (because "0" has been
-//    // appended in the previous tainting phase)
-//    if (exploring_cfi) current_path_code.push_back(true);
-//#endif
-
-//    auto ins_iter = ins_at_order.begin();
-//#if !defined(DISABLE_FSA)
-//    decltype(ins_iter) prev_ins_iter = ins_iter;
-//#endif
-
     typedef decltype(ins_at_order) ins_at_order_t;
     auto last_order_ins = *ins_at_order.rbegin();
-//    std::pair<UINT32, ptr_instruction_t> prev_order_ins;
     std::for_each(ins_at_order.begin(), ins_at_order.end(), [&](ins_at_order_t::value_type order_ins)
     {
       // consider only the instruction that is not behind the exploring CFI
       if ((!exploring_cfi || (exploring_cfi && (order_ins.first > exploring_cfi->exec_order))) &&
           (order_ins.first < last_order_ins.first))
       {
-//#if !defined(DISABLE_FSA)
-//        explored_fsa->add_vertex(order_ins.second);
-//        if (prev_order_ins.second)
-//        {
-//          explored_fsa->add_edge(prev_order_ins.second->address, order_ins.second->address,
-//                                 current_path_code);
-//          explored_fsa->add_edge(prev_order_ins.second, order_ins.second, current_path_code);
-//        }
-//        else
-//        {
-//          if (exploring_cfi)
-//          {
-//            explored_fsa->add_edge(exploring_cfi->address, order_ins.second->address,
-//                                   current_path_code);
-//            explored_fsa->add_edge(std::dynamic_pointer_cast<instruction>(exploring_cfi),
-//                                   order_ins.second, current_path_code);
-//          }
-//        }
-//#endif
         // verify if the instruction is a CFI
         if (order_ins.second->is_cond_direct_cf)
         {
@@ -297,61 +188,13 @@ static inline auto save_detected_cfis () -> void
 #if !defined(NDEBUG)
             newly_detected_input_dep_cfis.push_back(new_cfi);
 #endif
-//#if !defined(DISABLE_FSA)
-//            // update the path code of the CFI
-//            new_cfi->path_code = current_path_code; current_path_code.push_back(false);
-//#endif
           }
 #if !defined(NDEBUG)
           newly_detected_cfis.push_back(new_cfi);
 #endif
         }
       }
-//#if !defined(DISABLE_FSA)
-//      prev_order_ins = order_ins;
-//#endif
     });
-
-//    for (ins_iter; ins_iter != ins_at_order.end(); ++ins_iter)
-//    {
-//      // consider only the instruction that is not behind the exploring CFI
-//      if (!exploring_cfi || (exploring_cfi && (ins_iter->first > exploring_cfi->exec_order)))
-//      {
-//#if !defined(DISABLE_FSA)
-//        explored_fsa->add_edge((prev_ins_iter->second)->address, (ins_iter->second)->address,
-//                               current_path_code);
-//#endif
-//        // verify if the instruction is a CFI
-//        if (ins_iter->second->is_cond_direct_cf)
-//        {
-//          auto new_cfi = std::static_pointer_cast<cond_direct_instruction>(ins_iter->second);
-//          // and depends on the input
-//          if (!new_cfi->input_dep_addrs.empty())
-//          {
-//            // then copy a fresh copy for it
-//            new_cfi->fresh_input.reset(new UINT8[received_msg_size]);
-//            std::copy(fresh_input.get(), fresh_input.get() + received_msg_size,
-//                      new_cfi->fresh_input.get());
-
-//            // set its checkpoints and save it
-//            set_checkpoints_for_cfi(new_cfi); detected_input_dep_cfis.push_back(new_cfi);
-//#if !defined(NDEBUG)
-//            newly_detected_input_dep_cfis.push_back(new_cfi);
-//#endif
-//#if !defined(DISABLE_FSA)
-//            // update the path code of the CFI
-//            new_cfi->path_code = current_path_code; current_path_code.push_back(false);
-//#endif
-//          }
-//#if !defined(NDEBUG)
-//          newly_detected_cfis.push_back(new_cfi);
-//#endif
-//        }
-//      }
-//#if !defined(DISABLE_FSA)
-//      prev_ins_iter = ins_iter;
-//#endif
-//    }
   }
 
   return;
@@ -437,7 +280,7 @@ static inline auto analyze_executed_instructions () -> void
 static inline auto calculate_rollbacking_trace_length() -> void
 {
   rollbacking_trace_length = 0;
-  /*order_ins_map_t::reverse_iterator*/auto ins_iter = ins_at_order.rbegin();
+  auto ins_iter = ins_at_order.rbegin();
   ptr_cond_direct_ins_t last_cfi;
 
   // reverse iterate in the list of executed instructions
@@ -449,10 +292,6 @@ static inline auto calculate_rollbacking_trace_length() -> void
       // and this CFI depends on the input
       last_cfi = std::static_pointer_cast<cond_direct_instruction>(ins_iter->second);
       if (!last_cfi->input_dep_addrs.empty()) break;
-//      {
-//        rollbacking_trace_length = last_cfi->exec_order;
-//        break;
-//      }
     }
   }
 
@@ -525,9 +364,6 @@ auto kernel_mapped_instruction (ADDRINT ins_addr, THREADID thread_id) -> VOID
  */
 auto generic_instruction (ADDRINT ins_addr, const CONTEXT* p_ctxt, THREADID thread_id) -> VOID
 {
-//  ptr_cond_direct_ins_t current_cfi, duplicated_cfi;
-
-//  std::cerr << "thread id " << thread_id << "\n";
   if (thread_id == traced_thread_id)
   {
 //    tfm::format(std::cerr, "%d <%s: %s>\n", current_exec_order + 1, addrint_to_hexstring(ins_addr),
@@ -627,11 +463,8 @@ auto mem_read_instruction (ADDRINT ins_addr, ADDRINT mem_read_addr, UINT32 mem_r
     }
 
     // update source operands
-//    ptr_operand_t mem_operand;
     for (auto addr_offset = 0; addr_offset < mem_read_size; ++addr_offset)
     {
-//      mem_operand.reset(new operand(mem_read_addr + addr_offset));
-//      ins_at_order[current_exec_order]->src_operands.insert(mem_operand);
       ins_at_order[current_exec_order]->src_operands.insert(std::make_shared<operand>(
                                                               mem_read_addr + addr_offset));
     }
@@ -666,12 +499,8 @@ auto mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 me
 #endif
 
     // update destination operands
-//    ptr_operand_t mem_operand;
     for (auto addr_offset = 0; addr_offset < mem_written_size; ++addr_offset)
     {
-//      mem_operand.reset(new operand(mem_written_addr + addr_offset));
-//      ins_at_order[current_exec_order]->dst_operands.insert(mem_operand);
-
       ins_at_order[current_exec_order]->dst_operands.insert(std::make_shared<operand>(
                                                               mem_written_addr + addr_offset));
     }
@@ -689,32 +518,6 @@ auto mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 me
 static inline auto source_variables(UINT32 ins_exec_order) -> std::set<df_vertex_desc>
 {
   df_vertex_desc_set src_vertex_descs;
-//  df_vertex_desc_set::iterator outer_vertex_iter;
-//  df_vertex_desc new_vertex_desc;
-//  std::set<ptr_operand_t>::iterator src_operand_iter;
-//  for (auto src_operand_iter = ins_at_order[ins_exec_order]->src_operands.begin();
-//       src_operand_iter != ins_at_order[ins_exec_order]->src_operands.end(); ++src_operand_iter)
-//  {
-//    // verify if the current source operand is
-//    auto outer_vertex_iter = dta_outer_vertices.begin();
-//    for (; outer_vertex_iter != dta_outer_vertices.end(); ++outer_vertex_iter)
-//    {
-//      // found in the outer interface
-//      if (((*src_operand_iter)->value.type() == dta_graph[*outer_vertex_iter]->value.type()) &&
-//          ((*src_operand_iter)->name == dta_graph[*outer_vertex_iter]->name))
-//      {
-//        src_vertex_descs.insert(*outer_vertex_iter);
-//        break;
-//      }
-//    }
-
-//    // not found
-//    if (outer_vertex_iter == dta_outer_vertices.end())
-//    {
-//      auto new_vertex_desc = boost::add_vertex(*src_operand_iter, dta_graph);
-//      dta_outer_vertices.insert(new_vertex_desc); src_vertex_descs.insert(new_vertex_desc);
-//    }
-//  }
 
   std::for_each(ins_at_order[ins_exec_order]->src_operands.begin(),
                 ins_at_order[ins_exec_order]->src_operands.end(), [&](ptr_operand_t opr)
@@ -752,13 +555,6 @@ static inline auto source_variables(UINT32 ins_exec_order) -> std::set<df_vertex
 static inline auto destination_variables(UINT32 idx) -> std::set<df_vertex_desc>
 {
   std::set<df_vertex_desc> dst_vertex_descs;
-//  df_vertex_desc new_vertex_desc;
-//  df_vertex_desc_set::iterator outer_vertex_iter;
-//  df_vertex_desc_set::iterator next_vertex_iter;
-//  std::set<ptr_operand_t>::iterator dst_operand_iter;
-
-//  for (auto dst_operand_iter = ins_at_order[idx]->dst_operands.begin();
-//       dst_operand_iter != ins_at_order[idx]->dst_operands.end(); ++dst_operand_iter)
   std::for_each(ins_at_order[idx]->dst_operands.begin(), ins_at_order[idx]->dst_operands.end(),
                 [&](ptr_operand_t dst_operand)
   {
@@ -770,11 +566,11 @@ static inline auto destination_variables(UINT32 idx) -> std::set<df_vertex_desc>
       ++next_vertex_iter;
 
       // found in the outer interface
-      if ((/*(*dst_operand_iter)*/dst_operand->value.type() == dta_graph[*outer_vertex_iter]->value.type())
-          && (/*(*dst_operand_iter)*/dst_operand->name == dta_graph[*outer_vertex_iter]->name))
+      if ((dst_operand->value.type() == dta_graph[*outer_vertex_iter]->value.type())
+          && (dst_operand->name == dta_graph[*outer_vertex_iter]->name))
       {
         // then insert the current target operand into the graph
-        auto new_vertex_desc = boost::add_vertex(/**dst_operand_iter*/dst_operand, dta_graph);
+        auto new_vertex_desc = boost::add_vertex(dst_operand, dta_graph);
 
         // and modify the outer interface by replacing the old vertex with the new vertex
         dta_outer_vertices.erase(outer_vertex_iter);
@@ -789,7 +585,7 @@ static inline auto destination_variables(UINT32 idx) -> std::set<df_vertex_desc>
     if (outer_vertex_iter == dta_outer_vertices.end())
     {
       // then insert the current target operand into the graph
-      auto new_vertex_desc = boost::add_vertex(/**dst_operand_iter*/dst_operand, dta_graph);
+      auto new_vertex_desc = boost::add_vertex(dst_operand, dta_graph);
 
       // and modify the outer interface by insert the new vertex
       dta_outer_vertices.insert(new_vertex_desc);
@@ -811,22 +607,8 @@ auto graphical_propagation (ADDRINT ins_addr, THREADID thread_id) -> VOID
 {
   if (thread_id == traced_thread_id)
   {
-    /*std::set<df_vertex_desc>*/auto src_vertex_descs = source_variables(current_exec_order);
-    /*std::set<df_vertex_desc>*/auto dst_vertex_descs = destination_variables(current_exec_order);
-
-//    std::set<df_vertex_desc>::iterator src_vertex_desc_iter;
-//    std::set<df_vertex_desc>::iterator dst_vertex_desc_iter;
-
-    // insert the edges between each pair (source, destination) into the tainting graph
-//    for (auto src_vertex_desc_iter = src_vertex_descs.begin();
-//         src_vertex_desc_iter != src_vertex_descs.end(); ++src_vertex_desc_iter)
-//    {
-//      for (auto dst_vertex_desc_iter = dst_vertex_descs.begin();
-//           dst_vertex_desc_iter != dst_vertex_descs.end(); ++dst_vertex_desc_iter)
-//      {
-//        boost::add_edge(*src_vertex_desc_iter, *dst_vertex_desc_iter, current_exec_order, dta_graph);
-//      }
-//    }
+    auto src_vertex_descs = source_variables(current_exec_order);
+    auto dst_vertex_descs = destination_variables(current_exec_order);
 
     std::for_each(src_vertex_descs.begin(), src_vertex_descs.end(),
                   [/*dst_vertex_descs*/&](df_vertex_desc src_desc)

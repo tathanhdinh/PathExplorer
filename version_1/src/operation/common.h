@@ -23,6 +23,7 @@
 
 #include "../base/checkpoint.h"
 #include "../base/cond_direct_instruction.h"
+#include "../base/execution_path.h"
 #include "../util/tinyformat.h"
 #if !defined(DISABLE_FSA)
 #include "../base/explorer_graph.h"
@@ -64,6 +65,8 @@ extern UINT32                   current_exec_order;
 extern path_code_t              current_path_code;
 extern ptr_explorer_graph_t     explored_fsa;
 #endif
+extern ptr_execution_path_t     current_exec_path;
+extern ptr_execution_paths_t    explored_exec_paths;
 
 extern ADDRINT                  received_msg_addr;
 extern UINT32                   received_msg_size;
