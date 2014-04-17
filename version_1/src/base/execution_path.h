@@ -5,12 +5,14 @@
 
 #include "cond_direct_instruction.h"
 
+typedef std::vector<addrint_value_maps_t> condition_t;
+
 class execution_path
 {
 public:
-  order_ins_map_t       content;
-  path_code_t           code;
-  addrint_value_maps_t  condition;
+  order_ins_map_t content;
+  path_code_t     code;
+  condition_t     condition;
 
   execution_path(const order_ins_map_t& current_path, const path_code_t& current_path_code);
   void calculate_condition();
