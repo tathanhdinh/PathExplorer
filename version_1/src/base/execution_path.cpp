@@ -1,5 +1,17 @@
 #include "execution_path.h"
 
+
+/**
+ * @brief calculate join (least upper bound or cartesian product) of two cfi conditions
+ */
+addrint_value_maps_t join_conditions(addrint_value_maps_t cond_a, addrint_value_maps_t cond_b)
+{
+  addrint_value_maps_t joined_cond;
+
+  return joined_cond;
+}
+
+
 /**
  * @brief constructor
  */
