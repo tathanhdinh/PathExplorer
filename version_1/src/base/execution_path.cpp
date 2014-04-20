@@ -5,8 +5,8 @@
 /**
  * @brief calculate join (least upper bound or cartesian product) of two cfi conditions
  */
-addrint_value_maps_t join_conditions(const addrint_value_maps_t& cond_a,
-                                     const addrint_value_maps_t& cond_b)
+addrint_value_maps_t join_maps(const addrint_value_maps_t& cond_a,
+                               const addrint_value_maps_t& cond_b)
 {
   addrint_value_maps_t joined_cond;
 
@@ -48,20 +48,77 @@ addrint_value_maps_t join_conditions(const addrint_value_maps_t& cond_a,
 }
 
 
+typedef std::function<condition_t ()> lazy_func_cond_t;
+
 /**
- * @brief join_if_needed
+ * @brief higher_join_if_needed
  */
-condition_t join_if_needed(condition_t in_cond)
+lazy_func_cond_t higher_join_if_needed(lazy_func_cond_t in_cond)
 {
-  condition_t out_cond;
-  return out_cond;
+  auto new_cond = [&]() -> condition_t
+  {
+    condition_t real_in_cond = in_cond();
+    return real_in_cond;
+  };
+  return new_cond;
 }
 
 
-condition_t fix(std::function<decltype(join_if_needed)> join_func)
+/**
+ * @brief higher_fix
+ */
+lazy_func_cond_t higher_fix(std::function<decltype(higher_join_if_needed)> join_func)
 {
+  // explicit Y combinator: Y f = f (Y f)
 //  return join_func(fix(join_func));
-  return std::bind(join_func, std::bind(&fix, join_func), std::placeholders::_1);
+
+  // implicit Y combinator: Y f = f (\x -> (Y f) x)
+  return std::bind(join_func, std::bind(&higher_fix, join_func))();
+}
+
+
+/**
+ * @brief join_if_needed
+ */
+condition_t join_maps_in_condition(condition_t in_cond)
+{
+  return in_cond;
+}
+
+
+/**
+ * @brief fix
+ */
+condition_t y_fix(std::function<decltype(join_maps_in_condition)> join_func)
+{
+  // explicit Y combinator: Y f = f (Y f)
+//  return join_func(fix(join_func));
+
+  // implicit Y combinator: Y f = f (\x -> (Y f) x)
+  return std::bind(join_func, std::bind(&y_fix, join_func))();
+}
+
+
+/**
+ * @brief fix
+ */
+condition_t fix(const condition_t& prev_cond,
+                std::function<decltype(join_maps_in_condition)> join_func)
+{
+  auto is_intersected = [&](const addrint_value_map_t& map_a,
+                            const addrint_value_map_t& map_b) -> bool
+  {
+    bool intersection_detected = false;
+    std::for_each(map_a.begin(), map_a.end(), [&](addrint_value_map_t::value_type map_a_elem)
+    {
+      if (!intersection_detected)
+        intersection_detected = (map_b.find(map_a_elem.first) != map_b.end());
+    });
+    return intersection_detected;
+  };
+
+  condition_t new_cond;
+  return std::bind(&fix, new_cond, join_func)();
 }
 
 
