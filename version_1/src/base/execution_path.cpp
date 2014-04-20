@@ -44,7 +44,7 @@ addrint_value_maps_t join_maps(const addrint_value_maps_t& cond_a,
     });
   });
 
-  return joined_cond;
+  return std::move(joined_cond);
 }
 
 
@@ -117,39 +117,67 @@ condition_t fix(const condition_t& prev_cond,
     return intersection_detected;
   };
 
-  bool intersection_detected = false;
-  auto cond_elem_a = prev_cond.begin(); auto cond_elem_b = std::next(cond_elem_a);
+  auto have_the_same_type = [&](const addrint_value_map_t& map_a,
+                                const addrint_value_map_t& map_b) -> bool
+  {
+    bool are_the_same = true;
+    if (map_a.size() != map_b.size())
+    {
+      are_the_same = false;
+    }
+    else
+    {
+      std::for_each(map_a.begin(), map_a.end(), [&](addrint_value_map_t::value_type map_a_elem)
+      {
+        if (are_the_same)
+          are_the_same = (map_b.find(map_a_elem.first) != map_b.end());
+      });
+    }
+    return are_the_same;
+  };
+
+  condition_t new_cond = prev_cond;
+  auto cond_elem_a = prev_cond.begin();
   for (; cond_elem_a != prev_cond.end(); ++cond_elem_a)
   {
+    auto cond_elem_b = std::next(cond_elem_a);
     for (; cond_elem_b != prev_cond.end(); ++cond_elem_b)
     {
       if (have_intersection(*(cond_elem_a->begin()), *(cond_elem_b->begin())))
       {
         auto joined_map = join_maps(*cond_elem_a, *cond_elem_b);
 
+        auto map_a = *(cond_elem_a->begin()); auto map_b = *(cond_elem_b->begin());
+        for (auto cond_elem = new_cond.begin(); cond_elem != new_cond.end(); ++cond_elem)
+        {
+          if (have_the_same_type(map_a, *(cond_elem->begin())))
+          {
+            new_cond.erase(cond_elem); break;
+          }
+        }
+        for (auto cond_elem = new_cond.begin(); cond_elem != new_cond.end(); ++cond_elem)
+        {
+          if (have_the_same_type(map_b, *(cond_elem->begin())))
+          {
+            new_cond.erase(cond_elem); break;
+          }
+        }
 
-        break;
+        new_cond.push_back(joined_map); break;
       }
-
-      intersection_detected = have_intersection(*(cond_elem_a->begin()), *(cond_elem_b->begin()));
-      if (intersection_detected) break;
     }
+
+    if (cond_elem_b != prev_cond.end()) break;
   }
 
-  condition_t new_cond = prev_cond;
-  if (intersection_detected)
+  if (cond_elem_a != prev_cond.end())
   {
-
-
+    return std::move(std::bind(&fix, new_cond, join_func)());
   }
   else
   {
-    return std::move(prev_cond);
+    return new_cond;
   }
-
-
-
-  return std::move(std::bind(&fix, new_cond, join_func)());
 }
 
 
