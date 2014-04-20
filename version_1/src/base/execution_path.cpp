@@ -102,8 +102,7 @@ condition_t y_fix(std::function<decltype(join_maps_in_condition)> join_func)
 /**
  * @brief fix
  */
-condition_t fix(const condition_t& prev_cond/*,
-                std::function<decltype(join_maps_in_condition)> join_func*/)
+condition_t fix(const condition_t& prev_cond)
 {
   auto have_intersection = [&](const addrint_value_map_t& map_a,
                                const addrint_value_map_t& map_b) -> bool
@@ -233,7 +232,7 @@ void execution_path::calculate_condition()
     }
   });
 
-  this->condition = fix(raw_condition/*, join_maps*/);
+  this->condition = fix(raw_condition);
 
   return;
 }
