@@ -102,8 +102,8 @@ condition_t y_fix(std::function<decltype(join_maps_in_condition)> join_func)
 /**
  * @brief fix
  */
-condition_t fix(const condition_t& prev_cond,
-                std::function<decltype(join_maps_in_condition)> join_func)
+condition_t fix(const condition_t& prev_cond/*,
+                std::function<decltype(join_maps_in_condition)> join_func*/)
 {
   auto have_intersection = [&](const addrint_value_map_t& map_a,
                                const addrint_value_map_t& map_b) -> bool
@@ -183,7 +183,7 @@ condition_t fix(const condition_t& prev_cond,
 
   if (cond_elem_a != prev_cond.end())
   {
-    return std::move(std::bind(&fix, new_cond, join_func)());
+    return std::move(std::bind(&fix, new_cond/*, join_func*/)());
   }
   else
   {
@@ -208,13 +208,32 @@ execution_path::execution_path(const order_ins_map_t& current_path,
  */
 void execution_path::calculate_condition()
 {
+  decltype(this->condition) raw_condition;
 
-  typedef decltype(this->content) ins_at_order_t;
-//  ins_at_order_t::mapped_type prev_ins;
-  std::for_each(this->content.begin(), this->content.end(), [&](ins_at_order_t::value_type order_ins)
+  typedef decltype(this->code) code_t;
+  code_t::size_type current_code_order = 0;
+
+  typedef decltype(this->content) content_t;
+  std::for_each(this->content.begin(), this->content.end(), [&](content_t::value_type order_ins)
   {
-
+    // verify if the current instruction is a cfi
+    if (order_ins.second->is_cond_direct_cf)
+    {
+      // yes, then downcast it as a CFI
+      auto current_cfi = std::static_pointer_cast<cond_direct_instruction>(order_ins.second);
+      // verify if this CFI is resolved
+      if (current_cfi->is_resolved)
+      {
+        // look into the path code to know which condition should be added
+        if (!this->code[current_code_order])
+          raw_condition.push_back(current_cfi->first_input_projections);
+        else raw_condition.push_back(current_cfi->second_input_projections);
+      }
+      current_code_order++;
+    }
   });
+
+  this->condition = fix(raw_condition/*, join_maps*/);
 
   return;
 }
