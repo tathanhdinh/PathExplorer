@@ -137,17 +137,23 @@ condition_t fix(const condition_t& prev_cond,
   };
 
   condition_t new_cond = prev_cond;
+
+  // the condition is a cartesian product A x ... x B x ...
+  // verify if there exist some intersected elements
   auto cond_elem_a = prev_cond.begin();
   for (; cond_elem_a != prev_cond.end(); ++cond_elem_a)
   {
     auto cond_elem_b = std::next(cond_elem_a);
     for (; cond_elem_b != prev_cond.end(); ++cond_elem_b)
     {
+      // exist
       if (have_intersection(*(cond_elem_a->begin()), *(cond_elem_b->begin())))
       {
+        // then join them into a single element
         auto joined_map = join_maps(*cond_elem_a, *cond_elem_b);
 
-        auto map_a = *(cond_elem_a->begin()); auto map_b = *(cond_elem_b->begin());
+        // erase element a from the condition
+        auto map_a = *(cond_elem_a->begin());
         for (auto cond_elem = new_cond.begin(); cond_elem != new_cond.end(); ++cond_elem)
         {
           if (have_the_same_type(map_a, *(cond_elem->begin())))
@@ -155,6 +161,9 @@ condition_t fix(const condition_t& prev_cond,
             new_cond.erase(cond_elem); break;
           }
         }
+
+        // erase element b from the condition
+        auto map_b = *(cond_elem_b->begin());
         for (auto cond_elem = new_cond.begin(); cond_elem != new_cond.end(); ++cond_elem)
         {
           if (have_the_same_type(map_b, *(cond_elem->begin())))
@@ -163,10 +172,12 @@ condition_t fix(const condition_t& prev_cond,
           }
         }
 
+        // push the joined element into the condition
         new_cond.push_back(joined_map); break;
       }
     }
 
+    // that mean some intersected elements have been detected
     if (cond_elem_b != prev_cond.end()) break;
   }
 
@@ -176,7 +187,7 @@ condition_t fix(const condition_t& prev_cond,
   }
   else
   {
-    return new_cond;
+    return std::move(new_cond);
   }
 }
 
