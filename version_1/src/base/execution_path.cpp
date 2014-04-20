@@ -105,8 +105,8 @@ condition_t y_fix(std::function<decltype(join_maps_in_condition)> join_func)
 condition_t fix(const condition_t& prev_cond,
                 std::function<decltype(join_maps_in_condition)> join_func)
 {
-  auto is_intersected = [&](const addrint_value_map_t& map_a,
-                            const addrint_value_map_t& map_b) -> bool
+  auto have_intersection = [&](const addrint_value_map_t& map_a,
+                               const addrint_value_map_t& map_b) -> bool
   {
     bool intersection_detected = false;
     std::for_each(map_a.begin(), map_a.end(), [&](addrint_value_map_t::value_type map_a_elem)
@@ -117,8 +117,39 @@ condition_t fix(const condition_t& prev_cond,
     return intersection_detected;
   };
 
-  condition_t new_cond;
-  return std::bind(&fix, new_cond, join_func)();
+  bool intersection_detected = false;
+  auto cond_elem_a = prev_cond.begin(); auto cond_elem_b = std::next(cond_elem_a);
+  for (; cond_elem_a != prev_cond.end(); ++cond_elem_a)
+  {
+    for (; cond_elem_b != prev_cond.end(); ++cond_elem_b)
+    {
+      if (have_intersection(*(cond_elem_a->begin()), *(cond_elem_b->begin())))
+      {
+        auto joined_map = join_maps(*cond_elem_a, *cond_elem_b);
+
+
+        break;
+      }
+
+      intersection_detected = have_intersection(*(cond_elem_a->begin()), *(cond_elem_b->begin()));
+      if (intersection_detected) break;
+    }
+  }
+
+  condition_t new_cond = prev_cond;
+  if (intersection_detected)
+  {
+
+
+  }
+  else
+  {
+    return std::move(prev_cond);
+  }
+
+
+
+  return std::move(std::bind(&fix, new_cond, join_func)());
 }
 
 
