@@ -100,7 +100,7 @@ condition_t y_fix(std::function<decltype(join_maps_in_condition)> join_func)
 
 
 /**
- * @brief fix
+ * @brief calculate stabilized condition
  */
 condition_t fix(const condition_t& prev_cond)
 {
@@ -180,13 +180,14 @@ condition_t fix(const condition_t& prev_cond)
     if (cond_elem_b != prev_cond.end()) break;
   }
 
-  if (cond_elem_a != prev_cond.end())
+  // tail recursion
+  if (cond_elem_a == prev_cond.end())
   {
-    return std::move(std::bind(&fix, new_cond/*, join_func*/)());
+    return std::move(new_cond);
   }
   else
   {
-    return std::move(new_cond);
+    return std::move(std::bind(&fix, new_cond)());
   }
 }
 
@@ -203,7 +204,7 @@ execution_path::execution_path(const order_ins_map_t& current_path,
 
 
 /**
- * @brief reconstruct path condition
+ * @brief reconstruct path condition as a cartesian product A x ... x B x ...
  */
 void execution_path::calculate_condition()
 {
