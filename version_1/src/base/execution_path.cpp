@@ -1,6 +1,7 @@
 #include "execution_path.h"
 
 #include <functional>
+#include <algorithm>
 
 /**
  * @brief calculate join (least upper bound or cartesian product) of two cfi conditions
@@ -43,16 +44,16 @@ addrint_value_maps_t join_maps(const addrint_value_maps_t& cond_a,
 }
 
 
-typedef std::function<condition_t ()> lazy_func_cond_t;
+typedef std::function<conditions_t ()> lazy_func_cond_t;
 
 /**
  * @brief higher_join_if_needed
  */
 lazy_func_cond_t higher_join_if_needed(lazy_func_cond_t in_cond)
 {
-  auto new_cond = [&]() -> condition_t
+  auto new_cond = [&]() -> conditions_t
   {
-    condition_t real_in_cond = in_cond();
+    conditions_t real_in_cond = in_cond();
     return real_in_cond;
   };
   return new_cond;
@@ -75,7 +76,7 @@ lazy_func_cond_t higher_fix(std::function<decltype(higher_join_if_needed)> join_
 /**
  * @brief join_if_needed
  */
-condition_t join_maps_in_condition(condition_t in_cond)
+conditions_t join_maps_in_condition(conditions_t in_cond)
 {
   return in_cond;
 }
@@ -84,7 +85,7 @@ condition_t join_maps_in_condition(condition_t in_cond)
 /**
  * @brief fix
  */
-condition_t y_fix(std::function<decltype(join_maps_in_condition)> join_func)
+conditions_t y_fix(std::function<decltype(join_maps_in_condition)> join_func)
 {
   // explicit Y combinator: Y f = f (Y f)
 //  return join_func(fix(join_func));
@@ -97,9 +98,9 @@ condition_t y_fix(std::function<decltype(join_maps_in_condition)> join_func)
 /**
  * @brief calculate stabilized condition
  */
-auto stablizing(const condition_t& prev_cond) -> condition_t
+auto stablizing(const conditions_t& prev_cond) -> conditions_t
 {
-  // verify if two maps a and b have an intersection
+  // lambda verifying if two maps a and b have an intersection
   auto have_intersection = [&](const addrint_value_map_t& map_a,
                                const addrint_value_map_t& map_b) -> bool
   {
@@ -111,7 +112,7 @@ auto stablizing(const condition_t& prev_cond) -> condition_t
     });
   };
 
-  // verify if two maps a and b have the same type
+  // lambda verifying if two maps a and b have the same type
   auto have_the_same_type = [&](const addrint_value_map_t& map_a,
                                 const addrint_value_map_t& map_b) -> bool
   {
@@ -125,7 +126,7 @@ auto stablizing(const condition_t& prev_cond) -> condition_t
             }));
   };
 
-  condition_t new_cond = prev_cond;
+  conditions_t new_cond = prev_cond;
 
   // the condition is a cartesian product A x ... x B x ...
   // verify if there exist some intersected elements
@@ -136,10 +137,21 @@ auto stablizing(const condition_t& prev_cond) -> condition_t
     for (; cond_elem_b != prev_cond.end(); ++cond_elem_b)
     {
       // exist
-      if (have_intersection(*(cond_elem_a->begin()), *(cond_elem_b->begin())))
+      if (have_intersection(*(cond_elem_a->first.begin()), *(cond_elem_b->first.begin())))
       {
         // then join them into a single element
-        auto joined_map = join_maps(*cond_elem_a, *cond_elem_b);
+        auto joined_map = join_maps(cond_elem_a->first, cond_elem_b->first);
+        auto joined_cfis = cond_elem_a->second;
+        typedef decltype(cond_elem_b) cond_elem_b_t;
+        std::for_each(cond_elem_b->second.begin(), cond_elem_b->second.end(),
+                      [&](cond_elem_b_t::reference cfi_b)
+        {
+          if (std::find(cond_elem_a->second.begin(), cond_elem_a->second.end(), cfi_b) !=
+              cond_elem_a->second.end())
+          {
+            joined_cfis.push_back(cfi_b);
+          }
+        });
 
         // erase element a from the condition
         auto map_a = *(cond_elem_a->begin());
