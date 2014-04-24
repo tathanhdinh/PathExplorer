@@ -15,32 +15,49 @@ addrint_value_maps_t join_maps(const addrint_value_maps_t& cond_a,
     std::for_each(cond_b.begin(), cond_b.end(), [&](addrint_value_maps_t::value_type b_map)
     {
       addrint_value_map_t joined_map = a_map;
-      bool is_conflict = false;
+//      bool is_conflict = false;
 
-      std::for_each(b_map.begin(), b_map.end(),
-                    [&](addrint_value_maps_t::value_type::value_type b_point)
+//      std::for_each(b_map.begin(), b_map.end(),
+//                    [&](addrint_value_maps_t::value_type::value_type b_point)
+//      {
+//        if (!is_conflict)
+//        {
+//          // verify if the source of b_point exists in the a_map
+//          if (a_map.find(b_point.first) != a_map.end())
+//          {
+//            // exists, then verify if there is a conflict between corresponding targets
+//            // in a_map and b_map
+//            if (a_map[b_point.first] != b_map[b_point.first])
+//            {
+//              is_conflict = true;
+//            }
+//          }
+//          else
+//          {
+//            // does not exist, then add b_point into the joined map
+//            joined_map.insert(b_point);
+//          }
+//        }
+//      });
+
+      if (std::all_of(b_map.begin(), b_map.end(),
+                      [&](addrint_value_maps_t::value_type::value_type& b_point) -> bool
+                      {
+                        if (a_map.find(b_point.first) == a_map.end())
+                        {
+                          joined_map.insert(b_point);
+                          return true;
+                        }
+                        else
+                        {
+                          return (a_map[b_point.first] != b_map[b_point.first]);
+                        }
+                      }))
       {
-        if (!is_conflict)
-        {
-          // verify if the source of b_point exists in the a_map
-          if (a_map.find(b_point.first) != a_map.end())
-          {
-            // exists, then verify if there is a conflict between corresponding targets
-            // in a_map and b_map
-            if (a_map[b_point.first] != b_map[b_point.first])
-            {
-              is_conflict = true;
-            }
-          }
-          else
-          {
-            // does not exist, then add b_point into the joined map
-            joined_map.insert(b_point);
-          }
-        }
-      });
+        joined_cond.push_back(joined_map);
+      }
 
-      if (!is_conflict) joined_cond.push_back(joined_map);
+//      if (!is_conflict) joined_cond.push_back(joined_map);
     });
   });
 
