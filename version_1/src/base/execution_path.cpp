@@ -102,37 +102,50 @@ condition_t y_fix(std::function<decltype(join_maps_in_condition)> join_func)
 /**
  * @brief calculate stabilized condition
  */
-condition_t fix(const condition_t& prev_cond)
+auto stablizing(const condition_t& prev_cond) -> condition_t
 {
+  // verify if two maps a and b have an intersection
   auto have_intersection = [&](const addrint_value_map_t& map_a,
                                const addrint_value_map_t& map_b) -> bool
   {
-    bool intersection_detected = false;
-    std::for_each(map_a.begin(), map_a.end(), [&](addrint_value_map_t::value_type map_a_elem)
+//    bool result = false;
+//    // verify if there is some element of a is also an element of b
+//    std::for_each(map_a.begin(), map_a.end(), [&](addrint_value_map_t::value_type map_a_elem)
+//    {
+//      if (!result) result = (map_b.find(map_a_elem.first) != map_b.end());
+//    });
+//    return result;
+
+    // verify if there is some element of a is also an element of b
+    return std::any_of(map_a.begin(), map_a.end(), [&](addrint_value_map_t::value_type map_a_elem)
     {
-      if (!intersection_detected)
-        intersection_detected = (map_b.find(map_a_elem.first) != map_b.end());
+      return (map_b.find(map_a_elem.first) != map_b.end());
     });
-    return intersection_detected;
   };
 
+  // verify if two maps a and b have the same type
   auto have_the_same_type = [&](const addrint_value_map_t& map_a,
                                 const addrint_value_map_t& map_b) -> bool
   {
-    bool are_the_same = true;
-    if (map_a.size() != map_b.size())
-    {
-      are_the_same = false;
-    }
-    else
-    {
-      std::for_each(map_a.begin(), map_a.end(), [&](addrint_value_map_t::value_type map_a_elem)
-      {
-        if (are_the_same)
-          are_the_same = (map_b.find(map_a_elem.first) != map_b.end());
-      });
-    }
-    return are_the_same;
+//    bool result = true;
+//    if (map_a.size() != map_b.size()) result = false;
+//    else
+//    {
+//      // map a and b have the same size, now verify if every element of a is also an element of b
+//      std::for_each(map_a.begin(), map_a.end(), [&](addrint_value_map_t::value_type map_a_elem)
+//      {
+//        if (result) result = (map_b.find(map_a_elem.first) != map_b.end());
+//      });
+//    }
+//    return result;
+
+    return (// verify if the map a and be have the same size,
+            (map_a.size() == map_b.size()) &&
+            // yes, now verify if every element of a is also an element of b
+            std::all_of(map_a.begin(), map_a.end(), [&](addrint_value_map_t::value_type map_a_elem)
+            {
+              return (map_b.find(map_a_elem.first) != map_b.end());
+            }));
   };
 
   condition_t new_cond = prev_cond;
@@ -187,7 +200,7 @@ condition_t fix(const condition_t& prev_cond)
   }
   else
   {
-    return std::move(std::bind(&fix, new_cond)());
+    return std::move(std::bind(&stablizing, new_cond)());
   }
 }
 
@@ -233,7 +246,7 @@ void execution_path::calculate_condition()
     }
   });
 
-  this->condition = fix(raw_condition);
+  this->condition = stablizing(raw_condition);
 
   return;
 }
