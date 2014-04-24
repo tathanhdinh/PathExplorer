@@ -154,10 +154,10 @@ auto stablizing(const conditions_t& prev_cond) -> conditions_t
         });
 
         // erase element a from the condition
-        auto map_a = *(cond_elem_a->begin());
+        auto map_a = *(cond_elem_a->second.begin());
         for (auto cond_elem = new_cond.begin(); cond_elem != new_cond.end(); ++cond_elem)
         {
-          if (have_the_same_type(map_a, *(cond_elem->begin())))
+          if (have_the_same_type(map_a, *(cond_elem->second.begin())))
           {
             new_cond.erase(cond_elem); break;
           }
