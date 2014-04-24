@@ -9,55 +9,33 @@ addrint_value_maps_t join_maps(const addrint_value_maps_t& cond_a,
                                const addrint_value_maps_t& cond_b)
 {
   addrint_value_maps_t joined_cond;
+  addrint_value_map_t joined_map;
 
   std::for_each(cond_a.begin(), cond_a.end(), [&](addrint_value_maps_t::value_type a_map)
   {
     std::for_each(cond_b.begin(), cond_b.end(), [&](addrint_value_maps_t::value_type b_map)
     {
-      addrint_value_map_t joined_map = a_map;
-//      bool is_conflict = false;
-
-//      std::for_each(b_map.begin(), b_map.end(),
-//                    [&](addrint_value_maps_t::value_type::value_type b_point)
-//      {
-//        if (!is_conflict)
-//        {
-//          // verify if the source of b_point exists in the a_map
-//          if (a_map.find(b_point.first) != a_map.end())
-//          {
-//            // exists, then verify if there is a conflict between corresponding targets
-//            // in a_map and b_map
-//            if (a_map[b_point.first] != b_map[b_point.first])
-//            {
-//              is_conflict = true;
-//            }
-//          }
-//          else
-//          {
-//            // does not exist, then add b_point into the joined map
-//            joined_map.insert(b_point);
-//          }
-//        }
-//      });
-
+      joined_map = a_map;
       if (std::all_of(b_map.begin(), b_map.end(),
                       [&](addrint_value_maps_t::value_type::value_type& b_point) -> bool
                       {
+                        // verify if the source of b_point exists in the a_map
                         if (a_map.find(b_point.first) == a_map.end())
                         {
+                          // does not exist, then add b_point into the joined map
                           joined_map.insert(b_point);
                           return true;
                         }
                         else
                         {
-                          return (a_map[b_point.first] != b_map[b_point.first]);
+                          // exists, then verify if there is a conflict between a_map and b_map
+                          return (a_map[b_point.first] == b_map[b_point.first]);
                         }
                       }))
       {
+        // if there is no conflict then add the joined map into the condition
         joined_cond.push_back(joined_map);
       }
-
-//      if (!is_conflict) joined_cond.push_back(joined_map);
     });
   });
 
@@ -125,14 +103,6 @@ auto stablizing(const condition_t& prev_cond) -> condition_t
   auto have_intersection = [&](const addrint_value_map_t& map_a,
                                const addrint_value_map_t& map_b) -> bool
   {
-//    bool result = false;
-//    // verify if there is some element of a is also an element of b
-//    std::for_each(map_a.begin(), map_a.end(), [&](addrint_value_map_t::value_type map_a_elem)
-//    {
-//      if (!result) result = (map_b.find(map_a_elem.first) != map_b.end());
-//    });
-//    return result;
-
     // verify if there is some element of a is also an element of b
     return std::any_of(map_a.begin(), map_a.end(),
                        [&](addrint_value_map_t::value_type map_a_elem) -> bool
@@ -145,18 +115,6 @@ auto stablizing(const condition_t& prev_cond) -> condition_t
   auto have_the_same_type = [&](const addrint_value_map_t& map_a,
                                 const addrint_value_map_t& map_b) -> bool
   {
-//    bool result = true;
-//    if (map_a.size() != map_b.size()) result = false;
-//    else
-//    {
-//      // map a and b have the same size, now verify if every element of a is also an element of b
-//      std::for_each(map_a.begin(), map_a.end(), [&](addrint_value_map_t::value_type map_a_elem)
-//      {
-//        if (result) result = (map_b.find(map_a_elem.first) != map_b.end());
-//      });
-//    }
-//    return result;
-
     return (// verify if the map a and be have the same size,
             (map_a.size() == map_b.size()) &&
             // yes, now verify if every element of a is also an element of b
