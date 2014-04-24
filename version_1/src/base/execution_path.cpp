@@ -134,7 +134,8 @@ auto stablizing(const condition_t& prev_cond) -> condition_t
 //    return result;
 
     // verify if there is some element of a is also an element of b
-    return std::any_of(map_a.begin(), map_a.end(), [&](addrint_value_map_t::value_type map_a_elem)
+    return std::any_of(map_a.begin(), map_a.end(),
+                       [&](addrint_value_map_t::value_type map_a_elem) -> bool
     {
       return (map_b.find(map_a_elem.first) != map_b.end());
     });
@@ -159,7 +160,8 @@ auto stablizing(const condition_t& prev_cond) -> condition_t
     return (// verify if the map a and be have the same size,
             (map_a.size() == map_b.size()) &&
             // yes, now verify if every element of a is also an element of b
-            std::all_of(map_a.begin(), map_a.end(), [&](addrint_value_map_t::value_type map_a_elem)
+            std::all_of(map_a.begin(), map_a.end(),
+                        [&](addrint_value_map_t::value_type map_a_elem) -> bool
             {
               return (map_b.find(map_a_elem.first) != map_b.end());
             }));
