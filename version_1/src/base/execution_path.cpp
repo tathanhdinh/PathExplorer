@@ -12,13 +12,13 @@ addrint_value_maps_t join_maps(const addrint_value_maps_t& cond_a,
   addrint_value_maps_t joined_cond;
   addrint_value_map_t joined_map;
 
-  std::for_each(cond_a.begin(), cond_a.end(), [&](addrint_value_maps_t::value_type a_map)
+  std::for_each(cond_a.begin(), cond_a.end(), [&](addrint_value_maps_t::const_reference a_map)
   {
-    std::for_each(cond_b.begin(), cond_b.end(), [&](addrint_value_maps_t::value_type b_map)
+    std::for_each(cond_b.begin(), cond_b.end(), [&](addrint_value_maps_t::const_reference b_map)
     {
       joined_map = a_map;
       if (std::all_of(b_map.begin(), b_map.end(),
-                      [&](addrint_value_maps_t::value_type::value_type& b_point) -> bool
+                      [&](addrint_value_maps_t::value_type::const_reference b_point) -> bool
                       {
                         // verify if the source of b_point exists in the a_map
                         if (a_map.find(b_point.first) == a_map.end())
@@ -30,7 +30,7 @@ addrint_value_maps_t join_maps(const addrint_value_maps_t& cond_a,
                         else
                         {
                           // exists, then verify if there is a conflict between a_map and b_map
-                          return (a_map[b_point.first] == b_map[b_point.first]);
+                          return (a_map.at(b_point.first) == b_map.at(b_point.first));
                         }
                       }))
       {
