@@ -6,42 +6,42 @@
 /**
  * @brief calculate join (least upper bound or cartesian product) of two cfi conditions
  */
-addrint_value_maps_t join_maps(const addrint_value_maps_t& cond_a,
-                               const addrint_value_maps_t& cond_b)
-{
-  addrint_value_maps_t joined_cond;
-  addrint_value_map_t joined_map;
+//addrint_value_maps_t join_maps(const addrint_value_maps_t& cond_a,
+//                               const addrint_value_maps_t& cond_b)
+//{
+//  addrint_value_maps_t joined_cond;
+//  addrint_value_map_t joined_map;
 
-  std::for_each(cond_a.begin(), cond_a.end(), [&](addrint_value_maps_t::const_reference a_map)
-  {
-    std::for_each(cond_b.begin(), cond_b.end(), [&](addrint_value_maps_t::const_reference b_map)
-    {
-      joined_map = a_map;
-      if (std::all_of(b_map.begin(), b_map.end(),
-                      [&](addrint_value_maps_t::value_type::const_reference b_point) -> bool
-                      {
-                        // verify if the source of b_point exists in the a_map
-                        if (a_map.find(b_point.first) == a_map.end())
-                        {
-                          // does not exist, then add b_point into the joined map
-                          joined_map.insert(b_point);
-                          return true;
-                        }
-                        else
-                        {
-                          // exists, then verify if there is a conflict between a_map and b_map
-                          return (a_map.at(b_point.first) == b_map.at(b_point.first));
-                        }
-                      }))
-      {
-        // if there is no conflict then add the joined map into the condition
-        joined_cond.push_back(joined_map);
-      }
-    });
-  });
+//  std::for_each(cond_a.begin(), cond_a.end(), [&](addrint_value_maps_t::const_reference a_map)
+//  {
+//    std::for_each(cond_b.begin(), cond_b.end(), [&](addrint_value_maps_t::const_reference b_map)
+//    {
+//      joined_map = a_map;
+//      if (std::all_of(b_map.begin(), b_map.end(),
+//                      [&](addrint_value_maps_t::value_type::const_reference b_point) -> bool
+//                      {
+//                        // verify if the source of b_point exists in the a_map
+//                        if (a_map.find(b_point.first) == a_map.end())
+//                        {
+//                          // does not exist, then add b_point into the joined map
+//                          joined_map.insert(b_point);
+//                          return true;
+//                        }
+//                        else
+//                        {
+//                          // exists, then verify if there is a conflict between a_map and b_map
+//                          return (a_map.at(b_point.first) == b_map.at(b_point.first));
+//                        }
+//                      }))
+//      {
+//        // if there is no conflict then add the joined map into the condition
+//        joined_cond.push_back(joined_map);
+//      }
+//    });
+//  });
 
-  return std::move(joined_cond);
-}
+//  return std::move(joined_cond);
+//}
 
 
 typedef std::function<conditions_t ()> lazy_func_cond_t;
@@ -116,14 +116,68 @@ auto stablizing(const conditions_t& prev_cond) -> conditions_t
   auto have_the_same_type = [&](const addrint_value_map_t& map_a,
                                 const addrint_value_map_t& map_b) -> bool
   {
-    return (// verify if the map a and be have the same size,
-            (map_a.size() == map_b.size()) &&
-            // yes, now verify if every element of a is also an element of b
+    return ((map_a.size() == map_b.size()) &&
             std::all_of(map_a.begin(), map_a.end(),
                         [&](addrint_value_map_t::value_type map_a_elem) -> bool
-            {
-              return (map_b.find(map_a_elem.first) != map_b.end());
-            }));
+                        {
+                          // verify if every element of a is also element of b
+                          return (map_b.find(map_a_elem.first) != map_b.end());
+                        }));
+  };
+
+  // lambda calculating join (least upper bound or cartesian product) of two maps
+  auto join_maps = [&](const addrint_value_maps_t& cond_a,
+                       const addrint_value_maps_t& cond_b) -> addrint_value_maps_t
+  {
+    addrint_value_maps_t joined_cond;
+    addrint_value_map_t joined_map;
+
+    std::for_each(cond_a.begin(), cond_a.end(), [&](addrint_value_maps_t::const_reference a_map)
+    {
+      std::for_each(cond_b.begin(), cond_b.end(), [&](addrint_value_maps_t::const_reference b_map)
+      {
+        joined_map = a_map;
+        if (std::all_of(b_map.begin(), b_map.end(),
+                        [&](addrint_value_maps_t::value_type::const_reference b_point) -> bool
+                        {
+                          // verify if the source of b_point exists in the a_map
+                          if (a_map.find(b_point.first) == a_map.end())
+                          {
+                            // does not exist, then add b_point into the joined map
+                            joined_map.insert(b_point);
+                            return true;
+                          }
+                          else
+                          {
+                            // exists, then verify if there is a conflict between a_map and b_map
+                            return (a_map.at(b_point.first) == b_map.at(b_point.first));
+                          }
+                        }))
+        {
+          // if there is no conflict then add the joined map into the condition
+          joined_cond.push_back(joined_map);
+        }
+      });
+    });
+
+    return std::move(joined_cond);
+  };
+
+  // lambda calculating join of two list of cfi
+  auto join_cfis = [&](const ptr_cond_direct_inss_t& cfis_a,
+                       const ptr_cond_direct_inss_t& cfis_b) -> ptr_cond_direct_inss_t&&
+  {
+    auto joined_list = cfis_a;
+    std::for_each(cfis_b.begin(), cfis_b.end(), [&](ptr_cond_direct_inss_t::const_reference cfi_b)
+    {
+      // verify if a element of cfis_b exists also in cfis_a
+      if (std::find(cfis_a.begin(), cfis_a.end(), cfi_b) != cfis_a.end())
+      {
+        // does not exist, then add it
+        joined_list.push_back(cfi_b);
+      }
+    });
+    return std::move(joined_list);
   };
 
   conditions_t new_cond = prev_cond;
@@ -143,17 +197,7 @@ auto stablizing(const conditions_t& prev_cond) -> conditions_t
         auto joined_map = join_maps(cond_elem_a->first, cond_elem_b->first);
 
         // and join their cfis
-        auto joined_cfis = cond_elem_a->second;
-        typedef decltype(cond_elem_b->second) cond_elem_b_second_t;
-        std::for_each(cond_elem_b->second.begin(), cond_elem_b->second.end(),
-                      [&](cond_elem_b_second_t::value_type cfi_b)
-        {
-          if (std::find(cond_elem_a->second.begin(), cond_elem_a->second.end(), cfi_b) !=
-              cond_elem_a->second.end())
-          {
-            joined_cfis.push_back(cfi_b);
-          }
-        });
+        auto joined_cfis = join_cfis(cond_elem_a->second, cond_elem_b->second);
 
         // erase element a from the condition
         auto map_a = *(cond_elem_a->first.begin());
