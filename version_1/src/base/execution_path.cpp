@@ -146,7 +146,7 @@ auto stablizing(const conditions_t& prev_cond) -> conditions_t
         auto joined_cfis = cond_elem_a->second;
         typedef decltype(cond_elem_b->second) cond_elem_b_second_t;
         std::for_each(cond_elem_b->second.begin(), cond_elem_b->second.end(),
-                      [&](cond_elem_b_second_t::reference cfi_b)
+                      [&](cond_elem_b_second_t::value_type cfi_b)
         {
           if (std::find(cond_elem_a->second.begin(), cond_elem_a->second.end(), cfi_b) !=
               cond_elem_a->second.end())
@@ -176,7 +176,7 @@ auto stablizing(const conditions_t& prev_cond) -> conditions_t
         }
 
         // push the joined element into the condition
-        new_cond.push_back(std::make_pair<joined_map, joined_cfis>); break;
+        new_cond.push_back(std::make_pair(joined_map, joined_cfis)); break;
 //        new_cond.push_back(joined_map); break;
       }
     }
@@ -219,7 +219,7 @@ void execution_path::calculate_condition()
   code_t::size_type current_code_order = 0;
 
   typedef decltype(this->content) content_t;
-  std::for_each(this->content.begin(), this->content.end(), [&](content_t::value_type order_ins)
+  std::for_each(this->content.begin(), this->content.end(), [&](content_t::reference order_ins)
   {
     // verify if the current instruction is a cfi
     if (order_ins.second->is_cond_direct_cf)
@@ -231,8 +231,10 @@ void execution_path::calculate_condition()
       {
         // look into the path code to know which condition should be added
         if (!this->code[current_code_order])
-          raw_condition.push_back(current_cfi->first_input_projections);
-        else raw_condition.push_back(current_cfi->second_input_projections);
+          raw_condition.push_back(std::make_pair(current_cfi->first_input_projections,
+                                                 ptr_cond_direct_inss_t(1, current_cfi)));
+        else raw_condition.push_back(std::make_pair(current_cfi->second_input_projections,
+                                                    ptr_cond_direct_inss_t(1, current_cfi)));
       }
       current_code_order++;
     }
