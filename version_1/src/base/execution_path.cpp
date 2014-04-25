@@ -139,12 +139,14 @@ auto stablizing(const conditions_t& prev_cond) -> conditions_t
       // exist
       if (have_intersection(*(cond_elem_a->first.begin()), *(cond_elem_b->first.begin())))
       {
-        // then join them into a single element
+        // then join their maps
         auto joined_map = join_maps(cond_elem_a->first, cond_elem_b->first);
+
+        // and join their cfis
         auto joined_cfis = cond_elem_a->second;
-        typedef decltype(cond_elem_b) cond_elem_b_t;
+        typedef decltype(cond_elem_b->second) cond_elem_b_second_t;
         std::for_each(cond_elem_b->second.begin(), cond_elem_b->second.end(),
-                      [&](cond_elem_b_t::reference cfi_b)
+                      [&](cond_elem_b_second_t::reference cfi_b)
         {
           if (std::find(cond_elem_a->second.begin(), cond_elem_a->second.end(), cfi_b) !=
               cond_elem_a->second.end())
@@ -154,27 +156,28 @@ auto stablizing(const conditions_t& prev_cond) -> conditions_t
         });
 
         // erase element a from the condition
-        auto map_a = *(cond_elem_a->second.begin());
+        auto map_a = *(cond_elem_a->first.begin());
         for (auto cond_elem = new_cond.begin(); cond_elem != new_cond.end(); ++cond_elem)
         {
-          if (have_the_same_type(map_a, *(cond_elem->second.begin())))
+          if (have_the_same_type(map_a, *(cond_elem->first.begin())))
           {
             new_cond.erase(cond_elem); break;
           }
         }
 
         // erase element b from the condition
-        auto map_b = *(cond_elem_b->begin());
+        auto map_b = *(cond_elem_b->first.begin());
         for (auto cond_elem = new_cond.begin(); cond_elem != new_cond.end(); ++cond_elem)
         {
-          if (have_the_same_type(map_b, *(cond_elem->begin())))
+          if (have_the_same_type(map_b, *(cond_elem->first.begin())))
           {
             new_cond.erase(cond_elem); break;
           }
         }
 
         // push the joined element into the condition
-        new_cond.push_back(joined_map); break;
+        new_cond.push_back(std::make_pair<joined_map, joined_cfis>); break;
+//        new_cond.push_back(joined_map); break;
       }
     }
 
