@@ -72,10 +72,10 @@ auto are_of_the_same_type (const addrint_value_map_t& map_a,
 
 
 /**
- * @brief verify if two maps a and b are isomorphic (i.e. there is a functor as following)
+ * @brief verify if two maps a and b are isomorphic (i.e. there is a functor F as following)
  *                           map_a --------------> V
  *                             |                   |
- *                             |                   |
+ *                           F |                   | F
  *                             V                   V
  *                           map_b --------------> V
  */
