@@ -55,6 +55,37 @@ conditions_t y_fix(std::function<decltype(join_maps_in_condition)> join_func)
 
 
 /**
+ * @brief verifying if two maps a and b are of the same type (i.e. the sets of addresses of a and
+ * of b are the same)
+ */
+auto are_of_the_same_type (const addrint_value_map_t& map_a,
+                           const addrint_value_map_t& map_b) -> bool
+{
+  return ((map_a.size() == map_b.size()) &&
+          std::all_of(map_a.begin(), map_a.end(),
+                      [&](addrint_value_map_t::value_type map_a_elem) -> bool
+                      {
+                        // verify if every element of a is also element of b
+                        return (map_b.find(map_a_elem.first) != map_b.end());
+                      }));
+};
+
+
+/**
+ * @brief verify if two maps a and b are isomorphic (i.e. there is a functor as following)
+ *                           map_a --------------> V
+ *                             |                   |
+ *                             |                   |
+ *                             V                   V
+ *                           map_b --------------> V
+ */
+auto are_isomorphic (const addrint_value_map_t& map_a, const addrint_value_map_t& map_b) -> bool
+{
+  return ((map_a.size() == map_b.size()) && )
+}
+
+
+/**
  * @brief calculate stabilized condition
  */
 auto stablizing(const conditions_t& prev_cond) -> conditions_t
@@ -69,19 +100,6 @@ auto stablizing(const conditions_t& prev_cond) -> conditions_t
     {
       return (map_b.find(map_a_elem.first) != map_b.end());
     });
-  };
-
-  // lambda verifying if two maps a and b have the same type
-  auto have_the_same_type = [&](const addrint_value_map_t& map_a,
-                                const addrint_value_map_t& map_b) -> bool
-  {
-    return ((map_a.size() == map_b.size()) &&
-            std::all_of(map_a.begin(), map_a.end(),
-                        [&](addrint_value_map_t::value_type map_a_elem) -> bool
-                        {
-                          // verify if every element of a is also element of b
-                          return (map_b.find(map_a_elem.first) != map_b.end());
-                        }));
   };
 
   // lambda calculating join (least upper bound or cartesian product) of two maps
@@ -165,7 +183,7 @@ auto stablizing(const conditions_t& prev_cond) -> conditions_t
         auto map_a = *(cond_elem_a->first.begin());
         for (auto cond_elem = new_cond.begin(); cond_elem != new_cond.end(); ++cond_elem)
         {
-          if (have_the_same_type(map_a, *(cond_elem->first.begin())))
+          if (are_of_the_same_type(map_a, *(cond_elem->first.begin())))
           {
             new_cond.erase(cond_elem); break;
           }
@@ -175,7 +193,7 @@ auto stablizing(const conditions_t& prev_cond) -> conditions_t
         auto map_b = *(cond_elem_b->first.begin());
         for (auto cond_elem = new_cond.begin(); cond_elem != new_cond.end(); ++cond_elem)
         {
-          if (have_the_same_type(map_b, *(cond_elem->first.begin())))
+          if (are_of_the_same_type(map_b, *(cond_elem->first.begin())))
           {
             new_cond.erase(cond_elem); break;
           }
@@ -183,7 +201,6 @@ auto stablizing(const conditions_t& prev_cond) -> conditions_t
 
         // push the joined element into the condition
         new_cond.push_back(std::make_pair(joined_map, joined_cfis)); break;
-//        new_cond.push_back(joined_map); break;
       }
     }
 
@@ -227,7 +244,7 @@ void execution_path::calculate_condition()
   code_t::size_type current_code_order = 0;
 
   typedef decltype(this->content) content_t;
-  std::for_each(this->content.begin(), this->content.end(), [&](content_t::reference order_ins)
+  std::for_each(this->content.begin(), this->content.end(), [&](content_t::const_reference order_ins)
   {
     // verify if the current instruction is a cfi
     if (order_ins.second->is_cond_direct_cf)
