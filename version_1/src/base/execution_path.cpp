@@ -3,47 +3,6 @@
 #include <functional>
 #include <algorithm>
 
-/**
- * @brief calculate join (least upper bound or cartesian product) of two cfi conditions
- */
-//addrint_value_maps_t join_maps(const addrint_value_maps_t& cond_a,
-//                               const addrint_value_maps_t& cond_b)
-//{
-//  addrint_value_maps_t joined_cond;
-//  addrint_value_map_t joined_map;
-
-//  std::for_each(cond_a.begin(), cond_a.end(), [&](addrint_value_maps_t::const_reference a_map)
-//  {
-//    std::for_each(cond_b.begin(), cond_b.end(), [&](addrint_value_maps_t::const_reference b_map)
-//    {
-//      joined_map = a_map;
-//      if (std::all_of(b_map.begin(), b_map.end(),
-//                      [&](addrint_value_maps_t::value_type::const_reference b_point) -> bool
-//                      {
-//                        // verify if the source of b_point exists in the a_map
-//                        if (a_map.find(b_point.first) == a_map.end())
-//                        {
-//                          // does not exist, then add b_point into the joined map
-//                          joined_map.insert(b_point);
-//                          return true;
-//                        }
-//                        else
-//                        {
-//                          // exists, then verify if there is a conflict between a_map and b_map
-//                          return (a_map.at(b_point.first) == b_map.at(b_point.first));
-//                        }
-//                      }))
-//      {
-//        // if there is no conflict then add the joined map into the condition
-//        joined_cond.push_back(joined_map);
-//      }
-//    });
-//  });
-
-//  return std::move(joined_cond);
-//}
-
-
 typedef std::function<conditions_t ()> lazy_func_cond_t;
 
 /**
@@ -160,12 +119,13 @@ auto stablizing(const conditions_t& prev_cond) -> conditions_t
       });
     });
 
+    // using move semantics may be not quite effective because of return value optimization
     return std::move(joined_cond);
   };
 
   // lambda calculating join of two list of cfi
   auto join_cfis = [&](const ptr_cond_direct_inss_t& cfis_a,
-                       const ptr_cond_direct_inss_t& cfis_b) -> ptr_cond_direct_inss_t&&
+                       const ptr_cond_direct_inss_t& cfis_b) -> ptr_cond_direct_inss_t
   {
     auto joined_list = cfis_a;
     std::for_each(cfis_b.begin(), cfis_b.end(), [&](ptr_cond_direct_inss_t::const_reference cfi_b)
@@ -177,12 +137,14 @@ auto stablizing(const conditions_t& prev_cond) -> conditions_t
         joined_list.push_back(cfi_b);
       }
     });
+
+    // using move semantics may be not quite effective because of return value optimization
     return std::move(joined_list);
   };
 
+  // the condition is a cartesian product A x ... x B x ...
   conditions_t new_cond = prev_cond;
 
-  // the condition is a cartesian product A x ... x B x ...
   // verify if there exist some intersected elements
   auto cond_elem_a = prev_cond.begin();
   for (; cond_elem_a != prev_cond.end(); ++cond_elem_a)
@@ -232,10 +194,12 @@ auto stablizing(const conditions_t& prev_cond) -> conditions_t
   // tail recursion
   if (cond_elem_a == prev_cond.end())
   {
+    // using move semantics may be not quite effective because of return value optimization
     return std::move(new_cond);
   }
   else
   {
+    // using move semantics may be not quite effective because of return value optimization
     return std::move(std::bind(&stablizing, new_cond)());
   }
 }
