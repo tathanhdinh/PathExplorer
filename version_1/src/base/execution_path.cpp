@@ -126,7 +126,7 @@ auto are_isomorphic (const addrint_value_maps_t& maps_a, const addrint_value_map
 /**
  * @brief calculate stabilized condition
  */
-auto stabilize_condition (const conditions_t& prev_cond) -> conditions_t
+auto stabilize (const conditions_t& prev_cond) -> conditions_t
 {
   // lambda verifying if two maps a and b have an intersection
   auto have_intersection = [&](const addrint_value_map_t& map_a,
@@ -255,7 +255,7 @@ auto stabilize_condition (const conditions_t& prev_cond) -> conditions_t
   else
   {
     // using move semantics may be not quite effective because of return value optimization
-    return std::move(std::bind(&stabilize_condition, new_cond)());
+    return std::move(std::bind(&stabilize, new_cond)());
   }
 }
 
@@ -272,20 +272,23 @@ auto stabilize_condition (const conditions_t& prev_cond) -> conditions_t
 //  };
 //}
 
+auto is_recursive(const conditions_t& stabilized_cond) -> bool
+{
+  return ((stabilized_cond.size() >= 2) &&
+          (are_isomorphic(stabilized_cond.crbegin()->first,
+                          std::next(stabilized_cond.crbegin())->first)));
+}
+
 
 /**
  * @brief reconstruct path condition as a cartesian product A x ... x B x ...
  */
-static inline auto calculate_conditions(const order_ins_map_t& current_path,
-                                        const path_code_t& current_path_code) -> conditions_t
+static inline auto calculate_condition(const order_ins_map_t& current_path,
+                                       const path_code_t& current_path_code) -> conditions_t
 {
   conditions_t raw_condition;
-
-//  typedef decltype(this->code) code_t;
-//  code_t::size_type current_code_order = 0;
   std::size_t current_code_order = 0;
 
-//  typedef decltype(this->content) content_t;
   std::for_each(current_path.begin(), current_path.end(),
                 [&](order_ins_map_t::const_reference order_ins)
   {
@@ -308,7 +311,7 @@ static inline auto calculate_conditions(const order_ins_map_t& current_path,
     }
   });
 
-  return stabilize_condition(raw_condition);
+  return stabilize(raw_condition);
 }
 
 
@@ -320,43 +323,6 @@ execution_path::execution_path(const order_ins_map_t& current_path,
 {
   this->content = current_path;
   this->code = current_path_code;
-  this->condition = calculate_conditions(current_path, current_path_code);
+  this->condition = calculate_condition(current_path, current_path_code);
+  this->condition_is_recursive = is_recursive(this->condition);
 }
-
-
-///**
-// * @brief reconstruct path condition as a cartesian product A x ... x B x ...
-// */
-//void execution_path::calculate_conditions()
-//{
-//  decltype(this->condition) raw_condition;
-
-//  typedef decltype(this->code) code_t;
-//  code_t::size_type current_code_order = 0;
-
-//  typedef decltype(this->content) content_t;
-//  std::for_each(this->content.begin(), this->content.end(), [&](content_t::const_reference order_ins)
-//  {
-//    // verify if the current instruction is a cfi
-//    if (order_ins.second->is_cond_direct_cf)
-//    {
-//      // yes, then downcast it as a CFI
-//      auto current_cfi = std::static_pointer_cast<cond_direct_instruction>(order_ins.second);
-//      // verify if this CFI is resolved
-//      if (current_cfi->is_resolved)
-//      {
-//        // look into the path code to know which condition should be added
-//        if (!this->code[current_code_order])
-//          raw_condition.push_back(std::make_pair(current_cfi->first_input_projections,
-//                                                 ptr_cond_direct_inss_t(1, current_cfi)));
-//        else raw_condition.push_back(std::make_pair(current_cfi->second_input_projections,
-//                                                    ptr_cond_direct_inss_t(1, current_cfi)));
-//      }
-//      current_code_order++;
-//    }
-//  });
-
-//  this->condition = stabilize_condition(raw_condition);
-
-//  return;
-//}

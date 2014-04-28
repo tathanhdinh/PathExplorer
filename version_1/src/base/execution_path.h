@@ -16,10 +16,10 @@ public:
   order_ins_map_t   content;
   path_code_t       code;
   conditions_t      condition;
-//  lazy_conditions_t lazy_condition;
+  int               condition_order;
+  bool              condition_is_recursive;
 
   execution_path(const order_ins_map_t& current_path, const path_code_t& current_path_code);
-//  void calculate_conditions();
   conditions_t lazy_condition(int n);
 };
 
