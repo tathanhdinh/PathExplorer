@@ -268,7 +268,7 @@ static inline auto analyze_executed_instructions () -> void
   determine_cfi_input_dependency(); save_detected_cfis();
   calculate_path_code();
 
-  current_exec_path = std::make_shared<execution_path>(ins_at_order, current_path_code);
+//  current_exec_path = std::make_shared<execution_path>(ins_at_order, current_path_code);
 
   return;
 }

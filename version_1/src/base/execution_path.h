@@ -19,7 +19,7 @@ public:
 //  lazy_conditions_t lazy_condition;
 
   execution_path(const order_ins_map_t& current_path, const path_code_t& current_path_code);
-  void calculate_conditions();
+//  void calculate_conditions();
   conditions_t lazy_condition(int n);
 };
 

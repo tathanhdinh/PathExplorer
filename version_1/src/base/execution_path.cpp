@@ -260,16 +260,55 @@ auto stabilize_condition (const conditions_t& prev_cond) -> conditions_t
 }
 
 
-auto generalize_condition(const conditions_t& prev_condition) -> lazy_conditions_t
-{
-  return [&](int n)
-  {
-    std::for_each(prev_condition.rbegin(), prev_condition.rend(),
-                  [&](conditions_t::const_reference cond)
-    {
+//auto generalize_condition(const conditions_t& prev_condition) -> lazy_conditions_t
+//{
+//  return [&](int n)
+//  {
+//    std::for_each(prev_condition.rbegin(), prev_condition.rend(),
+//                  [&](conditions_t::const_reference cond)
+//    {
 
-    });
-  };
+//    });
+//  };
+//}
+
+
+/**
+ * @brief reconstruct path condition as a cartesian product A x ... x B x ...
+ */
+static inline auto calculate_conditions(const order_ins_map_t& current_path,
+                                        const path_code_t& current_path_code) -> conditions_t
+{
+  conditions_t raw_condition;
+
+//  typedef decltype(this->code) code_t;
+//  code_t::size_type current_code_order = 0;
+  std::size_t current_code_order = 0;
+
+//  typedef decltype(this->content) content_t;
+  std::for_each(current_path.begin(), current_path.end(),
+                [&](order_ins_map_t::const_reference order_ins)
+  {
+    // verify if the current instruction is a cfi
+    if (order_ins.second->is_cond_direct_cf)
+    {
+      // yes, then downcast it as a CFI
+      auto current_cfi = std::static_pointer_cast<cond_direct_instruction>(order_ins.second);
+      // verify if this CFI is resolved
+      if (current_cfi->is_resolved)
+      {
+        // look into the path code to know which condition should be added
+        if (!current_path_code[current_code_order])
+          raw_condition.push_back(std::make_pair(current_cfi->first_input_projections,
+                                                 ptr_cond_direct_inss_t(1, current_cfi)));
+        else raw_condition.push_back(std::make_pair(current_cfi->second_input_projections,
+                                                    ptr_cond_direct_inss_t(1, current_cfi)));
+      }
+      current_code_order++;
+    }
+  });
+
+  return stabilize_condition(raw_condition);
 }
 
 
@@ -281,42 +320,43 @@ execution_path::execution_path(const order_ins_map_t& current_path,
 {
   this->content = current_path;
   this->code = current_path_code;
+  this->condition = calculate_conditions(current_path, current_path_code);
 }
 
 
-/**
- * @brief reconstruct path condition as a cartesian product A x ... x B x ...
- */
-void execution_path::calculate_conditions()
-{
-  decltype(this->condition) raw_condition;
+///**
+// * @brief reconstruct path condition as a cartesian product A x ... x B x ...
+// */
+//void execution_path::calculate_conditions()
+//{
+//  decltype(this->condition) raw_condition;
 
-  typedef decltype(this->code) code_t;
-  code_t::size_type current_code_order = 0;
+//  typedef decltype(this->code) code_t;
+//  code_t::size_type current_code_order = 0;
 
-  typedef decltype(this->content) content_t;
-  std::for_each(this->content.begin(), this->content.end(), [&](content_t::const_reference order_ins)
-  {
-    // verify if the current instruction is a cfi
-    if (order_ins.second->is_cond_direct_cf)
-    {
-      // yes, then downcast it as a CFI
-      auto current_cfi = std::static_pointer_cast<cond_direct_instruction>(order_ins.second);
-      // verify if this CFI is resolved
-      if (current_cfi->is_resolved)
-      {
-        // look into the path code to know which condition should be added
-        if (!this->code[current_code_order])
-          raw_condition.push_back(std::make_pair(current_cfi->first_input_projections,
-                                                 ptr_cond_direct_inss_t(1, current_cfi)));
-        else raw_condition.push_back(std::make_pair(current_cfi->second_input_projections,
-                                                    ptr_cond_direct_inss_t(1, current_cfi)));
-      }
-      current_code_order++;
-    }
-  });
+//  typedef decltype(this->content) content_t;
+//  std::for_each(this->content.begin(), this->content.end(), [&](content_t::const_reference order_ins)
+//  {
+//    // verify if the current instruction is a cfi
+//    if (order_ins.second->is_cond_direct_cf)
+//    {
+//      // yes, then downcast it as a CFI
+//      auto current_cfi = std::static_pointer_cast<cond_direct_instruction>(order_ins.second);
+//      // verify if this CFI is resolved
+//      if (current_cfi->is_resolved)
+//      {
+//        // look into the path code to know which condition should be added
+//        if (!this->code[current_code_order])
+//          raw_condition.push_back(std::make_pair(current_cfi->first_input_projections,
+//                                                 ptr_cond_direct_inss_t(1, current_cfi)));
+//        else raw_condition.push_back(std::make_pair(current_cfi->second_input_projections,
+//                                                    ptr_cond_direct_inss_t(1, current_cfi)));
+//      }
+//      current_code_order++;
+//    }
+//  });
 
-  this->condition = stabilize_condition(raw_condition);
+//  this->condition = stabilize_condition(raw_condition);
 
-  return;
-}
+//  return;
+//}

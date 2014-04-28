@@ -389,9 +389,13 @@ auto generic_instruction (ADDRINT ins_addr, THREADID thread_id) -> VOID
     // verify if the execution order of the instruction exceeds the last CFI
     if (current_exec_order >= tainted_trace_length)
     {
-      // exceeds, namely the rollbacking phase should stop
-      current_exec_path->calculate_conditions();
+      // exceeds, namely the rollbacking phase should stop:
+      // first, save the current execution path
+      current_exec_path = std::make_shared<execution_path>(ins_at_order, current_path_code);
+//      current_exec_path->calculate_conditions();
       explored_exec_paths.push_back(current_exec_path);
+
+      // second, prepare tainting a new path
       prepare_new_tainting_phase();
     }
     else
@@ -543,8 +547,8 @@ auto control_flow_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
       else
       {
         // there is no CFI in resolving, then verify if the current CFI depends on the input
-        auto current_cfi = std::static_pointer_cast<cond_direct_instruction>(
-              ins_at_order[current_exec_order]);
+        auto current_cfi =
+            std::static_pointer_cast<cond_direct_instruction>(ins_at_order[current_exec_order]);
         if (!current_cfi->input_dep_addrs.empty())
         {
           // yes, then set it as the active CFI
