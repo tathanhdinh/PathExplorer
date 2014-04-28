@@ -72,16 +72,23 @@ auto are_of_the_same_type (const addrint_value_map_t& map_a,
 
 
 /**
- * @brief verify if two maps a and b are isomorphic (i.e. there is a functor F as following)
- *                           map_a --------------> V
- *                             |                   |
- *                           F |                   | F
- *                             V                   V
- *                           map_b --------------> V
+ * @brief verify if two maps a and b are isomorphic (i.e. there is a functor F satisfying)
+ *                                    map_a
+ *                             A --------------> V
+ *                             |                 |
+ *                           F |                 | F = 1
+ *                             V                 V
+ *                             B --------------> V
+ *                                    map_b
  */
-auto are_isomorphic (const addrint_value_map_t& map_a, const addrint_value_map_t& map_b) -> bool
+auto are_isomorphic (const addrint_value_maps_t& maps_a, const addrint_value_maps_t& maps_b) -> bool
 {
-  return ((map_a.size() == map_b.size()) && )
+  return ((maps_a.begin()->size() == maps_b.begin()->size()) && (maps_a.size() == maps_b.size()) &&
+          std::all_of(maps_a.begin(), maps_a.end(),
+                      [&](addrint_value_maps_t::const_reference maps_a_elem)
+  {
+
+          }));
 }
 
 
