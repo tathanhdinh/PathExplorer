@@ -113,14 +113,13 @@ auto are_isomorphic (const addrint_value_maps_t& maps_a, const addrint_value_map
   return ((maps_a.size() == maps_b.size()) &&
           std::all_of(maps_a.begin(), maps_a.end(),
                       [&](addrint_value_maps_t::const_reference maps_a_elem) -> bool
-                      {
-                        return std::any_of(maps_b.begin(), maps_b.end(),
-                                           [&](addrint_value_maps_t::const_reference maps_b_elem) -> bool
-                                           {
-                                             return are_isomorphic(maps_a_elem, maps_b_elem);
-                                           });
-
-                      }));
+  {
+    return std::any_of(maps_b.begin(), maps_b.end(),
+                       [&](addrint_value_maps_t::const_reference maps_b_elem) -> bool
+    {
+      return are_isomorphic(maps_a_elem, maps_b_elem);
+    });
+  }));
 }
 
 
@@ -155,20 +154,20 @@ auto stabilize_condition (const conditions_t& prev_cond) -> conditions_t
         joined_map = a_map;
         if (std::all_of(b_map.begin(), b_map.end(),
                         [&](addrint_value_maps_t::value_type::const_reference b_point) -> bool
-                        {
-                          // verify if the source of b_point exists in the a_map
-                          if (a_map.find(b_point.first) == a_map.end())
-                          {
-                            // does not exist, then add b_point into the joined map
-                            joined_map.insert(b_point);
-                            return true;
-                          }
-                          else
-                          {
-                            // exists, then verify if there is a conflict between a_map and b_map
-                            return (a_map.at(b_point.first) == b_map.at(b_point.first));
-                          }
-                        }))
+        {
+          // verify if the source of b_point exists in the a_map
+          if (a_map.find(b_point.first) == a_map.end())
+          {
+            // does not exist, then add b_point into the joined map
+            joined_map.insert(b_point);
+            return true;
+          }
+          else
+          {
+            // exists, then verify if there is a conflict between a_map and b_map
+            return (a_map.at(b_point.first) == b_map.at(b_point.first));
+          }
+        }))
         {
           // if there is no conflict then add the joined map into the condition
           joined_cond.push_back(joined_map);
@@ -263,7 +262,14 @@ auto stabilize_condition (const conditions_t& prev_cond) -> conditions_t
 
 auto generalize_condition(const conditions_t& prev_condition) -> lazy_conditions_t
 {
+  return [&](int n)
+  {
+    std::for_each(prev_condition.rbegin(), prev_condition.rend(),
+                  [&](conditions_t::const_reference cond)
+    {
 
+    });
+  };
 }
 
 
