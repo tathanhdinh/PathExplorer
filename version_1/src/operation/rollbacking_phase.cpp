@@ -390,7 +390,7 @@ auto generic_instruction (ADDRINT ins_addr, THREADID thread_id) -> VOID
     if (current_exec_order >= tainted_trace_length)
     {
       // exceeds, namely the rollbacking phase should stop
-      current_exec_path->calculate_condition();
+      current_exec_path->calculate_conditions();
       explored_exec_paths.push_back(current_exec_path);
       prepare_new_tainting_phase();
     }

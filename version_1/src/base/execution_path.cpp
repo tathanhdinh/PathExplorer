@@ -71,13 +71,25 @@ auto are_of_the_same_type (const addrint_value_map_t& map_a,
 };
 
 
+/**
+ * @brief verify if two maps a and b are isomorphic (i.e. there is an isomorphism (function) f
+ * making
+ *                                    map_a
+ *                             A --------------> V
+ *                             |                 |
+ *                           f |                 | f = 1
+ *                             V                 V
+ *                             B --------------> V
+ *                                    map_b
+ * commutative
+ */
 auto are_isomorphic (const addrint_value_map_t& map_a, const addrint_value_map_t& map_b) -> bool
 {
   addrint_value_map_t::const_iterator map_b_iter = map_b.begin();
 
   return ((map_a.size() == map_b.size()) &&
           std::all_of(map_a.begin(), map_a.end(),
-                      [&](addrint_value_map_t::const_reference map_a_elem)
+                      [&](addrint_value_map_t::const_reference map_a_elem) -> bool
           {
             return (map_a_elem.second == (map_b_iter++)->second);
           }));
@@ -85,7 +97,8 @@ auto are_isomorphic (const addrint_value_map_t& map_a, const addrint_value_map_t
 
 
 /**
- * @brief verify if two maps a and b are isomorphic (i.e. there is an isomorphism F making
+ * @brief verify if hom(A,V) and hom(B,V) are isomorphic (i.e. there is an isomorphism (functor) F
+ * making
  *                                    map_a
  *                             A --------------> V
  *                             |                 |
@@ -97,14 +110,14 @@ auto are_isomorphic (const addrint_value_map_t& map_a, const addrint_value_map_t
  */
 auto are_isomorphic (const addrint_value_maps_t& maps_a, const addrint_value_maps_t& maps_b) -> bool
 {
-  return ((maps_a.begin()->size() == maps_b.begin()->size()) && (maps_a.size() == maps_b.size()) &&
+  return ((maps_a.size() == maps_b.size()) &&
           std::all_of(maps_a.begin(), maps_a.end(),
                       [&](addrint_value_maps_t::const_reference maps_a_elem) -> bool
                       {
                         return std::any_of(maps_b.begin(), maps_b.end(),
                                            [&](addrint_value_maps_t::const_reference maps_b_elem) -> bool
                                            {
-                                             return (are_isomorphic(maps_a_elem, maps_b_elem));
+                                             return are_isomorphic(maps_a_elem, maps_b_elem);
                                            });
 
                       }));
@@ -114,7 +127,7 @@ auto are_isomorphic (const addrint_value_maps_t& maps_a, const addrint_value_map
 /**
  * @brief calculate stabilized condition
  */
-auto stablizing (const conditions_t& prev_cond) -> conditions_t
+auto stabilize_condition (const conditions_t& prev_cond) -> conditions_t
 {
   // lambda verifying if two maps a and b have an intersection
   auto have_intersection = [&](const addrint_value_map_t& map_a,
@@ -243,8 +256,14 @@ auto stablizing (const conditions_t& prev_cond) -> conditions_t
   else
   {
     // using move semantics may be not quite effective because of return value optimization
-    return std::move(std::bind(&stablizing, new_cond)());
+    return std::move(std::bind(&stabilize_condition, new_cond)());
   }
+}
+
+
+auto generalize_condition(const conditions_t& prev_condition) -> lazy_conditions_t
+{
+
 }
 
 
@@ -262,7 +281,7 @@ execution_path::execution_path(const order_ins_map_t& current_path,
 /**
  * @brief reconstruct path condition as a cartesian product A x ... x B x ...
  */
-void execution_path::calculate_condition()
+void execution_path::calculate_conditions()
 {
   decltype(this->condition) raw_condition;
 
@@ -291,7 +310,7 @@ void execution_path::calculate_condition()
     }
   });
 
-  this->condition = stablizing(raw_condition);
+  this->condition = stabilize_condition(raw_condition);
 
   return;
 }
