@@ -272,6 +272,9 @@ auto stabilize (const conditions_t& prev_cond) -> conditions_t
 //  };
 //}
 
+/**
+ * @brief verify if the condition is recursive
+ */
 auto is_recursive(const conditions_t& stabilized_cond) -> bool
 {
   return ((stabilized_cond.size() >= 2) &&
@@ -281,9 +284,37 @@ auto is_recursive(const conditions_t& stabilized_cond) -> bool
 
 
 /**
+ * @brief calculate the non-recursive order of the condition
+ */
+auto order(const conditions_t& stabilized_cond) -> int
+{
+  conditions_t::const_reverse_iterator examining_cond_iter = stabilized_cond.crbegin();
+  std::all_of(stabilized_cond.crbegin(), stabilized_cond.crend(),
+              [&](conditions_t::const_reference cond_elem) -> bool
+  {
+    return ((stabilized_cond.crend() - examining_cond_iter >= 2) &&
+            are_isomorphic(examining_cond_iter->first, (++examining_cond_iter)->first));
+  });
+
+  return stabilized_cond.crend() - examining_cond_iter;
+
+
+//  if (!is_recursive(stabilized_cond))
+//  {
+//    return stabilized_cond.size();
+//  }
+//  else
+//  {
+//    stabilized_cond.pop_back();
+//    return order(stabilized_cond);
+//  }
+}
+
+
+/**
  * @brief reconstruct path condition as a cartesian product A x ... x B x ...
  */
-static inline auto calculate_condition(const order_ins_map_t& current_path,
+static inline auto calculate_from(const order_ins_map_t& current_path,
                                        const path_code_t& current_path_code) -> conditions_t
 {
   conditions_t raw_condition;
@@ -323,6 +354,7 @@ execution_path::execution_path(const order_ins_map_t& current_path,
 {
   this->content = current_path;
   this->code = current_path_code;
-  this->condition = calculate_condition(current_path, current_path_code);
+  this->condition = calculate_from(current_path, current_path_code);
   this->condition_is_recursive = is_recursive(this->condition);
+  this->condition_order = order(this->condition);
 }
