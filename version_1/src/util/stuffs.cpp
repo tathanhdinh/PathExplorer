@@ -17,7 +17,7 @@ auto save_static_trace (const std::string& filename) -> void
 {
   std::ofstream out_file(filename.c_str(), std::ofstream::out | std::ofstream::trunc);
 
-  /*std::map<ADDRINT, ptr_instruction_t>::iterator*/auto ins_iter = ins_at_addr.begin();
+  auto ins_iter = ins_at_addr.begin();
   for (; ins_iter != ins_at_addr.end(); ++ins_iter)
   {
     tfm::format(out_file, "%-15s %-50s %-25s %-25s\n", addrint_to_hexstring(ins_iter->first),

@@ -55,8 +55,8 @@ conditions_t y_fix(std::function<decltype(join_maps_in_condition)> join_func)
 
 
 /**
- * @brief verifying if two maps a and b are of the same type (i.e. the sets of addresses of a and
- * of b are the same)
+ * @brief verifying if two maps a and b are of the same type, i.e. the sets of addresses of a and
+ * of b are the same
  */
 auto are_of_the_same_type (const addrint_value_map_t& map_a,
                            const addrint_value_map_t& map_b) -> bool
@@ -72,7 +72,7 @@ auto are_of_the_same_type (const addrint_value_map_t& map_a,
 
 
 /**
- * @brief verify if two maps a and b are isomorphic (i.e. there is an isomorphism (function) f
+ * @brief verify if two maps a and b are isomorphic, i.e. there is an isomorphism (function) f
  * making
  *                                    map_a
  *                             A --------------> V
@@ -97,7 +97,7 @@ auto are_isomorphic (const addrint_value_map_t& map_a, const addrint_value_map_t
 
 
 /**
- * @brief verify if hom(A,V) and hom(B,V) are isomorphic (i.e. there is an isomorphism (functor) F
+ * @brief verify if hom(A,V) and hom(B,V) are isomorphic, i.e. there is an isomorphism (functor) F
  * making
  *                                    map_a
  *                             A --------------> V
@@ -106,7 +106,7 @@ auto are_isomorphic (const addrint_value_map_t& map_a, const addrint_value_map_t
  *                             V                 V
  *                             B --------------> V
  *                                    map_b
- * commutative)
+ * commutative
  */
 auto are_isomorphic (const addrint_value_maps_t& maps_a, const addrint_value_maps_t& maps_b) -> bool
 {
@@ -260,18 +260,6 @@ auto stabilize (const conditions_t& prev_cond) -> conditions_t
 }
 
 
-//auto generalize_condition(const conditions_t& prev_condition) -> lazy_conditions_t
-//{
-//  return [&](int n)
-//  {
-//    std::for_each(prev_condition.rbegin(), prev_condition.rend(),
-//                  [&](conditions_t::const_reference cond)
-//    {
-
-//    });
-//  };
-//}
-
 /**
  * @brief verify if the condition is recursive
  */
@@ -362,4 +350,11 @@ auto execution_path::lazy_condition(unsigned int n) -> conditions_t
   }
 
   return std::move(lazy_cond);
+}
+
+
+auto show_path_condition(const ptr_execution_paths_t& exp_paths) -> void
+{
+
+  return;
 }
