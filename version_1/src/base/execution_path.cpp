@@ -359,8 +359,18 @@ execution_path::execution_path(const order_ins_map_t& current_path,
   this->condition_order = order(this->condition);
 }
 
-auto execution_path::lazy_condition(int n) -> conditions_t
+
+/**
+ * @brief predict a lazy condition
+ */
+auto execution_path::lazy_condition(unsigned int n) -> conditions_t
 {
   conditions_t lazy_cond(this->condition.begin(),
-                         std::next(this->condition.begin(), std::min(n, this->order)));
+                         std::next(this->condition.begin(), std::min(n, this->condition_order)));
+  if (this->condition_is_recursive)
+  {
+    while (n-- > this->condition_order) lazy_cond.push_back(this->condition.back());
+  }
+
+  return std::move(lazy_cond);
 }

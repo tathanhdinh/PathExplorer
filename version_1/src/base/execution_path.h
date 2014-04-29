@@ -16,11 +16,11 @@ public:
   order_ins_map_t   content;
   path_code_t       code;
   conditions_t      condition;
-  int               condition_order;
+  unsigned int      condition_order;
   bool              condition_is_recursive;
 
   execution_path(const order_ins_map_t& current_path, const path_code_t& current_path_code);
-  conditions_t lazy_condition(int n);
+  conditions_t lazy_condition(unsigned int n);
 };
 
 typedef std::shared_ptr<execution_path> ptr_execution_path_t;
