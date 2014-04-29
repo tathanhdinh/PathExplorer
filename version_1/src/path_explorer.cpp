@@ -1,7 +1,7 @@
 #include "operation/instrumentation.h"
 #include "operation/tainting_phase.h"
 #include "operation/capturing_phase.h"
-#include "operation/common.h"
+#include "common.h"
 #include "util/stuffs.h"
 #include <ctime>
 

@@ -3,7 +3,7 @@
 #include <boost/graph/breadth_first_search.hpp>
 #include <boost/graph/lookup_edge.hpp>
 
-#include "common.h"
+#include "../common.h"
 #include "rollbacking_phase.h"
 #include "../util/stuffs.h"
 

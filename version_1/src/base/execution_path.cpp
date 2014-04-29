@@ -1,5 +1,6 @@
 #include "execution_path.h"
 
+#include "../util/stuffs.h"
 #include <functional>
 #include <algorithm>
 
@@ -340,7 +341,7 @@ execution_path::execution_path(const order_ins_map_t& current_path,
 /**
  * @brief predict a lazy condition
  */
-auto execution_path::lazy_condition(unsigned int n) -> conditions_t
+auto execution_path::lazy_condition(int n) -> conditions_t
 {
   conditions_t lazy_cond(this->condition.begin(),
                          std::next(this->condition.begin(), std::min(n, this->condition_order)));
@@ -355,6 +356,20 @@ auto execution_path::lazy_condition(unsigned int n) -> conditions_t
 
 auto show_path_condition(const ptr_execution_paths_t& exp_paths) -> void
 {
-
+  std::for_each(exp_paths.begin(), exp_paths.end(),
+                [&](ptr_execution_paths_t::const_reference exp_path)
+  {
+    for (auto i = 0; i < exp_path->condition_order - 1; ++i)
+    {
+      tfm::format(std::cout, "| ");
+      std::for_each(exp_path->condition.at(i).first.begin()->begin(),
+                    exp_path->condition.at(i).first.begin()->end(),
+                    [&](addrint_value_map_t::const_reference cond_elem)
+      {
+        tfm::format(std::cout, "%s ", addrint_to_hexstring(cond_elem.first));
+      });
+      tfm::format(std::cout, "\n");
+    }
+  });
   return;
 }

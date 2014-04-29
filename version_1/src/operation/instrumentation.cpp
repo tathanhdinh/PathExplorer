@@ -6,7 +6,7 @@
 #include <locale>
 
 #include "../util/stuffs.h"
-#include "common.h"
+#include "../common.h"
 #include "instrumentation.h"
 #include "capturing_phase.h"
 #include "tainting_phase.h"

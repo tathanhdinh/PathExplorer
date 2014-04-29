@@ -1,5 +1,5 @@
 #include "tainting_phase.h"
-#include "common.h"
+#include "../common.h"
 #include "../util/stuffs.h"
 
 #include <cstdlib>

@@ -1,7 +1,7 @@
 #ifndef STUFFS_H
 #define STUFFS_H
 
-#include "../operation/common.h"
+#include "../common.h"
 
 auto save_static_trace          (const std::string& filename) -> void;
 

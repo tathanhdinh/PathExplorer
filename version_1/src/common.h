@@ -1,17 +1,17 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#include "../parsing_helper.h"
+#include "parsing_helper.h"
 #include <pin.H>
 
 #include <fstream>
 
-#include "../base/checkpoint.h"
-#include "../base/cond_direct_instruction.h"
-#include "../base/execution_path.h"
-#include "../util/tinyformat.h"
+#include "base/checkpoint.h"
+#include "base/cond_direct_instruction.h"
+#include "base/execution_path.h"
+#include "util/tinyformat.h"
 #if !defined(DISABLE_FSA)
-#include "../base/explorer_graph.h"
+#include "base/explorer_graph.h"
 #endif
 
 typedef enum

@@ -1,4 +1,4 @@
-#include "../operation/common.h"
+#include "../common.h"
 #include <boost/graph/graphviz.hpp>
 #include <cstdint>
 

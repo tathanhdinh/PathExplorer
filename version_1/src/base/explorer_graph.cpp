@@ -1,6 +1,6 @@
 #include "explorer_graph.h"
 #include "cond_direct_instruction.h"
-#include "../operation/common.h"
+#include "../common.h"
 #include "../util/stuffs.h"
 
 #include <boost/graph/graphviz.hpp>
