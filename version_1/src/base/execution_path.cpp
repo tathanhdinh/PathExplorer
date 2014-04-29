@@ -354,22 +354,30 @@ auto execution_path::lazy_condition(int n) -> conditions_t
 }
 
 
+/**
+ * @brief show_path_condition
+ */
 auto show_path_condition(const ptr_execution_paths_t& exp_paths) -> void
 {
+  auto show_cond = [&](ptr_execution_paths_t::const_reference exp_path, int i) -> void
+  {
+    tfm::format(std::cout, "| ");
+    std::for_each(exp_path->condition.at(i).first.begin()->begin(),
+                  exp_path->condition.at(i).first.begin()->end(),
+                  [&](addrint_value_map_t::const_reference cond_elem)
+    {
+      tfm::format(std::cout, "%s ", addrint_to_hexstring(cond_elem.first));
+    });
+    return;
+  };
+
   std::for_each(exp_paths.begin(), exp_paths.end(),
                 [&](ptr_execution_paths_t::const_reference exp_path)
   {
-    for (auto i = 0; i < exp_path->condition_order - 1; ++i)
-    {
-      tfm::format(std::cout, "| ");
-      std::for_each(exp_path->condition.at(i).first.begin()->begin(),
-                    exp_path->condition.at(i).first.begin()->end(),
-                    [&](addrint_value_map_t::const_reference cond_elem)
-      {
-        tfm::format(std::cout, "%s ", addrint_to_hexstring(cond_elem.first));
-      });
-      tfm::format(std::cout, "\n");
-    }
+    auto i = 0;
+    for (; i < exp_path->condition_order; ++i) show_cond(exp_path, i);
+    if (exp_path->condition_is_recursive) tfm::format(std::cout, "|*\n");
+    else tfm::format(std::cout, "|\n");
   });
   return;
 }
