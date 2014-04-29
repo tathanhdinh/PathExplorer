@@ -297,17 +297,6 @@ auto order(const conditions_t& stabilized_cond) -> int
   });
 
   return stabilized_cond.crend() - examining_cond_iter;
-
-
-//  if (!is_recursive(stabilized_cond))
-//  {
-//    return stabilized_cond.size();
-//  }
-//  else
-//  {
-//    stabilized_cond.pop_back();
-//    return order(stabilized_cond);
-//  }
 }
 
 

@@ -4,11 +4,9 @@
 #include "../parsing_helper.h"
 #include "cond_direct_instruction.h"
 
-#include <functional>
-
 typedef std::pair<addrint_value_maps_t, ptr_cond_direct_inss_t> condition_t;
 typedef std::vector<condition_t> conditions_t;
-//typedef std::function<conditions_t(int)> lazy_conditions_t;
+
 
 class execution_path
 {
