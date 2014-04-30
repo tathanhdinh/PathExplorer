@@ -293,7 +293,7 @@ auto order(const conditions_t& stabilized_cond) -> int
  * @brief reconstruct path condition as a cartesian product A x ... x B x ...
  */
 static inline auto calculate_from(const order_ins_map_t& current_path,
-                                       const path_code_t& current_path_code) -> conditions_t
+                                  const path_code_t& current_path_code) -> conditions_t
 {
   conditions_t raw_condition;
   std::size_t current_code_order = 0;
@@ -347,13 +347,14 @@ auto execution_path::lazy_condition(int n) -> conditions_t
                          std::next(this->condition.begin(), std::min(n, this->condition_order)));
   if (this->condition_is_recursive)
   {
-    while (n-- > this->condition_order) lazy_cond.push_back(this->condition.back());
+    while (this->condition_order < n--) lazy_cond.push_back(this->condition.back());
   }
 
   return std::move(lazy_cond);
 }
 
 
+#if !defined(NDEBUG)
 /**
  * @brief show_path_condition
  */
@@ -381,3 +382,4 @@ auto show_path_condition(const ptr_execution_paths_t& exp_paths) -> void
   });
   return;
 }
+#endif

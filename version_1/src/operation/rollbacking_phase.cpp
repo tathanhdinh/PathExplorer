@@ -390,10 +390,10 @@ auto generic_instruction (ADDRINT ins_addr, THREADID thread_id) -> VOID
     if (current_exec_order >= tainted_trace_length)
     {
       // exceeds, namely the rollbacking phase should stop:
+
       // first, save the current execution path
-      current_exec_path = std::make_shared<execution_path>(ins_at_order, current_path_code);
-//      current_exec_path->calculate_conditions();
-      explored_exec_paths.push_back(current_exec_path);
+//      current_exec_path = std::make_shared<execution_path>(ins_at_order, current_path_code);
+//      explored_exec_paths.push_back(current_exec_path);
 
       // second, prepare tainting a new path
       prepare_new_tainting_phase();

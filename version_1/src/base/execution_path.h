@@ -23,6 +23,8 @@ public:
 typedef std::shared_ptr<execution_path> ptr_execution_path_t;
 typedef std::vector<ptr_execution_path_t> ptr_execution_paths_t;
 
+#if !defined(NDEBUG)
 auto show_path_condition(const ptr_execution_paths_t& exp_paths) -> void;
+#endif
 
 #endif // EXECUTION_PATH_H
