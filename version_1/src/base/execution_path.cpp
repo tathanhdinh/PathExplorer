@@ -127,7 +127,7 @@ auto are_isomorphic (const addrint_value_maps_t& maps_a, const addrint_value_map
 /**
  * @brief calculate stabilized condition
  */
-auto stabilize (const conditions_t& prev_cond) -> conditions_t
+auto stabilize (const conditions_t& input_cond) -> conditions_t
 {
   // lambda verifying if two maps a and b have an intersection
   auto have_intersection = [&](const addrint_value_map_t& map_a,
@@ -199,65 +199,128 @@ auto stabilize (const conditions_t& prev_cond) -> conditions_t
     return std::move(joined_list);
   };
 
-  // the condition is a cartesian product A x ... x B x ...
-  conditions_t new_cond = prev_cond;
-
-  // verify if there exist some intersected elements
-  auto cond_elem_a = prev_cond.begin();
-  for (; cond_elem_a != prev_cond.end(); ++cond_elem_a)
+  // lambda erasing some sub-condition of given type from a path condition
+  auto erase_from = [&](const addrint_value_map_t cond_type, conditions_t path_cond) -> void
   {
-    auto cond_elem_b = std::next(cond_elem_a);
-    for (; cond_elem_b != prev_cond.end(); ++cond_elem_b)
+    for (auto cond_elem = path_cond.begin(); cond_elem != path_cond.end(); ++cond_elem)
     {
-      // exist
-      if (have_intersection(*(cond_elem_a->first.begin()), *(cond_elem_b->first.begin())))
-      {
-        // then join their maps
-        auto joined_map = join_maps(cond_elem_a->first, cond_elem_b->first);
-
-        // and join their cfis
-        auto joined_cfis = join_cfis(cond_elem_a->second, cond_elem_b->second);
-
-        // erase element a from the condition
-        auto map_a = *(cond_elem_a->first.begin());
-        for (auto cond_elem = new_cond.begin(); cond_elem != new_cond.end(); ++cond_elem)
-        {
-          if (are_of_the_same_type(map_a, *(cond_elem->first.begin())))
-          {
-            new_cond.erase(cond_elem); break;
-          }
-        }
-
-        // erase element b from the condition
-        auto map_b = *(cond_elem_b->first.begin());
-        for (auto cond_elem = new_cond.begin(); cond_elem != new_cond.end(); ++cond_elem)
-        {
-          if (are_of_the_same_type(map_b, *(cond_elem->first.begin())))
-          {
-            new_cond.erase(cond_elem); break;
-          }
-        }
-
-        // push the joined element into the condition
-        new_cond.push_back(std::make_pair(joined_map, joined_cfis)); break;
-      }
+      if (are_of_the_same_type(cond_type, *(cond_elem->first.begin())))
+        path_cond.erase(cond_elem); break;
     }
+    return;
+  };
 
-    // that mean some intersected elements have been detected
-    if (cond_elem_b != prev_cond.end()) break;
-  }
 
-  // tail recursion
-  if (cond_elem_a == prev_cond.end())
+  // the condition can be considered as a cartesian product A x ... x B x ...
+  // the following loop modify the condition by merging intersected sub-conditions until no such
+  // intersection is found
+  conditions_t examined_cond = input_cond;
+  bool intersection_exists;
+  do
   {
-    // using move semantics may be not quite effective because of return value optimization
-    return std::move(new_cond);
+    intersection_exists = false;
+
+    // for each pair of sub-conditions
+//    auto cond_elem_a = examined_cond.begin();
+    for (auto cond_elem_a = examined_cond.begin(); cond_elem_a != examined_cond.end();
+         ++cond_elem_a)
+    {
+//      auto cond_elem_b = std::next(cond_elem_a);
+      for (auto cond_elem_b = std::next(cond_elem_a); cond_elem_b != examined_cond.end();
+           ++cond_elem_b)
+      {
+        // verify if they have intersection
+        if (have_intersection(*(cond_elem_a->first.begin()), *(cond_elem_b->first.begin())))
+        {
+          // yes
+          intersection_exists = true;
+
+          // then join their maps
+          auto joined_maps = join_maps(cond_elem_a->first, cond_elem_b->first);
+          // and join their cfi
+          auto joined_cfis = join_cfis(cond_elem_a->second, cond_elem_b->second);
+
+          // temporarily save the intersected sub-conditions;
+          auto map_a = *(cond_elem_a->first.begin()); auto map_b = *(cond_elem_b->first.begin());
+
+          // erase sub-condition a and b from the path condition, note the side-effect: the input
+          // condition examining_cond will be modified
+          erase_from(map_a, examined_cond); erase_from(map_b, examined_cond);
+
+          // add joined condition into the path condition
+          examined_cond.push_back(std::make_pair(joined_maps, joined_cfis));
+
+          // because the curr_cond has been modified, iterator cond_elem_a and cond_elem_b have
+          // been made invalid, restart the verification
+          break;
+        }
+      }
+      if (intersection_exists) break;
+    }
   }
-  else
-  {
-    // using move semantics may be not quite effective because of return value optimization
-    return std::move(std::bind(&stabilize, new_cond)());
-  }
+  while (intersection_exists);
+
+  return examined_cond;
+
+//  // the condition is a cartesian product A x ... x B x ...
+//  conditions_t new_cond = input_cond;
+
+//  // verify if there exist some intersected elements
+//  auto cond_elem_a = input_cond.begin();
+//  for (; cond_elem_a != input_cond.end(); ++cond_elem_a)
+//  {
+//    auto cond_elem_b = std::next(cond_elem_a);
+//    for (; cond_elem_b != input_cond.end(); ++cond_elem_b)
+//    {
+//      // exist
+//      if (have_intersection(*(cond_elem_a->first.begin()), *(cond_elem_b->first.begin())))
+//      {
+//        // then join their maps
+//        auto joined_map = join_maps(cond_elem_a->first, cond_elem_b->first);
+
+//        // and join their cfis
+//        auto joined_cfis = join_cfis(cond_elem_a->second, cond_elem_b->second);
+
+//        // erase element a from the condition
+//        auto map_a = *(cond_elem_a->first.begin());
+//        for (auto cond_elem = new_cond.begin(); cond_elem != new_cond.end(); ++cond_elem)
+//        {
+//          if (are_of_the_same_type(map_a, *(cond_elem->first.begin())))
+//          {
+//            new_cond.erase(cond_elem); break;
+//          }
+//        }
+
+//        // erase element b from the condition
+//        auto map_b = *(cond_elem_b->first.begin());
+//        for (auto cond_elem = new_cond.begin(); cond_elem != new_cond.end(); ++cond_elem)
+//        {
+//          if (are_of_the_same_type(map_b, *(cond_elem->first.begin())))
+//          {
+//            new_cond.erase(cond_elem); break;
+//          }
+//        }
+
+//        // push the joined element into the condition
+//        new_cond.push_back(std::make_pair(joined_map, joined_cfis)); break;
+//      }
+//    }
+
+//    // that mean some intersected elements have been detected
+//    if (cond_elem_b != input_cond.end()) break;
+//  }
+
+//  // tail recursion
+//  if (cond_elem_a == input_cond.end())
+//  {
+//    // using move semantics may be not quite effective because of return value optimization
+//    return std::move(new_cond);
+//  }
+//  else
+//  {
+//    // using move semantics may be not quite effective because of return value optimization
+//    return std::move(std::bind(&stabilize, new_cond)());
+//  }
 }
 
 
@@ -298,6 +361,8 @@ static inline auto calculate_from(const order_ins_map_t& current_path,
   conditions_t raw_condition;
   std::size_t current_code_order = 0;
 
+  tfm::format(std::cerr, "current path size %d with code size %d\n", current_path.size(),
+              current_path_code.size());
   std::for_each(current_path.begin(), current_path.end(),
                 [&](order_ins_map_t::const_reference order_ins)
   {
@@ -320,6 +385,7 @@ static inline auto calculate_from(const order_ins_map_t& current_path,
     }
   });
 
+  tfm::format(std::cerr, "stabilizing condition\n");
   return stabilize(raw_condition);
 }
 
