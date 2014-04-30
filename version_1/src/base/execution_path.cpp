@@ -221,11 +221,9 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
     intersection_exists = false;
 
     // for each pair of sub-conditions
-//    auto cond_elem_a = examined_cond.begin();
     for (auto cond_elem_a = examined_cond.begin(); cond_elem_a != examined_cond.end();
          ++cond_elem_a)
     {
-//      auto cond_elem_b = std::next(cond_elem_a);
       for (auto cond_elem_b = std::next(cond_elem_a); cond_elem_b != examined_cond.end();
            ++cond_elem_b)
       {
@@ -251,7 +249,7 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
           examined_cond.push_back(std::make_pair(joined_maps, joined_cfis));
 
           // because the curr_cond has been modified, iterator cond_elem_a and cond_elem_b have
-          // been made invalid, restart the verification
+          // been made invalid, breakout to restart the verification
           break;
         }
       }
