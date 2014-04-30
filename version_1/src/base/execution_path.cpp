@@ -125,7 +125,8 @@ auto are_isomorphic (const addrint_value_maps_t& maps_a, const addrint_value_map
 
 
 /**
- * @brief calculate stabilized condition
+ * @brief calculate stabilized condition which can be considered as a cartesian product
+ *                             A x ... x B x ...
  */
 auto stabilize (const conditions_t& input_cond) -> conditions_t
 {
@@ -133,6 +134,8 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
   auto have_intersection = [&](const addrint_value_map_t& map_a,
                                const addrint_value_map_t& map_b) -> bool
   {
+    tfm::format(std::cerr, "finding intersection %d %d \n", map_a.size(), map_b.size());
+
     // verify if there is some element of a is also an element of b
     return std::any_of(map_a.begin(), map_a.end(),
                        [&](addrint_value_map_t::value_type map_a_elem) -> bool
@@ -211,19 +214,24 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
   };
 
 
-  // the condition can be considered as a cartesian product A x ... x B x ...
   // the following loop modify the condition by merging intersected sub-conditions until no such
   // intersection is found
   conditions_t examined_cond = input_cond;
   bool intersection_exists;
+
+  tfm::format(std::cerr, "find fix-point\n");
+
   do
   {
     intersection_exists = false;
+
+    tfm::format(std::cerr, "examined condition size %d\n", examined_cond.size());
 
     // for each pair of sub-conditions
     for (auto cond_elem_a = examined_cond.begin(); cond_elem_a != examined_cond.end();
          ++cond_elem_a)
     {
+      tfm::format(std::cerr, "sub-condition a %d\n", cond_elem_a->first.size());
       for (auto cond_elem_b = std::next(cond_elem_a); cond_elem_b != examined_cond.end();
            ++cond_elem_b)
       {
@@ -259,66 +267,6 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
   while (intersection_exists);
 
   return examined_cond;
-
-//  // the condition is a cartesian product A x ... x B x ...
-//  conditions_t new_cond = input_cond;
-
-//  // verify if there exist some intersected elements
-//  auto cond_elem_a = input_cond.begin();
-//  for (; cond_elem_a != input_cond.end(); ++cond_elem_a)
-//  {
-//    auto cond_elem_b = std::next(cond_elem_a);
-//    for (; cond_elem_b != input_cond.end(); ++cond_elem_b)
-//    {
-//      // exist
-//      if (have_intersection(*(cond_elem_a->first.begin()), *(cond_elem_b->first.begin())))
-//      {
-//        // then join their maps
-//        auto joined_map = join_maps(cond_elem_a->first, cond_elem_b->first);
-
-//        // and join their cfis
-//        auto joined_cfis = join_cfis(cond_elem_a->second, cond_elem_b->second);
-
-//        // erase element a from the condition
-//        auto map_a = *(cond_elem_a->first.begin());
-//        for (auto cond_elem = new_cond.begin(); cond_elem != new_cond.end(); ++cond_elem)
-//        {
-//          if (are_of_the_same_type(map_a, *(cond_elem->first.begin())))
-//          {
-//            new_cond.erase(cond_elem); break;
-//          }
-//        }
-
-//        // erase element b from the condition
-//        auto map_b = *(cond_elem_b->first.begin());
-//        for (auto cond_elem = new_cond.begin(); cond_elem != new_cond.end(); ++cond_elem)
-//        {
-//          if (are_of_the_same_type(map_b, *(cond_elem->first.begin())))
-//          {
-//            new_cond.erase(cond_elem); break;
-//          }
-//        }
-
-//        // push the joined element into the condition
-//        new_cond.push_back(std::make_pair(joined_map, joined_cfis)); break;
-//      }
-//    }
-
-//    // that mean some intersected elements have been detected
-//    if (cond_elem_b != input_cond.end()) break;
-//  }
-
-//  // tail recursion
-//  if (cond_elem_a == input_cond.end())
-//  {
-//    // using move semantics may be not quite effective because of return value optimization
-//    return std::move(new_cond);
-//  }
-//  else
-//  {
-//    // using move semantics may be not quite effective because of return value optimization
-//    return std::move(std::bind(&stabilize, new_cond)());
-//  }
 }
 
 
