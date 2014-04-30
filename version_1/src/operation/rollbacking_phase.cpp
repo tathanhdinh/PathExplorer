@@ -149,19 +149,12 @@ static auto generic_randomized_generator () -> void
 }
 
 
-static inline auto initialize_values_at_active_modified_addrs () -> void
+static auto initialize_values_at_active_modified_addrs () -> void
 {
-//  active_modified_addrs_values.clear(); /*input_on_active_modified_addrs.clear();*/
-//  /*addrint_set_t::iterator*/auto addr_iter = active_modified_addrs.begin();
-//  for (; addr_iter != active_modified_addrs.end(); ++addr_iter)
-//  {
-//    active_modified_addrs_values[*addr_iter] = 0;
-//  }
-
   active_modified_addrs_values.clear();
   typedef decltype(active_modified_addrs) active_modified_addrs_t;
   std::for_each(active_modified_addrs.begin(), active_modified_addrs.end(),
-                [&](active_modified_addrs_t::value_type addr)
+                [&](active_modified_addrs_t::const_reference addr)
   {
     active_modified_addrs_values[addr] = 0;
 //    byte_testing_value = 0; word_testing_value = 0; dword_testing_value = 0;
@@ -171,19 +164,19 @@ static inline auto initialize_values_at_active_modified_addrs () -> void
   {
   case 1:
     max_rollback_num = std::numeric_limits<UINT8>::max() + 1;
-    gen_mode = sequential; /*generate_testing_values = byte_sequential_generator;*/
+    gen_mode = sequential;
     generate_testing_values = generic_sequential_generator<UINT8>;
     break;
 
   case 2:
     max_rollback_num = std::numeric_limits<UINT16>::max() + 1;
-    gen_mode = sequential; /*generate_testing_values = word_sequential_generator;*/
+    gen_mode = sequential;
     generate_testing_values = generic_sequential_generator<UINT16>;
     break;
 
   case 4:
     max_rollback_num = max_local_rollback_knob.Value();
-    gen_mode = randomized; /*generate_testing_values = dword_sequential_generator;*/
+    gen_mode = randomized;
 //    generate_testing_values = generic_sequential_generator<UINT32>;
     generate_testing_values = generic_randomized_generator<UINT32>;
     break;
@@ -261,7 +254,7 @@ static inline void get_next_active_checkpoint()
   {
     // exist, then find the next checkpoint in the checkpoint list of the current active CFI
     auto nx_chkpnt_iter = active_cfi->checkpoints.begin();
-    decltype(nx_chkpnt_iter) chkpnt_iter = nx_chkpnt_iter;
+    auto chkpnt_iter = nx_chkpnt_iter;
     while (++nx_chkpnt_iter != active_cfi->checkpoints.end())
     {
       if (chkpnt_iter->first->exec_order == active_checkpoint->exec_order)
@@ -293,8 +286,8 @@ static inline void get_next_active_checkpoint()
 /**
  * @brief calculate an input for the new tainting phase
  */
-static inline auto calculate_tainting_fresh_input(ptr_uint8_t selected_input,
-                                                  addrint_value_map_t& modified_addrs_with_values) -> void
+static auto calculate_tainting_fresh_input(ptr_uint8_t selected_input,
+                                           addrint_value_map_t& modified_addrs_with_values) -> void
 {
   // make a copy of the selected input
 //  tainting_input.reset(new UINT8[received_msg_size]);
@@ -314,7 +307,7 @@ static inline auto calculate_tainting_fresh_input(ptr_uint8_t selected_input,
 /**
  * @brief prepare_new_tainting_phase
  */
-static inline auto prepare_new_tainting_phase () -> void
+static auto prepare_new_tainting_phase () -> void
 {
   show_exploring_progress();
 
@@ -392,8 +385,8 @@ auto generic_instruction (ADDRINT ins_addr, THREADID thread_id) -> VOID
       // exceeds, namely the rollbacking phase should stop:
 
       // first, save the current execution path
-      current_exec_path = std::make_shared<execution_path>(ins_at_order, current_path_code);
-      explored_exec_paths.push_back(current_exec_path);
+//      current_exec_path = std::make_shared<execution_path>(ins_at_order, current_path_code);
+//      explored_exec_paths.push_back(current_exec_path);
 
       // second, prepare tainting a new path
       prepare_new_tainting_phase();
@@ -518,7 +511,8 @@ auto control_flow_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
               {
 #if !defined(NDEBUG)
                 tfm::format(log_file, "the cfi at %d is still actived, its next checkpoint is at %d, modified addresses size %d\n",
-                            active_cfi->exec_order, active_checkpoint->exec_order, active_modified_addrs.size());
+                            active_cfi->exec_order, active_checkpoint->exec_order,
+                            active_modified_addrs.size());
 #endif
                 // exists, then rollback to the new active checkpoint
                 rollback();

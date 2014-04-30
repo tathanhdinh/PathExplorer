@@ -173,9 +173,9 @@ static inline auto save_detected_cfis () -> void
         // verify if the instruction is a CFI
         if (order_ins.second->is_cond_direct_cf)
         {
-          // recast it as a CFI
+          // then recast to get its type
           auto new_cfi = std::static_pointer_cast<cond_direct_instruction>(order_ins.second);
-          // and depends on the input
+          // and if the recasted CFI depends on the input
           if (!new_cfi->input_dep_addrs.empty())
           {
             // then copy a fresh input for it
@@ -278,23 +278,41 @@ static inline auto analyze_executed_instructions () -> void
  * @brief calculate a new limit trace length for the next rollbacking phase, this limit is the
  * execution order of the last input dependent CFI in the tainting phase.
  */
-static inline auto calculate_rollbacking_trace_length() -> void
+static auto calculate_rollbacking_trace_length() -> void
 {
   rollbacking_trace_length = 0;
   auto ins_iter = ins_at_order.rbegin();
   ptr_cond_direct_ins_t last_cfi;
 
   // reverse iterate in the list of executed instructions
-  for (++ins_iter; ins_iter != ins_at_order.rend(); ++ins_iter)
+//  for (++ins_iter; ins_iter != ins_at_order.rend(); ++ins_iter)
+//  {
+//    // verify if the instruction is a CFI
+//    if (ins_iter->second->is_cond_direct_cf)
+//    {
+//      // and this CFI depends on the input
+//      last_cfi = std::static_pointer_cast<cond_direct_instruction>(ins_iter->second);
+//      if (!last_cfi->input_dep_addrs.empty()) break;
+//    }
+//  }
+
+  typedef decltype(ins_at_order) ins_at_order_t;
+  std::any_of(std::next(ins_at_order.rbegin()), ins_at_order.rend(),
+              [&](ins_at_order_t::const_reference ins_ord) -> bool
   {
     // verify if the instruction is a CFI
-    if (ins_iter->second->is_cond_direct_cf)
+    if (ins_ord.second->is_cond_direct_cf)
     {
       // and this CFI depends on the input
-      last_cfi = std::static_pointer_cast<cond_direct_instruction>(ins_iter->second);
-      if (!last_cfi->input_dep_addrs.empty()) break;
+      last_cfi = std::static_pointer_cast<cond_direct_instruction>(ins_ord.second);
+      if (last_cfi->input_dep_addrs.empty())
+      {
+        last_cfi.reset(); return false;
+      }
+      else return true;
     }
-  }
+    else return false;
+  });
 
   if (last_cfi && (!exploring_cfi || (last_cfi->exec_order > exploring_cfi->exec_order)))
     rollbacking_trace_length = std::min(last_cfi->exec_order + 1, max_trace_size);
