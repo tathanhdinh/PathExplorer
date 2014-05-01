@@ -164,7 +164,7 @@ static inline auto save_detected_cfis () -> void
   {
     typedef decltype(ins_at_order) ins_at_order_t;
     auto last_order_ins = *ins_at_order.rbegin();
-    std::for_each(ins_at_order.begin(), ins_at_order.end(), [&](ins_at_order_t::value_type order_ins)
+    std::for_each(ins_at_order.begin(), ins_at_order.end(), [&](ins_at_order_t::const_reference order_ins)
     {
       // consider only the instruction that is not behind the exploring CFI
       if ((!exploring_cfi || (exploring_cfi && (order_ins.first > exploring_cfi->exec_order))) &&

@@ -43,12 +43,6 @@ namespace rollbacking
  */
 static auto randomized_generator () -> void
 {
-//  for (auto addr_iter = active_modified_addrs_values.begin();
-//       addr_iter != active_modified_addrs_values.end(); ++addr_iter)
-//  {
-//    addr_iter->second = std::rand() % std::numeric_limits<UINT8>::max();
-//  }
-
   typedef decltype(active_modified_addrs_values) active_modified_addrs_values_t;
   std::for_each(active_modified_addrs_values.begin(), active_modified_addrs_values.end(),
                 [&](active_modified_addrs_values_t::reference addr_value)
@@ -57,64 +51,6 @@ static auto randomized_generator () -> void
   });
   return;
 }
-
-
-///**
-// * @brief sequential_generator
-// */
-//static auto sequential_generator () -> void
-//{
-//  for (auto addr_iter = active_modified_addrs_values.begin();
-//       addr_iter != active_modified_addrs_values.end(); ++addr_iter)
-//  {
-//    addr_iter->second++;
-//  }
-//  return;
-//}
-
-
-///**
-// * @brief byte_sequential_generator
-// */
-//static auto byte_sequential_generator () -> void
-//{
-//  active_modified_addrs_values.begin()->second = byte_testing_value;
-//  byte_testing_value++;
-//  return;
-//}
-
-
-///**
-// * @brief word_sequential_generator
-// */
-//static auto word_sequential_generator () -> void
-//{
-//  active_modified_addrs_values.begin()->second = word_testing_value & 0x00FF;
-//  std::next(
-//        active_modified_addrs_values.begin())->second = word_testing_value >> 8;
-//  word_testing_value++;
-//  return;
-//}
-
-
-///**
-// * @brief dword_sequential_generator
-// */
-//static auto dword_sequential_generator () -> void
-//{
-//  active_modified_addrs_values.begin()->second = dword_testing_value & 0x000000FF;
-//  std::next(
-//        active_modified_addrs_values.begin())->second = (dword_testing_value >> 8) & 0x000000FF;
-//  std::next(
-//        std::next(
-//          active_modified_addrs_values.begin()))->second = (dword_testing_value >> 16) & 0x000000FF;
-//  std::next(
-//        std::next(
-//          std::next(
-//            active_modified_addrs_values.begin())))->second = (dword_testing_value >> 24) & 0x000000FF;
-//  dword_testing_value++;
-//  return;
-//}
 
 
 /**
@@ -404,11 +340,6 @@ auto generic_instruction (ADDRINT ins_addr, THREADID thread_id) -> VOID
     else
     {
       current_exec_order++;
-//#if !defined(NDEBUG)
-//      tfm::format(std::cerr, "%-3d %-15s %-50s %-25s %-25s\n", current_exec_order,
-//                  addrint_to_hexstring(ins_addr), ins_at_addr[ins_addr]->disassembled_name,
-//                  ins_at_addr[ins_addr]->contained_image, ins_at_addr[ins_addr]->contained_function);
-//#endif
 
       // verify if the executed instruction is in the original trace
       if (ins_at_order[current_exec_order]->address != ins_addr)
@@ -429,22 +360,13 @@ auto generic_instruction (ADDRINT ins_addr, THREADID thread_id) -> VOID
 #endif
             // it is, then it will be marked as resolved
             active_cfi->is_resolved = true;
-            // push an input projection into the corresponding input list of the active CFI
-            if (active_cfi->second_input_projections.empty())
-            {
-//              project_input_on_active_modified_addrs();
-              active_cfi->second_input_projections.push_back(active_modified_addrs_values);
-//              active_cfi->second_input_projections.push_back(input_on_active_modified_addrs);
-            }
 
-//#if !defined(DISABLE_FSA)
-//            // because the CFI will follow new direction so the path code should be changed
-//            project_input_on_active_modified_addrs();
-//            path_code_t new_path_code = active_cfi->path_code; new_path_code.push_back(true);
-//            explored_fsa->add_edge(ins_at_order[current_exec_order - 1]->address,
-//                                   ins_at_order[current_exec_order]->address, new_path_code,
-//                                   input_on_active_modified_addrs);
-//#endif
+            // push an input projection into the corresponding input list of the active CFI
+            active_cfi->second_input_projections.push_back(active_modified_addrs_values);
+//            if (active_cfi->second_input_projections.empty())
+//            {
+//              active_cfi->second_input_projections.push_back(active_modified_addrs_values);
+//            }
           }
           else
           {
@@ -470,13 +392,7 @@ auto generic_instruction (ADDRINT ins_addr, THREADID thread_id) -> VOID
         // and the executed instruction has exceeded this CFI
         if (active_cfi && (current_exec_order > active_cfi->exec_order))
         {
-//#if !defined(DISABLE_FSA)
-//          project_input_on_active_modified_addrs();
-//          path_code_t new_path_code = active_cfi->path_code; new_path_code.push_back(false);
-//          explored_fsa->add_edge(ins_at_order[current_exec_order - 1]->address,
-//                                 ins_at_order[current_exec_order]->address, new_path_code,
-//                                 input_on_active_modified_addrs);
-//#endif
+          active_cfi->first_input_projections.push_back(active_modified_addrs_values);
           rollback();
         }
       }
@@ -492,8 +408,6 @@ auto generic_instruction (ADDRINT ins_addr, THREADID thread_id) -> VOID
  */
 auto control_flow_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
 {
-//  ptr_cond_direct_ins_t current_cfi;
-
   if (thread_id == traced_thread_id)
   {
     // consider only CFIs that are beyond the exploring CFI
@@ -574,7 +488,7 @@ auto control_flow_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
 //            active_cfi->first_input_projections.push_back(input_on_active_modified_addrs);
 //          }
 
-          // and rollback to resolve the new active CFI
+          // and rollback to resolve this new active CFI
           rollback();
         }
       }
