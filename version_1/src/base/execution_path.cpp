@@ -214,8 +214,8 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
   };
 
 
-  // the following loop modify the condition by merging intersected sub-conditions until no such
-  // intersection is found
+  // the following loop makes the condition converge on a stabilized state: it modifies the
+  // condition by merging intersected sub-conditions until no such intersection is found
   conditions_t examined_cond = input_cond;
   bool intersection_exists;
 
@@ -256,8 +256,8 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
           // add joined condition into the path condition
           examined_cond.push_back(std::make_pair(joined_maps, joined_cfis));
 
-          // because the curr_cond has been modified, iterator cond_elem_a and cond_elem_b have
-          // been made invalid, breakout to restart the verification
+          // because the curr_cond has been modified, both iterators cond_elem_a and cond_elem_b
+          // have been made invalid, breakout to restart the verification
           break;
         }
       }
@@ -301,8 +301,8 @@ auto order(const conditions_t& stabilized_cond) -> int
 /**
  * @brief reconstruct path condition as a cartesian product A x ... x B x ...
  */
-static inline auto calculate_from(const order_ins_map_t& current_path,
-                                  const path_code_t& current_path_code) -> conditions_t
+static auto calculate_from(const order_ins_map_t& current_path,
+                           const path_code_t& current_path_code) -> conditions_t
 {
   conditions_t raw_condition;
   std::size_t current_code_order = 0;

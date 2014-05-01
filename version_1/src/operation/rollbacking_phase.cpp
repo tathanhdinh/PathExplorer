@@ -117,11 +117,16 @@ static auto randomized_generator () -> void
 //}
 
 
+/**
+ * the template function is conherent only where sizeof(T) = active_modified_addrs_values.size()
+ */
 template <typename T>
 static auto generic_sequential_generator () -> void
 {
   static T generic_testing_value = 0;
 
+  // because sizeof(T) = active_modified_addrs_values.size(), all elements of
+  // active_modified_addrs_values will be updated
   auto addr_value = active_modified_addrs_values.begin();
   for (auto idx = 0; idx < sizeof(T); ++idx)
   {
@@ -133,6 +138,9 @@ static auto generic_sequential_generator () -> void
 }
 
 
+/**
+ * the template function is conherent only where sizeof(T) = active_modified_addrs_values.size()
+ */
 template <typename T>
 static auto generic_randomized_generator () -> void
 {
@@ -149,6 +157,9 @@ static auto generic_randomized_generator () -> void
 }
 
 
+/**
+ * @brief initialize_values_at_active_modified_addrs
+ */
 static auto initialize_values_at_active_modified_addrs () -> void
 {
   active_modified_addrs_values.clear();
@@ -157,7 +168,6 @@ static auto initialize_values_at_active_modified_addrs () -> void
                 [&](active_modified_addrs_t::const_reference addr)
   {
     active_modified_addrs_values[addr] = 0;
-//    byte_testing_value = 0; word_testing_value = 0; dword_testing_value = 0;
   });
 
   switch (active_modified_addrs_values.size())
@@ -246,7 +256,7 @@ static inline void rollback()
 /**
  * @brief get the next active checkpoint and the active modified addresses
  */
-static inline void get_next_active_checkpoint()
+static auto get_next_active_checkpoint () -> void
 {
 //  std::vector<checkpoint_with_modified_addrs>::iterator chkpnt_iter, nx_chkpnt_iter;
   // verify if there exist an enabled active checkpoint
@@ -594,7 +604,7 @@ auto mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length
     {
       // no, namely we are now in normal "forward" execution, so all checkpoint until the current
       // execution order need to track memory write instructions
-      /*ptr_checkpoints_t::iterator*/auto chkpnt_iter = saved_checkpoints.begin();
+      auto chkpnt_iter = saved_checkpoints.begin();
       for (; chkpnt_iter != saved_checkpoints.end(); ++chkpnt_iter)
       {
         if ((*chkpnt_iter)->exec_order <= current_exec_order)
