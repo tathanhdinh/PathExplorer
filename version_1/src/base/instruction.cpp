@@ -52,8 +52,6 @@ instruction::instruction(const INS& ins)
   this->has_real_rep          = INS_HasRealRep(ins);
 
   // collect read/write registers
-//  UINT32        register_id, register_num;
-//  REG           curr_register;
   ptr_operand_t new_operand;
 
   if ((ins_opcode == XED_ICLASS_CMPSB) || (ins_opcode == XED_ICLASS_CMPSD) ||

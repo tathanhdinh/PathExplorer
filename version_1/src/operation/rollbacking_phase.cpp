@@ -160,7 +160,7 @@ static auto initialize_values_at_active_modified_addrs () -> void
 static inline void rollback()
 {
   // verify if the number of used rollbacks has reached its bound
-  if (used_rollback_num < max_rollback_num - 1)
+  if (used_rollback_num < /*max_rollback_num - 1*/max_rollback_num)
   {
     // not reached yet, then just rollback again with a new value of the input
     active_cfi->used_rollback_num++; used_rollback_num++; generate_testing_values();
@@ -170,7 +170,7 @@ static inline void rollback()
   else
   {
     // already reached, then restore the orginal value of the input
-    if (used_rollback_num == max_rollback_num - 1)
+    if (used_rollback_num == /*max_rollback_num - 1*/max_rollback_num)
     {
       active_cfi->used_rollback_num++; used_rollback_num++;
       rollback_with_original_input(active_checkpoint, current_exec_order);
@@ -427,7 +427,7 @@ auto control_flow_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
           if (current_exec_order == active_cfi->exec_order)
           {
             // verify if its current checkpoint is in the last rollback try
-            if (used_rollback_num == max_rollback_num)
+            if (used_rollback_num == max_rollback_num + 1)
             {
               // yes, then verify if there exists another checkpoint
               get_next_active_checkpoint();
