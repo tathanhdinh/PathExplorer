@@ -56,66 +56,85 @@ instruction::instruction(const INS& ins)
 //  REG           curr_register;
   ptr_operand_t new_operand;
 
-  auto r_reg_num = INS_MaxNumRRegs(ins);
-  for (decltype(r_reg_num) r_reg_id = 0; r_reg_id < r_reg_num; ++r_reg_id)
+  if ((ins_opcode == XED_ICLASS_CMPSB) || (ins_opcode == XED_ICLASS_CMPSD) ||
+      (ins_opcode == XED_ICLASS_CMPSW) || (ins_opcode == XED_ICLASS_CMPSQ))
   {
-    auto r_reg = INS_RegR(ins, r_reg_id);
-    // the source register is not considered when it is the instruction pointer, namely the control 
-    // tainting will not be considered
-    if (r_reg != REG_INST_PTR)
+    // do not consider read registers of compare instructions
+  }
+  else
+  {
+    auto r_reg_num = INS_MaxNumRRegs(ins);
+    for (/*decltype(r_reg_num)*/auto r_reg_id = 0; r_reg_id < r_reg_num; ++r_reg_id)
     {
-      if (INS_IsRet(ins) && (r_reg == REG_STACK_PTR))
+
+      auto r_reg = INS_RegR(ins, r_reg_id);
+      // the source register is not considered when it is the instruction pointer, namely the control
+      // tainting will not be considered
+      if (r_reg != REG_INST_PTR)
       {
-        // do nothing: when the instruction is ret, the esp (and rsp) register will be used 
-        // implicitly to point out the address of popped value; to eliminate the 
-        // excessive dependence, this register is not considered.
-      }
-      else 
-      {
-        // add the segment registers filter
-        if ((REG_SEG_BASE <= r_reg) && (r_reg <= REG_SEG_LAST))
+        if (INS_IsRet(ins) && (r_reg == REG_STACK_PTR))
         {
-          // do nothing: the segment registers are obsolete
+          // do nothing: when the instruction is ret, the esp (and rsp) register will be used
+          // implicitly to point out the address of popped value; to eliminate the
+          // excessive dependence, this register is not considered.
         }
         else
         {
-//          new_operand.reset(new operand(r_reg));
-          new_operand = std::make_shared<operand>(r_reg);
-          this->src_operands.insert(new_operand);
+          // add the segment registers filter
+          if ((REG_SEG_BASE <= r_reg) && (r_reg <= REG_SEG_LAST))
+          {
+            // do nothing: the segment registers are obsolete
+          }
+          else
+          {
+            // new_operand.reset(new operand(r_reg));
+//            new_operand = std::make_shared<operand>(r_reg);
+            this->src_operands.insert(/*new_operand*/std::make_shared<operand>(r_reg));
+          }
         }
       }
     }
   }
   
-  auto w_reg_num = INS_MaxNumWRegs(ins);
-  for (decltype(w_reg_num) w_reg_id = 0; w_reg_id < w_reg_num; ++w_reg_id)
+  if ((ins_opcode == XED_ICLASS_CMPSB) || (ins_opcode == XED_ICLASS_CMPSD) ||
+      (ins_opcode == XED_ICLASS_CMPSW) || (ins_opcode == XED_ICLASS_CMPSQ))
   {
-    auto w_reg = INS_RegW(ins, w_reg_id);
-    if ((w_reg != REG_INST_PTR) || INS_IsBranchOrCall(ins) || INS_IsRet(ins) || INS_HasRealRep(ins))
+    // consider only flags register of compare instructions
+//    new_operand = std::make_shared<operand>(REG_EFLAGS);
+    this->dst_operands.insert(std::make_shared<operand>(REG_EFLAGS));
+  }
+  else
+  {
+    auto w_reg_num = INS_MaxNumWRegs(ins);
+    for (/*decltype(w_reg_num)*/auto w_reg_id = 0; w_reg_id < w_reg_num; ++w_reg_id)
     {
-      if ((w_reg == REG_STACK_PTR) && INS_IsRet(ins))
+      auto w_reg = INS_RegW(ins, w_reg_id);
+      if ((w_reg != REG_INST_PTR) || INS_IsBranchOrCall(ins) || INS_IsRet(ins) || INS_HasRealRep(ins))
       {
-        // do nothing: see above
-      }
-      else
-      {
-        // add the segment registers filter
-        if ((REG_SEG_BASE <= w_reg) && (w_reg <= REG_SEG_LAST))
+        if ((w_reg == REG_STACK_PTR) && INS_IsRet(ins))
         {
           // do nothing: see above
         }
         else
         {
-//          new_operand.reset(new operand(w_reg));
-          new_operand = std::make_shared<operand>(w_reg);
-          this->dst_operands.insert(new_operand);
+          // add the segment registers filter
+          if ((REG_SEG_BASE <= w_reg) && (w_reg <= REG_SEG_LAST))
+          {
+            // do nothing: see above
+          }
+          else
+          {
+            // new_operand.reset(new operand(w_reg));
+//            new_operand = std::make_shared<operand>(w_reg);
+            this->dst_operands.insert(/*new_operand*/std::make_shared<operand>(w_reg));
+          }
         }
       }
-    }
-    else
-    {
-      // do nothing if the register is the instruction pointer and the instruction is not a kind
-      // that can change the ip then the register is not considered
+      else
+      {
+        // do nothing if the register is the instruction pointer and the instruction is not a kind
+        // that can change the ip then the register is not considered
+      }
     }
   }
 }

@@ -45,26 +45,21 @@ auto save_explored_trace (const std::string& filename) -> void
 class vertex_label_writer
 {
 public:
-  vertex_label_writer(df_diagram& diagram) : tainting_graph(diagram)
-  {
-  }
+  vertex_label_writer(df_diagram& diagram) : tainting_graph(diagram) {}
 
-  template <typename Vertex>
-  void operator()(std::ostream& vertex_label, Vertex vertex)
+//  template <typename Vertex>
+  void operator()(std::ostream& vertex_label, /*Vertex*/df_vertex_desc vertex)
   {
-    df_vertex current_vertex = tainting_graph[vertex];
+    /*df_vertex*/auto current_vertex = tainting_graph[vertex];
     if ((current_vertex->value.type() == typeid(ADDRINT)) &&
         (received_msg_addr <= boost::get<ADDRINT>(current_vertex->value)) &&
         (boost::get<ADDRINT>(current_vertex->value) < received_msg_addr + received_msg_size))
     {
       tfm::format(vertex_label, "[color=blue,style=filled,label=\"%s\"]", current_vertex->name);
-//      vertex_label << boost::format("[color=blue,style=filled,label=\"%s\"]")
-//                      % current_vertex->name;
     }
     else
     {
       tfm::format(vertex_label, "[color=black,label=\"%s\"]", current_vertex->name);
-//      vertex_label << boost::format("[color=black,label=\"%s\"]") % current_vertex->name;
     }
   }
 
@@ -79,18 +74,15 @@ private:
 class edge_label_writer
 {
 public:
-  edge_label_writer(df_diagram& diagram) : tainting_graph(diagram)
-  {
-  }
+  edge_label_writer(df_diagram& diagram) : tainting_graph(diagram) {}
 
-  template <typename Edge>
-  void operator()(std::ostream& edge_label, Edge edge)
+//  template <typename Edge>
+  void operator()(std::ostream& edge_label, /*Edge*/df_edge_desc edge)
   {
-    df_edge current_edge = tainting_graph[edge];
-    tfm::format(edge_label, "[label=\"%s: %s\"]", current_edge,
-                ins_at_order[current_edge]->disassembled_name);
-//    edge_label << boost::format("[label=\"%s: %s\"]")
-//                  % current_edge % ins_at_order[current_edge]->disassembled_name;
+    auto current_edge = tainting_graph[edge];
+//    tfm::format(edge_label, "[label=\"%s: %s\"]", current_edge,
+//                ins_at_order[current_edge]->disassembled_name);
+    tfm::format(edge_label, "[label=\"%s\"]", current_edge);
   }
 
 private:
@@ -101,7 +93,7 @@ private:
 /**
  * @brief save the tainting graph
  */
-auto save_tainting_graph  (df_diagram& dta_graph, const std::string& filename) -> void
+auto save_tainting_graph (df_diagram& dta_graph, const std::string& filename) -> void
 {
   std::ofstream out_file(filename.c_str(), std::ofstream::out | std::ofstream::trunc);
   boost::write_graphviz(out_file, dta_graph, vertex_label_writer(dta_graph),
@@ -123,8 +115,7 @@ auto path_code_to_string  (const path_code_t& path_code) -> std::string
 //    else code_str.push_back('0');
 //  }
 
-  std::for_each(path_code.begin(), path_code.end(),
-                [&](path_code_t::const_reference code_elem)
+  std::for_each(path_code.begin(), path_code.end(), [&](path_code_t::const_reference code_elem)
   {
     if (code_elem) code_str.push_back('1');
     else code_str.push_back('0');
