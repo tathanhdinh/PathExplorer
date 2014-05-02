@@ -1,22 +1,8 @@
 #ifndef INSTRUCTION_H
 #define INSTRUCTION_H
 
-// these definitions are not necessary (defined already in the CMakeLists),
-// they are added just to make qt-creator parsing headers
-#if defined(_WIN32) || defined(_WIN64)
-#ifndef TARGET_IA32
-#define TARGET_IA32
-#endif
-#ifndef HOST_IA32
-#define HOST_IA32
-#endif
-#ifndef TARGET_WINDOWS
-#define TARGET_WINDOWS
-#endif
-#ifndef USING_XED
-#define USING_XED
-#endif
-#endif
+#include "../parsing_helper.h"
+#include "operand.h"
 
 #include <pin.H>
 extern "C"
@@ -24,12 +10,9 @@ extern "C"
 #include <xed-interface.h>
 }
 
-#include <string>
 #include <map>
 #include <set>
 #include <vector>
-
-#include "operand.h"
 
 class instruction
 {

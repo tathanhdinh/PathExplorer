@@ -8,14 +8,6 @@
 #include <string>
 #include <list>
 
-//#if __cplusplus < 199711L
-//#include <boost/shared_ptr.hpp>
-//#define pept boost
-//#else
-//#include <memory>
-//#define pept std
-//#endif
-
 #include <boost/variant.hpp>
 #include <boost/graph/adjacency_list.hpp>
 

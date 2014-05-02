@@ -6,14 +6,6 @@
 
 #include <vector>
 
-//#if __cplusplus < 199711L
-//#include <boost/shared_ptr.hpp>
-//#define pept boost
-//#else
-//#include <memory>
-//#define pept std
-//#endif
-
 typedef std::shared_ptr<UINT8>                      ptr_uint8_t;
 typedef std::set<ADDRINT>                           addrint_set_t;
 typedef std::map<ADDRINT, UINT8>                    addrint_value_map_t;

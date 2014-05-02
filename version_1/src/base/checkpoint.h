@@ -9,14 +9,6 @@
 #include <vector>
 #include <memory>
 
-//#if __cplusplus < 199711L
-//#include <boost/shared_ptr.hpp>
-//#define pept boost
-//#else
-//#include <memory>
-//#define pept std
-//#endif
-
 typedef std::map<ADDRINT, UINT8> addrint_value_map_t;
 
 class checkpoint
