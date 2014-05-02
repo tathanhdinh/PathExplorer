@@ -117,11 +117,19 @@ auto path_code_to_string  (const path_code_t& path_code) -> std::string
 {
   std::string code_str = "";
   /*path_code_t::const_iterator*/
-  for (auto code_iter = path_code.begin(); code_iter != path_code.end(); ++code_iter)
+//  for (auto code_iter = path_code.begin(); code_iter != path_code.end(); ++code_iter)
+//  {
+//    if (*code_iter) code_str.push_back('1');
+//    else code_str.push_back('0');
+//  }
+
+  std::for_each(path_code.begin(), path_code.end(),
+                [&](path_code_t::const_reference code_elem)
   {
-    if (*code_iter) code_str.push_back('1');
+    if (code_elem) code_str.push_back('1');
     else code_str.push_back('0');
-  }
+  });
+
   return std::move(code_str);
 }
 #endif
@@ -157,5 +165,20 @@ auto show_exploring_progress () -> void
               resolved_cfi_num, explored_cfi_num, singular_cfi_num, detected_input_dep_cfis.size());
   std::cout.flush();
 
+  return;
+}
+
+
+auto show_cfi_logged_inputs () -> void
+{
+  typedef decltype(detected_input_dep_cfis) cfis_t;
+  std::for_each(detected_input_dep_cfis.begin(), detected_input_dep_cfis.end(),
+                [&](cfis_t::const_reference cfi_elem)
+  {
+    if (cfi_elem->is_resolved)
+      tfm::format(std::cerr, "logged input of CFI %s: first %d, second %d\n",
+                  addrint_to_hexstring(cfi_elem->address), cfi_elem->first_input_projections.size(),
+                  cfi_elem->second_input_projections.size());
+  });
   return;
 }

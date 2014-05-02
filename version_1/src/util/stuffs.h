@@ -19,4 +19,6 @@ auto path_code_to_string        (const path_code_t& path_code) -> std::string;
 
 auto show_exploring_progress    () -> void;
 
+auto show_cfi_logged_inputs     () -> void;
+
 #endif // STUFFS_H
