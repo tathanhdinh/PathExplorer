@@ -99,9 +99,9 @@ static auto generic_randomized_generator () -> void
 static auto initialize_values_at_active_modified_addrs () -> void
 {
   active_modified_addrs_values.clear();
-  typedef decltype(active_modified_addrs) active_modified_addrs_t;
+  typedef decltype(active_modified_addrs) addrs_t;
   std::for_each(active_modified_addrs.begin(), active_modified_addrs.end(),
-                [&](active_modified_addrs_t::const_reference addr)
+                [&](addrs_t::const_reference addr)
   {
     active_modified_addrs_values[addr] = 0;
   });
@@ -582,18 +582,29 @@ auto mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length
     {
       // no, namely we are now in normal "forward" execution, so all checkpoint until the current
       // execution order need to track memory write instructions
-      auto chkpnt_iter = saved_checkpoints.begin();
-      for (; chkpnt_iter != saved_checkpoints.end(); ++chkpnt_iter)
+//      auto chkpnt_iter = saved_checkpoints.begin();
+//      for (; chkpnt_iter != saved_checkpoints.end(); ++chkpnt_iter)
+//      {
+//        if ((*chkpnt_iter)->exec_order <= current_exec_order)
+//        {
+//          (*chkpnt_iter)->mem_write_tracking(mem_addr, mem_length);
+//        }
+//        else
+//        {
+//          break;
+//        }
+//      }
+
+      typedef decltype(saved_checkpoints) checkpoints_t;
+      std::any_of(saved_checkpoints.begin(), saved_checkpoints.end(),
+                  [&](checkpoints_t::reference checkpoint_elem) -> bool
       {
-        if ((*chkpnt_iter)->exec_order <= current_exec_order)
+        if (checkpoint_elem->exec_order <= current_exec_order)
         {
-          (*chkpnt_iter)->mem_write_tracking(mem_addr, mem_length);
+          checkpoint_elem->mem_write_tracking(mem_addr, mem_length); return false;
         }
-        else
-        {
-          break;
-        }
-      }
+        else return true;
+      });
     }
   }
   return;
