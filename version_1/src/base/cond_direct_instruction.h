@@ -10,7 +10,8 @@ typedef std::shared_ptr<UINT8>                      ptr_uint8_t;
 typedef std::set<ADDRINT>                           addrint_set_t;
 typedef std::map<ADDRINT, UINT8>                    addrint_value_map_t;
 typedef std::vector<addrint_value_map_t>            addrint_value_maps_t;
-typedef std::pair<ptr_checkpoint_t, addrint_set_t>  checkpoint_with_modified_addrs;
+typedef std::pair<ptr_checkpoint_t, addrint_set_t>  checkpoint_addrs_pair_t;
+typedef std::vector<checkpoint_addrs_pair_t>        checkpoint_addrs_pairs_t;
 
 #if !defined(DISABLE_FSA)
 typedef std::vector<bool>                           path_code_t;
@@ -31,12 +32,12 @@ public:
   path_code_t path_code;
 #endif
 
-  addrint_set_t                                 input_dep_addrs;
-  addrint_value_maps_t                          first_input_projections;
-  addrint_value_maps_t                          second_input_projections;
-  std::vector<checkpoint_with_modified_addrs>   checkpoints;
+  addrint_set_t             input_dep_addrs;
+  addrint_value_maps_t      first_input_projections;
+  addrint_value_maps_t      second_input_projections;
+  checkpoint_addrs_pairs_t  affecting_checkpoint_addrs_pairs;
 
-  ptr_uint8_t                                   fresh_input;
+  ptr_uint8_t               fresh_input;
 
 public:
   cond_direct_instruction(const INS& ins);

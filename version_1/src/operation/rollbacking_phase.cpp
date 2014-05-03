@@ -193,11 +193,13 @@ static inline void rollback()
 /**
  * @brief get the next active checkpoint and the active modified addresses
  */
-static auto get_next_active_checkpoint () -> void
+static auto get_next_active_checkpoint (ptr_checkpoint_t input_checkpoint, ptr_cond_direct_ins_t input_cfi) -> checkpoint_addrs_pair_t
 {
+  checkpoint_addrs_pair_t result;
+
 //  std::vector<checkpoint_with_modified_addrs>::iterator chkpnt_iter, nx_chkpnt_iter;
   // verify if there exist an enabled active checkpoint
-  if (active_checkpoint)
+  if (/*active_checkpoint*/input_checkpoint)
   {
     // exist, then find the next checkpoint in the checkpoint list of the current active CFI
 //    auto nx_chkpnt_iter = active_cfi->checkpoints.begin();
@@ -217,32 +219,51 @@ static auto get_next_active_checkpoint () -> void
 //      active_checkpoint.reset(); active_modified_addrs.clear();
 //    }
 
-    typedef decltype(active_cfi->checkpoints) checkpoints_t;
-    auto prev_elem = active_cfi->checkpoints.front();
-    if (!std::any_of(std::next(active_cfi->checkpoints.begin()), active_cfi->checkpoints.end(),
-                [&](checkpoints_t::reference checkpoint_elem) -> bool
+//    typedef decltype(active_cfi->affecting_checkpoint_addrs_pairs) checkpoints_t;
+    auto prev_elem = /*active_cfi*/input_cfi->affecting_checkpoint_addrs_pairs.front();
+//    if (!std::any_of(std::next(active_cfi->affecting_checkpoint_addrs_pairs.begin()),
+//                     active_cfi->affecting_checkpoint_addrs_pairs.end(),
+//                     [&](checkpoint_addrs_pairs_t::reference checkpoint_addrs_elem) -> bool
+//    {
+//      if (prev_elem.first->exec_order == active_checkpoint->exec_order)
+//      {
+////        active_checkpoint = checkpoint_addrs_elem.first;
+////        active_modified_addrs = checkpoint_addrs_elem.second;
+//        result = checkpoint_addrs_elem;
+//        return true;
+//      }
+//      else return false;
+//    }))
+//    {
+//      active_checkpoint.reset(); active_modified_addrs.clear();
+//    }
+    std::any_of(std::next(input_cfi->affecting_checkpoint_addrs_pairs.begin()),
+                input_cfi->affecting_checkpoint_addrs_pairs.end(),
+                [&](checkpoint_addrs_pairs_t::reference checkpoint_addrs_elem) -> bool
     {
-      if (prev_elem.first->exec_order == active_checkpoint->exec_order)
+      if (prev_elem.first->exec_order == input_checkpoint->exec_order)
       {
-        active_checkpoint = checkpoint_elem.first; active_modified_addrs = checkpoint_elem.second;
+//        active_checkpoint = checkpoint_addrs_elem.first;
+//        active_modified_addrs = checkpoint_addrs_elem.second;
+        result = checkpoint_addrs_elem;
         return true;
       }
       else return false;
-    }))
-    {
-      active_checkpoint.reset(); active_modified_addrs.clear();
-    }
+    });
+
   }
   else
   {
     // doest not exist, then the active checkpoint is assigned as the first checkpoint of the
     // current active CFI
-    active_checkpoint = active_cfi->checkpoints[0].first;
-    active_modified_addrs = active_cfi->checkpoints[0].second;
+//    active_checkpoint = active_cfi->affecting_checkpoint_addrs_pairs[0].first;
+//    active_modified_addrs = active_cfi->affecting_checkpoint_addrs_pairs[0].second;
+    result = input_cfi->affecting_checkpoint_addrs_pairs[0];
   }
 
-  if (active_checkpoint) initialize_values_at_active_modified_addrs();
-  return;
+//  if (active_checkpoint) initialize_values_at_active_modified_addrs();
+
+  return result;
 }
 
 
@@ -509,7 +530,9 @@ auto control_flow_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
             {
               // yes, then verify if there exists another checkpoint, note that used_rollback_num
               // will be reset to zero here
-              get_next_active_checkpoint();
+              std::tie(active_checkpoint, active_modified_addrs) =
+                  get_next_active_checkpoint(active_checkpoint, active_cfi);
+//              if (active_checkpoint) initialize_values_at_active_modified_addrs();
               if (active_checkpoint)
               {
 #if !defined(NDEBUG)
@@ -518,6 +541,7 @@ auto control_flow_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
                             active_modified_addrs.size());
 #endif
                 // exists, then rollback to the new active checkpoint
+                initialize_values_at_active_modified_addrs();
                 rollback();
               }
               else
@@ -525,7 +549,7 @@ auto control_flow_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
                 // the next checkpoint does not exist, all of its reserved tests have been used
                 active_cfi->is_bypassed = !active_cfi->is_resolved;
                 active_cfi->is_singular = active_cfi->is_bypassed &&
-                    (active_cfi->checkpoints.size() == 1) && (gen_mode == sequential);
+                    (active_cfi->affecting_checkpoint_addrs_pairs.size() == 1) && (gen_mode == sequential);
                 total_rollback_times += active_cfi->used_rollback_num;
 
 //                if (active_cfi->is_bypassed && (active_cfi->checkpoints.size() == 1) &&
@@ -552,7 +576,8 @@ auto control_flow_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
         if (!current_cfi->input_dep_addrs.empty())
         {
           // yes, then set it as the active CFI
-          active_cfi = current_cfi; get_next_active_checkpoint();
+          active_cfi = current_cfi;
+          std::tie(active_checkpoint, active_modified_addrs) = get_next_active_checkpoint(active_checkpoint, active_cfi);
 #if !defined(NDEBUG)
           tfm::format(log_file, "the CFI %s at %d is activated, its first checkpoint is at %d, modified addresses size %d\n",
                       active_cfi->disassembled_name, active_cfi->exec_order,
@@ -564,6 +589,7 @@ auto control_flow_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
 //                    active_cfi->fresh_input.get());
 
           // push an input projection into the corresponding input list of the active CFI
+          initialize_values_at_active_modified_addrs();
           active_cfi->first_input_projections.push_back(active_modified_addrs_values);
 //          if (active_cfi->first_input_projections.empty())
 //          {

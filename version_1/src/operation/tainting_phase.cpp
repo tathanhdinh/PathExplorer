@@ -103,7 +103,7 @@ static inline auto set_checkpoints_for_cfi(const ptr_cond_direct_ins_t& cfi) -> 
 {
   auto dep_addrs = cfi->input_dep_addrs;
   decltype(dep_addrs) input_dep_addrs, new_dep_addrs, intersected_addrs;
-  checkpoint_with_modified_addrs checkpoint_with_input_addrs;
+  checkpoint_addrs_pair_t checkpoint_with_input_addrs;
 
   for (auto chkpnt_iter = saved_checkpoints.begin(); chkpnt_iter != saved_checkpoints.end();
        ++chkpnt_iter)
@@ -132,7 +132,7 @@ static inline auto set_checkpoints_for_cfi(const ptr_cond_direct_ins_t& cfi) -> 
         // to change the decision of the CFI then we should rollback to the checkpoint and modify some
         // value at the address of the intersected addrs
         checkpoint_with_input_addrs = std::make_pair(*chkpnt_iter, intersected_addrs);
-        cfi->checkpoints.push_back(checkpoint_with_input_addrs);
+        cfi->affecting_checkpoint_addrs_pairs.push_back(checkpoint_with_input_addrs);
 //#if !defined(NDEBUG)
 //        tfm::format(std::cerr, "the cfi at %d has a checkpoint at %d\n", cfi->exec_order,
 //                    (*chkpnt_iter)->exec_order);
