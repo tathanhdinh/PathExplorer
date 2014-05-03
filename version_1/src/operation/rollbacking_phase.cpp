@@ -31,7 +31,7 @@ static input_generation_mode    gen_mode;
 UINT8                           byte_testing_value;
 UINT16                          word_testing_value;
 UINT32                          dword_testing_value;
-std::function<addrint_value_map_t(const addrint_value_map_t&)>  generate_testing_values;
+std::function<addrint_value_map_t(const addrint_value_map_t&)>  generate_testing_input;
 
 
 /*================================================================================================*/
@@ -95,7 +95,7 @@ static auto generic_randomized_generator (const addrint_value_map_t& input_map) 
     output_map[addr_value->first] = (generic_testing_value >> (idx * 8)) & 0xFF;
     addr_value = std::next(addr_value);
   }
-  generic_testing_value = std::rand() % (std::numeric_limits<T>::max() + 1);
+  generic_testing_value = std::rand() % std::numeric_limits<T>::max();
   return output_map;
 }
 
@@ -118,25 +118,25 @@ static auto initialize_values_at_active_modified_addrs () -> void
   case 1:
     max_rollback_num = std::numeric_limits<UINT8>::max();
     gen_mode = sequential;
-    generate_testing_values = generic_sequential_generator<UINT8>;
+    generate_testing_input = generic_sequential_generator<UINT8>;
     break;
 
   case 2:
     max_rollback_num = std::numeric_limits<UINT16>::max();
     gen_mode = sequential;
-    generate_testing_values = generic_sequential_generator<UINT16>;
+    generate_testing_input = generic_sequential_generator<UINT16>;
     break;
 
   case 4:
     max_rollback_num = max_local_rollback_knob.Value();
     gen_mode = randomized;
 //    generate_testing_values = generic_sequential_generator<UINT32>;
-    generate_testing_values = generic_randomized_generator<UINT32>;
+    generate_testing_input = generic_randomized_generator<UINT32>;
     break;
 
   default:
     max_rollback_num = max_local_rollback_knob.Value();
-    gen_mode = randomized; generate_testing_values = randomized_generator;
+    gen_mode = randomized; generate_testing_input = randomized_generator;
     break;
   }
 
@@ -171,7 +171,7 @@ static inline void rollback()
   {
     // not reached yet, then just rollback again with a new value of the input
     active_cfi->used_rollback_num++; used_rollback_num++;
-    active_modified_addrs_values = generate_testing_values(active_modified_addrs_values);
+    active_modified_addrs_values = generate_testing_input(active_modified_addrs_values);
     rollback_with_modified_input(active_checkpoint, current_exec_order,
                                  active_modified_addrs_values);
   }
@@ -449,6 +449,8 @@ auto generic_instruction (ADDRINT ins_addr, THREADID thread_id) -> VOID
     else
     {
       current_exec_order++;
+
+//      tfm::format(std::cerr, "%d: %s\n", current_exec_order, ins_at_order[current_exec_order]->disassembled_name);
 
       // verify if the executed instruction is in the original trace
       if (ins_at_order[current_exec_order]->address != ins_addr)
