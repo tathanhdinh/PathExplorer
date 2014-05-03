@@ -31,7 +31,7 @@ static input_generation_mode    gen_mode;
 UINT8                           byte_testing_value;
 UINT16                          word_testing_value;
 UINT32                          dword_testing_value;
-std::function<void()>           generate_testing_values;
+std::function<addrint_value_map_t(const addrint_value_map_t&)>  new_testing_values;
 
 
 /*================================================================================================*/
@@ -41,15 +41,18 @@ namespace rollbacking
 /**
  * @brief randomized_generator
  */
-static auto randomized_generator () -> void
+static auto randomized_generator (const addrint_value_map_t& input_map) -> addrint_value_map_t
 {
-  typedef decltype(active_modified_addrs_values) addrs_values_t;
-  std::for_each(active_modified_addrs_values.begin(), active_modified_addrs_values.end(),
-                [&](addrs_values_t::reference addr_value)
+  addrint_value_map_t output_map;
+
+//  typedef decltype(active_modified_addrs_values) addrs_values_t;
+  std::for_each(/*active_modified_addrs_values*/input_map.begin(), /*active_modified_addrs_values*/input_map.end(),
+                [&](/*addrs_values_t*/addrint_value_map_t::const_reference addr_value)
   {
-    addr_value.second = std::rand() % std::numeric_limits<UINT8>::max();
+//    addr_value.second = std::rand() % std::numeric_limits<UINT8>::max();
+    output_map[addr_value.first] = std::rand() % std::numeric_limits<UINT8>::max();
   });
-  return;
+  return output_map;
 }
 
 
@@ -57,20 +60,22 @@ static auto randomized_generator () -> void
  * the template function is conherent only where sizeof(T) = active_modified_addrs_values.size()
  */
 template <typename T>
-static auto generic_sequential_generator () -> void
+static auto generic_sequential_generator (const addrint_value_map_t& input_map) -> addrint_value_map_t
 {
   static T generic_testing_value = 0;
+  addrint_value_map_t output_map;
 
   // because sizeof(T) = active_modified_addrs_values.size(), all elements of
   // active_modified_addrs_values will be updated
-  auto addr_value = active_modified_addrs_values.begin();
+  auto addr_value = /*active_modified_addrs_values*/input_map.begin();
   for (auto idx = 0; idx < sizeof(T); ++idx)
   {
-    addr_value->second = (generic_testing_value >> (idx * 8)) & 0xFF;
+//    addr_value->second = (generic_testing_value >> (idx * 8)) & 0xFF;
+    output_map[addr_value->first] = (generic_testing_value >> (idx * 8)) & 0xFF;
     addr_value = std::next(addr_value);
   }
   generic_testing_value++;
-  return;
+  return output_map;
 }
 
 
@@ -78,18 +83,20 @@ static auto generic_sequential_generator () -> void
  * the template function is conherent only where sizeof(T) = active_modified_addrs_values.size()
  */
 template <typename T>
-static auto generic_randomized_generator () -> void
+static auto generic_randomized_generator (const addrint_value_map_t& input_map) -> addrint_value_map_t
 {
   static T generic_testing_value = 0;
+  addrint_value_map_t output_map;
 
-  auto addr_value = active_modified_addrs_values.begin();
+  auto addr_value = /*active_modified_addrs_values*/input_map.begin();
   for (auto idx = 0; idx < sizeof(T); ++idx)
   {
-    addr_value->second = (generic_testing_value >> (idx * 8)) & 0xFF;
+//    addr_value->second = (generic_testing_value >> (idx * 8)) & 0xFF;
+    output_map[addr_value->first] = (generic_testing_value >> (idx * 8)) & 0xFF;
     addr_value = std::next(addr_value);
   }
   generic_testing_value = std::rand() % std::numeric_limits<T>::max();
-  return;
+  return output_map;
 }
 
 
@@ -111,25 +118,25 @@ static auto initialize_values_at_active_modified_addrs () -> void
   case 1:
     max_rollback_num = std::numeric_limits<UINT8>::max();
     gen_mode = sequential;
-    generate_testing_values = generic_sequential_generator<UINT8>;
+    new_testing_values = generic_sequential_generator<UINT8>;
     break;
 
   case 2:
     max_rollback_num = std::numeric_limits<UINT16>::max();
     gen_mode = sequential;
-    generate_testing_values = generic_sequential_generator<UINT16>;
+    new_testing_values = generic_sequential_generator<UINT16>;
     break;
 
   case 4:
     max_rollback_num = max_local_rollback_knob.Value();
     gen_mode = randomized;
 //    generate_testing_values = generic_sequential_generator<UINT32>;
-    generate_testing_values = generic_randomized_generator<UINT32>;
+    new_testing_values = generic_randomized_generator<UINT32>;
     break;
 
   default:
     max_rollback_num = max_local_rollback_knob.Value();
-    gen_mode = randomized; generate_testing_values = randomized_generator;
+    gen_mode = randomized; new_testing_values = randomized_generator;
     break;
   }
 
@@ -164,7 +171,7 @@ static inline void rollback()
   {
     // not reached yet, then just rollback again with a new value of the input
     active_cfi->used_rollback_num++; used_rollback_num++;
-    generate_testing_values();
+    active_modified_addrs_values = new_testing_values(active_modified_addrs_values);
     rollback_with_modified_input(active_checkpoint, current_exec_order,
                                  active_modified_addrs_values);
   }
@@ -193,7 +200,8 @@ static inline void rollback()
 /**
  * @brief get the next active checkpoint and the active modified addresses
  */
-static auto get_next_active_checkpoint (ptr_checkpoint_t input_checkpoint, ptr_cond_direct_ins_t input_cfi) -> checkpoint_addrs_pair_t
+static auto get_next_active_checkpoint (ptr_checkpoint_t input_checkpoint,
+                                        ptr_cond_direct_ins_t input_cfi) -> checkpoint_addrs_pair_t
 {
   checkpoint_addrs_pair_t result;
 
