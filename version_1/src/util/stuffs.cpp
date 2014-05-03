@@ -167,8 +167,9 @@ auto show_cfi_logged_inputs () -> void
                 [&](cfis_t::const_reference cfi_elem)
   {
     if (cfi_elem->is_resolved)
-      tfm::format(std::cerr, "logged input of CFI %s: first %d, second %d\n",
-                  addrint_to_hexstring(cfi_elem->address), cfi_elem->first_input_projections.size(),
+      tfm::format(std::cerr, "logged input of CFI %s at execution order %d: first %d, second %d\n",
+                  addrint_to_hexstring(cfi_elem->address), cfi_elem->exec_order,
+                  cfi_elem->first_input_projections.size(),
                   cfi_elem->second_input_projections.size());
   });
   return;

@@ -109,13 +109,13 @@ static auto initialize_values_at_active_modified_addrs () -> void
   switch (active_modified_addrs_values.size())
   {
   case 1:
-    max_rollback_num = std::numeric_limits<UINT8>::max() + 1;
+    max_rollback_num = std::numeric_limits<UINT8>::max();
     gen_mode = sequential;
     generate_testing_values = generic_sequential_generator<UINT8>;
     break;
 
   case 2:
-    max_rollback_num = std::numeric_limits<UINT16>::max() + 1;
+    max_rollback_num = std::numeric_limits<UINT16>::max();
     gen_mode = sequential;
     generate_testing_values = generic_sequential_generator<UINT16>;
     break;
@@ -199,19 +199,35 @@ static auto get_next_active_checkpoint () -> void
   if (active_checkpoint)
   {
     // exist, then find the next checkpoint in the checkpoint list of the current active CFI
-    auto nx_chkpnt_iter = active_cfi->checkpoints.begin();
-    auto chkpnt_iter = nx_chkpnt_iter;
-    while (++nx_chkpnt_iter != active_cfi->checkpoints.end())
-    {
-      if (chkpnt_iter->first->exec_order == active_checkpoint->exec_order)
-      {
-        active_checkpoint = nx_chkpnt_iter->first; active_modified_addrs = nx_chkpnt_iter->second;
-        break;
-      }
-      chkpnt_iter = nx_chkpnt_iter;
-    }
+//    auto nx_chkpnt_iter = active_cfi->checkpoints.begin();
+//    auto chkpnt_iter = nx_chkpnt_iter;
+//    while (++nx_chkpnt_iter != active_cfi->checkpoints.end())
+//    {
+//      if (chkpnt_iter->first->exec_order == active_checkpoint->exec_order)
+//      {
+//        active_checkpoint = nx_chkpnt_iter->first; active_modified_addrs = nx_chkpnt_iter->second;
+//        break;
+//      }
+//      chkpnt_iter = nx_chkpnt_iter;
+//    }
 
-    if (nx_chkpnt_iter == active_cfi->checkpoints.end())
+//    if (nx_chkpnt_iter == active_cfi->checkpoints.end())
+//    {
+//      active_checkpoint.reset(); active_modified_addrs.clear();
+//    }
+
+    typedef decltype(active_cfi->checkpoints) checkpoints_t;
+    auto prev_elem = active_cfi->checkpoints.front();
+    if (!std::any_of(std::next(active_cfi->checkpoints.begin()), active_cfi->checkpoints.end(),
+                [&](checkpoints_t::reference checkpoint_elem) -> bool
+    {
+      if (prev_elem.first->exec_order == active_checkpoint->exec_order)
+      {
+        active_checkpoint = checkpoint_elem.first; active_modified_addrs = checkpoint_elem.second;
+        return true;
+      }
+      else return false;
+    }))
     {
       active_checkpoint.reset(); active_modified_addrs.clear();
     }
@@ -426,10 +442,6 @@ auto generic_instruction (ADDRINT ins_addr, THREADID thread_id) -> VOID
 
             // push an input projection into the corresponding input list of the active CFI
             active_cfi->second_input_projections.push_back(active_modified_addrs_values);
-//            if (active_cfi->second_input_projections.empty())
-//            {
-//              active_cfi->second_input_projections.push_back(active_modified_addrs_values);
-//            }
           }
           else
           {
@@ -455,7 +467,9 @@ auto generic_instruction (ADDRINT ins_addr, THREADID thread_id) -> VOID
         // and the executed instruction has exceeded this CFI
         if (active_cfi && (current_exec_order > active_cfi->exec_order))
         {
+          // yes, then push an input projection into the corresponding input list of the active CFI
           active_cfi->first_input_projections.push_back(active_modified_addrs_values);
+          // and rollback
           rollback();
         }
       }
@@ -509,9 +523,12 @@ auto control_flow_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
               {
                 // the next checkpoint does not exist, all of its reserved tests have been used
                 active_cfi->is_bypassed = !active_cfi->is_resolved;
+                active_cfi->is_singular = active_cfi->is_bypassed &&
+                    (active_cfi->checkpoints.size() == 1) && (gen_mode == sequential);
                 total_rollback_times += active_cfi->used_rollback_num;
-                if (active_cfi->is_bypassed && (active_cfi->checkpoints.size() == 1) &&
-                    (gen_mode == sequential)) active_cfi->is_singular = true;
+
+//                if (active_cfi->is_bypassed && (active_cfi->checkpoints.size() == 1) &&
+//                    (gen_mode == sequential)) active_cfi->is_singular = true;
 #if !defined(NDEBUG)
                 if (active_cfi->is_bypassed)
                 {
@@ -546,6 +563,7 @@ auto control_flow_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
 //                    active_cfi->fresh_input.get());
 
           // push an input projection into the corresponding input list of the active CFI
+          active_cfi->first_input_projections.push_back(active_modified_addrs_values);
 //          if (active_cfi->first_input_projections.empty())
 //          {
 //            project_input_on_active_modified_addrs();
