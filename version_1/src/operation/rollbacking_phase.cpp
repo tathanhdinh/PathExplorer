@@ -450,8 +450,6 @@ auto generic_instruction (ADDRINT ins_addr, THREADID thread_id) -> VOID
     {
       current_exec_order++;
 
-//      tfm::format(std::cerr, "%d: %s\n", current_exec_order, ins_at_order[current_exec_order]->disassembled_name);
-
       // verify if the executed instruction is in the original trace
       if (ins_at_order[current_exec_order]->address != ins_addr)
       {
@@ -676,13 +674,6 @@ auto initialize(UINT32 trace_length_limit) -> void
   active_cfi.reset(); active_checkpoint.reset(); first_checkpoint = saved_checkpoints[0];
   active_modified_addrs.clear(); tainted_trace_length = trace_length_limit; used_rollback_num = 0;
   max_rollback_num = max_local_rollback_knob.Value(); gen_mode = randomized;
-
-//  // keep a fresh copy of input at this rollbacking phase
-//  fresh_input.reset(new UINT8[received_msg_size]);
-//  UINT8* this_rollbacking_phase_input = reinterpret_cast<UINT8*>(received_msg_addr);
-//  if (exploring_cfi) this_rollbacking_phase_input = exploring_cfi->fresh_input.get();
-//  std::copy(this_rollbacking_phase_input, this_rollbacking_phase_input + received_msg_size, fresh_input.get());
-
   return;
 }
 
