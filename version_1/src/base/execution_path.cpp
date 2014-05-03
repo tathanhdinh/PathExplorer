@@ -320,7 +320,9 @@ static auto calculate_from(const order_ins_map_t& current_path,
       // verify if this CFI is resolved
       if (current_cfi->is_resolved)
       {
-        tfm::format(std::cerr, "added cfi %d %d\n", current_cfi->first_input_projections.size(),
+        tfm::format(std::cerr, "adding %s at %d with inputs %d %d\n",
+                    current_cfi->disassembled_name, current_cfi->exec_order,
+                    current_cfi->first_input_projections.size(),
                     current_cfi->second_input_projections.size());
 
         // look into the path code to know which condition should be added

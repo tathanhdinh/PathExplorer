@@ -440,8 +440,8 @@ auto generic_instruction (ADDRINT ins_addr, THREADID thread_id) -> VOID
       // exceeds, namely the rollbacking phase should stop:
 
       // first, save the current execution path
-//      current_exec_path = std::make_shared<execution_path>(ins_at_order, current_path_code);
-//      explored_exec_paths.push_back(current_exec_path);
+      current_exec_path = std::make_shared<execution_path>(ins_at_order, current_path_code);
+      explored_exec_paths.push_back(current_exec_path);
 
       // second, prepare tainting a new path
       prepare_new_tainting_phase();
@@ -671,9 +671,12 @@ auto mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length
 auto initialize(UINT32 trace_length_limit) -> void
 {
   // reinitialize some local variables
-  active_cfi.reset(); active_checkpoint.reset(); first_checkpoint = saved_checkpoints[0];
-  active_modified_addrs.clear(); tainted_trace_length = trace_length_limit; used_rollback_num = 0;
-  max_rollback_num = max_local_rollback_knob.Value(); gen_mode = randomized;
+  active_cfi.reset(); active_checkpoint.reset();
+  first_checkpoint = saved_checkpoints[0];
+  active_modified_addrs.clear();
+  tainted_trace_length = trace_length_limit; used_rollback_num = 0;
+  max_rollback_num = max_local_rollback_knob.Value();
+  gen_mode = randomized;
   return;
 }
 
