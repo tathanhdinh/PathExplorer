@@ -31,7 +31,7 @@ static input_generation_mode    gen_mode;
 UINT8                           byte_testing_value;
 UINT16                          word_testing_value;
 UINT32                          dword_testing_value;
-std::function<addrint_value_map_t(const addrint_value_map_t&)>  new_testing_values;
+std::function<addrint_value_map_t(const addrint_value_map_t&)>  generate_testing_values;
 
 
 /*================================================================================================*/
@@ -95,7 +95,7 @@ static auto generic_randomized_generator (const addrint_value_map_t& input_map) 
     output_map[addr_value->first] = (generic_testing_value >> (idx * 8)) & 0xFF;
     addr_value = std::next(addr_value);
   }
-  generic_testing_value = std::rand() % std::numeric_limits<T>::max();
+  generic_testing_value = std::rand() % (std::numeric_limits<T>::max() + 1);
   return output_map;
 }
 
@@ -118,25 +118,25 @@ static auto initialize_values_at_active_modified_addrs () -> void
   case 1:
     max_rollback_num = std::numeric_limits<UINT8>::max();
     gen_mode = sequential;
-    new_testing_values = generic_sequential_generator<UINT8>;
+    generate_testing_values = generic_sequential_generator<UINT8>;
     break;
 
   case 2:
     max_rollback_num = std::numeric_limits<UINT16>::max();
     gen_mode = sequential;
-    new_testing_values = generic_sequential_generator<UINT16>;
+    generate_testing_values = generic_sequential_generator<UINT16>;
     break;
 
   case 4:
     max_rollback_num = max_local_rollback_knob.Value();
     gen_mode = randomized;
 //    generate_testing_values = generic_sequential_generator<UINT32>;
-    new_testing_values = generic_randomized_generator<UINT32>;
+    generate_testing_values = generic_randomized_generator<UINT32>;
     break;
 
   default:
     max_rollback_num = max_local_rollback_knob.Value();
-    gen_mode = randomized; new_testing_values = randomized_generator;
+    gen_mode = randomized; generate_testing_values = randomized_generator;
     break;
   }
 
@@ -171,7 +171,7 @@ static inline void rollback()
   {
     // not reached yet, then just rollback again with a new value of the input
     active_cfi->used_rollback_num++; used_rollback_num++;
-    active_modified_addrs_values = new_testing_values(active_modified_addrs_values);
+    active_modified_addrs_values = generate_testing_values(active_modified_addrs_values);
     rollback_with_modified_input(active_checkpoint, current_exec_order,
                                  active_modified_addrs_values);
   }
@@ -200,8 +200,8 @@ static inline void rollback()
 /**
  * @brief get the next active checkpoint and the active modified addresses
  */
-static auto get_next_active_checkpoint (ptr_checkpoint_t input_checkpoint,
-                                        ptr_cond_direct_ins_t input_cfi) -> checkpoint_addrs_pair_t
+static auto next_checkpoint_and_addrs (ptr_checkpoint_t input_checkpoint,
+                                       ptr_cond_direct_ins_t input_cfi) -> checkpoint_addrs_pair_t
 {
   checkpoint_addrs_pair_t result;
 
@@ -539,7 +539,7 @@ auto control_flow_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
               // yes, then verify if there exists another checkpoint, note that used_rollback_num
               // will be reset to zero here
               std::tie(active_checkpoint, active_modified_addrs) =
-                  get_next_active_checkpoint(active_checkpoint, active_cfi);
+                  next_checkpoint_and_addrs(active_checkpoint, active_cfi);
 //              if (active_checkpoint) initialize_values_at_active_modified_addrs();
               if (active_checkpoint)
               {
@@ -585,7 +585,8 @@ auto control_flow_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
         {
           // yes, then set it as the active CFI
           active_cfi = current_cfi;
-          std::tie(active_checkpoint, active_modified_addrs) = get_next_active_checkpoint(active_checkpoint, active_cfi);
+          std::tie(active_checkpoint, active_modified_addrs) =
+              next_checkpoint_and_addrs(active_checkpoint, active_cfi);
 #if !defined(NDEBUG)
           tfm::format(log_file, "the CFI %s at %d is activated, its first checkpoint is at %d, modified addresses size %d\n",
                       active_cfi->disassembled_name, active_cfi->exec_order,
