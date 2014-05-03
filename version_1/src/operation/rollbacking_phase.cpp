@@ -43,9 +43,9 @@ namespace rollbacking
  */
 static auto randomized_generator () -> void
 {
-  typedef decltype(active_modified_addrs_values) active_modified_addrs_values_t;
+  typedef decltype(active_modified_addrs_values) addrs_values_t;
   std::for_each(active_modified_addrs_values.begin(), active_modified_addrs_values.end(),
-                [&](active_modified_addrs_values_t::reference addr_value)
+                [&](addrs_values_t::reference addr_value)
   {
     addr_value.second = std::rand() % std::numeric_limits<UINT8>::max();
   });
@@ -163,7 +163,8 @@ static inline void rollback()
   if (used_rollback_num < /*max_rollback_num - 1*/max_rollback_num)
   {
     // not reached yet, then just rollback again with a new value of the input
-    active_cfi->used_rollback_num++; used_rollback_num++; generate_testing_values();
+    active_cfi->used_rollback_num++; used_rollback_num++;
+    generate_testing_values();
     rollback_with_modified_input(active_checkpoint, current_exec_order,
                                  active_modified_addrs_values);
   }
@@ -248,10 +249,10 @@ static auto get_next_active_checkpoint () -> void
 /**
  * @brief calculate an input for the new tainting phase
  */
-static auto calculate_tainting_fresh_input(ptr_uint8_t selected_input,
-                                           addrint_value_map_t& modified_addrs_with_values) -> void
+static auto calculate_tainting_fresh_input(const ptr_uint8_t selected_input,
+                                           const addrint_value_map_t& modified_addrs_with_values) -> void
 {
-  // make a copy of the selected input
+  // make a copy in fresh input of the selected input
 //  tainting_input.reset(new UINT8[received_msg_size]);
 //  std::copy(selected_input.get(), selected_input.get() + received_msg_size, tainting_input.get());
   std::copy(selected_input.get(), selected_input.get() + received_msg_size, fresh_input.get());
@@ -506,8 +507,8 @@ auto control_flow_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
             // verify if its current checkpoint is in the last rollback try
             if (used_rollback_num == max_rollback_num + 1)
             {
-              // yes, then verify if there exists another checkpoint (note that used_rollback_num
-              // will be reset to zero here)
+              // yes, then verify if there exists another checkpoint, note that used_rollback_num
+              // will be reset to zero here
               get_next_active_checkpoint();
               if (active_checkpoint)
               {
