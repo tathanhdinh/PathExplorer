@@ -135,12 +135,28 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
   auto have_intersection = [&](const addrint_value_map_t& map_a,
                                const addrint_value_map_t& map_b) -> bool
   {
-    tfm::format(std::cerr, "finding intersection %d %d \n", map_a.size(), map_b.size());
+//    std::for_each(map_a.begin(), map_a.end(),
+//                  [](addrint_value_map_t::const_reference a_point)
+//    {
+//      tfm::format(std::cerr, "%s ", addrint_to_hexstring(a_point.first));
+//    });
+//    tfm::format(std::cerr, "\n");
+//    std::for_each(map_b.begin(), map_b.end(),
+//                  [](addrint_value_map_t::const_reference b_point)
+//    {
+//      tfm::format(std::cerr, "%s ", addrint_to_hexstring(b_point.first));
+//    });
 
     // verify if there is some element of a is also an element of b
     return std::any_of(map_a.begin(), map_a.end(),
                        [&](addrint_value_map_t::value_type map_a_elem) -> bool
     {
+      if (map_b.find(map_a_elem.first) != map_b.end())
+      {
+        tfm::format(std::cerr, "intersection detected\n");
+//        PIN_ExitApplication(0);
+      }
+
       return (map_b.find(map_a_elem.first) != map_b.end());
     });
   };
@@ -170,10 +186,13 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
           else
           {
             // exists, then verify if there is a conflict between a_map and b_map
+            tfm::format(std::cerr, "values at %s: %d %d\n", addrint_to_hexstring(b_point.first),
+                        a_map.at(b_point.first), b_map.at(b_point.first));
             return (a_map.at(b_point.first) == b_map.at(b_point.first));
           }
         }))
         {
+//          tfm::format(std::cerr, "join a and b\n");
           // if there is no conflict then add the joined map into the condition
           joined_cond.push_back(joined_map);
         }
@@ -231,14 +250,17 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
     for (auto cond_elem_a = examined_cond.begin(); cond_elem_a != examined_cond.end();
          ++cond_elem_a)
     {
-      tfm::format(std::cerr, "sub-condition a %d\n", cond_elem_a->first.size());
+      tfm::format(std::cerr, "sub-condition a has %d elements\n", cond_elem_a->first.size());
       for (auto cond_elem_b = std::next(cond_elem_a); cond_elem_b != examined_cond.end();
            ++cond_elem_b)
       {
+        tfm::format(std::cerr, "sub-condition b has %d elements\n", cond_elem_b->first.size());
         // verify if they have intersection
         if (have_intersection(*(cond_elem_a->first.begin()), *(cond_elem_b->first.begin())))
         {
           // yes
+//          tfm::format(std::cerr, "a and b are intersected\n");
+//          PIN_ExitApplication(0);
           intersection_exists = true;
 
           // then join their maps
@@ -349,9 +371,18 @@ execution_path::execution_path(const order_ins_map_t& current_path,
 {
   this->content = current_path;
   this->code = current_path_code;
-  this->condition = calculate_from(current_path, current_path_code);
+//  this->condition = calculate_from(current_path, current_path_code);
+//  this->condition_is_recursive = is_recursive(this->condition);
+//  this->condition_order = order(this->condition);
+}
+
+
+auto execution_path::calculate_condition() -> void
+{
+  this->condition = calculate_from(this->content, this->code);
   this->condition_is_recursive = is_recursive(this->condition);
   this->condition_order = order(this->condition);
+  return;
 }
 
 
