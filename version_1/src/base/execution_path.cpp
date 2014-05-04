@@ -127,6 +127,7 @@ auto are_isomorphic (const addrint_value_maps_t& maps_a, const addrint_value_map
 /**
  * @brief calculate stabilized condition which can be considered as a cartesian product
  *                             A x ... x B x ...
+ * of disjoint sub-conditions
  */
 auto stabilize (const conditions_t& input_cond) -> conditions_t
 {
