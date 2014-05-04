@@ -256,7 +256,11 @@ static auto next_checkpoint_and_addrs (ptr_checkpoint_t input_checkpoint,
         result = checkpoint_addrs_elem;
         return true;
       }
-      else return false;
+      else
+      {
+        prev_elem = checkpoint_addrs_elem;
+        return false;
+      }
     });
 
   }

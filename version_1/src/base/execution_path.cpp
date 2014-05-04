@@ -217,8 +217,7 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
       }
     });
 
-    // using move semantics may be not quite effective because of return value optimization
-    return std::move(joined_list);
+    return joined_list;
   };
 
   // lambda erasing some sub-condition of given type from a path condition
@@ -377,6 +376,9 @@ execution_path::execution_path(const order_ins_map_t& current_path,
 }
 
 
+/**
+ * @brief calculate path condition
+ */
 auto execution_path::calculate_condition() -> void
 {
   this->condition = calculate_from(this->content, this->code);
@@ -398,7 +400,7 @@ auto execution_path::lazy_condition(int n) -> conditions_t
     while (this->condition_order < n--) lazy_cond.push_back(this->condition.back());
   }
 
-  return std::move(lazy_cond);
+  return lazy_cond;
 }
 
 
