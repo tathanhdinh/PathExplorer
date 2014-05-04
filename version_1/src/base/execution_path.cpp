@@ -180,8 +180,7 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
       });
     });
 
-    // using move semantics may be not quite effective because of return value optimization
-    return std::move(joined_cond);
+    return joined_cond;
   };
 
   // lambda calculating join of two list of cfi
