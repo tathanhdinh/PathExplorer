@@ -215,7 +215,7 @@ static inline auto calculate_path_code () -> void
 
     typedef decltype(ins_at_order) ins_at_order_t;
     ins_at_order_t::mapped_type prev_ins;
-    std::for_each(ins_at_order.begin(), ins_at_order.end(), [&](ins_at_order_t::value_type order_ins)
+    std::for_each(ins_at_order.begin(), ins_at_order.end(), [&](ins_at_order_t::const_reference order_ins)
     {
       if (!exploring_cfi || (exploring_cfi && (order_ins.first > exploring_cfi->exec_order)))
       {

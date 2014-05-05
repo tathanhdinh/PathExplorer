@@ -78,7 +78,7 @@ auto explorer_graph::add_vertex(ADDRINT ins_addr) -> void
 /**
  * @brief add a vertex into the explorer tree
  */
-auto explorer_graph::add_vertex(ptr_instruction_t& ins) -> void
+auto explorer_graph::add_vertex(ptr_instruction_t ins) -> void
 {
   boost::add_vertex(ins, internal_exp_tree);
   return;
@@ -183,7 +183,7 @@ auto explorer_graph::add_edge(ADDRINT ins_a_addr, ADDRINT ins_b_addr,
   }
 
   // verify if the edge from a to b exists
-  /*exp_edge_desc ab_edge;*/ bool edge_exists;
+  bool edge_exists;
   std::tie(std::ignore, edge_exists) = boost::edge(ins_a_desc, ins_b_desc, internal_exp_graph_simple);
   // no, then add a new edge with empty label
   if (!edge_exists) boost::add_edge(ins_a_desc, ins_b_desc,
@@ -196,7 +196,7 @@ auto explorer_graph::add_edge(ADDRINT ins_a_addr, ADDRINT ins_b_addr,
 /**
  * @brief add an edge into the explorer tree
  */
-auto explorer_graph::add_edge(ptr_instruction_t& ins_a, ptr_instruction_t& ins_b,
+auto explorer_graph::add_edge(ptr_instruction_t ins_a, ptr_instruction_t ins_b,
                               const path_code_t& edge_path_code) -> void
 {
   exp_tree_vertex_desc vertex_a_desc, vertex_b_desc;
@@ -223,7 +223,7 @@ public:
 //  template<typename Vertex>
   void operator()(std::ostream& label, /*Vertex*/exp_vertex_desc vertex)
   {
-    /*exp_vertex*/auto vertex_ins_addr = internal_graph[vertex];
+    auto vertex_ins_addr = internal_graph[vertex];
     // verify if the instruction at this address is a input dependent CFI
     auto cfi_iter = detected_input_dep_cfis.begin();
     for (; cfi_iter != detected_input_dep_cfis.end(); ++cfi_iter)

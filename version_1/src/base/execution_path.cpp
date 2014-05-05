@@ -454,4 +454,11 @@ auto show_path_condition(const ptr_execution_paths_t& exp_paths) -> void
   });
   return;
 }
+
+
+auto show_path_condition(const ptr_execution_path_t& exp_path) -> void
+{
+
+  return;
+}
 #endif
