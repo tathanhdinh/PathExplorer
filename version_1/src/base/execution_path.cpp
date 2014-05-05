@@ -64,7 +64,7 @@ auto are_of_the_same_type (const addrint_value_map_t& map_a,
 {
   return ((map_a.size() == map_b.size()) &&
           std::all_of(map_a.begin(), map_a.end(),
-                      [&](addrint_value_map_t::value_type map_a_elem) -> bool
+                      [&](addrint_value_map_t::const_reference map_a_elem) -> bool
                       {
                         // verify if every element of a is also element of b
                         return (map_b.find(map_a_elem.first) != map_b.end());
@@ -221,13 +221,13 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
   };
 
   // lambda erasing some sub-condition of given type from a path condition
-  auto erase_from = [&](const addrint_value_map_t cond_type, conditions_t path_cond) -> void
+  auto erase_from = [&](const addrint_value_map_t& cond_type, conditions_t& path_cond) -> void
   {
     for (auto cond_elem = path_cond.begin(); cond_elem != path_cond.end(); ++cond_elem)
     {
       if (are_of_the_same_type(cond_type, *(cond_elem->first.begin())))
       {
-        tfm::format(std::cerr, "same type condition detected\n");
+        tfm::format(std::cerr, "same type condition detected, delete it\n");
         path_cond.erase(cond_elem); break;
       }
     }
@@ -252,11 +252,11 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
     for (auto cond_elem_a = examined_cond.begin(); cond_elem_a != examined_cond.end();
          ++cond_elem_a)
     {
-      tfm::format(std::cerr, "sub-condition a has %d elements\n", cond_elem_a->first.size());
+//      tfm::format(std::cerr, "sub-condition a has %d elements\n", cond_elem_a->first.size());
       for (auto cond_elem_b = std::next(cond_elem_a); cond_elem_b != examined_cond.end();
            ++cond_elem_b)
       {
-        tfm::format(std::cerr, "sub-condition b has %d elements\n", cond_elem_b->first.size());
+//        tfm::format(std::cerr, "sub-condition b has %d elements\n", cond_elem_b->first.size());
         // verify if they have intersection
         if (have_intersection(*(cond_elem_a->first.begin()), *(cond_elem_b->first.begin())))
         {
@@ -275,9 +275,11 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
 
           // erase sub-condition a and b from the path condition, note the side-effect: the input
           // condition examining_cond will be modified
-          tfm::format(std::cerr, "remove joined maps from condition\n");
-          PIN_ExitApplication(0);
+
+          tfm::format(std::cerr, "condition size %d, removing joined maps from it\n", examined_cond.size());
           erase_from(map_a, examined_cond); erase_from(map_b, examined_cond);
+          tfm::format(std::cerr, "joined maps removed, condition size %d\n", examined_cond.size());
+//          PIN_ExitApplication(0);
 
           // add joined condition into the path condition
           examined_cond.push_back(std::make_pair(joined_maps, joined_cfis));
@@ -333,7 +335,7 @@ static auto calculate_from(const order_ins_map_t& current_path,
   conditions_t raw_condition;
   std::size_t current_code_order = 0;
 
-  tfm::format(std::cerr, "current path size %d with code size %d\n", current_path.size(),
+  tfm::format(std::cerr, "----\ncurrent path length %d with code size %d\n", current_path.size(),
               current_path_code.size());
   std::for_each(current_path.begin(), current_path.end(),
                 [&](order_ins_map_t::const_reference order_ins)
@@ -346,10 +348,10 @@ static auto calculate_from(const order_ins_map_t& current_path,
       // verify if this CFI is resolved
       if (current_cfi->is_resolved)
       {
-        tfm::format(std::cerr, "adding %s at %d with inputs %d %d\n",
-                    current_cfi->disassembled_name, current_cfi->exec_order,
-                    current_cfi->first_input_projections.size(),
-                    current_cfi->second_input_projections.size());
+//        tfm::format(std::cerr, "adding %s at %d with inputs %d %d\n",
+//                    current_cfi->disassembled_name, current_cfi->exec_order,
+//                    current_cfi->first_input_projections.size(),
+//                    current_cfi->second_input_projections.size());
 
         // look into the path code to know which condition should be added
         if (!current_path_code[current_code_order])
@@ -362,7 +364,7 @@ static auto calculate_from(const order_ins_map_t& current_path,
     }
   });
 
-  tfm::format(std::cerr, "stabilizing condition\n");
+  tfm::format(std::cerr, "stabilizing raw condition with size %d\n", raw_condition.size());
   return stabilize(raw_condition);
 }
 
@@ -417,7 +419,7 @@ auto calculate_exec_path_conditions(ptr_execution_paths_t& exec_paths) -> void
   std::for_each(exec_paths.begin(), exec_paths.end(), [](ptr_execution_paths_t::value_type path)
   {
     path->calculate_condition();
-    PIN_ExitApplication(0);
+//    PIN_ExitApplication(0);
   });
   return;
 }
@@ -429,6 +431,7 @@ auto calculate_exec_path_conditions(ptr_execution_paths_t& exec_paths) -> void
  */
 auto show_path_condition(const ptr_execution_paths_t& exp_paths) -> void
 {
+  tfm::format(std::cout, "path conditions\n");
   auto show_cond = [&](ptr_execution_paths_t::const_reference exp_path, int i) -> void
   {
     tfm::format(std::cout, "| ");

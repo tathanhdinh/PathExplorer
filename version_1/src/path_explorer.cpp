@@ -163,12 +163,16 @@ auto stop_exploring (INT32 code, VOID *data) -> VOID
               detected_input_dep_cfis.size());
   log_file.close();
 
+#if !defined(NDEBUG)
+  show_cfi_logged_inputs();
+
+#endif
+
   calculate_exec_path_conditions(explored_exec_paths);
 
-#if !defined(NDEBUG)
+//#if !defined(NDEBUG)
 //  show_path_condition(explored_exec_paths);
-  show_cfi_logged_inputs();
-#endif
+//#endif
 
   return;
 }
