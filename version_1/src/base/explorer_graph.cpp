@@ -5,6 +5,7 @@
 
 #include <boost/graph/graphviz.hpp>
 #include <boost/graph/filtered_graph.hpp>
+#include <boost/graph/copy.hpp>
 #include <algorithm>
 
 typedef ADDRINT                                             exp_vertex;
@@ -27,6 +28,7 @@ typedef boost::graph_traits<exp_tree_t>::vertex_descriptor    exp_tree_vertex_de
 typedef boost::graph_traits<exp_tree_t>::edge_descriptor      exp_tree_edge_desc;
 typedef boost::graph_traits<exp_tree_t>::vertex_iterator      exp_tree_vertex_iter;
 typedef boost::graph_traits<exp_tree_t>::edge_iterator        exp_tree_edge_iter;
+typedef std::pair<exp_tree_edge_t, exp_tree_vertex_desc>      exp_tree_with_root_t;
 
 
 /*================================================================================================*/
@@ -214,8 +216,51 @@ auto explorer_graph::add_edge(ptr_instruction_t ins_a, ptr_instruction_t ins_b,
 }
 
 
-auto extract_cfi_graph (const exp_graph_t& orig_graph) -> void
+auto extract_cfi_graph (exp_tree_vertex_t root_vertex) -> exp_tree_t
 {
+  auto look_for_vertex = [&](exp_tree_vertex_t vertex, const exp_tree_t& tree)
+      -> exp_tree_vertex_desc
+  {
+    exp_tree_vertex_desc result_vertex_desc;
+
+    exp_tree_vertex_iter first_vertex_iter, last_vertex_iter;
+    std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(tree);
+    std::any_of(first_vertex_iter, last_vertex_iter, [&](exp_tree_vertex_desc vertex_desc) -> bool
+    {
+      if (tree[vertex_desc] == vertex)
+      {
+        result_vertex_desc = vertex_desc; return true;
+      }
+      else return false;
+    });
+
+    return result_vertex_desc;
+  };
+
+  auto merge_tree = [&](exp_tree_vertex_t root_vertex,
+      const exp_tree_t& left_tree, exp_tree_vertex_t left_root_vertex, const exp_tree_edge_t& left_edge,
+      const exp_tree_t& right_tree, exp_tree_vertex_t right_root_vertex, const exp_tree_edge_t& right_edge) -> exp_tree_t
+  {
+    exp_tree_t result_tree;
+    if (left_root_vertex) boost::copy_graph(left_tree, result_tree);
+    if (right_root_vertex) boost::copy_graph(right_tree, result_tree);
+    auto root_vertex_desc = boost::add_vertex(root_vertex, result_tree);
+
+    // add left and right edges into the result tree
+    if (left_root_vertex)
+    {
+      auto left_root_desc = look_for_vertex(left_root_vertex, result_tree);
+      boost::add_edge(root_vertex_desc, left_root_desc, left_edge, result_tree);
+    }
+    if (right_root_vertex)
+    {
+      auto right_root_desc = look_for_vertex(right_root_vertex, result_tree);
+      boost::add_edge(root_vertex_desc, right_root_desc, right_edge, result_tree);
+    }
+
+    return result_tree;
+  };
+
   return;
 }
 
