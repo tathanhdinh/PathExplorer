@@ -413,8 +413,8 @@ static auto prepare_new_tainting_phase () -> void
     {
       // does not exist, namely all CFI are explored
 #if !defined(NDEBUG)
-      log_file << "stop exploring, all CFI have been explored\n";
-#endif
+      tfm::format(log_file, "stop exploring, all CFI have been explored\n");
+#endif          
       PIN_ExitApplication(process_id);
     }
   }

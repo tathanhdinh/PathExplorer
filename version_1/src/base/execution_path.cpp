@@ -186,8 +186,8 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
           else
           {
             // exists, then verify if there is a conflict between a_map and b_map
-            tfm::format(std::cerr, "values at %s: %d %d\n", addrint_to_hexstring(b_point.first),
-                        a_map.at(b_point.first), b_map.at(b_point.first));
+//            tfm::format(std::cerr, "values at %s: %d %d\n", addrint_to_hexstring(b_point.first),
+//                        a_map.at(b_point.first), b_map.at(b_point.first));
             return (a_map.at(b_point.first) == b_map.at(b_point.first));
           }
         }))
@@ -226,7 +226,10 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
     for (auto cond_elem = path_cond.begin(); cond_elem != path_cond.end(); ++cond_elem)
     {
       if (are_of_the_same_type(cond_type, *(cond_elem->first.begin())))
+      {
+        tfm::format(std::cerr, "same type condition detected\n");
         path_cond.erase(cond_elem); break;
+      }
     }
     return;
   };
@@ -272,6 +275,8 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
 
           // erase sub-condition a and b from the path condition, note the side-effect: the input
           // condition examining_cond will be modified
+          tfm::format(std::cerr, "remove joined maps from condition\n");
+          PIN_ExitApplication(0);
           erase_from(map_a, examined_cond); erase_from(map_b, examined_cond);
 
           // add joined condition into the path condition
@@ -401,6 +406,20 @@ auto execution_path::lazy_condition(int n) -> conditions_t
   }
 
   return lazy_cond;
+}
+
+
+/**
+ * @brief calculate conditions of all explored paths
+ */
+auto calculate_exec_path_conditions(ptr_execution_paths_t& exec_paths) -> void
+{
+  std::for_each(exec_paths.begin(), exec_paths.end(), [](ptr_execution_paths_t::value_type path)
+  {
+    path->calculate_condition();
+    PIN_ExitApplication(0);
+  });
+  return;
 }
 
 
