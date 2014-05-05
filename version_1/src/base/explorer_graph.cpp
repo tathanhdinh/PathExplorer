@@ -11,32 +11,32 @@ typedef ADDRINT                                             exp_vertex;
 typedef std::pair<std::vector<bool>, addrint_value_maps_t>  exp_edge;
 typedef boost::adjacency_list<boost::listS, boost::vecS,
                               boost::bidirectionalS,
-                              exp_vertex, exp_edge>         exp_graph;
-typedef boost::graph_traits<exp_graph>::vertex_descriptor   exp_vertex_desc;
-typedef boost::graph_traits<exp_graph>::edge_descriptor     exp_edge_desc;
-typedef boost::graph_traits<exp_graph>::vertex_iterator     exp_vertex_iter;
-typedef boost::graph_traits<exp_graph>::edge_iterator       exp_edge_iter;
+                              exp_vertex, exp_edge>         exp_graph_t;
+typedef boost::graph_traits<exp_graph_t>::vertex_descriptor   exp_vertex_desc;
+typedef boost::graph_traits<exp_graph_t>::edge_descriptor     exp_edge_desc;
+typedef boost::graph_traits<exp_graph_t>::vertex_iterator     exp_vertex_iter;
+typedef boost::graph_traits<exp_graph_t>::edge_iterator       exp_edge_iter;
 
-typedef ptr_instruction_t                                   exp_tree_vertex;
-typedef path_code_t                                         exp_tree_edge;
+typedef ptr_instruction_t                                   exp_tree_vertex_t;
+typedef path_code_t                                         exp_tree_edge_t;
 typedef boost::adjacency_list<boost::listS, boost::vecS,
                               boost::bidirectionalS,
-                              exp_tree_vertex,
-                              exp_tree_edge>                exp_tree;
-typedef boost::graph_traits<exp_tree>::vertex_descriptor    exp_tree_vertex_desc;
-typedef boost::graph_traits<exp_tree>::edge_descriptor      exp_tree_edge_desc;
-typedef boost::graph_traits<exp_tree>::vertex_iterator      exp_tree_vertex_iter;
-typedef boost::graph_traits<exp_tree>::edge_iterator        exp_tree_edge_iter;
+                              exp_tree_vertex_t,
+                              exp_tree_edge_t>                exp_tree_t;
+typedef boost::graph_traits<exp_tree_t>::vertex_descriptor    exp_tree_vertex_desc;
+typedef boost::graph_traits<exp_tree_t>::edge_descriptor      exp_tree_edge_desc;
+typedef boost::graph_traits<exp_tree_t>::vertex_iterator      exp_tree_vertex_iter;
+typedef boost::graph_traits<exp_tree_t>::edge_iterator        exp_tree_edge_iter;
 
 
 /*================================================================================================*/
 
-static exp_graph            internal_exp_graph;
-static exp_graph            internal_exp_graph_simple;
+static exp_graph_t            internal_exp_graph;
+static exp_graph_t            internal_exp_graph_simple;
 static ptr_explorer_graph_t single_graph_instance;
 static addrint_value_map_t  default_addrs_values;
 
-static exp_tree             internal_exp_tree;
+static exp_tree_t             internal_exp_tree;
 
 /*================================================================================================*/
 /**
@@ -120,7 +120,7 @@ auto explorer_graph::add_edge(ADDRINT ins_a_addr, ADDRINT ins_b_addr,
     if (internal_exp_graph[*vertex_iter] == ins_b_addr) ins_b_desc = *vertex_iter;
   }
 
-  boost::graph_traits<exp_graph>::out_edge_iterator out_edge_iter, last_out_edge_iter;
+  boost::graph_traits<exp_graph_t>::out_edge_iterator out_edge_iter, last_out_edge_iter;
   std::tie(out_edge_iter, last_out_edge_iter) = boost::out_edges(ins_a_desc, internal_exp_graph);
 
   // iterate over out edges from a
@@ -214,11 +214,16 @@ auto explorer_graph::add_edge(ptr_instruction_t ins_a, ptr_instruction_t ins_b,
 }
 
 
+auto extract_cfi_graph (const exp_graph_t& orig_graph) -> void
+{
+  return;
+}
+
 extern ptr_cond_direct_inss_t detected_input_dep_cfis;
 class exp_vertex_label_writer
 {
 public:
-  exp_vertex_label_writer(exp_graph& input_graph) : internal_graph(input_graph) {}
+  exp_vertex_label_writer(exp_graph_t& input_graph) : internal_graph(input_graph) {}
 
 //  template<typename Vertex>
   void operator()(std::ostream& label, /*Vertex*/exp_vertex_desc vertex)
@@ -246,7 +251,7 @@ public:
   }
 
 private:
-  exp_graph internal_graph;
+  exp_graph_t internal_graph;
 };
 
 
@@ -282,18 +287,18 @@ private:
 class exp_edge_label_writer
 {
 public:
-  exp_edge_label_writer(exp_graph& input_graph) : internal_graph(input_graph) {}
+  exp_edge_label_writer(exp_graph_t& input_graph) : internal_graph(input_graph) {}
 
 //  template<typename Edge>
   void operator()(std::ostream& label, /*Edge*/exp_edge_desc edge)
   {
-    /*exp_edge*/auto current_edge = internal_graph[edge];
+    auto current_edge = internal_graph[edge];
     tfm::format(label, "[label=\"%s\"]", /*path_code_to_string(current_edge.first)*/"");
     return;
   }
 
 private:
-  exp_graph internal_graph;
+  exp_graph_t internal_graph;
 };
 
 
@@ -323,8 +328,8 @@ public:
 
   bool operator()(exp_vertex_desc vertex) const
   {
-    boost::graph_traits<exp_graph>::out_edge_iterator out_e_iter, last_out_e_iter;
-    boost::graph_traits<exp_graph>::in_edge_iterator in_e_iter, last_in_e_iter;
+    boost::graph_traits<exp_graph_t>::out_edge_iterator out_e_iter, last_out_e_iter;
+    boost::graph_traits<exp_graph_t>::in_edge_iterator in_e_iter, last_in_e_iter;
 
     // verify if the vertex is isolated (no in/out edges)
     std::tie(out_e_iter, last_out_e_iter) = boost::out_edges(vertex, internal_graph);
@@ -337,7 +342,7 @@ public:
   }
 
 private:
-  exp_graph internal_graph;
+  exp_graph_t internal_graph;
 };
 
 
@@ -375,14 +380,14 @@ private:
 auto explorer_graph::save_to_file(std::string filename) -> void
 {
 //  exp_vertex_isolated_prunner vertex_prunner;
-  boost::filtered_graph<exp_graph, boost::keep_all, exp_vertex_isolated_prunner>
+  boost::filtered_graph<exp_graph_t, boost::keep_all, exp_vertex_isolated_prunner>
       prunned_graph(internal_exp_graph, boost::keep_all(), exp_vertex_isolated_prunner());
   std::ofstream output(filename.c_str(), std::ofstream::out | std::ofstream::trunc);
   boost::write_graphviz(output, prunned_graph,
                         exp_vertex_label_writer(internal_exp_graph),
                         exp_edge_label_writer(internal_exp_graph));
 
-  boost::filtered_graph<exp_graph, boost::keep_all, exp_vertex_isolated_prunner>
+  boost::filtered_graph<exp_graph_t, boost::keep_all, exp_vertex_isolated_prunner>
       prunned_graph_simple(internal_exp_graph_simple, boost::keep_all(), exp_vertex_isolated_prunner());
   std::ofstream output_simple(("simple_" + filename).c_str(),
                               std::ofstream::out | std::ofstream::trunc);
@@ -392,10 +397,8 @@ auto explorer_graph::save_to_file(std::string filename) -> void
 
   std::ofstream output_tree(("tree_" + filename).c_str(), std::ofstream::out | std::ofstream::trunc);
   boost::write_graphviz(output_tree, internal_exp_tree,
-                        generic_exp_vertex_label_writer<exp_tree>(internal_exp_tree),
-                        generic_exp_edge_label_writer<exp_tree>(internal_exp_tree));
+                        generic_exp_vertex_label_writer<exp_tree_t>(internal_exp_tree),
+                        generic_exp_edge_label_writer<exp_tree_t>(internal_exp_tree));
 
   return;
 }
-
-

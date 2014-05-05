@@ -10,7 +10,7 @@ typedef std::vector<bool>                 path_code_t;
 class explorer_graph
 {
 private:
-  // using private structure key
+  // using private key to prevent the free construction of object
   struct private_construct_key {};
 
 public:
