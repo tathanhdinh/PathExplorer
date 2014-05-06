@@ -30,6 +30,7 @@ public:
                          ptr_instruction_t ins_b,
                          const path_code_t& edge_path_code)         -> void;
 
+  auto extract_cfi_tree ()                                          -> void;
   auto save_to_file     (std::string filename)                      -> void;
 
 public:

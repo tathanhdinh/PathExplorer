@@ -147,6 +147,7 @@ auto stop_exploring (INT32 code, VOID *data) -> VOID
   save_static_trace(process_id_str + "_path_explorer_static_trace.log");
 
 #if !defined(DISABLE_FSA)
+  explored_fsa->extract_cfi_tree();
   explored_fsa->save_to_file(process_id_str + "_path_explorer_explored_fsa.dot");
 #endif
   
@@ -164,10 +165,10 @@ auto stop_exploring (INT32 code, VOID *data) -> VOID
   log_file.close();
 
 #if !defined(NDEBUG)
-  show_cfi_logged_inputs();
+//  show_cfi_logged_inputs();
 #endif
 
-  calculate_exec_path_conditions(explored_exec_paths);
+//  calculate_exec_path_conditions(explored_exec_paths);
 
 //#if !defined(NDEBUG)
 //  show_path_condition(explored_exec_paths);

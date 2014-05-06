@@ -218,7 +218,10 @@ auto explorer_graph::add_edge(ptr_instruction_t ins_a, ptr_instruction_t ins_b,
 }
 
 
-auto extract_cfi_tree () -> void
+/**
+ * @brief extract CFI tree from the explorer tree
+ */
+auto explorer_graph::extract_cfi_tree () -> void
 {
   auto look_for_vertex = [&](exp_tree_vertex_t vertex, exp_tree_t tree) -> exp_tree_vertex_desc
   {
@@ -474,7 +477,7 @@ private:
  * @brief save the graph to a dot file
  *
  */
-auto explorer_graph::save_to_file(std::string filename) -> void
+auto explorer_graph::save_to_file (std::string filename) -> void
 {
 //  exp_vertex_isolated_prunner vertex_prunner;
   boost::filtered_graph<exp_graph_t, boost::keep_all, exp_vertex_isolated_prunner>
@@ -485,17 +488,24 @@ auto explorer_graph::save_to_file(std::string filename) -> void
                         exp_edge_label_writer(internal_exp_graph));
 
   boost::filtered_graph<exp_graph_t, boost::keep_all, exp_vertex_isolated_prunner>
-      prunned_graph_simple(internal_exp_graph_simple, boost::keep_all(), exp_vertex_isolated_prunner());
+      prunned_graph_simple(internal_exp_graph_simple, boost::keep_all(),
+                           exp_vertex_isolated_prunner());
   std::ofstream output_simple(("simple_" + filename).c_str(),
                               std::ofstream::out | std::ofstream::trunc);
   boost::write_graphviz(output_simple, prunned_graph_simple,
                         exp_vertex_label_writer(internal_exp_graph_simple),
                         exp_edge_label_writer(internal_exp_graph_simple));
 
-  std::ofstream output_tree(("tree_" + filename).c_str(), std::ofstream::out | std::ofstream::trunc);
+  std::ofstream output_tree(("tree_" + filename).c_str(),
+                            std::ofstream::out | std::ofstream::trunc);
   boost::write_graphviz(output_tree, internal_exp_tree,
                         generic_exp_vertex_label_writer<exp_tree_t>(internal_exp_tree),
                         generic_exp_edge_label_writer<exp_tree_t>(internal_exp_tree));
 
+  std::ofstream output_cfi_tree(("cfi_tree_" + filename).c_str(),
+                                std::ofstream::out | std::ofstream::trunc);
+  boost::write_graphviz(output_cfi_tree, internal_exp_cfi_tree,
+                        generic_exp_vertex_label_writer<exp_tree_t>(internal_exp_cfi_tree),
+                        generic_exp_edge_label_writer<exp_tree_t>(internal_exp_cfi_tree));
   return;
 }
