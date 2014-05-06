@@ -8,18 +8,18 @@
 #include <boost/graph/copy.hpp>
 #include <algorithm>
 
-typedef ADDRINT                                             exp_vertex;
-typedef std::pair<std::vector<bool>, addrint_value_maps_t>  exp_edge;
+typedef ADDRINT                                               exp_vertex;
+typedef std::pair<std::vector<bool>, addrint_value_maps_t>    exp_edge;
 typedef boost::adjacency_list<boost::listS, boost::vecS,
                               boost::bidirectionalS,
-                              exp_vertex, exp_edge>         exp_graph_t;
+                              exp_vertex, exp_edge>           exp_graph_t;
 typedef boost::graph_traits<exp_graph_t>::vertex_descriptor   exp_vertex_desc;
 typedef boost::graph_traits<exp_graph_t>::edge_descriptor     exp_edge_desc;
 typedef boost::graph_traits<exp_graph_t>::vertex_iterator     exp_vertex_iter;
 typedef boost::graph_traits<exp_graph_t>::edge_iterator       exp_edge_iter;
 
-typedef ptr_instruction_t                                   exp_tree_vertex_t;
-typedef path_code_t                                         exp_tree_edge_t;
+typedef ptr_instruction_t                                     exp_tree_vertex_t;
+typedef path_code_t                                           exp_tree_edge_t;
 typedef boost::adjacency_list<boost::listS, boost::vecS,
                               boost::bidirectionalS,
                               exp_tree_vertex_t,
@@ -28,7 +28,8 @@ typedef boost::graph_traits<exp_tree_t>::vertex_descriptor    exp_tree_vertex_de
 typedef boost::graph_traits<exp_tree_t>::edge_descriptor      exp_tree_edge_desc;
 typedef boost::graph_traits<exp_tree_t>::vertex_iterator      exp_tree_vertex_iter;
 typedef boost::graph_traits<exp_tree_t>::edge_iterator        exp_tree_edge_iter;
-typedef std::pair<exp_tree_edge_t, exp_tree_vertex_desc>      exp_tree_with_root_t;
+
+typedef std::pair<exp_tree_edge_t, exp_tree_vertex_t>         exp_tree_with_root_t;
 
 
 /*================================================================================================*/
@@ -216,18 +217,18 @@ auto explorer_graph::add_edge(ptr_instruction_t ins_a, ptr_instruction_t ins_b,
 }
 
 
-auto extract_cfi_graph (exp_tree_vertex_t root_vertex) -> exp_tree_t
+auto extract_cfi_tree (exp_tree_vertex_t root_vertex) -> exp_tree_with_root_t
 {
-  auto look_for_vertex = [&](exp_tree_vertex_t vertex, const exp_tree_t& tree)
+  auto look_for_vertex = [&](exp_tree_vertex_t vertex)
       -> exp_tree_vertex_desc
   {
     exp_tree_vertex_desc result_vertex_desc;
 
     exp_tree_vertex_iter first_vertex_iter, last_vertex_iter;
-    std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(tree);
+    std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_exp_tree);
     std::any_of(first_vertex_iter, last_vertex_iter, [&](exp_tree_vertex_desc vertex_desc) -> bool
     {
-      if (tree[vertex_desc] == vertex)
+      if (internal_exp_tree[vertex_desc] == vertex)
       {
         result_vertex_desc = vertex_desc; return true;
       }
@@ -238,27 +239,61 @@ auto extract_cfi_graph (exp_tree_vertex_t root_vertex) -> exp_tree_t
   };
 
   auto merge_tree = [&](exp_tree_vertex_t root_vertex,
-      const exp_tree_t& left_tree, exp_tree_vertex_t left_root_vertex, const exp_tree_edge_t& left_edge,
-      const exp_tree_t& right_tree, exp_tree_vertex_t right_root_vertex, const exp_tree_edge_t& right_edge) -> exp_tree_t
+      const exp_tree_with_root_t& left_tree, const path_code_t& left_edge,
+      const exp_tree_with_root_t& right_tree, const path_code_t& right_edge) -> exp_tree_with_root_t
   {
     exp_tree_t result_tree;
-    if (left_root_vertex) boost::copy_graph(left_tree, result_tree);
-    if (right_root_vertex) boost::copy_graph(right_tree, result_tree);
+
+    // copy left and right tree, add the root vertex
+    if (left_tree.second) boost::copy_graph(left_tree.first, result_tree);
+    if (right_tree.second) boost::copy_graph(right_tree.first, result_tree);
     auto root_vertex_desc = boost::add_vertex(root_vertex, result_tree);
 
     // add left and right edges into the result tree
-    if (left_root_vertex)
+    if (left_tree.second)
     {
-      auto left_root_desc = look_for_vertex(left_root_vertex, result_tree);
+      auto left_root_desc = look_for_vertex(left_tree.second, result_tree);
       boost::add_edge(root_vertex_desc, left_root_desc, left_edge, result_tree);
     }
-    if (right_root_vertex)
+    if (right_tree.second)
     {
-      auto right_root_desc = look_for_vertex(right_root_vertex, result_tree);
+      auto right_root_desc = look_for_vertex(right_tree.second, result_tree);
       boost::add_edge(root_vertex_desc, right_root_desc, right_edge, result_tree);
     }
 
-    return result_tree;
+    return std::make_pair(result_tree, root_vertex);
+  };
+
+//  auto end_of_one_way_path_from = [&](exp_tree_vertex_t start_vertex) -> exp_tree_vertex_t
+//  {
+//    auto start_vertex_desc = look_for_vertex(start_vertex, internal_exp_tree);
+
+//    if (boost::out_degree(start_vertex_desc, internal_exp_tree))
+//  };
+
+  auto next_cfi_vertex = [&](exp_tree_vertex_t start_vertex) -> exp_tree_vertex_t
+  {
+    auto start_vertex_desc = look_for_vertex(start_vertex, internal_exp_tree);
+  }
+
+  auto extract_path = [&](exp_tree_vertex_t root_vertex, bool direction)
+      -> std::pair<exp_tree_vertex_t, path_code_t>
+  {
+    exp_tree_t::out_edge_iterator first_out_edge_iter, last_out_edge_iter;
+
+    auto root_vertex_desc = look_for_vertex(root_vertex, internal_exp_tree);
+    std::tie(first_out_edge_iter, last_out_edge_iter) = boost::out_edges(root_vertex_desc,
+                                                                   internal_exp_tree);
+
+    std::pair<exp_tree_vertex_t, path_code_t> result;
+    std::any_of(first_out_edge_iter, last_out_edge_iter, [&](exp_tree_edge_desc edge_desc)
+    {
+      if (internal_exp_tree[edge_desc].back() == direction)
+      {
+        result.second = internal_exp_tree[edge_desc];
+      }
+      else return false;
+    });
   };
 
   return;
