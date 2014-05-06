@@ -220,8 +220,7 @@ auto explorer_graph::add_edge(ptr_instruction_t ins_a, ptr_instruction_t ins_b,
 
 auto extract_cfi_tree () -> void
 {
-  auto look_for_vertex = [&](exp_tree_vertex_t vertex, exp_tree_t tree)
-      -> exp_tree_vertex_desc
+  auto look_for_vertex = [&](exp_tree_vertex_t vertex, exp_tree_t tree) -> exp_tree_vertex_desc
   {
     exp_tree_vertex_desc result_vertex_desc;
 
@@ -316,111 +315,6 @@ auto extract_cfi_tree () -> void
   return;
 }
 
-//auto extract_cfi_tree (exp_tree_vertex_t root_vertex) -> exp_tree_with_root_t
-//{
-//  auto look_for_vertex = [&](exp_tree_vertex_t vertex, exp_tree_t tree)
-//      -> exp_tree_vertex_desc
-//  {
-//    exp_tree_vertex_desc result_vertex_desc;
-
-//    exp_tree_vertex_iter first_vertex_iter, last_vertex_iter;
-//    std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(tree);
-//    std::any_of(first_vertex_iter, last_vertex_iter, [&](exp_tree_vertex_desc vertex_desc) -> bool
-//    {
-//      if (tree[vertex_desc] == vertex)
-//      {
-//        result_vertex_desc = vertex_desc; return true;
-//      }
-//      else return false;
-//    });
-
-//    return result_vertex_desc;
-//  };
-
-//  auto merge_tree = [&](exp_tree_vertex_t root_vertex,
-//      exp_tree_with_root_t& left_tree, path_code_t& left_edge,
-//      exp_tree_with_root_t& right_tree, path_code_t& right_edge) -> exp_tree_with_root_t
-//  {
-//    exp_tree_t result_tree;
-
-//    // copy left and right tree, add the root vertex
-////    if (left_tree.second) boost::copy_graph(left_tree.first, result_tree);
-////    if (right_tree.second) boost::copy_graph(right_tree.first, result_tree);
-//    auto root_vertex_desc = boost::add_vertex(root_vertex, result_tree);
-
-//    // add left and right edges into the result tree
-//    if (left_tree.second)
-//    {
-//      auto left_root_desc = look_for_vertex(left_tree.second, result_tree);
-//      boost::add_edge(root_vertex_desc, left_root_desc, left_edge, result_tree);
-//    }
-//    if (right_tree.second)
-//    {
-//      auto right_root_desc = look_for_vertex(right_tree.second, result_tree);
-//      boost::add_edge(root_vertex_desc, right_root_desc, right_edge, result_tree);
-//    }
-
-////    return std::make_pair(result_tree, root_vertex);
-//  };
-
-
-//  std::function<exp_tree_vertex_t(exp_tree_vertex_t)> nearest_cfi_vertex =
-//      [&](exp_tree_vertex_t start_vertex) -> exp_tree_vertex_t
-//  {
-//    exp_tree_vertex_t result;
-
-//    // verify if the start vertex is a cfi
-//    if (start_vertex->is_cond_direct_cf) result = start_vertex;
-//    else
-//    {
-//      // not a cfi, then its neighbor number is 0 or 1
-//      auto start_vertex_desc = look_for_vertex(start_vertex, internal_exp_tree);
-//      if (boost::out_degree(start_vertex_desc, internal_exp_tree) == 1)
-//        result = nearest_cfi_vertex(
-//              internal_exp_tree[boost::target(*(boost::out_edges(
-//                                                  start_vertex_desc, internal_exp_tree
-//                                                  ).first),
-//                                              internal_exp_tree)]);
-//    }
-
-//    return result;
-//  };
-
-//  auto extract_path = [&](exp_tree_vertex_t root_vertex, bool direction)
-//      -> std::pair<exp_tree_vertex_t, path_code_t>
-//  {
-//    exp_tree_t::out_edge_iterator first_out_edge_iter, last_out_edge_iter;
-
-//    auto root_vertex_desc = look_for_vertex(root_vertex, internal_exp_tree);
-//    std::tie(first_out_edge_iter, last_out_edge_iter) = boost::out_edges(root_vertex_desc,
-//                                                                   internal_exp_tree);
-
-//    std::pair<exp_tree_vertex_t, path_code_t> result;
-//    std::any_of(first_out_edge_iter, last_out_edge_iter, [&](exp_tree_edge_desc edge_desc) -> bool
-//    {
-//      if (internal_exp_tree[edge_desc].back() == direction)
-//      {
-//        result.first = nearest_cfi_vertex(internal_exp_tree[boost::target(edge_desc,
-//                                                                          internal_exp_tree)]);
-//        result.second = internal_exp_tree[edge_desc];
-//        return (result.first != nullptr);
-//      }
-//      else return false;
-//    });
-
-//    return result;
-//  };
-
-//  auto left_path = extract_path(root_vertex, false);
-//  auto right_path = extract_path(root_vertex, true);
-
-////  return;
-
-//  return merge_tree(root_vertex,
-//                    extract_cfi_tree(left_path.first),
-//                    left_path.second,
-//                    extract_cfi_tree(right_path.first), right_path.second);
-//}
 
 extern ptr_cond_direct_inss_t detected_input_dep_cfis;
 class exp_vertex_label_writer
