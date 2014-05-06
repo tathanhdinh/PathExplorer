@@ -5,6 +5,7 @@
 #include <pin.H>
 
 #include <fstream>
+#include <random>
 
 #include "base/checkpoint.h"
 #include "base/cond_direct_instruction.h"
@@ -79,5 +80,8 @@ extern KNOB<UINT32>             max_local_rollback_knob;
 extern KNOB<UINT32>             max_trace_length_knob;
 
 extern std::ofstream            log_file;
+
+typedef std::shared_ptr<std::default_random_engine> ptr_random_engine_t;
+extern ptr_random_engine_t      ptr_rand_engine;
 
 #endif // COMMON_H

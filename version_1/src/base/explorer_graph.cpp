@@ -247,7 +247,9 @@ auto explorer_graph::extract_cfi_tree () -> void
     exp_tree_vertex_t result;
 
     // verify if the start vertex is a cfi
-    if (start_vertex->is_cond_direct_cf) result = start_vertex;
+    if (start_vertex->is_cond_direct_cf &&
+        !std::static_pointer_cast<cond_direct_instruction>(
+          start_vertex)->input_dep_addrs.empty()) result = start_vertex;
     else
     {
       // not a cfi, then its neighbor number is 0 or 1
@@ -289,7 +291,9 @@ auto explorer_graph::extract_cfi_tree () -> void
   std::for_each(boost::vertices(internal_exp_tree).first, boost::vertices(internal_exp_tree).second,
                 [&](exp_tree_vertex_desc vertex_desc)
   {
-    if (internal_exp_tree[vertex_desc]->is_cond_direct_cf)
+    if (internal_exp_tree[vertex_desc]->is_cond_direct_cf &&
+        !std::static_pointer_cast<cond_direct_instruction>(
+          internal_exp_tree[vertex_desc])->input_dep_addrs.empty())
     {
       boost::add_vertex(internal_exp_tree[vertex_desc], internal_exp_cfi_tree);
     }
@@ -299,7 +303,9 @@ auto explorer_graph::extract_cfi_tree () -> void
   std::for_each(boost::vertices(internal_exp_tree).first, boost::vertices(internal_exp_tree).second,
                 [&](exp_tree_vertex_desc vertex_desc)
   {
-    if (internal_exp_tree[vertex_desc]->is_cond_direct_cf)
+    if (internal_exp_tree[vertex_desc]->is_cond_direct_cf &&
+        !std::static_pointer_cast<cond_direct_instruction>(
+          internal_exp_tree[vertex_desc])->input_dep_addrs.empty())
     {
       std::for_each(boost::out_edges(vertex_desc, internal_exp_tree).first,
                     boost::out_edges(vertex_desc, internal_exp_tree).second,

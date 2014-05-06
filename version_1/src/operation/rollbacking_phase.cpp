@@ -95,7 +95,8 @@ static auto generic_randomized_generator (const addrint_value_map_t& input_map) 
     output_map[addr_value->first] = (generic_testing_value >> (idx * 8)) & 0xFF;
     addr_value = std::next(addr_value);
   }
-  generic_testing_value = std::rand() % std::numeric_limits<T>::max();
+//  generic_testing_value = std::rand() % std::numeric_limits<T>::max();
+  generic_testing_value = (*ptr_rand_engine)() % std::numeric_limits<T>::max();
   return output_map;
 }
 

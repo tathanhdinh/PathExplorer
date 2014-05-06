@@ -59,6 +59,8 @@ decltype(start_time)    stop_time;
 
 std::ofstream           log_file;
 
+ptr_random_engine_t     ptr_rand_engine;
+
 /* ---------------------------------------------------------------------------------------------- */
 /*                                         input handler functions                                */
 /* ---------------------------------------------------------------------------------------------- */
@@ -132,6 +134,7 @@ auto start_exploring (VOID *data) -> VOID
   instrumentation::initialize();
 
   start_time = std::time(0); std::srand(static_cast<unsigned int>(start_time));
+  ptr_rand_engine = std::make_shared<std::default_random_engine>(std::random_device());
 
   return;
 }
