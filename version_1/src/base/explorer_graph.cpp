@@ -371,17 +371,62 @@ public:
                   typename boost::graph_traits<exp_t>::vertex_descriptor vertex_desc)
   {
     auto current_vertex = internal_graph[vertex_desc];
-    auto vertex_is_cfi = false;
-    std::for_each(detected_input_dep_cfis.begin(), detected_input_dep_cfis.end(),
-                  [&](ptr_cond_direct_ins_t cfi)
+//    auto vertex_is_cfi = false;
+//    std::for_each(detected_input_dep_cfis.begin(), detected_input_dep_cfis.end(),
+//                  [&](ptr_cond_direct_ins_t cfi)
+//    {
+//      if (cfi->address == current_vertex->address) vertex_is_cfi = true;
+//    });
+
+    auto is_input_dep_cfi = [&](ptr_instruction_t tested_ins) -> bool
     {
-      if (cfi->address == current_vertex->address) vertex_is_cfi = true;
-    });
-    if (vertex_is_cfi) tfm::format(label, "[label=\"<%s: %s>\",style=filled,fillcolor=slateblue]",
-                                   addrint_to_hexstring(current_vertex->address),
-                                   current_vertex->disassembled_name);
-    else tfm::format(label, "[label=\"<%s: %s>\"]", addrint_to_hexstring(current_vertex->address),
-                     current_vertex->disassembled_name);
+//      return std::any_of(detected_input_dep_cfis.begin(), detected_input_dep_cfis.end(),
+//                  [&](ptr_instruction_t ins)
+//      {
+//        return (tested_ins == ins);
+//      });
+
+      return (tested_ins->is_cond_direct_cf &&
+              !std::static_pointer_cast<cond_direct_instruction>(
+                tested_ins)->input_dep_addrs.empty());
+    };
+
+    auto is_resolved_cfi = [&](ptr_instruction_t tested_ins) -> bool
+    {
+//      return std::any_of(detected_input_dep_cfis.begin(), detected_input_dep_cfis.end(),
+//                  [&](ptr_instruction_t ins)
+//      {
+//        return ((tested_ins == ins) &&
+//                std::static_pointer_cast<cond_direct_instruction>(ins)->is_resolved);
+//      });
+      return (tested_ins->is_cond_direct_cf &&
+              !std::static_pointer_cast<cond_direct_instruction>(
+                tested_ins)->input_dep_addrs.empty() &&
+              std::static_pointer_cast<cond_direct_instruction>(
+                tested_ins)->is_resolved);
+    };
+
+//    if (vertex_is_cfi) tfm::format(label, "[label=\"<%s: %s>\",style=filled,fillcolor=slateblue]",
+//                                   addrint_to_hexstring(current_vertex->address),
+//                                   current_vertex->disassembled_name);
+//    else tfm::format(label, "[label=\"<%s: %s>\"]", addrint_to_hexstring(current_vertex->address),
+//                     current_vertex->disassembled_name);
+    if (is_input_dep_cfi(current_vertex))
+    {
+      if (is_resolved_cfi(current_vertex))
+        tfm::format(label, "[label=\"<%s: %s>\",style=filled,fillcolor=coral]",
+                    addrint_to_hexstring(current_vertex->address),
+                    current_vertex->disassembled_name);
+      else
+        tfm::format(label, "[label=\"<%s: %s>\",style=filled,fillcolor=slateblue]",
+                    addrint_to_hexstring(current_vertex->address),
+                    current_vertex->disassembled_name);
+    }
+    else
+    {
+      tfm::format(label, "[label=\"<%s: %s>\"]", addrint_to_hexstring(current_vertex->address),
+                  current_vertex->disassembled_name);
+    }
     return;
   }
 

@@ -222,7 +222,7 @@ int main(int argc, char *argv[])
     tfm::format(std::cerr, "activate Pintool data-finalization\n");
     PIN_AddFiniFunction(stop_exploring, 0);
 
-    log_file.flush();
+//    log_file.flush();
 
     // now the control is passed to pin, so the main function will never return
     PIN_StartProgram();
