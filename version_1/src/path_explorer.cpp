@@ -147,10 +147,16 @@ auto stop_exploring (INT32 code, VOID *data) -> VOID
 {
   stop_time = std::time(0);
 
+  tfm::format(std::cerr, "calculating results\n");
+
+  tfm::format(std::cerr, "saving static trace\n");
   save_static_trace(process_id_str + "_path_explorer_static_trace.log");
 
 #if !defined(DISABLE_FSA)
+  tfm::format(std::cerr, "extracting CFI tree\n");
   explored_fsa->extract_cfi_tree();
+
+  tfm::format(std::cerr, "saving all trees\n");
   explored_fsa->save_to_file(process_id_str + "_path_explorer_explored_fsa.dot");
 #endif
   

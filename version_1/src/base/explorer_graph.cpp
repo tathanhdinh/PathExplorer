@@ -218,6 +218,28 @@ auto explorer_graph::add_edge(ptr_instruction_t ins_a, ptr_instruction_t ins_b,
 }
 
 
+static auto nearest_cfi_vertex (exp_tree_vertex_desc start_vertex) -> exp_tree_vertex_desc
+{
+//  exp_tree_vertex_desc result;
+
+  // verify if the start vertex is a cfi
+  if (internal_exp_tree[start_vertex]->is_cond_direct_cf &&
+      !std::static_pointer_cast<cond_direct_instruction>(
+        internal_exp_tree[start_vertex])->input_dep_addrs.empty()) return start_vertex;
+  else
+  {
+    // not a cfi, then its neighbor number is 0 or 1
+//    auto start_vertex_desc = look_for_vertex(start_vertex, internal_exp_tree);
+    if (boost::out_degree(start_vertex, internal_exp_tree) == 1)
+      return nearest_cfi_vertex(boost::target(*(boost::out_edges(start_vertex,
+                                                                 internal_exp_tree).first),
+                                              internal_exp_tree));
+  }
+
+  return boost::graph_traits<exp_tree_t>::null_vertex();
+}
+
+
 /**
  * @brief extract CFI tree from the explorer tree
  */
@@ -241,43 +263,20 @@ auto explorer_graph::extract_cfi_tree () -> void
     return result_vertex_desc;
   };
 
-  std::function<exp_tree_vertex_t(exp_tree_vertex_t)> nearest_cfi_vertex =
-      [&](exp_tree_vertex_t start_vertex) -> exp_tree_vertex_t
-  {
-    exp_tree_vertex_t result;
-
-    // verify if the start vertex is a cfi
-    if (start_vertex->is_cond_direct_cf &&
-        !std::static_pointer_cast<cond_direct_instruction>(
-          start_vertex)->input_dep_addrs.empty()) result = start_vertex;
-    else
-    {
-      // not a cfi, then its neighbor number is 0 or 1
-      auto start_vertex_desc = look_for_vertex(start_vertex, internal_exp_tree);
-      if (boost::out_degree(start_vertex_desc, internal_exp_tree) == 1)
-        result = nearest_cfi_vertex(internal_exp_tree[boost::target(*(boost::out_edges(
-                                                                        start_vertex_desc,
-                                                                        internal_exp_tree).first),
-                                                                    internal_exp_tree)]);
-    }
-    return result;
-  };
-
   auto next_cfi_following_path =
-      [&](exp_tree_vertex_t current_cfi, const path_code_t& path) -> exp_tree_vertex_t
+      [&](exp_tree_vertex_desc current_cfi_desc, const path_code_t& path) -> exp_tree_vertex_desc
   {
-    exp_tree_vertex_t result;
-    if (current_cfi)
+    auto result = boost::graph_traits<exp_tree_t>::null_vertex();
+    if (current_cfi_desc != boost::graph_traits<exp_tree_t>::null_vertex())
     {
-      auto current_cfi_desc = look_for_vertex(current_cfi, internal_exp_tree);
+//      auto current_cfi_desc = look_for_vertex(current_cfi, internal_exp_tree);
       std::any_of(boost::out_edges(current_cfi_desc, internal_exp_tree).first,
                   boost::out_edges(current_cfi_desc, internal_exp_tree).second,
                   [&](exp_tree_edge_desc out_edge) -> bool
       {
         if (internal_exp_tree[out_edge] == path)
         {
-          result = nearest_cfi_vertex(internal_exp_tree[boost::target(out_edge,
-                                                                      internal_exp_tree)]);
+          result = nearest_cfi_vertex(boost::target(out_edge, internal_exp_tree));
           return true;
         }
         else return false;
@@ -311,11 +310,10 @@ auto explorer_graph::extract_cfi_tree () -> void
                     boost::out_edges(vertex_desc, internal_exp_tree).second,
                     [&](exp_tree_edge_desc out_edge)
       {
-        auto nearest_cfi = next_cfi_following_path(internal_exp_tree[vertex_desc],
-                                                   internal_exp_tree[out_edge]);
-        if (nearest_cfi)
+        auto nearest_cfi_desc = next_cfi_following_path(vertex_desc, internal_exp_tree[out_edge]);
+        if (nearest_cfi_desc != boost::graph_traits<exp_tree_t>::null_vertex())
           boost::add_edge(look_for_vertex(internal_exp_tree[vertex_desc], internal_exp_cfi_tree),
-                          look_for_vertex(nearest_cfi, internal_exp_cfi_tree),
+                          look_for_vertex(internal_exp_tree[nearest_cfi_desc], internal_exp_cfi_tree),
                           internal_exp_tree[out_edge], internal_exp_cfi_tree);
       });
     }
