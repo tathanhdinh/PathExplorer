@@ -359,11 +359,43 @@ private:
 };
 
 
+/**
+ * @brief is_input_dep_cfi
+ */
+auto is_input_dep_cfi (ptr_instruction_t tested_ins) -> bool
+{
+//      return std::any_of(detected_input_dep_cfis.begin(), detected_input_dep_cfis.end(),
+//                  [&](ptr_instruction_t ins)
+//      {
+//        return (tested_ins == ins);
+//      });
+
+  return (tested_ins->is_cond_direct_cf &&
+          !std::static_pointer_cast<cond_direct_instruction>(tested_ins)->input_dep_addrs.empty());
+};
+
+
+/**
+ * @brief is_resolved_cfi
+ */
+auto is_resolved_cfi (ptr_instruction_t tested_ins) -> bool
+{
+//      return std::any_of(detected_input_dep_cfis.begin(), detected_input_dep_cfis.end(),
+//                  [&](ptr_instruction_t ins)
+//      {
+//        return ((tested_ins == ins) &&
+//                std::static_pointer_cast<cond_direct_instruction>(ins)->is_resolved);
+//      });
+  return (tested_ins->is_cond_direct_cf &&
+          !std::static_pointer_cast<cond_direct_instruction>(tested_ins)->input_dep_addrs.empty() &&
+          std::static_pointer_cast<cond_direct_instruction>(tested_ins)->is_resolved);
+};
+
 template <typename exp_t>
 class generic_exp_vertex_label_writer
 {
 public:
-  generic_exp_vertex_label_writer(exp_t& input_graph) : internal_graph(input_graph) {};
+  generic_exp_vertex_label_writer(const exp_t& input_graph) : internal_graph(input_graph) {};
 
   void operator()(std::ostream& label,
                   typename boost::graph_traits<exp_t>::vertex_descriptor vertex_desc)
@@ -376,33 +408,6 @@ public:
 //      if (cfi->address == current_vertex->address) vertex_is_cfi = true;
 //    });
 
-    auto is_input_dep_cfi = [&](ptr_instruction_t tested_ins) -> bool
-    {
-//      return std::any_of(detected_input_dep_cfis.begin(), detected_input_dep_cfis.end(),
-//                  [&](ptr_instruction_t ins)
-//      {
-//        return (tested_ins == ins);
-//      });
-
-      return (tested_ins->is_cond_direct_cf &&
-              !std::static_pointer_cast<cond_direct_instruction>(
-                tested_ins)->input_dep_addrs.empty());
-    };
-
-    auto is_resolved_cfi = [&](ptr_instruction_t tested_ins) -> bool
-    {
-//      return std::any_of(detected_input_dep_cfis.begin(), detected_input_dep_cfis.end(),
-//                  [&](ptr_instruction_t ins)
-//      {
-//        return ((tested_ins == ins) &&
-//                std::static_pointer_cast<cond_direct_instruction>(ins)->is_resolved);
-//      });
-      return (tested_ins->is_cond_direct_cf &&
-              !std::static_pointer_cast<cond_direct_instruction>(
-                tested_ins)->input_dep_addrs.empty() &&
-              std::static_pointer_cast<cond_direct_instruction>(
-                tested_ins)->is_resolved);
-    };
 
 //    if (vertex_is_cfi) tfm::format(label, "[label=\"<%s: %s>\",style=filled,fillcolor=slateblue]",
 //                                   addrint_to_hexstring(current_vertex->address),
@@ -455,13 +460,26 @@ template <typename exp_t>
 class generic_exp_edge_label_writer
 {
 public:
-  generic_exp_edge_label_writer(exp_t& input_graph) : internal_graph(input_graph) {};
+  generic_exp_edge_label_writer(const exp_t& input_graph) : internal_graph(input_graph) {};
 
   void operator()(std::ostream& label,
                   typename boost::graph_traits<exp_t>::edge_descriptor edge_desc)
   {
-    auto current_edge = internal_graph[edge_desc];
-    tfm::format(label, "[label=\"%s\"]", /*path_code_to_string(current_edge)*/"");
+//    auto current_edge = internal_graph[edge_desc];
+//    tfm::format(label, "[label=\"%s\"]", /*path_code_to_string(current_edge)*/"");
+
+    auto target_vertex_desc = boost::target(edge_desc, internal_graph);
+    if (is_input_dep_cfi(internal_graph[target_vertex_desc]) &&
+        !std::static_pointer_cast<cond_direct_instruction>(
+          internal_graph[target_vertex_desc])->path_code.empty())
+    {
+      tfm::format(label, "[label=\"%d\"]",
+                  std::static_pointer_cast<cond_direct_instruction>(
+                    internal_graph[target_vertex_desc])->path_code.back());
+    }
+    else
+      tfm::format(label, "[label=\"\"]");
+
     return;
   }
 
