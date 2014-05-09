@@ -197,7 +197,7 @@ auto show_cfi_logged_inputs () -> void
 {
   typedef decltype(detected_input_dep_cfis) cfis_t;
   std::for_each(detected_input_dep_cfis.begin(), detected_input_dep_cfis.end(),
-                [&](cfis_t::const_reference cfi_elem)
+                [&](decltype(detected_input_dep_cfis)::const_reference cfi_elem)
   {
     if (cfi_elem->is_resolved)
       tfm::format(std::cerr, "logged input of CFI %s at execution order %d: first %d, second %d\n",

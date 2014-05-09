@@ -107,9 +107,9 @@ static auto generic_randomized_generator (const addrint_value_map_t& input_map) 
 static auto initialize_values_at_active_modified_addrs () -> void
 {
   active_modified_addrs_values.clear();
-  typedef decltype(active_modified_addrs) addrs_t;
+//  typedef decltype(active_modified_addrs) addrs_t;
   std::for_each(active_modified_addrs.begin(), active_modified_addrs.end(),
-                [&](addrs_t::const_reference addr)
+                [&](decltype(active_modified_addrs)::const_reference addr)
   {
     active_modified_addrs_values[addr] = 0;
   });
@@ -377,9 +377,9 @@ static auto prepare_new_tainting_phase () -> void
   else
   {
     // not exceeded yet, then verify if there exists a resolved but unexplored CFI
-    typedef decltype(detected_input_dep_cfis) cfis_t;
+//    typedef decltype(detected_input_dep_cfis) cfis_t;
     if (std::any_of(detected_input_dep_cfis.begin(), detected_input_dep_cfis.end(),
-                    [&](cfis_t::reference cfi_elem) -> bool
+                    [&](decltype(detected_input_dep_cfis)::reference cfi_elem) -> bool
     {
       if (cfi_elem->is_resolved && !cfi_elem->is_explored)
       {
@@ -654,9 +654,9 @@ auto mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length
 //        }
 //      }
 
-      typedef decltype(saved_checkpoints) checkpoints_t;
+//      typedef decltype(saved_checkpoints) checkpoints_t;
       std::any_of(saved_checkpoints.begin(), saved_checkpoints.end(),
-                  [&](checkpoints_t::reference checkpoint_elem) -> bool
+                  [&](decltype(saved_checkpoints)::reference checkpoint_elem) -> bool
       {
         if (checkpoint_elem->exec_order <= current_exec_order)
         {

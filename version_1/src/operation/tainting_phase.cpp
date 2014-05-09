@@ -162,9 +162,10 @@ static inline auto save_detected_cfis () -> void
 {
   if (ins_at_order.size() > 1)
   {
-    typedef decltype(ins_at_order) ins_at_order_t;
+//    typedef decltype(ins_at_order) ins_at_order_t;
     auto last_order_ins = *ins_at_order.rbegin();
-    std::for_each(ins_at_order.begin(), ins_at_order.end(), [&](ins_at_order_t::const_reference order_ins)
+    std::for_each(ins_at_order.begin(), ins_at_order.end(),
+                  [&](decltype(ins_at_order)::const_reference order_ins)
     {
       // consider only the instruction that is not behind the exploring CFI
       if ((!exploring_cfi || (exploring_cfi && (order_ins.first > exploring_cfi->exec_order))) &&
@@ -213,9 +214,10 @@ static inline auto calculate_path_code () -> void
     // appended in the previous tainting phase)
     if (exploring_cfi) current_path_code.push_back(true);
 
-    typedef decltype(ins_at_order) ins_at_order_t;
-    ins_at_order_t::mapped_type prev_ins;
-    std::for_each(ins_at_order.begin(), ins_at_order.end(), [&](ins_at_order_t::const_reference order_ins)
+//    typedef decltype(ins_at_order) ins_at_order_t;
+    decltype(ins_at_order)::mapped_type prev_ins;
+    std::for_each(ins_at_order.begin(), ins_at_order.end(),
+                  [&](decltype(ins_at_order)::const_reference order_ins)
     {
       if (!exploring_cfi || (exploring_cfi && (order_ins.first > exploring_cfi->exec_order)))
       {
@@ -296,9 +298,9 @@ static auto calculate_rollbacking_trace_length() -> void
 //    }
 //  }
 
-  typedef decltype(ins_at_order) ins_at_order_t;
+//  typedef decltype(ins_at_order) ins_at_order_t;
   std::any_of(std::next(ins_at_order.rbegin()), ins_at_order.rend(),
-              [&](ins_at_order_t::const_reference ins_ord) -> bool
+              [&](decltype(ins_at_order)::const_reference ins_ord) -> bool
   {
     // verify if the instruction is a CFI
     if (ins_ord.second->is_cond_direct_cf)
