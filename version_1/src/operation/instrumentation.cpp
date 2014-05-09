@@ -220,9 +220,9 @@ static inline auto network_related_intercept (IMG& loaded_img) -> void
   if ((img_name.find("ws2_32.dll") != std::string::npos) ||
       (img_name.find("wininet.dll") != std::string::npos))
   {
-    typedef decltype(intercept_func_of_name) intercept_func_of_name_t;
+//    typedef decltype(intercept_func_of_name) intercept_func_of_name_t;
     std::for_each(intercept_func_of_name.begin(), intercept_func_of_name.end(),
-                  [&](intercept_func_of_name_t::const_reference origin_interceptor)
+                  [&](decltype(intercept_func_of_name)::const_reference origin_interceptor)
     {
       PIN_LockClient();
       // look for the routine corresponding with the name of the original function

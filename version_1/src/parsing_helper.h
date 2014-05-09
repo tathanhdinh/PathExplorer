@@ -18,4 +18,10 @@
 #endif
 #endif
 
+#if _MSC_VER == 1600
+#include <utility>
+#define decltype(...) \
+  std::identity<decltype(__VA_ARGS__)>::type
+#endif
+
 #endif // PARSING_HELPER_H

@@ -245,9 +245,9 @@ auto save_cfi_inputs (const std::string& filename) -> void
     return;
   };
 
-  typedef decltype(detected_input_dep_cfis) cfis_t;
+//  typedef decltype(detected_input_dep_cfis) cfis_t;
   std::for_each(detected_input_dep_cfis.begin(), detected_input_dep_cfis.end(),
-                [&](cfis_t::const_reference cfi)
+                [&](decltype(detected_input_dep_cfis)::const_reference cfi)
   {
     if (cfi->is_explored || cfi->is_bypassed)
     {

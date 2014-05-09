@@ -32,7 +32,7 @@ checkpoint::checkpoint(UINT32 existing_exec_order, const CONTEXT* p_ctxt,
  */
 void checkpoint::mem_write_tracking(ADDRINT mem_addr, UINT32 mem_size)
 {
-  for (/*UINT32*/auto mem_idx = 0; mem_idx < mem_size; ++mem_idx)
+  for (auto mem_idx = 0; mem_idx < mem_size; ++mem_idx)
   {
     // this address is written for the first time,
     if (mem_written_log.find(mem_addr + mem_idx) == mem_written_log.end())
