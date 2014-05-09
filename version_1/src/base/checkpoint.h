@@ -46,12 +46,5 @@ extern auto rollback_with_modified_input  (const ptr_checkpoint_t& destination,
                                            UINT32& existing_exec_order,
                                            addrint_value_map_t& modified_addrs_values)  -> void;
 
-
-//void rollback_and_restore(ptr_checkpoint_t& ptr_chkpnt, UINT8* backup_input_addr);
-
-//void rollback_and_restore(ptr_checkpoint_t& ptr_chkpnt, std::set<ADDRINT>& mem_addrs);
-
-//void rollback_and_modify(ptr_checkpoint_t& ptr_chkpnt, std::set<ADDRINT>& dep_mems);
-
 #endif // CHECKPOINT_H
 

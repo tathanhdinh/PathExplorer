@@ -18,8 +18,6 @@ auto save_cfi_inputs            (const std::string& filename) -> void;
 
 auto addrint_to_hexstring       (ADDRINT input) -> std::string;
 
-//auto rollback_bound_is_reached  () -> bool;
-
 #if !defined(DISABLE_FSA)
 auto path_code_to_string        (const path_code_t& path_code) -> std::string;
 #endif

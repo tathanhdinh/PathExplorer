@@ -2,7 +2,6 @@
 
 #include "../util/stuffs.h"
 
-
 checkpoint::checkpoint(UINT32 existing_exec_order, const CONTEXT* p_ctxt,
                        ADDRINT input_mem_read_addr, UINT32 input_mem_read_size)
 {
