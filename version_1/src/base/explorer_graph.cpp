@@ -359,38 +359,6 @@ private:
 };
 
 
-/**
- * @brief is_input_dep_cfi
- */
-auto is_input_dep_cfi (ptr_instruction_t tested_ins) -> bool
-{
-//      return std::any_of(detected_input_dep_cfis.begin(), detected_input_dep_cfis.end(),
-//                  [&](ptr_instruction_t ins)
-//      {
-//        return (tested_ins == ins);
-//      });
-
-  return (tested_ins->is_cond_direct_cf &&
-          !std::static_pointer_cast<cond_direct_instruction>(tested_ins)->input_dep_addrs.empty());
-};
-
-
-/**
- * @brief is_resolved_cfi
- */
-auto is_resolved_cfi (ptr_instruction_t tested_ins) -> bool
-{
-//      return std::any_of(detected_input_dep_cfis.begin(), detected_input_dep_cfis.end(),
-//                  [&](ptr_instruction_t ins)
-//      {
-//        return ((tested_ins == ins) &&
-//                std::static_pointer_cast<cond_direct_instruction>(ins)->is_resolved);
-//      });
-  return (tested_ins->is_cond_direct_cf &&
-          !std::static_pointer_cast<cond_direct_instruction>(tested_ins)->input_dep_addrs.empty() &&
-          std::static_pointer_cast<cond_direct_instruction>(tested_ins)->is_resolved);
-};
-
 template <typename exp_t>
 class generic_exp_vertex_label_writer
 {
@@ -503,7 +471,7 @@ public:
     std::tie(in_e_iter, last_in_e_iter) = boost::in_edges(vertex, internal_graph);
 
     // the isolated one (i.e. the corresponing instruction is never executed) will be prunned
-    if ((out_e_iter == last_out_e_iter) && (in_e_iter == last_in_e_iter)) /*is_kept = false*/return false;
+    if ((out_e_iter == last_out_e_iter) && (in_e_iter == last_in_e_iter)) return false;
 
     return true;
   }

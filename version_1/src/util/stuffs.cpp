@@ -13,6 +13,39 @@ auto addrint_to_hexstring (ADDRINT input) -> std::string
 }
 
 
+/**
+ * @brief is_input_dep_cfi
+ */
+auto is_input_dep_cfi (ptr_instruction_t tested_ins) -> bool
+{
+//      return std::any_of(detected_input_dep_cfis.begin(), detected_input_dep_cfis.end(),
+//                  [&](ptr_instruction_t ins)
+//      {
+//        return (tested_ins == ins);
+//      });
+
+  return (tested_ins->is_cond_direct_cf &&
+          !std::static_pointer_cast<cond_direct_instruction>(tested_ins)->input_dep_addrs.empty());
+};
+
+
+/**
+ * @brief is_resolved_cfi
+ */
+auto is_resolved_cfi (ptr_instruction_t tested_ins) -> bool
+{
+//      return std::any_of(detected_input_dep_cfis.begin(), detected_input_dep_cfis.end(),
+//                  [&](ptr_instruction_t ins)
+//      {
+//        return ((tested_ins == ins) &&
+//                std::static_pointer_cast<cond_direct_instruction>(ins)->is_resolved);
+//      });
+  return (tested_ins->is_cond_direct_cf &&
+          !std::static_pointer_cast<cond_direct_instruction>(tested_ins)->input_dep_addrs.empty() &&
+          std::static_pointer_cast<cond_direct_instruction>(tested_ins)->is_resolved);
+};
+
+
 auto save_static_trace (const std::string& filename) -> void
 {
   std::ofstream out_file(filename.c_str(), std::ofstream::out | std::ofstream::trunc);
@@ -172,5 +205,55 @@ auto show_cfi_logged_inputs () -> void
                   cfi_elem->first_input_projections.size(),
                   cfi_elem->second_input_projections.size());
   });
+  return;
+}
+
+
+auto save_cfi_inputs (const std::string& filename) -> void
+{
+  // lambda function to save projected inputs of a cfi
+  auto save_inputs_of_cfi =
+      [&](const ptr_cond_direct_ins_t cfi, const std::string& filename) -> void
+  {
+    auto save_maps = [&](addrint_value_maps_t input_maps, std::ofstream& output_file) -> void
+    {
+      std::for_each(input_maps.begin(), input_maps.end(),
+                    [&](addrint_value_maps_t::const_reference addr_value_map)
+      {
+        std::for_each(addr_value_map.begin(), addr_value_map.end(),
+                      [&](addrint_value_map_t::const_reference addr_value)
+        {
+          tfm::format(output_file, "%s:%d,", addrint_to_hexstring(addr_value.first),
+                      addr_value.second);
+        });
+        tfm::format(output_file, "\n");
+      });
+    };
+
+    auto generic_filename = filename + addrint_to_hexstring(cfi->address) +
+        path_code_to_string(cfi->path_code);
+
+    std::ofstream first_output_file((generic_filename + "_0").c_str(),
+                                    std::ofstream::out | std::ofstream::trunc);
+    save_maps(cfi->first_input_projections, first_output_file);
+    first_output_file.close();
+
+    std::ofstream second_output_file((generic_filename + "_1").c_str(),
+                                     std::ofstream::out | std::ofstream::trunc);
+    save_maps(cfi->second_input_projections, second_output_file);
+    second_output_file.close();
+    return;
+  };
+
+  typedef decltype(detected_input_dep_cfis) cfis_t;
+  std::for_each(detected_input_dep_cfis.begin(), detected_input_dep_cfis.end(),
+                [&](cfis_t::const_reference cfi)
+  {
+    if (cfi->is_explored || cfi->is_bypassed)
+    {
+      save_inputs_of_cfi(cfi, filename);
+    }
+  });
+
   return;
 }
