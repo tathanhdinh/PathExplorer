@@ -195,7 +195,7 @@ auto show_exploring_progress () -> void
 
 auto show_cfi_logged_inputs () -> void
 {
-  typedef decltype(detected_input_dep_cfis) cfis_t;
+//  typedef decltype(detected_input_dep_cfis) cfis_t;
   std::for_each(detected_input_dep_cfis.begin(), detected_input_dep_cfis.end(),
                 [&](decltype(detected_input_dep_cfis)::const_reference cfi_elem)
   {

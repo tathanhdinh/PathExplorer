@@ -188,7 +188,8 @@ auto explorer_graph::add_edge(ADDRINT ins_a_addr, ADDRINT ins_b_addr,
 
   // verify if the edge from a to b exists
   bool edge_exists;
-  std::tie(std::ignore, edge_exists) = boost::edge(ins_a_desc, ins_b_desc, internal_exp_graph_simple);
+  std::tie(std::ignore, edge_exists) = boost::edge(ins_a_desc, ins_b_desc,
+                                                   internal_exp_graph_simple);
   // no, then add a new edge with empty label
   if (!edge_exists) boost::add_edge(ins_a_desc, ins_b_desc,
                                     std::make_pair(std::vector<bool>(), addrint_value_maps_t()),

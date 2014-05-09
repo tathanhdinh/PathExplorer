@@ -1,6 +1,7 @@
 #include "checkpoint.h"
 
 #include "../util/stuffs.h"
+#include "../parsing_helper.h"
 
 checkpoint::checkpoint(UINT32 existing_exec_order, const CONTEXT* p_ctxt,
                        ADDRINT input_mem_read_addr, UINT32 input_mem_read_size)
@@ -59,11 +60,18 @@ static inline void generic_restore(UINT32& existing_exec_order, UINT32 checkpoin
   existing_exec_order = checkpoint_exec_order - 1;
 
   // restore values of written memory addresses
-  /*addrint_value_map_t::iterator*/auto mem_iter = checkpoint_mem_written_log.begin();
-  for (; mem_iter != checkpoint_mem_written_log.end(); ++mem_iter)
+//  auto mem_iter = checkpoint_mem_written_log.begin();
+//  for (; mem_iter != checkpoint_mem_written_log.end(); ++mem_iter)
+//  {
+//    PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_iter->first), &mem_iter->second, sizeof(UINT8));
+//  }
+
+  std::for_each(checkpoint_mem_written_log.begin(), checkpoint_mem_written_log.end(),
+                [](addrint_value_map_t::const_reference addr_mem)
   {
-    PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_iter->first), &mem_iter->second, sizeof(UINT8));
-  }
+    PIN_SafeCopy(reinterpret_cast<UINT8*>(addr_mem.first), &addr_mem.second, sizeof(UINT8));
+  });
+
 #if !defined(ENABLE_FAST_ROLLBACK)
   checkpoint_mem_written_log.clear();
 #endif
