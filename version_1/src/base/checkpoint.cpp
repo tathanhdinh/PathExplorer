@@ -52,8 +52,8 @@ void checkpoint::mem_write_tracking(ADDRINT mem_addr, UINT32 mem_size)
 /**
  * @brief restore the execution order and over-written memory addresses
  */
-static inline void generic_restore(UINT32& existing_exec_order, UINT32 checkpoint_exec_order,
-                                   addrint_value_map_t& checkpoint_mem_written_log)
+static auto generic_restore(UINT32& existing_exec_order, UINT32 checkpoint_exec_order,
+                            addrint_value_map_t& checkpoint_mem_written_log) -> void
 {
   // restore the existing execution order (-1 because the instruction at the checkpoint will
   // be re-executed)
@@ -100,11 +100,17 @@ void rollback_with_original_input(const ptr_checkpoint_t& dest, UINT32& existing
   generic_restore(existing_exec_order, dest->exec_order, dest->mem_written_log);
 
   // restore the original input
-  addrint_value_map_t::iterator mem_iter = dest->input_dep_original_values.begin();
-  for (; mem_iter != dest->input_dep_original_values.end(); ++mem_iter)
+//  addrint_value_map_t::iterator mem_iter = dest->input_dep_original_values.begin();
+//  for (; mem_iter != dest->input_dep_original_values.end(); ++mem_iter)
+//  {
+//    PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_iter->first), &mem_iter->second, sizeof(UINT8));
+//  }
+
+  std::for_each(dest->input_dep_original_values.begin(), dest->input_dep_original_values.end(),
+                [](decltype(dest->input_dep_original_values)::const_reference addr_mem)
   {
-    PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_iter->first), &mem_iter->second, sizeof(UINT8));
-  }
+    PIN_SafeCopy(reinterpret_cast<UINT8*>(addr_mem.first), &addr_mem.second, sizeof(UINT8));
+  });
 
   // restore the values of registers
   PIN_ExecuteAt(dest->context.get());
@@ -138,11 +144,16 @@ void rollback_with_modified_input(const ptr_checkpoint_t& dest, UINT32& existing
   generic_restore(existing_exec_order, dest->exec_order, dest->mem_written_log);
 
   // modify the current input
-  addrint_value_map_t::iterator mem_iter = modified_addrs_values.begin();
-  for (; mem_iter != modified_addrs_values.end(); ++mem_iter)
+//  addrint_value_map_t::iterator mem_iter = modified_addrs_values.begin();
+//  for (; mem_iter != modified_addrs_values.end(); ++mem_iter)
+//  {
+//    PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_iter->first), &mem_iter->second, sizeof(UINT8));
+//  }
+  std::for_each(modified_addrs_values.begin(), modified_addrs_values.end(),
+                [](addrint_value_map_t::const_reference addr_value)
   {
-    PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_iter->first), &mem_iter->second, sizeof(UINT8));
-  }
+    PIN_SafeCopy(reinterpret_cast<UINT8*>(addr_value.first), &addr_value.second, sizeof(UINT8));
+  });
 
   // restore values of registers
   PIN_ExecuteAt(dest->context.get());
