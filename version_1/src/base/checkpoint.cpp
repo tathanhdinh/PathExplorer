@@ -31,7 +31,7 @@ checkpoint::checkpoint(UINT32 existing_exec_order, const CONTEXT* p_ctxt,
 /**
  * @brief tracking instructions that write memory
  */
-void checkpoint::mem_write_tracking(ADDRINT mem_addr, UINT32 mem_size)
+auto checkpoint::mem_write_tracking(ADDRINT mem_addr, UINT32 mem_size) -> void
 {
   for (auto mem_idx = 0; mem_idx < mem_size; ++mem_idx)
   {
@@ -82,7 +82,7 @@ static auto generic_restore(UINT32& existing_exec_order, UINT32 checkpoint_exec_
 /**
  * @brief keep the current input and rollback
  */
-void rollback_with_current_input(const ptr_checkpoint_t& dest, UINT32& existing_exec_order)
+auto rollback_with_current_input(ptr_checkpoint_t dest, UINT32& existing_exec_order) -> void
 {
   generic_restore(existing_exec_order, dest->exec_order, dest->mem_written_log);
 
@@ -95,7 +95,7 @@ void rollback_with_current_input(const ptr_checkpoint_t& dest, UINT32& existing_
 /**
  * @brief restore the original input and rollback
  */
-void rollback_with_original_input(const ptr_checkpoint_t& dest, UINT32& existing_exec_order)
+auto rollback_with_original_input(ptr_checkpoint_t dest, UINT32& existing_exec_order) -> void
 {
   generic_restore(existing_exec_order, dest->exec_order, dest->mem_written_log);
 
@@ -121,8 +121,8 @@ void rollback_with_original_input(const ptr_checkpoint_t& dest, UINT32& existing
 /**
  * @brief replace the current input by a new input and rollback
  */
-void rollback_with_new_input(const ptr_checkpoint_t& dest, UINT32& existing_exec_order,
-                             ADDRINT input_addr, UINT32 input_size, UINT8* new_buffer)
+auto rollback_with_new_input(ptr_checkpoint_t dest, UINT32& existing_exec_order,
+                             ADDRINT input_addr, UINT32 input_size, UINT8* new_buffer) -> void
 {
   generic_restore(existing_exec_order, dest->exec_order, dest->mem_written_log);
 
@@ -138,8 +138,8 @@ void rollback_with_new_input(const ptr_checkpoint_t& dest, UINT32& existing_exec
 /**
  * @brief modify the current input and rollback
  */
-void rollback_with_modified_input(const ptr_checkpoint_t& dest, UINT32& existing_exec_order,
-                                  addrint_value_map_t& modified_addrs_values)
+auto rollback_with_modified_input(ptr_checkpoint_t dest, UINT32& existing_exec_order,
+                                  addrint_value_map_t& modified_addrs_values) -> void
 {
   generic_restore(existing_exec_order, dest->exec_order, dest->mem_written_log);
 
