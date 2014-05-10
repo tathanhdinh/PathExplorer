@@ -31,7 +31,7 @@ checkpoint::checkpoint(UINT32 existing_exec_order, const CONTEXT* p_ctxt,
 /**
  * @brief tracking instructions that write memory
  */
-auto checkpoint::mem_write_tracking(ADDRINT mem_addr, UINT32 mem_size) -> void
+auto checkpoint::mem_write_tracking (ADDRINT mem_addr, UINT32 mem_size) -> void
 {
   for (auto mem_idx = 0; mem_idx < mem_size; ++mem_idx)
   {
@@ -52,8 +52,8 @@ auto checkpoint::mem_write_tracking(ADDRINT mem_addr, UINT32 mem_size) -> void
 /**
  * @brief restore the execution order and over-written memory addresses
  */
-static auto generic_restore(UINT32& existing_exec_order, UINT32 checkpoint_exec_order,
-                            addrint_value_map_t& checkpoint_mem_written_log) -> void
+static auto generic_restore (UINT32& existing_exec_order, UINT32 checkpoint_exec_order,
+                             addrint_value_map_t& checkpoint_mem_written_log) -> void
 {
   // restore the existing execution order (-1 because the instruction at the checkpoint will
   // be re-executed)

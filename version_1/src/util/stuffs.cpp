@@ -230,15 +230,16 @@ auto save_cfi_inputs (const std::string& filename) -> void
       });
     };
 
-    auto generic_filename = filename + addrint_to_hexstring(cfi->address) +
-        path_code_to_string(cfi->path_code);
+    auto generic_filename = path_code_to_string(cfi->path_code) + "_" +
+        addrint_to_hexstring(cfi->address)  + "_" + filename;
+    tfm::format(std::cerr, "%s\n", generic_filename);
 
-    std::ofstream first_output_file((generic_filename + "_0").c_str(),
+    std::ofstream first_output_file(("0_" + generic_filename).c_str(),
                                     std::ofstream::out | std::ofstream::trunc);
     save_maps(cfi->first_input_projections, first_output_file);
     first_output_file.close();
 
-    std::ofstream second_output_file((generic_filename + "_1").c_str(),
+    std::ofstream second_output_file(("1_" + generic_filename).c_str(),
                                      std::ofstream::out | std::ofstream::trunc);
     save_maps(cfi->second_input_projections, second_output_file);
     second_output_file.close();

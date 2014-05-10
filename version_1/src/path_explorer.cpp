@@ -146,6 +146,7 @@ auto start_exploring (VOID *data) -> VOID
 auto stop_exploring (INT32 code, VOID *data) -> VOID
 {
   stop_time = std::time(0);
+  tfm::format(std::cerr, "%d seconds elapsed\n", stop_time - start_time);
 
   tfm::format(std::cerr, "calculating results\n");
 
@@ -156,10 +157,13 @@ auto stop_exploring (INT32 code, VOID *data) -> VOID
   tfm::format(std::cerr, "extracting CFI tree\n");
   explored_fsa->extract_cfi_tree();
 
+  tfm::format(std::cerr, "saving CFI inputs\n");
+  save_cfi_inputs(process_id_str + "_cfi_inputs.log");
+
   tfm::format(std::cerr, "saving all trees\n");
   explored_fsa->save_to_file(process_id_str + "_path_explorer_explored_fsa.dot");
 #endif
-  
+
   UINT32 resolved_cfi_num = 0, singular_cfi_num = 0;
   std::for_each(detected_input_dep_cfis.begin(), detected_input_dep_cfis.end(),
                 [&](ptr_cond_direct_ins_t cfi)
@@ -174,7 +178,7 @@ auto stop_exploring (INT32 code, VOID *data) -> VOID
   log_file.close();
 
 #if !defined(NDEBUG)
-//  show_cfi_logged_inputs();
+  show_cfi_logged_inputs();
 #endif
 
 //  calculate_exec_path_conditions(explored_exec_paths);
