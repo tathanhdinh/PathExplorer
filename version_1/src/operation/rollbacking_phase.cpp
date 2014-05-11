@@ -31,6 +31,7 @@ static input_generation_mode    gen_mode;
 UINT8                           byte_testing_value;
 UINT16                          word_testing_value;
 UINT32                          dword_testing_value;
+
 std::function<addrint_value_map_t(const addrint_value_map_t&)>  generate_testing_input;
 
 
@@ -431,6 +432,7 @@ static auto prepare_new_tainting_phase () -> void
  * same as the original trace: if there exists an instruction that does not occur in the original
  * trace then that must be resulted from a control-flow instruction which has changed the control
  * flow, so the new instruction will not be executed and we take a rollback.
+ *
  * Its semantics is quite sophisticated because there are several conditions to check.
  *
  * @param ins_addr: the address of the current examined instruction.
