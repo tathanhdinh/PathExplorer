@@ -65,8 +65,8 @@ static auto generic_sequential_generator (const addrint_value_map_t& input_map) 
   static T generic_testing_value = 0;
   addrint_value_map_t output_map;
 
-  // because sizeof(T) = active_modified_addrs_values.size(), all elements of
-  // active_modified_addrs_values will be updated
+  // because sizeof(T) = active_modified_addrs_values.size(),
+  // all elements of active_modified_addrs_values will be updated
   auto addr_value = /*active_modified_addrs_values*/input_map.begin();
   for (auto idx = 0; idx < sizeof(T); ++idx)
   {
@@ -88,7 +88,7 @@ static auto generic_randomized_generator (const addrint_value_map_t& input_map) 
   static T generic_testing_value = 0;
   addrint_value_map_t output_map;
 
-  auto addr_value = /*active_modified_addrs_values*/input_map.begin();
+  auto addr_value = input_map.begin();
   for (auto idx = 0; idx < sizeof(T); ++idx)
   {
 //    addr_value->second = (generic_testing_value >> (idx * 8)) & 0xFF;
@@ -111,7 +111,8 @@ static auto initialize_values_at_active_modified_addrs () -> void
   std::for_each(active_modified_addrs.begin(), active_modified_addrs.end(),
                 [&](decltype(active_modified_addrs)::const_reference addr)
   {
-    active_modified_addrs_values[addr] = 0;
+//    active_modified_addrs_values[addr] = 0;
+    active_modified_addrs_values[addr] = fresh_input.get()[addr - received_msg_addr];
   });
 
   switch (active_modified_addrs_values.size())

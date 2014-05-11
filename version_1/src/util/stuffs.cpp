@@ -83,7 +83,7 @@ public:
 //  template <typename Vertex>
   void operator()(std::ostream& vertex_label, /*Vertex*/df_vertex_desc vertex)
   {
-    /*df_vertex*/auto current_vertex = tainting_graph[vertex];
+    auto current_vertex = tainting_graph[vertex];
     if ((current_vertex->value.type() == typeid(ADDRINT)) &&
         (received_msg_addr <= boost::get<ADDRINT>(current_vertex->value)) &&
         (boost::get<ADDRINT>(current_vertex->value) < received_msg_addr + received_msg_size))
@@ -223,7 +223,7 @@ auto save_cfi_inputs (const std::string& filename) -> void
         std::for_each(addr_value_map.begin(), addr_value_map.end(),
                       [&](addrint_value_map_t::const_reference addr_value)
         {
-          tfm::format(output_file, "%s:%d,", addrint_to_hexstring(addr_value.first),
+          tfm::format(output_file, "%10s:%3d ", addrint_to_hexstring(addr_value.first),
                       addr_value.second);
         });
         tfm::format(output_file, "\n");
@@ -250,7 +250,7 @@ auto save_cfi_inputs (const std::string& filename) -> void
   std::for_each(detected_input_dep_cfis.begin(), detected_input_dep_cfis.end(),
                 [&](decltype(detected_input_dep_cfis)::const_reference cfi)
   {
-    if (cfi->is_explored || cfi->is_bypassed)
+    if (cfi->is_resolved/* || cfi->is_bypassed*/)
     {
       save_inputs_of_cfi(cfi, filename);
     }
