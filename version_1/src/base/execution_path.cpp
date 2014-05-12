@@ -56,6 +56,55 @@ conditions_t y_fix(std::function<decltype(join_maps_in_condition)> join_func)
 
 
 /**
+ * @brief verify if two map a and b are exactly equal, inspired from http://goo.gl/9W8Ws7
+ */
+auto are_identical (const addrint_value_map_t& map_a, const addrint_value_map_t& map_b) -> bool
+{
+  return ((map_a.size() == map_b.size()) &&
+          (std::equal(map_a.begin(), map_a.end(), map_b.begin())));
+}
+
+
+auto remove_duplicated (const addrint_value_maps_t& input_maps) -> addrint_value_maps_t
+{
+  auto examined_maps = input_maps;
+
+//  if (examined_maps.size() > 1)
+//  {
+//    auto back_map = examined_maps.back(); examined_maps.pop_back();
+//    auto is_identical_with_back = std::bind(are_identical, back_map, std::placeholders::_1);
+
+//    examined_maps = remove_duplicated(examined_maps);
+
+//    // verify if there exists some map which is before and identical with the last map
+//    if (std::find_if(examined_maps.begin(), examined_maps.end(),
+//                     is_identical_with_back) == examined_maps.end())
+//    {
+//      examined_maps.push_back(back_map);
+//    }
+//  }
+
+  if (input_maps.size() > 1)
+  {
+    examined_maps.push_back(input_maps.front());
+    std::for_each(std::next(input_maps.begin()), input_maps.end(),
+                  [&](addrint_value_maps_t::const_reference examined_map)
+    {
+      auto is_identical_with_current = std::bind(are_identical, examined_map,
+                                                 std::placeholders::_1);
+      if (std::find_if(examined_maps.begin(), examined_maps.end(),
+                       is_identical_with_current) == examined_maps.end())
+      {
+        examined_maps.push_back(examined_map);
+      }
+    });
+  }
+
+  return examined_maps;
+}
+
+
+/**
  * @brief verifying if two maps a and b are of the same type, i.e. the sets of addresses of a and
  * of b are the same
  */
