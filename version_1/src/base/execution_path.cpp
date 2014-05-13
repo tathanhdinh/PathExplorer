@@ -185,26 +185,22 @@ auto are_isomorphic (const addrint_value_maps_t& maps_a, const addrint_value_map
 auto stabilize (const conditions_t& input_cond) -> conditions_t
 {
   // lambda verifying if two maps a and b have an intersection
-  auto have_intersection = [&](const addrint_value_map_t& map_a,
-                               const addrint_value_map_t& map_b) -> bool
+  auto have_intersection = [](const addrint_value_map_t& map_a,
+                              const addrint_value_map_t& map_b) -> bool
   {
-    // verify if there is some element of a is also an element of b
+    // verify if there exists some element of a which is also an element of b
     return std::any_of(map_a.begin(), map_a.end(),
-                       [&](addrint_value_map_t::value_type map_a_elem) -> bool
+                       [&map_a,&map_b](addrint_value_map_t::value_type map_a_elem) -> bool
     {
-      if (map_b.find(map_a_elem.first) != map_b.end())
-      {
-        tfm::format(std::cerr, "intersection detected\n");
-//        PIN_ExitApplication(0);
-      }
-
       return (map_b.find(map_a_elem.first) != map_b.end());
     });
   };
 
-  // lambda calculating join (least upper bound or cartesian product) of two maps
-  auto join_maps = [&](const addrint_value_maps_t& cond_a,
-                       const addrint_value_maps_t& cond_b) -> addrint_value_maps_t
+  // lambda calculating join (least upper bound or cartesian product) of two maps a and b: the
+  // priority of the map b is higher on one of a, i.e. the map b is the condition of some (or
+  // several branches) that are placed lower than one of a
+  auto join_maps = [](const addrint_value_maps_t& cond_a,
+                      const addrint_value_maps_t& cond_b) -> addrint_value_maps_t
   {
     addrint_value_maps_t joined_cond;
     addrint_value_map_t joined_map;
