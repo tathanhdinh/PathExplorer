@@ -32,12 +32,6 @@
 #include <functional>
 #include <locale>
 
-//#if __cplusplus <= 199711L
-//#include <boost/shared_ptr.hpp>
-//#else
-//#include <memory>
-//#endif
-
 #include <boost/variant.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graphviz.hpp>

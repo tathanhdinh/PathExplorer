@@ -65,24 +65,12 @@ auto are_identical (const addrint_value_map_t& map_a, const addrint_value_map_t&
 }
 
 
+/**
+ * @brief remove duplicated map inside a vector of maps
+ */
 auto remove_duplicated (const addrint_value_maps_t& input_maps) -> addrint_value_maps_t
 {
   auto examined_maps = input_maps;
-
-//  if (examined_maps.size() > 1)
-//  {
-//    auto back_map = examined_maps.back(); examined_maps.pop_back();
-//    auto is_identical_with_back = std::bind(are_identical, back_map, std::placeholders::_1);
-
-//    examined_maps = remove_duplicated(examined_maps);
-
-//    // verify if there exists some map which is before and identical with the last map
-//    if (std::find_if(examined_maps.begin(), examined_maps.end(),
-//                     is_identical_with_back) == examined_maps.end())
-//    {
-//      examined_maps.push_back(back_map);
-//    }
-//  }
 
   if (input_maps.size() > 1)
   {
@@ -111,19 +99,28 @@ auto remove_duplicated (const addrint_value_maps_t& input_maps) -> addrint_value
 auto are_of_the_same_type (const addrint_value_map_t& map_a,
                            const addrint_value_map_t& map_b) -> bool
 {
+//  return ((map_a.size() == map_b.size()) &&
+//          std::all_of(map_a.begin(), map_a.end(),
+//                      [&](addrint_value_map_t::const_reference map_a_elem) -> bool
+//                      {
+//                        // verify if every element of a is also element of b
+//                        return (map_b.find(map_a_elem.first) != map_b.end());
+//                      }));
+
   return ((map_a.size() == map_b.size()) &&
-          std::all_of(map_a.begin(), map_a.end(),
-                      [&](addrint_value_map_t::const_reference map_a_elem) -> bool
-                      {
-                        // verify if every element of a is also element of b
-                        return (map_b.find(map_a_elem.first) != map_b.end());
-                      }));
+          std::equal(map_a.begin(), map_a.end(), map_b.begin(),
+                     [](addrint_value_map_t::const_reference a_elem,
+                        addrint_value_map_t::const_reference b_elem)
+                     {
+                       // verify if the address in a is equal to the one in b
+                         return (a_elem.first == b_elem.first);
+                     }));
 };
 
 
 /**
- * @brief verify if two maps a and b are isomorphic, i.e. there is an isomorphism (function) f
- * making
+ * @brief verify if two maps a and b are "strictly" isomorphic, i.e. there is a isomorphism
+ * (function) f making
  *                                    map_a
  *                             A --------------> V
  *                             |                 |
@@ -131,18 +128,25 @@ auto are_of_the_same_type (const addrint_value_map_t& map_a,
  *                             V                 V
  *                             B --------------> V
  *                                    map_b
- * commutative
+ * commutative, and f follows the address ordering in A and B
  */
 auto are_isomorphic (const addrint_value_map_t& map_a, const addrint_value_map_t& map_b) -> bool
 {
-  addrint_value_map_t::const_iterator map_b_iter = map_b.begin();
+//  addrint_value_map_t::const_iterator map_b_iter = map_b.begin();
 
+//  return ((map_a.size() == map_b.size()) &&
+//          std::all_of(map_a.begin(), map_a.end(),
+//                      [&](addrint_value_map_t::const_reference map_a_elem) -> bool
+//          {
+//            return (map_a_elem.second == (map_b_iter++)->second);
+//          }));
   return ((map_a.size() == map_b.size()) &&
-          std::all_of(map_a.begin(), map_a.end(),
-                      [&](addrint_value_map_t::const_reference map_a_elem) -> bool
-          {
-            return (map_a_elem.second == (map_b_iter++)->second);
-          }));
+          std::equal(map_a.begin(), map_a.end(), map_b.begin(),
+                     [](addrint_value_map_t::const_reference a_elem,
+                        addrint_value_map_t::const_reference b_elem)
+                     {
+                       return (a_elem.second == b_elem.second);
+                     }));
 }
 
 
@@ -184,18 +188,6 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
   auto have_intersection = [&](const addrint_value_map_t& map_a,
                                const addrint_value_map_t& map_b) -> bool
   {
-//    std::for_each(map_a.begin(), map_a.end(),
-//                  [](addrint_value_map_t::const_reference a_point)
-//    {
-//      tfm::format(std::cerr, "%s ", addrint_to_hexstring(a_point.first));
-//    });
-//    tfm::format(std::cerr, "\n");
-//    std::for_each(map_b.begin(), map_b.end(),
-//                  [](addrint_value_map_t::const_reference b_point)
-//    {
-//      tfm::format(std::cerr, "%s ", addrint_to_hexstring(b_point.first));
-//    });
-
     // verify if there is some element of a is also an element of b
     return std::any_of(map_a.begin(), map_a.end(),
                        [&](addrint_value_map_t::value_type map_a_elem) -> bool
@@ -235,8 +227,6 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
           else
           {
             // exists, then verify if there is a conflict between a_map and b_map
-//            tfm::format(std::cerr, "values at %s: %d %d\n", addrint_to_hexstring(b_point.first),
-//                        a_map.at(b_point.first), b_map.at(b_point.first));
             return (a_map.at(b_point.first) == b_map.at(b_point.first));
           }
         }))
