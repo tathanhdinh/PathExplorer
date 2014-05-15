@@ -99,14 +99,6 @@ auto remove_duplicated (const addrint_value_maps_t& input_maps) -> addrint_value
 auto are_of_the_same_type (const addrint_value_map_t& map_a,
                            const addrint_value_map_t& map_b) -> bool
 {
-//  return ((map_a.size() == map_b.size()) &&
-//          std::all_of(map_a.begin(), map_a.end(),
-//                      [&](addrint_value_map_t::const_reference map_a_elem) -> bool
-//                      {
-//                        // verify if every element of a is also element of b
-//                        return (map_b.find(map_a_elem.first) != map_b.end());
-//                      }));
-
   return ((map_a.size() == map_b.size()) &&
           std::equal(map_a.begin(), map_a.end(), map_b.begin(),
                      [](addrint_value_map_t::const_reference a_elem,
@@ -132,14 +124,6 @@ auto are_of_the_same_type (const addrint_value_map_t& map_a,
  */
 auto are_isomorphic (const addrint_value_map_t& map_a, const addrint_value_map_t& map_b) -> bool
 {
-//  addrint_value_map_t::const_iterator map_b_iter = map_b.begin();
-
-//  return ((map_a.size() == map_b.size()) &&
-//          std::all_of(map_a.begin(), map_a.end(),
-//                      [&](addrint_value_map_t::const_reference map_a_elem) -> bool
-//          {
-//            return (map_a_elem.second == (map_b_iter++)->second);
-//          }));
   return ((map_a.size() == map_b.size()) &&
           std::equal(map_a.begin(), map_a.end(), map_b.begin(),
                      [](addrint_value_map_t::const_reference a_elem,
