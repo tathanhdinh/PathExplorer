@@ -219,8 +219,8 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
   };
 
   // calculating join of two list of cfi
-  auto join_cfis = [&](const ptr_cond_direct_inss_t& cfis_a,
-                       const ptr_cond_direct_inss_t& cfis_b) -> ptr_cond_direct_inss_t
+  auto join_cfis = [](const ptr_cond_direct_inss_t& cfis_a,
+                      const ptr_cond_direct_inss_t& cfis_b) -> ptr_cond_direct_inss_t
   {
     auto joined_list = cfis_a;
     std::for_each(cfis_b.begin(), cfis_b.end(), [&](ptr_cond_direct_inss_t::const_reference cfi_b)
@@ -344,8 +344,9 @@ static auto calculate_from(const order_ins_map_t& current_path,
   conditions_t raw_condition;
   std::size_t current_code_order = 0;
 
-  tfm::format(std::cerr, "----\ncurrent path length %d with code size %d\n", current_path.size(),
-              current_path_code.size());
+  tfm::format(std::cerr, "----\ncurrent path length %d with code size %d: %s\n", current_path.size(),
+              current_path_code.size(), path_code_to_string(current_path_code));
+
   std::for_each(current_path.begin(), current_path.end(),
                 [&](order_ins_map_t::const_reference order_ins)
   {
