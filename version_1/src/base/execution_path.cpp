@@ -194,36 +194,31 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
       std::for_each(cond_b.begin(), cond_b.end(), [&](addrint_value_maps_t::const_reference b_map)
       {
         joined_map = a_map;
-        if (std::all_of(b_map.begin(), b_map.end(),
-                        [&](addrint_value_maps_t::value_type::const_reference b_point) -> bool
+
+        std::for_each(b_map.begin(), b_map.end(),
+                      [&](addrint_value_maps_t::value_type::const_reference b_point)
         {
           // verify if the source of b_point exists in the a_map
           if (a_map.find(b_point.first) == a_map.end())
           {
             // does not exist, then add b_point into the joined map
             joined_map.insert(b_point);
-            return true;
           }
           else
           {
             // exists, then because the map b has a higher priority then its value will be used
             joined_map.find(b_point.first)->second = b_point.second;
-//            // exists, then verify if there is a conflict between a_map and b_map
-//            return (a_map.at(b_point.first) == b_map.at(b_point.first));
           }
-        }))
-        {
-//          tfm::format(std::cerr, "join a and b\n");
-          // if there is no conflict then add the joined map into the condition
-          joined_cond.push_back(joined_map);
-        }
+        });
+
+        joined_cond.push_back(joined_map);
       });
     });
 
-    return joined_cond;
+    return remove_duplicated(joined_cond);
   };
 
-  // lambda calculating join of two list of cfi
+  // calculating join of two list of cfi
   auto join_cfis = [&](const ptr_cond_direct_inss_t& cfis_a,
                        const ptr_cond_direct_inss_t& cfis_b) -> ptr_cond_direct_inss_t
   {
@@ -242,7 +237,7 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
   };
 
   // lambda erasing some sub-condition of given type from a path condition
-  auto erase_from = [&](const addrint_value_map_t& cond_type, conditions_t& path_cond) -> void
+  auto erase_from = [](const addrint_value_map_t& cond_type, conditions_t& path_cond) -> void
   {
     for (auto cond_elem = path_cond.begin(); cond_elem != path_cond.end(); ++cond_elem)
     {
@@ -261,8 +256,6 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
   conditions_t examined_cond = input_cond;
   bool intersection_exists;
 
-  tfm::format(std::cerr, "find fix-point\n");
-
   do
   {
     intersection_exists = false;
@@ -270,37 +263,31 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
     tfm::format(std::cerr, "examined condition size %d\n", examined_cond.size());
 
     // for each pair of sub-conditions
-    for (auto cond_elem_a = examined_cond.begin(); cond_elem_a != examined_cond.end();
-         ++cond_elem_a)
+    for (auto sub_cond_a = examined_cond.begin(); sub_cond_a != examined_cond.end();
+         ++sub_cond_a)
     {
-//      tfm::format(std::cerr, "sub-condition a has %d elements\n", cond_elem_a->first.size());
-      for (auto cond_elem_b = std::next(cond_elem_a); cond_elem_b != examined_cond.end();
-           ++cond_elem_b)
+      for (auto sub_cond_b = std::next(sub_cond_a); sub_cond_b != examined_cond.end();
+           ++sub_cond_b)
       {
-//        tfm::format(std::cerr, "sub-condition b has %d elements\n", cond_elem_b->first.size());
         // verify if they have intersection
-        if (have_intersection(*(cond_elem_a->first.begin()), *(cond_elem_b->first.begin())))
+        if (have_intersection(*(sub_cond_a->first.begin()), *(sub_cond_b->first.begin())))
         {
           // yes
-//          tfm::format(std::cerr, "a and b are intersected\n");
-//          PIN_ExitApplication(0);
           intersection_exists = true;
 
           // then join their maps
-          auto joined_maps = join_maps(cond_elem_a->first, cond_elem_b->first);
+          auto joined_maps = join_maps(sub_cond_a->first, sub_cond_b->first);
           // and join their cfi
-          auto joined_cfis = join_cfis(cond_elem_a->second, cond_elem_b->second);
+          auto joined_cfis = join_cfis(sub_cond_a->second, sub_cond_b->second);
 
           // temporarily save the intersected sub-conditions;
-          auto map_a = *(cond_elem_a->first.begin()); auto map_b = *(cond_elem_b->first.begin());
+          auto map_a = *(sub_cond_a->first.begin());
+          auto map_b = *(sub_cond_b->first.begin());
 
           // erase sub-condition a and b from the path condition, note the side-effect: the input
           // condition examining_cond will be modified
-
-          tfm::format(std::cerr, "condition size %d, removing joined maps from it\n", examined_cond.size());
-          erase_from(map_a, examined_cond); erase_from(map_b, examined_cond);
-          tfm::format(std::cerr, "joined maps removed, condition size %d\n", examined_cond.size());
-//          PIN_ExitApplication(0);
+          erase_from(map_a, examined_cond);
+          erase_from(map_b, examined_cond);
 
           // add joined condition into the path condition
           examined_cond.push_back(std::make_pair(joined_maps, joined_cfis));
