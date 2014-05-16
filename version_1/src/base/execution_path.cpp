@@ -206,8 +206,10 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
           }
           else
           {
-            // exists, then verify if there is a conflict between a_map and b_map
-            return (a_map.at(b_point.first) == b_map.at(b_point.first));
+            // exists, then because the map b has a higher priority then its value will be used
+            joined_map.find(b_point.first)->second = b_point.second;
+//            // exists, then verify if there is a conflict between a_map and b_map
+//            return (a_map.at(b_point.first) == b_map.at(b_point.first));
           }
         }))
         {
