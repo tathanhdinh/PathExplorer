@@ -18,12 +18,6 @@ auto addrint_to_hexstring (ADDRINT input) -> std::string
  */
 auto is_input_dep_cfi (ptr_instruction_t tested_ins) -> bool
 {
-//      return std::any_of(detected_input_dep_cfis.begin(), detected_input_dep_cfis.end(),
-//                  [&](ptr_instruction_t ins)
-//      {
-//        return (tested_ins == ins);
-//      });
-
   return (tested_ins->is_cond_direct_cf &&
           !std::static_pointer_cast<cond_direct_instruction>(tested_ins)->input_dep_addrs.empty());
 };
@@ -34,12 +28,6 @@ auto is_input_dep_cfi (ptr_instruction_t tested_ins) -> bool
  */
 auto is_resolved_cfi (ptr_instruction_t tested_ins) -> bool
 {
-//      return std::any_of(detected_input_dep_cfis.begin(), detected_input_dep_cfis.end(),
-//                  [&](ptr_instruction_t ins)
-//      {
-//        return ((tested_ins == ins) &&
-//                std::static_pointer_cast<cond_direct_instruction>(ins)->is_resolved);
-//      });
   return (tested_ins->is_cond_direct_cf &&
           !std::static_pointer_cast<cond_direct_instruction>(tested_ins)->input_dep_addrs.empty() &&
           std::static_pointer_cast<cond_direct_instruction>(tested_ins)->is_resolved);
@@ -200,7 +188,7 @@ auto show_cfi_logged_inputs () -> void
                 [&](decltype(detected_input_dep_cfis)::const_reference cfi_elem)
   {
     if (cfi_elem->is_resolved)
-      tfm::format(std::cerr, "logged input of CFI %s at execution order %d: first %d, second %d\n",
+      tfm::format(std::cerr, "logged inputs of CFI %s at execution order %d: first %d, second %d\n",
                   addrint_to_hexstring(cfi_elem->address), cfi_elem->exec_order,
                   cfi_elem->first_input_projections.size(),
                   cfi_elem->second_input_projections.size());
@@ -232,7 +220,7 @@ auto save_cfi_inputs (const std::string& filename) -> void
 
     auto generic_filename = path_code_to_string(cfi->path_code) + "_" +
         addrint_to_hexstring(cfi->address)  + "_" + filename;
-    tfm::format(std::cerr, "%s\n", generic_filename);
+//    tfm::format(std::cerr, "%s\n", generic_filename);
 
     std::ofstream first_output_file(("0_" + generic_filename).c_str(),
                                     std::ofstream::out | std::ofstream::trunc);

@@ -181,7 +181,7 @@ auto stop_exploring (INT32 code, VOID *data) -> VOID
   show_cfi_logged_inputs();
 #endif
 
-//  calculate_exec_path_conditions(explored_exec_paths);
+  calculate_exec_path_conditions(explored_exec_paths);
 
 //#if !defined(NDEBUG)
 //  show_path_condition(explored_exec_paths);

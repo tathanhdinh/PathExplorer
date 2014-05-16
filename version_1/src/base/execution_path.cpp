@@ -236,8 +236,9 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
     return joined_list;
   };
 
-  // lambda erasing some sub-condition of given type from a path condition
-  auto erase_from = [](const addrint_value_map_t& cond_type, conditions_t& path_cond) -> void
+  // erasing some sub-condition of given type from a path condition
+  auto erase_sub_cond_of_type = [](
+      const addrint_value_map_t& cond_type, conditions_t& path_cond) -> void
   {
     for (auto cond_elem = path_cond.begin(); cond_elem != path_cond.end(); ++cond_elem)
     {
@@ -284,10 +285,10 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
           auto map_a = *(sub_cond_a->first.begin());
           auto map_b = *(sub_cond_b->first.begin());
 
-          // erase sub-condition a and b from the path condition, note the side-effect: the input
+          // erase sub-condition a and b from the path condition, NOTE the side-effect: the input
           // condition examining_cond will be modified
-          erase_from(map_a, examined_cond);
-          erase_from(map_b, examined_cond);
+          erase_sub_cond_of_type(map_a, examined_cond);
+          erase_sub_cond_of_type(map_b, examined_cond);
 
           // add joined condition into the path condition
           examined_cond.push_back(std::make_pair(joined_maps, joined_cfis));
@@ -356,11 +357,6 @@ static auto calculate_from(const order_ins_map_t& current_path,
       // verify if this CFI is resolved
       if (current_cfi->is_resolved)
       {
-//        tfm::format(std::cerr, "adding %s at %d with inputs %d %d\n",
-//                    current_cfi->disassembled_name, current_cfi->exec_order,
-//                    current_cfi->first_input_projections.size(),
-//                    current_cfi->second_input_projections.size());
-
         // look into the path code to know which condition should be added
         if (!current_path_code[current_code_order])
           raw_condition.push_back(std::make_pair(current_cfi->first_input_projections,
