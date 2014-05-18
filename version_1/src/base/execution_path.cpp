@@ -74,6 +74,17 @@ auto two_vmaps_are_identical (const addrint_value_maps_t& maps_a,
 }
 
 
+auto two_subcondition_are_identical (const condition_t& cond_a, const condition_t& cond_b) -> bool
+{
+//  auto two_cfis_are_identical =
+//      [](const ptr_cond_direct_inss_t& cfis_a, const ptr_cond_direct_inss_t& cfis_b) -> bool
+//  {
+//    return
+//  }
+  return (std::equal(cond_a.second.begin(), cond_a.second.end(), cond_b.second.begin()) &&
+          two_vmaps_are_identical(cond_a.first, cond_b.first));
+}
+
 auto map_exists_in_maps (const addrint_value_map_t& tested_map,
                          const addrint_value_maps_t& maps) -> bool
 {
