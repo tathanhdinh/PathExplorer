@@ -463,11 +463,12 @@ auto execution_path::calculate_condition() -> void
                 [](conditions_t::const_reference sub_cond)
   {
     tfm::format(std::cerr, "| ");
-    std::for_each(sub_cond.first.begin(), sub_cond.first.end(),
-                  [](/*condition_t::first_type*/decltype(sub_cond.first)::const_reference addr)
+    std::for_each(sub_cond.first.begin()->begin(), sub_cond.first.begin()->end(),
+                  [](addrint_value_map_t::const_reference addr_val)
     {
-
+      tfm::format(std::cerr, "%s ", addrint_to_hexstring(addr_val.first));
     });
+    tfm::format(std::cerr, "|\n");
   });
   return;
 }
