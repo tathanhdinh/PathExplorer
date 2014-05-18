@@ -58,10 +58,27 @@ conditions_t y_fix(std::function<decltype(join_maps_in_condition)> join_func)
 /**
  * @brief verify if two map a and b are exactly equal, inspired from http://goo.gl/9W8Ws7
  */
-auto are_identical (const addrint_value_map_t& map_a, const addrint_value_map_t& map_b) -> bool
+auto two_maps_are_identical (const addrint_value_map_t& map_a,
+                             const addrint_value_map_t& map_b) -> bool
 {
   return ((map_a.size() == map_b.size()) &&
-          (std::equal(map_a.begin(), map_a.end(), map_b.begin())));
+          std::equal(map_a.begin(), map_a.end(), map_b.begin()));
+}
+
+
+auto two_vmaps_are_identical (const addrint_value_maps_t& maps_a,
+                              const addrint_value_maps_t& maps_b) -> bool
+{
+  return ((maps_a.size() == maps_b.size()) &&
+          std::equal(maps_a.begin(), maps_a.end(), maps_b.begin(), two_maps_are_identical));
+}
+
+
+auto map_exists_in_maps (const addrint_value_map_t& tested_map,
+                         const addrint_value_maps_t& maps) -> bool
+{
+  auto is_identical = std::bind(two_maps_are_identical, tested_map, std::placeholders::_1);
+  return (std::find_if(maps.begin(), maps.end(), is_identical) != maps.end());
 }
 
 
@@ -78,7 +95,7 @@ auto remove_duplicated (const addrint_value_maps_t& input_maps) -> addrint_value
     std::for_each(std::next(input_maps.begin()), input_maps.end(),
                   [&](addrint_value_maps_t::const_reference examined_map)
     {
-      auto is_identical_with_current = std::bind(are_identical, examined_map,
+      auto is_identical_with_current = std::bind(two_maps_are_identical, examined_map,
                                                  std::placeholders::_1);
       if (std::find_if(examined_maps.begin(), examined_maps.end(),
                        is_identical_with_current) == examined_maps.end())
@@ -206,16 +223,26 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
           }
           else
           {
+//            tfm::format(std::cerr, "b's element %s exists in a\n", addrint_to_hexstring(b_point.first));
             // exists, then because the map b has a higher priority then its value will be used
             joined_map.find(b_point.first)->second = b_point.second;
           }
         });
 
-        joined_cond.push_back(joined_map);
+        if (map_exists_in_maps(joined_map, joined_cond))
+        {
+//          tfm::format(std::cerr, "joined condition exists\n");
+        }
+        else
+        {
+          tfm::format(std::cerr, "joined condition does not exist, add it\n");
+          joined_cond.push_back(joined_map);
+        }
       });
     });
 
-    return remove_duplicated(joined_cond);
+    return joined_cond;
+//    return remove_duplicated(joined_cond);
   };
 
   // calculating join of two list of cfi
@@ -267,14 +294,18 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
     for (auto sub_cond_a = examined_cond.begin(); sub_cond_a != examined_cond.end();
          ++sub_cond_a)
     {
+      tfm::format(std::cerr, "a size %d\n", sub_cond_a->first.size());
       for (auto sub_cond_b = std::next(sub_cond_a); sub_cond_b != examined_cond.end();
            ++sub_cond_b)
       {
+        tfm::format(std::cerr, "b size %d\n", sub_cond_b->first.size());
         // verify if they have intersection
         if (have_intersection(*(sub_cond_a->first.begin()), *(sub_cond_b->first.begin())))
         {
           // yes
           intersection_exists = true;
+
+          tfm::format(std::cerr, "intersection detected\n");
 
           // then join their maps
           auto joined_maps = join_maps(sub_cond_a->first, sub_cond_b->first);
@@ -290,6 +321,7 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
           erase_sub_cond_of_type(map_a, examined_cond);
           erase_sub_cond_of_type(map_b, examined_cond);
 
+          tfm::format(std::cerr, "joined size %d\n", joined_maps.size());
           // add joined condition into the path condition
           examined_cond.push_back(std::make_pair(joined_maps, joined_cfis));
 

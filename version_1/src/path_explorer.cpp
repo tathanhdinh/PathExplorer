@@ -183,9 +183,9 @@ auto stop_exploring (INT32 code, VOID *data) -> VOID
 
   calculate_exec_path_conditions(explored_exec_paths);
 
-//#if !defined(NDEBUG)
-//  show_path_condition(explored_exec_paths);
-//#endif
+#if !defined(NDEBUG)
+  show_path_condition(explored_exec_paths);
+#endif
 
   return;
 }
