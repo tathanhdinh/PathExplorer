@@ -347,8 +347,9 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
           // condition examining_cond will be modified
 //          erase_sub_cond_of_type(map_a, examined_cond);
 //          erase_sub_cond_of_type(map_b, examined_cond);
-          erase_sub_cond_from_cond(*sub_cond_a, examined_cond);
-          erase_sub_cond_from_cond(*sub_cond_b, examined_cond);
+          auto cp_a = *sub_cond_a; auto cp_b = *sub_cond_b;
+          erase_sub_cond_from_cond(cp_a, examined_cond);
+          erase_sub_cond_from_cond(cp_b, examined_cond);
 
           tfm::format(std::cerr, "joined size %d\n", joined_maps.size());
           // add joined condition into the path condition
@@ -457,6 +458,17 @@ auto execution_path::calculate_condition() -> void
   this->condition = calculate_from(this->content, this->code);
   this->condition_is_recursive = is_recursive(this->condition);
   this->condition_order = order(this->condition);
+
+  std::for_each(this->condition.begin(), this->condition.end(),
+                [](conditions_t::const_reference sub_cond)
+  {
+    tfm::format(std::cerr, "| ");
+    std::for_each(sub_cond.first.begin(), sub_cond.first.end(),
+                  [](/*condition_t::first_type*/decltype(sub_cond.first)::const_reference addr)
+    {
+
+    });
+  });
   return;
 }
 
@@ -524,6 +536,13 @@ auto show_path_condition(const ptr_execution_paths_t& exp_paths) -> void
 
 auto show_path_condition(const ptr_execution_path_t& exp_path) -> void
 {
+//  tfm::format(std::cout, "| ");
+//  std::for_each(exp_path->condition.at(i).first.begin()->begin(),
+//                exp_path->condition.at(i).first.begin()->end(),
+//                [&](addrint_value_map_t::const_reference cond_elem)
+//  {
+//    tfm::format(std::cout, "%s ", addrint_to_hexstring(cond_elem.first));
+//  });
 
   return;
 }
