@@ -74,16 +74,12 @@ auto two_vmaps_are_identical (const addrint_value_maps_t& maps_a,
 }
 
 
-auto two_subcondition_are_identical (const condition_t& cond_a, const condition_t& cond_b) -> bool
+auto two_subconditions_are_identical (const condition_t& cond_a, const condition_t& cond_b) -> bool
 {
-//  auto two_cfis_are_identical =
-//      [](const ptr_cond_direct_inss_t& cfis_a, const ptr_cond_direct_inss_t& cfis_b) -> bool
-//  {
-//    return
-//  }
   return (std::equal(cond_a.second.begin(), cond_a.second.end(), cond_b.second.begin()) &&
           two_vmaps_are_identical(cond_a.first, cond_b.first));
 }
+
 
 auto map_exists_in_maps (const addrint_value_map_t& tested_map,
                          const addrint_value_maps_t& maps) -> bool
@@ -289,6 +285,13 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
     return;
   };
 
+  auto erase_sub_cond_from_cond = [](const condition_t& sub_cond, conditions_t& cond) -> void
+  {
+    auto predicate = std::bind(two_subconditions_are_identical, sub_cond, std::placeholders::_1);
+    std::remove_if(cond.begin(), cond.end(), predicate);
+    return;
+  };
+
 
   // the following loop makes the condition converge on a stabilized state: it modifies the
   // condition by merging intersected sub-conditions until no such intersection is found
@@ -329,8 +332,10 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
 
           // erase sub-condition a and b from the path condition, NOTE the side-effect: the input
           // condition examining_cond will be modified
-          erase_sub_cond_of_type(map_a, examined_cond);
-          erase_sub_cond_of_type(map_b, examined_cond);
+//          erase_sub_cond_of_type(map_a, examined_cond);
+//          erase_sub_cond_of_type(map_b, examined_cond);
+          erase_sub_cond_from_cond(sub_cond_a, examined_cond);
+          erase_sub_cond_from_cond(sub_cond_b, examined_cond);
 
           tfm::format(std::cerr, "joined size %d\n", joined_maps.size());
           // add joined condition into the path condition
