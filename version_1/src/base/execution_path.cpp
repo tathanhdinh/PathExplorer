@@ -270,23 +270,24 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
     return joined_list;
   };
 
-  // erasing some sub-condition of given type from a path condition
-  auto erase_sub_cond_of_type = [](
-      const addrint_value_map_t& cond_type, conditions_t& path_cond) -> void
-  {
-    for (auto cond_elem = path_cond.begin(); cond_elem != path_cond.end(); ++cond_elem)
-    {
-      if (are_of_the_same_type(cond_type, *(cond_elem->first.begin())))
-      {
-        tfm::format(std::cerr, "same type condition detected, delete it\n");
-        path_cond.erase(cond_elem); break;
-      }
-    }
-    return;
-  };
+//  // erasing some sub-condition of given type from a path condition
+//  auto erase_sub_cond_of_type = [](
+//      const addrint_value_map_t& cond_type, conditions_t& path_cond) -> void
+//  {
+//    for (auto cond_elem = path_cond.begin(); cond_elem != path_cond.end(); ++cond_elem)
+//    {
+//      if (are_of_the_same_type(cond_type, *(cond_elem->first.begin())))
+//      {
+//        tfm::format(std::cerr, "same type condition detected, delete it\n");
+//        path_cond.erase(cond_elem); break;
+//      }
+//    }
+//    return;
+//  };
 
   auto erase_sub_cond_from_cond = [](const condition_t& sub_cond, conditions_t& cond) -> void
   {
+//    tfm::format(std::cerr, "erase sub condition\n");
     auto predicate = std::bind(two_subconditions_are_identical, sub_cond, std::placeholders::_1);
     std::remove_if(cond.begin(), cond.end(), predicate);
     return;
@@ -334,8 +335,8 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
           // condition examining_cond will be modified
 //          erase_sub_cond_of_type(map_a, examined_cond);
 //          erase_sub_cond_of_type(map_b, examined_cond);
-          erase_sub_cond_from_cond(sub_cond_a, examined_cond);
-          erase_sub_cond_from_cond(sub_cond_b, examined_cond);
+          erase_sub_cond_from_cond(*sub_cond_a, examined_cond);
+          erase_sub_cond_from_cond(*sub_cond_b, examined_cond);
 
           tfm::format(std::cerr, "joined size %d\n", joined_maps.size());
           // add joined condition into the path condition
