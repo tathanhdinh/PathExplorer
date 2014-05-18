@@ -287,9 +287,21 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
 
   auto erase_sub_cond_from_cond = [](const condition_t& sub_cond, conditions_t& cond) -> void
   {
-//    tfm::format(std::cerr, "erase sub condition\n");
+    tfm::format(std::cerr, "erase sub condition, current size %d\n", cond.size());
+
     auto predicate = std::bind(two_subconditions_are_identical, sub_cond, std::placeholders::_1);
-    std::remove_if(cond.begin(), cond.end(), predicate);
+
+    auto cond_iter = std::find_if(cond.begin(), cond.end(), predicate);
+    if (cond_iter != cond.end())
+    {
+      tfm::format(std::cerr, "sub condition found\n");
+      cond.erase(cond_iter);
+    }
+    else
+    {
+      tfm::format(std::cerr, "sub condition not found\n");
+    }
+
     return;
   };
 
@@ -328,8 +340,8 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
           auto joined_cfis = join_cfis(sub_cond_a->second, sub_cond_b->second);
 
           // temporarily save the intersected sub-conditions;
-          auto map_a = *(sub_cond_a->first.begin());
-          auto map_b = *(sub_cond_b->first.begin());
+//          auto map_a = *(sub_cond_a->first.begin());
+//          auto map_b = *(sub_cond_b->first.begin());
 
           // erase sub-condition a and b from the path condition, NOTE the side-effect: the input
           // condition examining_cond will be modified
