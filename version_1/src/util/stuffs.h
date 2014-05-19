@@ -7,6 +7,9 @@ auto is_input_dep_cfi           (ptr_instruction_t tested_ins) -> bool;
 
 auto is_resolved_cfi            (ptr_instruction_t tested_ins) -> bool;
 
+auto look_for_saved_instance    (const ptr_cond_direct_ins_t cfi,
+                                 const path_code_t path_code) -> ptr_cond_direct_ins_t;
+
 auto save_static_trace          (const std::string& filename)  -> void;
 
 auto save_explored_trace        (const std::string& filename)  -> void;

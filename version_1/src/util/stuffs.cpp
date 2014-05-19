@@ -34,6 +34,28 @@ auto is_resolved_cfi (ptr_instruction_t tested_ins) -> bool
 };
 
 
+/**
+ * @brief look_for_saved_cfi_instance
+ */
+auto look_for_saved_instance (const ptr_cond_direct_ins_t cfi,
+                              const path_code_t path_code) -> ptr_cond_direct_ins_t
+{
+  auto predicate = [&cfi,&path_code](ptr_cond_direct_ins_t examined_cfi) -> bool
+  {
+    return ((cfi->address == examined_cfi->address) &&
+            (cfi->exec_order == examined_cfi->exec_order) &&
+            std::equal(examined_cfi->path_code.begin(),
+                       examined_cfi->path_code.end(), path_code.begin()));
+  };
+
+  ptr_cond_direct_ins_t result_cfi;
+  auto result_cfi_iter = std::find_if(detected_input_dep_cfis.begin(),
+                                      detected_input_dep_cfis.end(), predicate);
+  if (result_cfi_iter != detected_input_dep_cfis.end()) result_cfi = *result_cfi_iter;
+  return result_cfi;
+}
+
+
 auto save_static_trace (const std::string& filename) -> void
 {
   std::ofstream out_file(filename.c_str(), std::ofstream::out | std::ofstream::trunc);

@@ -398,7 +398,10 @@ static auto calculate_from(const order_ins_map_t& current_path,
     if (order_ins.second->is_cond_direct_cf)
     {
       // yes, then downcast it as a CFI
-      auto current_cfi = std::static_pointer_cast<cond_direct_instruction>(order_ins.second);
+//      auto current_cfi = std::static_pointer_cast<cond_direct_instruction>(order_ins.second);
+      auto current_cfi = look_for_saved_instance(std::static_pointer_cast<cond_direct_instruction>(
+                                                   order_ins.second), current_path_code);
+
       // verify if this CFI is resolved
       if (current_cfi->is_resolved)
       {
