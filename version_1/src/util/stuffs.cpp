@@ -7,9 +7,34 @@ auto addrint_to_hexstring (ADDRINT input) -> std::string
 //  std::stringstream num_stream;
 //  num_stream << "0x" << std::hex << input;
 //  return num_stream.str();
-  return std::move(static_cast<std::ostringstream&>(std::ostringstream()
-                                                    << "0x" << std::hex << input).str());
+  return static_cast<std::ostringstream&>(std::ostringstream()
+                                          << "0x" << std::hex << input).str();
 
+}
+
+
+/**
+ * @brief path_code_to_string
+ */
+auto path_code_to_string  (const path_code_t& path_code) -> std::string
+{
+  std::string code_str = "";
+  /*path_code_t::const_iterator*/
+//  for (auto code_iter = path_code.begin(); code_iter != path_code.end(); ++code_iter)
+//  {
+//    if (*code_iter) code_str.push_back('1');
+//    else code_str.push_back('0');
+//  }
+
+  std::for_each(path_code.begin(), path_code.end(), [&](path_code_t::const_reference code_elem)
+  {
+//    if (code_elem) code_str.push_back('1');
+//    else code_str.push_back('0');
+
+    code_str.push_back(code_elem ? '1' : '0');
+  });
+
+  return code_str;
 }
 
 
@@ -40,8 +65,12 @@ auto is_resolved_cfi (ptr_instruction_t tested_ins) -> bool
 auto look_for_saved_instance (const ptr_cond_direct_ins_t cfi,
                               const path_code_t path_code) -> ptr_cond_direct_ins_t
 {
+//  tfm::format(std::cerr, "path code: %s\n", path_code_to_string(path_code));
+
   auto predicate = [&cfi,&path_code](ptr_cond_direct_ins_t examined_cfi) -> bool
   {
+//    tfm::format(std::cerr, "examined path code: %s\n", path_code_to_string(examined_cfi->path_code));
+
     return ((cfi->address == examined_cfi->address) &&
             (cfi->exec_order == examined_cfi->exec_order) &&
             std::equal(examined_cfi->path_code.begin(),
@@ -145,28 +174,6 @@ auto save_tainting_graph (df_diagram& dta_graph, const std::string& filename) ->
 
   return;
 }
-
-
-#if !defined(DISABLE_FSA)
-auto path_code_to_string  (const path_code_t& path_code) -> std::string
-{
-  std::string code_str = "";
-  /*path_code_t::const_iterator*/
-//  for (auto code_iter = path_code.begin(); code_iter != path_code.end(); ++code_iter)
-//  {
-//    if (*code_iter) code_str.push_back('1');
-//    else code_str.push_back('0');
-//  }
-
-  std::for_each(path_code.begin(), path_code.end(), [&](path_code_t::const_reference code_elem)
-  {
-    if (code_elem) code_str.push_back('1');
-    else code_str.push_back('0');
-  });
-
-  return std::move(code_str);
-}
-#endif
 
 
 /**

@@ -391,8 +391,8 @@ static auto calculate_from(const order_ins_map_t& current_path,
   tfm::format(std::cerr, "----\ncurrent path length %d with code size %d: %s\n", current_path.size(),
               current_path_code.size(), path_code_to_string(current_path_code));
 
-  std::for_each(current_path.begin(), current_path.end(),
-                [&](order_ins_map_t::const_reference order_ins)
+  std::for_each(current_path.begin(),
+                current_path.end(), [&](order_ins_map_t::const_reference order_ins)
   {
     // verify if the current instruction is a cfi
     if (order_ins.second->is_cond_direct_cf)
@@ -401,24 +401,26 @@ static auto calculate_from(const order_ins_map_t& current_path,
 //      auto current_cfi = std::static_pointer_cast<cond_direct_instruction>(order_ins.second);
       auto current_cfi = look_for_saved_instance(std::static_pointer_cast<cond_direct_instruction>(
                                                    order_ins.second), current_path_code);
-
-      // verify if this CFI is resolved
-      if (current_cfi->is_resolved)
+      if (current_cfi)
       {
-        // look into the path code to know which condition should be added
-        if (!current_path_code[current_code_order])
-          raw_condition.push_back(std::make_pair(current_cfi->first_input_projections,
-                                                 ptr_cond_direct_inss_t(1, current_cfi)));
-        else raw_condition.push_back(std::make_pair(current_cfi->second_input_projections,
-                                                    ptr_cond_direct_inss_t(1, current_cfi)));
+        // verify if this CFI is resolved
+        if (current_cfi->is_resolved)
+        {
+          // look into the path code to know which condition should be added
+          if (!current_path_code[current_code_order])
+            raw_condition.push_back(std::make_pair(current_cfi->first_input_projections,
+                                                   ptr_cond_direct_inss_t(1, current_cfi)));
+          else raw_condition.push_back(std::make_pair(current_cfi->second_input_projections,
+                                                      ptr_cond_direct_inss_t(1, current_cfi)));
 
-        tfm::format(std::cerr, "cfi is resolved\n");
+          tfm::format(std::cerr, "cfi is resolved\n");
+        }
+        else
+        {
+          tfm::format(std::cerr, "cfi at %s is not resolved\n", addrint_to_hexstring(current_cfi->address));
+        }
+        current_code_order++;
       }
-      else
-      {
-        tfm::format(std::cerr, "cfi at %s is not resolved\n", addrint_to_hexstring(current_cfi->address));
-      }
-      current_code_order++;
     }
   });
 
