@@ -146,7 +146,8 @@ auto are_of_the_same_type (const addrint_value_map_t& map_a,
  *                                    map_b
  * commutative, and f follows the address ordering in A and B
  */
-auto are_isomorphic (const addrint_value_map_t& map_a, const addrint_value_map_t& map_b) -> bool
+static auto are_isomorphic (const addrint_value_map_t& map_a,
+                            const addrint_value_map_t& map_b) -> bool
 {
   return ((map_a.size() == map_b.size()) &&
           std::equal(map_a.begin(), map_a.end(), map_b.begin(),
@@ -170,7 +171,8 @@ auto are_isomorphic (const addrint_value_map_t& map_a, const addrint_value_map_t
  *                                    map_b
  * commutative
  */
-auto are_isomorphic (const addrint_value_maps_t& maps_a, const addrint_value_maps_t& maps_b) -> bool
+static auto are_isomorphic (const addrint_value_maps_t& maps_a,
+                            const addrint_value_maps_t& maps_b) -> bool
 {
   return ((maps_a.size() == maps_b.size()) &&
           std::all_of(maps_a.begin(), maps_a.end(),
@@ -242,7 +244,7 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
         }
         else
         {
-          tfm::format(std::cerr, "joined condition does not exist, add it\n");
+//          tfm::format(std::cerr, "joined condition does not exist, add it\n");
           joined_cond.push_back(joined_map);
         }
       });
@@ -269,21 +271,6 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
 
     return joined_list;
   };
-
-//  // erasing some sub-condition of given type from a path condition
-//  auto erase_sub_cond_of_type = [](
-//      const addrint_value_map_t& cond_type, conditions_t& path_cond) -> void
-//  {
-//    for (auto cond_elem = path_cond.begin(); cond_elem != path_cond.end(); ++cond_elem)
-//    {
-//      if (are_of_the_same_type(cond_type, *(cond_elem->first.begin())))
-//      {
-//        tfm::format(std::cerr, "same type condition detected, delete it\n");
-//        path_cond.erase(cond_elem); break;
-//      }
-//    }
-//    return;
-//  };
 
   auto erase_sub_cond_from_cond = [](const condition_t& sub_cond, conditions_t& cond) -> void
   {
@@ -339,14 +326,8 @@ auto stabilize (const conditions_t& input_cond) -> conditions_t
           // and join their cfi
           auto joined_cfis = join_cfis(sub_cond_a->second, sub_cond_b->second);
 
-          // temporarily save the intersected sub-conditions;
-//          auto map_a = *(sub_cond_a->first.begin());
-//          auto map_b = *(sub_cond_b->first.begin());
-
           // erase sub-condition a and b from the path condition, NOTE the side-effect: the input
           // condition examining_cond will be modified
-//          erase_sub_cond_of_type(map_a, examined_cond);
-//          erase_sub_cond_of_type(map_b, examined_cond);
           auto cp_a = *sub_cond_a; auto cp_b = *sub_cond_b;
           erase_sub_cond_from_cond(cp_a, examined_cond);
           erase_sub_cond_from_cond(cp_b, examined_cond);
@@ -426,6 +407,12 @@ static auto calculate_from(const order_ins_map_t& current_path,
                                                  ptr_cond_direct_inss_t(1, current_cfi)));
         else raw_condition.push_back(std::make_pair(current_cfi->second_input_projections,
                                                     ptr_cond_direct_inss_t(1, current_cfi)));
+
+        tfm::format(std::cerr, "cfi is resolved\n");
+      }
+      else
+      {
+        tfm::format(std::cerr, "cfi at %s is not resolved\n", addrint_to_hexstring(current_cfi->address));
       }
       current_code_order++;
     }
@@ -459,6 +446,7 @@ auto execution_path::calculate_condition() -> void
   this->condition_is_recursive = is_recursive(this->condition);
   this->condition_order = order(this->condition);
 
+#if !defined(NDEBUG)
   std::for_each(this->condition.begin(), this->condition.end(),
                 [](conditions_t::const_reference sub_cond)
   {
@@ -470,6 +458,7 @@ auto execution_path::calculate_condition() -> void
     });
     tfm::format(std::cerr, "|\n");
   });
+#endif
   return;
 }
 
