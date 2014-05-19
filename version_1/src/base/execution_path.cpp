@@ -58,31 +58,32 @@ conditions_t y_fix(std::function<decltype(join_maps_in_condition)> join_func)
 /**
  * @brief verify if two map a and b are exactly equal, inspired from http://goo.gl/9W8Ws7
  */
-auto two_maps_are_identical (const addrint_value_map_t& map_a,
-                             const addrint_value_map_t& map_b) -> bool
+static auto two_maps_are_identical (const addrint_value_map_t& map_a,
+                                    const addrint_value_map_t& map_b) -> bool
 {
   return ((map_a.size() == map_b.size()) &&
           std::equal(map_a.begin(), map_a.end(), map_b.begin()));
 }
 
 
-auto two_vmaps_are_identical (const addrint_value_maps_t& maps_a,
-                              const addrint_value_maps_t& maps_b) -> bool
+static auto two_vmaps_are_identical (const addrint_value_maps_t& maps_a,
+                                     const addrint_value_maps_t& maps_b) -> bool
 {
   return ((maps_a.size() == maps_b.size()) &&
           std::equal(maps_a.begin(), maps_a.end(), maps_b.begin(), two_maps_are_identical));
 }
 
 
-auto two_subconditions_are_identical (const condition_t& cond_a, const condition_t& cond_b) -> bool
+static auto two_subconditions_are_identical (const condition_t& cond_a,
+                                             const condition_t& cond_b) -> bool
 {
   return (std::equal(cond_a.second.begin(), cond_a.second.end(), cond_b.second.begin()) &&
           two_vmaps_are_identical(cond_a.first, cond_b.first));
 }
 
 
-auto map_exists_in_maps (const addrint_value_map_t& tested_map,
-                         const addrint_value_maps_t& maps) -> bool
+static auto map_exists_in_maps (const addrint_value_map_t& tested_map,
+                                const addrint_value_maps_t& maps) -> bool
 {
   auto is_identical = std::bind(two_maps_are_identical, tested_map, std::placeholders::_1);
   return (std::find_if(maps.begin(), maps.end(), is_identical) != maps.end());
@@ -92,7 +93,7 @@ auto map_exists_in_maps (const addrint_value_map_t& tested_map,
 /**
  * @brief remove duplicated map inside a vector of maps
  */
-auto remove_duplicated (const addrint_value_maps_t& input_maps) -> addrint_value_maps_t
+static auto remove_duplicated (const addrint_value_maps_t& input_maps) -> addrint_value_maps_t
 {
   auto examined_maps = input_maps;
 
@@ -120,8 +121,8 @@ auto remove_duplicated (const addrint_value_maps_t& input_maps) -> addrint_value
  * @brief verifying if two maps a and b are of the same type, i.e. the sets of addresses of a and
  * of b are the same
  */
-auto are_of_the_same_type (const addrint_value_map_t& map_a,
-                           const addrint_value_map_t& map_b) -> bool
+static auto are_of_the_same_type (const addrint_value_map_t& map_a,
+                                  const addrint_value_map_t& map_b) -> bool
 {
   return ((map_a.size() == map_b.size()) &&
           std::equal(map_a.begin(), map_a.end(), map_b.begin(),
@@ -192,7 +193,7 @@ static auto are_isomorphic (const addrint_value_maps_t& maps_a,
  *                             A x ... x B x ...
  * of disjoint sub-conditions
  */
-auto stabilize (const conditions_t& input_cond) -> conditions_t
+static auto stabilize (const conditions_t& input_cond) -> conditions_t
 {
   // lambda verifying if two maps a and b have an intersection
   auto have_intersection = [](const addrint_value_map_t& map_a,
@@ -426,11 +427,10 @@ static auto calculate_from(const order_ins_map_t& current_path,
 /**
  * @brief constructor
  */
-execution_path::execution_path(const order_ins_map_t& current_path,
-                               const path_code_t& current_path_code)
+execution_path::execution_path(const order_ins_map_t& path, const path_code_t& path_code)
 {
-  this->content = current_path;
-  this->code = current_path_code;
+  this->content = path;
+  this->code = path_code;
 //  this->condition = calculate_from(current_path, current_path_code);
 //  this->condition_is_recursive = is_recursive(this->condition);
 //  this->condition_order = order(this->condition);
@@ -487,7 +487,6 @@ auto calculate_exec_path_conditions(ptr_execution_paths_t& exec_paths) -> void
   std::for_each(exec_paths.begin(), exec_paths.end(), [](ptr_execution_paths_t::value_type path)
   {
     path->calculate_condition();
-//    PIN_ExitApplication(0);
   });
   return;
 }
