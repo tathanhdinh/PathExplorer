@@ -23,6 +23,8 @@ auto save_tainting_graph        (df_diagram& dta_graph,
 
 auto save_cfi_inputs            (const std::string& filename)  -> void;
 
+auto save_path_condition        (const std::string& filename)  -> void;
+
 auto show_exploring_progress    () -> void;
 
 auto show_cfi_logged_inputs     () -> void;

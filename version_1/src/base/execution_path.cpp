@@ -478,10 +478,10 @@ execution_path::execution_path(const order_ins_map_t& path, const path_code_t& p
 {
   this->content = path;
   this->code = path_code;
-//  this->condition = calculate_from(current_path, current_path_code);
-//  this->condition_is_recursive = is_recursive(this->condition);
-//  this->condition_order = order(this->condition);
 }
+
+
+
 
 
 /**

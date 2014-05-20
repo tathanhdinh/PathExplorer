@@ -249,7 +249,6 @@ auto save_cfi_inputs (const std::string& filename) -> void
 
     auto generic_filename = path_code_to_string(cfi->path_code) + "_" +
         addrint_to_hexstring(cfi->address)  + "_" + filename;
-//    tfm::format(std::cerr, "%s\n", generic_filename);
 
     std::ofstream first_output_file(("0_" + generic_filename).c_str(),
                                     std::ofstream::out | std::ofstream::trunc);
@@ -263,7 +262,6 @@ auto save_cfi_inputs (const std::string& filename) -> void
     return;
   };
 
-//  typedef decltype(detected_input_dep_cfis) cfis_t;
   std::for_each(detected_input_dep_cfis.begin(), detected_input_dep_cfis.end(),
                 [&](decltype(detected_input_dep_cfis)::const_reference cfi)
   {
@@ -272,6 +270,33 @@ auto save_cfi_inputs (const std::string& filename) -> void
       save_inputs_of_cfi(cfi, filename);
     }
   });
+
+  return;
+}
+
+
+auto save_path_condition (const conditions_t& cond, const std::string& filename)  -> void
+{
+  auto save_path_inputs = [](
+      const std::vector<addrint_value_maps_t>& inputs, std::ofstream& output_file) -> void
+  {
+    // find max input size of sub-conditions
+    std::vector<addrint_value_maps_t::size_type> sizes;
+    std::for_each(inputs.begin(), inputs.end(),
+                  [&sizes](std::vector<addrint_value_maps_t>::const_reference sub_input)
+    {
+      sizes.push_back(sub_input.size());
+    });
+    auto max_size = *std::max_element(sizes.begin(), sizes.end());
+
+    std::vector<addrint_value_maps_t::const_iterator> map_iters;
+    std::for_each(inputs.begin(), inputs.end(),
+                  [&map_iters](std::vector<addrint_value_maps_t>::const_reference map)
+    {
+      map_iters.push_back(map.begin());
+    });
+
+  };
 
   return;
 }
