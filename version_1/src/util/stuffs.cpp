@@ -19,13 +19,6 @@ auto addrint_to_hexstring (ADDRINT input) -> std::string
 auto path_code_to_string  (const path_code_t& path_code) -> std::string
 {
   std::string code_str = "";
-  /*path_code_t::const_iterator*/
-//  for (auto code_iter = path_code.begin(); code_iter != path_code.end(); ++code_iter)
-//  {
-//    if (*code_iter) code_str.push_back('1');
-//    else code_str.push_back('0');
-//  }
-
   std::for_each(path_code.begin(), path_code.end(), [&](path_code_t::const_reference code_elem)
   {
 //    if (code_elem) code_str.push_back('1');
@@ -300,8 +293,9 @@ auto save_path_condition (const conditions_t& cond, const std::string& filename)
 
     for (auto i = 0; i < max_size; ++i)
     {
+      auto input_iter = inputs.begin();
       std::for_each(map_iter_pairs.begin(), map_iter_pairs.end(),
-                    [&](decltype(map_iter_pairs)::const_reference map_iter_pair)
+                    [&](decltype(map_iter_pairs)::reference map_iter_pair)
       {
         if (map_iter_pair.first != map_iter_pair.second)
         {
@@ -311,16 +305,35 @@ auto save_path_condition (const conditions_t& cond, const std::string& filename)
             tfm::format(output_file, "%10s:%3d ", addrint_to_hexstring(addr_val.first),
                         addr_val.second);
           });
-          tfm::format(output_file, " ");
+
+          map_iter_pair = std::make_pair(std::next(map_iter_pair.first), map_iter_pair.second);
         }
         else
         {
-          //
+          std::for_each(input_iter->begin()->begin(), input_iter->begin()->end(),
+                        [&](addrint_value_map_t::const_reference addr_val)
+          {
+            tfm::format(output_file, "%14s", " ");
+          });
         }
-      });
-    }
+        tfm::format(output_file, " ");
 
+        input_iter = std::next(input_iter);
+      });
+
+      tfm::format(output_file, "\n");
+    }
   };
+
+  std::vector<addrint_value_maps_t> inputs;
+  std::for_each(cond.begin(), cond.end(), [&inputs](const condition_t& sub_cond)
+  {
+    inputs.push_back(sub_cond.first);
+  });
+
+  std::ofstream output_file(filename.c_str(), std::ofstream::out | std::ofstream::trunc);
+  save_path_inputs(inputs, output_file);
+  output_file.close();
 
   return;
 }

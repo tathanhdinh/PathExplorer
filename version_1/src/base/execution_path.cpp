@@ -481,9 +481,6 @@ execution_path::execution_path(const order_ins_map_t& path, const path_code_t& p
 }
 
 
-
-
-
 /**
  * @brief calculate path condition
  */
@@ -505,6 +502,9 @@ auto execution_path::calculate_condition() -> void
     });
     tfm::format(std::cerr, "|\n");
   });
+
+  std::string output_filename = "path_" + path_code_to_string(this->code) + "_" + process_id_str;
+  save_path_condition(this->condition, output_filename);
 #endif
   return;
 }
