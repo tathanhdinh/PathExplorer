@@ -6,55 +6,6 @@
 
 typedef std::function<conditions_t ()> lazy_func_cond_t;
 
-///**
-// * @brief higher_join_if_needed
-// */
-//lazy_func_cond_t higher_join_if_needed(lazy_func_cond_t in_cond)
-//{
-//  auto new_cond = [&]() -> conditions_t
-//  {
-//    conditions_t real_in_cond = in_cond();
-//    return real_in_cond;
-//  };
-//  return new_cond;
-//}
-
-
-///**
-// * @brief higher_fix
-// */
-//lazy_func_cond_t higher_fix(std::function<decltype(higher_join_if_needed)> join_func)
-//{
-//  // explicit Y combinator: Y f = f (Y f)
-////  return join_func(fix(join_func));
-
-//  // implicit Y combinator: Y f = f (\x -> (Y f) x)
-//  return std::bind(join_func, std::bind(&higher_fix, join_func))();
-//}
-
-
-///**
-// * @brief join_if_needed
-// */
-//conditions_t join_maps_in_condition(conditions_t in_cond)
-//{
-//  return in_cond;
-//}
-
-
-///**
-// * @brief fix
-// */
-//conditions_t y_fix(std::function<decltype(join_maps_in_condition)> join_func)
-//{
-//  // explicit Y combinator: Y f = f (Y f)
-////  return join_func(fix(join_func));
-
-//  // implicit Y combinator: Y f = f (\x -> (Y f) x)
-//  return std::bind(join_func, std::bind(&y_fix, join_func))();
-//}
-
-
 /**
  * @brief verify if two map a and b are exactly equal, inspired from http://goo.gl/9W8Ws7
  */
@@ -269,6 +220,8 @@ static auto stabilize (const conditions_t& input_cond) -> conditions_t
       {
         addrs.push_back(addr_val.first);
       });
+
+      return addrs;
     };
 
     auto intersection = [](const addrs_t& addrs_a, const addrs_t& addrs_b) -> addrs_t
