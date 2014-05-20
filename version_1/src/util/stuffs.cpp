@@ -289,12 +289,36 @@ auto save_path_condition (const conditions_t& cond, const std::string& filename)
     });
     auto max_size = *std::max_element(sizes.begin(), sizes.end());
 
-    std::vector<addrint_value_maps_t::const_iterator> map_iters;
+    typedef std::pair<
+        addrint_value_maps_t::const_iterator, addrint_value_maps_t::const_iterator> map_iter_pair_t;
+    std::vector<map_iter_pair_t> map_iter_pairs;
     std::for_each(inputs.begin(), inputs.end(),
-                  [&map_iters](std::vector<addrint_value_maps_t>::const_reference map)
+                  [&map_iter_pairs](std::vector<addrint_value_maps_t>::const_reference map)
     {
-      map_iters.push_back(map.begin());
+      map_iter_pairs.push_back(std::make_pair(map.begin(), map.end()));
     });
+
+    for (auto i = 0; i < max_size; ++i)
+    {
+      std::for_each(map_iter_pairs.begin(), map_iter_pairs.end(),
+                    [&](decltype(map_iter_pairs)::const_reference map_iter_pair)
+      {
+        if (map_iter_pair.first != map_iter_pair.second)
+        {
+          std::for_each(map_iter_pair.first->begin(), map_iter_pair.first->end(),
+                        [&](addrint_value_map_t::const_reference addr_val)
+          {
+            tfm::format(output_file, "%10s:%3d ", addrint_to_hexstring(addr_val.first),
+                        addr_val.second);
+          });
+          tfm::format(output_file, " ");
+        }
+        else
+        {
+          //
+        }
+      });
+    }
 
   };
 
