@@ -313,10 +313,10 @@ auto save_path_condition (const conditions_t& cond, const std::string& filename)
           std::for_each(input_iter->begin()->begin(), input_iter->begin()->end(),
                         [&](addrint_value_map_t::const_reference addr_val)
           {
-            tfm::format(output_file, "%14s", " ");
+            tfm::format(output_file, "%14s ", " ");
           });
         }
-        tfm::format(output_file, " ");
+        tfm::format(output_file, "| ");
 
         input_iter = std::next(input_iter);
       });

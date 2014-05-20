@@ -243,7 +243,6 @@ static auto stabilize (const conditions_t& input_cond) -> conditions_t
           map_sum.insert(map_bda.begin(), map_bda.end());
 
           maps_ab.push_back(map_sum);
-//          tfm::format(std::cerr, "add product\n");
         });
       });
     });
