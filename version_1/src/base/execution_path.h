@@ -6,6 +6,7 @@
 
 typedef std::pair<addrint_value_maps_t, ptr_cond_direct_inss_t> condition_t;
 typedef std::vector<condition_t> conditions_t;
+typedef std::vector<ADDRINT> addrs_t;
 
 class execution_path
 {

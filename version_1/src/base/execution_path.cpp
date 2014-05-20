@@ -365,8 +365,12 @@ auto fast_stabilize (const conditions_t& input_cond) -> conditions_t
       });
     };
 
-    auto addrs_a = get_addrs(cond_a.first.front());
-    auto addrs_b = get_addrs(cond_b.first.front());
+    addrs_t addrs_a = get_addrs(cond_a.first.front());
+    addrs_t addrs_b = get_addrs(cond_b.first.front());
+    addrs_t addrs_ab;
+    std::set_intersection(addrs_a.begin(), addrs_a.end(),
+                          addrs_b.begin(), addrs_b.end(), std::back_inserter(addrs_ab));
+
 
   };
 }
