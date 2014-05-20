@@ -358,11 +358,16 @@ auto fast_stabilize (const conditions_t& input_cond) -> conditions_t
     auto get_addrs = [](const addrint_value_map_t addrs_vals) -> std::vector<ADDRINT>
     {
       std::vector<ADDRINT> addrs;
-      std::for_each(addrs_vals.begin(), addrs_vals.end(), [&addrs](addrint_value_map_t::const_reference addr_val)
+      std::for_each(addrs_vals.begin(), addrs_vals.end(),
+                    [&addrs](addrint_value_map_t::const_reference addr_val)
       {
         addrs.push_back(addr_val.first);
       });
     };
+
+    auto addrs_a = get_addrs(cond_a.first.front());
+    auto addrs_b = get_addrs(cond_b.first.front());
+
   };
 }
 
