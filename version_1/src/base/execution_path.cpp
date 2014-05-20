@@ -255,6 +255,94 @@ static auto stabilize (const conditions_t& input_cond) -> conditions_t
 //    return remove_duplicated(joined_cond);
   };
 
+  // calculating join (least upper bound or cartesian product) of two maps a and b: the
+  // priority of the map b is higher on one of a, i.e. the map b is the condition of some (or
+  // several branches) that are placed lower than one of a
+  auto fast_join_maps = [](
+      const addrint_value_maps_t& maps_a, const addrint_value_maps_t& maps_b) -> addrint_value_maps_t
+  {
+    auto get_addrs = [](const addrint_value_map_t addrs_vals) -> std::vector<ADDRINT>
+    {
+      addrs_t addrs;
+      std::for_each(addrs_vals.begin(), addrs_vals.end(),
+                    [&addrs](addrint_value_map_t::const_reference addr_val)
+      {
+        addrs.push_back(addr_val.first);
+      });
+    };
+
+    auto intersection = [](const addrs_t& addrs_a, const addrs_t& addrs_b) -> addrs_t
+    {
+      addrs_t addrs_aib;
+      std::set_intersection(addrs_a.begin(), addrs_a.end(),
+                            addrs_b.begin(), addrs_b.end(), std::back_inserter(addrs_aib));
+      return addrs_aib;
+    };
+
+    auto difference = [](const addrs_t& addrs_a, const addrs_t& addrs_b) -> addrs_t
+    {
+      addrs_t addrs_adb;
+      std::set_difference(addrs_a.begin(), addrs_a.end(),
+                          addrs_b.end(), addrs_b.end(), std::back_inserter(addrs_adb));
+      return addrs_adb;
+    };
+
+    auto maps_projection = [](
+        const addrint_value_maps_t& maps, const addrs_t& addrs) -> addrint_value_maps_t
+    {
+      addrint_value_maps_t projected_maps;
+
+      std::for_each(maps.begin(), maps.end(), [&](addrint_value_map_t addr_val_map)
+      {
+        addrint_value_map_t projected_map;
+        std::for_each(addrs.begin(), addrs.end(),
+                      [&projected_map, &addr_val_map](addrs_t::const_reference addr)
+        {
+          projected_map[addr] = addr_val_map[addr];
+        });
+
+        if (!map_exists_in_maps(projected_map, projected_maps))
+          projected_maps.push_back(projected_map);
+      });
+      return projected_maps;
+    };
+
+
+    addrs_t addrs_a = get_addrs(maps_a.front());
+    addrs_t addrs_b = get_addrs(maps_b.front());
+
+    addrs_t addrs_aib = intersection(addrs_a, addrs_b);
+    addrs_t addrs_adb = difference(addrs_a, addrs_b);
+    addrs_t addrs_bda = difference(addrs_b, addrs_a);
+
+    addrint_value_maps_t maps_adb = maps_projection(maps_a, addrs_adb);
+    addrint_value_maps_t maps_bda = maps_projection(maps_b, addrs_bda);
+    // because the priority of b is higher than a, so use the values of b
+    addrint_value_maps_t maps_aib = maps_projection(maps_b, addrs_aib);
+
+    addrint_value_maps_t maps_ab;
+    // calculate the cartesian product of 3 maps
+    std::for_each(maps_adb.begin(), maps_adb.end(),
+                  [&](addrint_value_maps_t::const_reference map_adb)
+    {
+      std::for_each(maps_aib.begin(), maps_aib.end(),
+                    [&](addrint_value_maps_t::const_reference map_aib)
+      {
+        std::for_each(maps_bda.begin(), maps_bda.end(),
+                      [&](addrint_value_maps_t::const_reference map_bda)
+        {
+          auto map_sum = map_adb;
+          map_sum.insert(map_aib.begin(), map_aib.end());
+          map_sum.insert(map_bda.begin(), map_bda.end());
+
+          maps_ab.push_back(map_sum);
+        });
+      });
+    });
+
+    return maps_ab;
+  };
+
   // calculating join of two list of cfi
   auto join_cfis = [](const ptr_cond_direct_inss_t& cfis_a,
                       const ptr_cond_direct_inss_t& cfis_b) -> ptr_cond_direct_inss_t
@@ -323,7 +411,7 @@ static auto stabilize (const conditions_t& input_cond) -> conditions_t
           tfm::format(std::cerr, "intersection detected\n");
 
           // then join their maps
-          auto joined_maps = join_maps(sub_cond_a->first, sub_cond_b->first);
+          auto joined_maps = /*join_maps*/fast_join_maps(sub_cond_a->first, sub_cond_b->first);
           // and join their cfi
           auto joined_cfis = join_cfis(sub_cond_a->second, sub_cond_b->second);
 
@@ -351,74 +439,114 @@ static auto stabilize (const conditions_t& input_cond) -> conditions_t
 }
 
 
-auto fast_stabilize (const conditions_t& input_cond) -> conditions_t
-{
-  // calculating join (least upper bound or cartesian product) of two maps a and b: the
-  // priority of the map b is higher on one of a, i.e. the map b is the condition of some (or
-  // several branches) that are placed lower than one of a
-  auto fast_join = [](const condition_t& cond_a, const condition_t& cond_b) -> condition_t
-  {
-    auto get_addrs = [](const addrint_value_map_t addrs_vals) -> std::vector<ADDRINT>
-    {
-      addrs_t addrs;
-      std::for_each(addrs_vals.begin(), addrs_vals.end(),
-                    [&addrs](addrint_value_map_t::const_reference addr_val)
-      {
-        addrs.push_back(addr_val.first);
-      });
-    };
+//auto fast_stabilize (const conditions_t& input_cond) -> conditions_t
+//{
+//  // calculating join (least upper bound or cartesian product) of two maps a and b: the
+//  // priority of the map b is higher on one of a, i.e. the map b is the condition of some (or
+//  // several branches) that are placed lower than one of a
+//  auto fast_join_maps = [](
+//      const addrint_value_maps_t& maps_a, const addrint_value_maps_t& maps_b) -> addrint_value_maps_t
+//  {
+//    auto get_addrs = [](const addrint_value_map_t addrs_vals) -> std::vector<ADDRINT>
+//    {
+//      addrs_t addrs;
+//      std::for_each(addrs_vals.begin(), addrs_vals.end(),
+//                    [&addrs](addrint_value_map_t::const_reference addr_val)
+//      {
+//        addrs.push_back(addr_val.first);
+//      });
+//    };
 
-    auto intersection = [](const addrs_t& addrs_a, const addrs_t& addrs_b) -> addrs_t
-    {
-      addrs_t addrs_aib;
-      std::set_intersection(addrs_a.begin(), addrs_a.end(),
-                            addrs_b.begin(), addrs_b.end(), std::back_inserter(addrs_aib));
-      return addrs_aib;
-    };
+//    auto intersection = [](const addrs_t& addrs_a, const addrs_t& addrs_b) -> addrs_t
+//    {
+//      addrs_t addrs_aib;
+//      std::set_intersection(addrs_a.begin(), addrs_a.end(),
+//                            addrs_b.begin(), addrs_b.end(), std::back_inserter(addrs_aib));
+//      return addrs_aib;
+//    };
 
-    auto difference = [](const addrs_t& addrs_a, const addrs_t& addrs_b) -> addrs_t
-    {
-      addrs_t addrs_adb;
-      std::set_difference(addrs_a.begin(), addrs_a.end(),
-                          addrs_b.end(), addrs_b.end(), std::back_inserter(addrs_adb));
-      return addrs_adb;
-    };
+//    auto difference = [](const addrs_t& addrs_a, const addrs_t& addrs_b) -> addrs_t
+//    {
+//      addrs_t addrs_adb;
+//      std::set_difference(addrs_a.begin(), addrs_a.end(),
+//                          addrs_b.end(), addrs_b.end(), std::back_inserter(addrs_adb));
+//      return addrs_adb;
+//    };
 
-    auto maps_projection = [](
-        const addrint_value_maps_t& maps, const addrs_t& addrs) -> addrint_value_maps_t
-    {
-      addrint_value_maps_t projected_maps;
+//    auto maps_projection = [](
+//        const addrint_value_maps_t& maps, const addrs_t& addrs) -> addrint_value_maps_t
+//    {
+//      addrint_value_maps_t projected_maps;
 
-      std::for_each(maps.begin(), maps.end(), [&](addrint_value_map_t addr_val_map)
-      {
-        addrint_value_map_t projected_map;
-        std::for_each(addrs.begin(), addrs.end(),
-                      [&projected_map, &addr_val_map](addrs_t::const_reference addr)
-        {
-          projected_map[addr] = addr_val_map[addr];
-        });
+//      std::for_each(maps.begin(), maps.end(), [&](addrint_value_map_t addr_val_map)
+//      {
+//        addrint_value_map_t projected_map;
+//        std::for_each(addrs.begin(), addrs.end(),
+//                      [&projected_map, &addr_val_map](addrs_t::const_reference addr)
+//        {
+//          projected_map[addr] = addr_val_map[addr];
+//        });
 
-        if (!map_exists_in_maps(projected_map, projected_maps))
-          projected_maps.push_back(projected_map);
-      });
-      return projected_maps;
-    };
+//        if (!map_exists_in_maps(projected_map, projected_maps))
+//          projected_maps.push_back(projected_map);
+//      });
+//      return projected_maps;
+//    };
 
 
-    addrs_t addrs_a = get_addrs(cond_a.first.front());
-    addrs_t addrs_b = get_addrs(cond_b.first.front());
+//    addrs_t addrs_a = get_addrs(maps_a.front());
+//    addrs_t addrs_b = get_addrs(maps_b.front());
 
-    addrs_t addrs_aib = intersection(addrs_a, addrs_b);
-    addrs_t addrs_adb = difference(addrs_a, addrs_b);
-    addrs_t addrs_bda = difference(addrs_b, addrs_a);
+//    addrs_t addrs_aib = intersection(addrs_a, addrs_b);
+//    addrs_t addrs_adb = difference(addrs_a, addrs_b);
+//    addrs_t addrs_bda = difference(addrs_b, addrs_a);
 
-    addrint_value_maps_t maps_adb = maps_projection(cond_a.first, addrs_adb);
-    addrint_value_maps_t maps_bda = maps_projection(cond_b.first, addrs_bda);
-    // because the priority of b is higher than a, so use the values of b
-    addrint_value_maps_t maps_aib = maps_projection(cond_b.first, addrs_aib);
+//    addrint_value_maps_t maps_adb = maps_projection(maps_a, addrs_adb);
+//    addrint_value_maps_t maps_bda = maps_projection(maps_b, addrs_bda);
+//    // because the priority of b is higher than a, so use the values of b
+//    addrint_value_maps_t maps_aib = maps_projection(maps_b, addrs_aib);
 
-  };
-}
+//    addrint_value_maps_t maps_ab;
+//    // calculate the cartesian product of 3 maps
+//    std::for_each(maps_adb.begin(), maps_adb.end(),
+//                  [&](addrint_value_maps_t::const_reference map_adb)
+//    {
+//      std::for_each(maps_aib.begin(), maps_aib.end(),
+//                    [&](addrint_value_maps_t::const_reference map_aib)
+//      {
+//        std::for_each(maps_bda.begin(), maps_bda.end(),
+//                      [&](addrint_value_maps_t::const_reference map_bda)
+//        {
+//          auto map_sum = map_adb;
+//          map_sum.insert(map_aib.begin(), map_aib.end());
+//          map_sum.insert(map_bda.begin(), map_bda.end());
+
+//          maps_ab.push_back(map_sum);
+//        });
+//      });
+//    });
+
+//    return maps_ab;
+//  };
+
+//  // calculating join of two list of cfi
+//  auto join_cfis = [](const ptr_cond_direct_inss_t& cfis_a,
+//                      const ptr_cond_direct_inss_t& cfis_b) -> ptr_cond_direct_inss_t
+//  {
+//    auto joined_list = cfis_a;
+//    std::for_each(cfis_b.begin(), cfis_b.end(), [&](ptr_cond_direct_inss_t::const_reference cfi_b)
+//    {
+//      // verify if a element of cfis_b exists also in cfis_a
+//      if (std::find(cfis_a.begin(), cfis_a.end(), cfi_b) != cfis_a.end())
+//      {
+//        // does not exist, then add it
+//        joined_list.push_back(cfi_b);
+//      }
+//    });
+
+//    return joined_list;
+//  };
+//}
 
 
 /**
