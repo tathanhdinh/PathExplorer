@@ -273,8 +273,8 @@ static auto stabilize (const conditions_t& input_cond) -> conditions_t
     // because the priority of b is higher than a, so use the values of b
     addrint_value_maps_t maps_aib = maps_projection(maps_b, addrs_aib);
 
-    addrint_value_maps_t maps_ab;
     // calculate the cartesian product of 3 maps
+    addrint_value_maps_t maps_ab;
     std::for_each(maps_adb.begin(), maps_adb.end(),
                   [&](addrint_value_maps_t::const_reference map_adb)
     {
@@ -316,14 +316,14 @@ static auto stabilize (const conditions_t& input_cond) -> conditions_t
 
   auto erase_sub_cond_from_cond = [](const condition_t& sub_cond, conditions_t& cond) -> void
   {
-    tfm::format(std::cerr, "erase sub condition, current size %d\n", cond.size());
+//    tfm::format(std::cerr, "erase sub condition, current size %d\n", cond.size());
 
     auto predicate = std::bind(two_subconditions_are_identical, sub_cond, std::placeholders::_1);
 
     auto cond_iter = std::find_if(cond.begin(), cond.end(), predicate);
     if (cond_iter != cond.end())
     {
-      tfm::format(std::cerr, "sub condition found\n");
+//      tfm::format(std::cerr, "sub condition found\n");
       cond.erase(cond_iter);
     }
     else
@@ -344,24 +344,24 @@ static auto stabilize (const conditions_t& input_cond) -> conditions_t
   {
     intersection_exists = false;
 
-    tfm::format(std::cerr, "examined condition size %d\n", examined_cond.size());
+//    tfm::format(std::cerr, "examined condition size %d\n", examined_cond.size());
 
     // for each pair of sub-conditions
     for (auto sub_cond_a = examined_cond.begin(); sub_cond_a != examined_cond.end();
          ++sub_cond_a)
     {
-      tfm::format(std::cerr, "a size %d\n", sub_cond_a->first.size());
+//      tfm::format(std::cerr, "a size %d\n", sub_cond_a->first.size());
       for (auto sub_cond_b = std::next(sub_cond_a); sub_cond_b != examined_cond.end();
            ++sub_cond_b)
       {
-        tfm::format(std::cerr, "b size %d\n", sub_cond_b->first.size());
+//        tfm::format(std::cerr, "b size %d\n", sub_cond_b->first.size());
         // verify if they have intersection
         if (have_intersection(*(sub_cond_a->first.begin()), *(sub_cond_b->first.begin())))
         {
           // yes
           intersection_exists = true;
 
-          tfm::format(std::cerr, "intersection detected\n");
+//          tfm::format(std::cerr, "intersection detected\n");
 
           // then join their maps
           auto joined_maps = /*join_maps*/fast_join_maps(sub_cond_a->first, sub_cond_b->first);
@@ -374,7 +374,7 @@ static auto stabilize (const conditions_t& input_cond) -> conditions_t
           erase_sub_cond_from_cond(cp_a, examined_cond);
           erase_sub_cond_from_cond(cp_b, examined_cond);
 
-          tfm::format(std::cerr, "joined size %d\n", joined_maps.size());
+//          tfm::format(std::cerr, "joined size %d\n", joined_maps.size());
           // add joined condition into the path condition
           examined_cond.push_back(std::make_pair(joined_maps, joined_cfis));
 
@@ -390,116 +390,6 @@ static auto stabilize (const conditions_t& input_cond) -> conditions_t
 
   return examined_cond;
 }
-
-
-//auto fast_stabilize (const conditions_t& input_cond) -> conditions_t
-//{
-//  // calculating join (least upper bound or cartesian product) of two maps a and b: the
-//  // priority of the map b is higher on one of a, i.e. the map b is the condition of some (or
-//  // several branches) that are placed lower than one of a
-//  auto fast_join_maps = [](
-//      const addrint_value_maps_t& maps_a, const addrint_value_maps_t& maps_b) -> addrint_value_maps_t
-//  {
-//    auto get_addrs = [](const addrint_value_map_t addrs_vals) -> std::vector<ADDRINT>
-//    {
-//      addrs_t addrs;
-//      std::for_each(addrs_vals.begin(), addrs_vals.end(),
-//                    [&addrs](addrint_value_map_t::const_reference addr_val)
-//      {
-//        addrs.push_back(addr_val.first);
-//      });
-//    };
-
-//    auto intersection = [](const addrs_t& addrs_a, const addrs_t& addrs_b) -> addrs_t
-//    {
-//      addrs_t addrs_aib;
-//      std::set_intersection(addrs_a.begin(), addrs_a.end(),
-//                            addrs_b.begin(), addrs_b.end(), std::back_inserter(addrs_aib));
-//      return addrs_aib;
-//    };
-
-//    auto difference = [](const addrs_t& addrs_a, const addrs_t& addrs_b) -> addrs_t
-//    {
-//      addrs_t addrs_adb;
-//      std::set_difference(addrs_a.begin(), addrs_a.end(),
-//                          addrs_b.end(), addrs_b.end(), std::back_inserter(addrs_adb));
-//      return addrs_adb;
-//    };
-
-//    auto maps_projection = [](
-//        const addrint_value_maps_t& maps, const addrs_t& addrs) -> addrint_value_maps_t
-//    {
-//      addrint_value_maps_t projected_maps;
-
-//      std::for_each(maps.begin(), maps.end(), [&](addrint_value_map_t addr_val_map)
-//      {
-//        addrint_value_map_t projected_map;
-//        std::for_each(addrs.begin(), addrs.end(),
-//                      [&projected_map, &addr_val_map](addrs_t::const_reference addr)
-//        {
-//          projected_map[addr] = addr_val_map[addr];
-//        });
-
-//        if (!map_exists_in_maps(projected_map, projected_maps))
-//          projected_maps.push_back(projected_map);
-//      });
-//      return projected_maps;
-//    };
-
-
-//    addrs_t addrs_a = get_addrs(maps_a.front());
-//    addrs_t addrs_b = get_addrs(maps_b.front());
-
-//    addrs_t addrs_aib = intersection(addrs_a, addrs_b);
-//    addrs_t addrs_adb = difference(addrs_a, addrs_b);
-//    addrs_t addrs_bda = difference(addrs_b, addrs_a);
-
-//    addrint_value_maps_t maps_adb = maps_projection(maps_a, addrs_adb);
-//    addrint_value_maps_t maps_bda = maps_projection(maps_b, addrs_bda);
-//    // because the priority of b is higher than a, so use the values of b
-//    addrint_value_maps_t maps_aib = maps_projection(maps_b, addrs_aib);
-
-//    addrint_value_maps_t maps_ab;
-//    // calculate the cartesian product of 3 maps
-//    std::for_each(maps_adb.begin(), maps_adb.end(),
-//                  [&](addrint_value_maps_t::const_reference map_adb)
-//    {
-//      std::for_each(maps_aib.begin(), maps_aib.end(),
-//                    [&](addrint_value_maps_t::const_reference map_aib)
-//      {
-//        std::for_each(maps_bda.begin(), maps_bda.end(),
-//                      [&](addrint_value_maps_t::const_reference map_bda)
-//        {
-//          auto map_sum = map_adb;
-//          map_sum.insert(map_aib.begin(), map_aib.end());
-//          map_sum.insert(map_bda.begin(), map_bda.end());
-
-//          maps_ab.push_back(map_sum);
-//        });
-//      });
-//    });
-
-//    return maps_ab;
-//  };
-
-//  // calculating join of two list of cfi
-//  auto join_cfis = [](const ptr_cond_direct_inss_t& cfis_a,
-//                      const ptr_cond_direct_inss_t& cfis_b) -> ptr_cond_direct_inss_t
-//  {
-//    auto joined_list = cfis_a;
-//    std::for_each(cfis_b.begin(), cfis_b.end(), [&](ptr_cond_direct_inss_t::const_reference cfi_b)
-//    {
-//      // verify if a element of cfis_b exists also in cfis_a
-//      if (std::find(cfis_a.begin(), cfis_a.end(), cfi_b) != cfis_a.end())
-//      {
-//        // does not exist, then add it
-//        joined_list.push_back(cfi_b);
-//      }
-//    });
-
-//    return joined_list;
-//  };
-//}
 
 
 /**
@@ -550,8 +440,8 @@ static auto calculate_from(const order_ins_map_t& current_path,
     {
       // yes, then downcast it as a CFI
 //      auto current_cfi = std::static_pointer_cast<cond_direct_instruction>(order_ins.second);
-      auto current_cfi = look_for_saved_instance(std::static_pointer_cast<cond_direct_instruction>(
-                                                   order_ins.second), current_path_code);
+      auto current_cfi = look_for_saved_instance(
+            std::static_pointer_cast<cond_direct_instruction>(order_ins.second), current_path_code);
       if (current_cfi)
       {
         // verify if this CFI is resolved
@@ -564,11 +454,12 @@ static auto calculate_from(const order_ins_map_t& current_path,
           else raw_condition.push_back(std::make_pair(current_cfi->second_input_projections,
                                                       ptr_cond_direct_inss_t(1, current_cfi)));
 
-          tfm::format(std::cerr, "cfi is resolved\n");
+//          tfm::format(std::cerr, "cfi is resolved\n");
         }
         else
         {
-          tfm::format(std::cerr, "cfi at %s is not resolved\n", addrint_to_hexstring(current_cfi->address));
+          tfm::format(std::cerr, "cfi at %s is not resolved\n",
+                      addrint_to_hexstring(current_cfi->address));
         }
         current_code_order++;
       }
