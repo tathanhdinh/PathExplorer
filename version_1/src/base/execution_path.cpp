@@ -236,7 +236,7 @@ static auto stabilize (const conditions_t& input_cond) -> conditions_t
     {
       addrs_t addrs_adb;
       std::set_difference(addrs_a.begin(), addrs_a.end(),
-                          addrs_b.end(), addrs_b.end(), std::back_inserter(addrs_adb));
+                          addrs_b.begin(), addrs_b.end(), std::back_inserter(addrs_adb));
       return addrs_adb;
     };
 
@@ -268,6 +268,8 @@ static auto stabilize (const conditions_t& input_cond) -> conditions_t
     addrs_t addrs_adb = difference(addrs_a, addrs_b);
     addrs_t addrs_bda = difference(addrs_b, addrs_a);
 
+    tfm::format(std::cerr, "%d %d %d\n", addrs_aib.size(), addrs_adb.size(), addrs_bda.size());
+
     addrint_value_maps_t maps_adb = maps_projection(maps_a, addrs_adb);
     addrint_value_maps_t maps_bda = maps_projection(maps_b, addrs_bda);
     // because the priority of b is higher than a, so use the values of b
@@ -289,6 +291,7 @@ static auto stabilize (const conditions_t& input_cond) -> conditions_t
           map_sum.insert(map_bda.begin(), map_bda.end());
 
           maps_ab.push_back(map_sum);
+//          tfm::format(std::cerr, "add product\n");
         });
       });
     });
@@ -503,7 +506,8 @@ auto execution_path::calculate_condition() -> void
     tfm::format(std::cerr, "|\n");
   });
 
-  std::string output_filename = "path_" + path_code_to_string(this->code) + "_" + process_id_str;
+  std::string output_filename = "path_" + path_code_to_string(this->code) +
+      "_" + process_id_str + ".log";
   save_path_condition(this->condition, output_filename);
 #endif
   return;
