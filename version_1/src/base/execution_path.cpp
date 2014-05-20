@@ -353,11 +353,14 @@ static auto stabilize (const conditions_t& input_cond) -> conditions_t
 
 auto fast_stabilize (const conditions_t& input_cond) -> conditions_t
 {
+  // calculating join (least upper bound or cartesian product) of two maps a and b: the
+  // priority of the map b is higher on one of a, i.e. the map b is the condition of some (or
+  // several branches) that are placed lower than one of a
   auto fast_join = [](const condition_t& cond_a, const condition_t& cond_b) -> condition_t
   {
     auto get_addrs = [](const addrint_value_map_t addrs_vals) -> std::vector<ADDRINT>
     {
-      std::vector<ADDRINT> addrs;
+      addrs_t addrs;
       std::for_each(addrs_vals.begin(), addrs_vals.end(),
                     [&addrs](addrint_value_map_t::const_reference addr_val)
       {
@@ -365,12 +368,54 @@ auto fast_stabilize (const conditions_t& input_cond) -> conditions_t
       });
     };
 
+    auto intersection = [](const addrs_t& addrs_a, const addrs_t& addrs_b) -> addrs_t
+    {
+      addrs_t addrs_aib;
+      std::set_intersection(addrs_a.begin(), addrs_a.end(),
+                            addrs_b.begin(), addrs_b.end(), std::back_inserter(addrs_aib));
+      return addrs_aib;
+    };
+
+    auto difference = [](const addrs_t& addrs_a, const addrs_t& addrs_b) -> addrs_t
+    {
+      addrs_t addrs_adb;
+      std::set_difference(addrs_a.begin(), addrs_a.end(),
+                          addrs_b.end(), addrs_b.end(), std::back_inserter(addrs_adb));
+      return addrs_adb;
+    };
+
+    auto maps_projection = [](
+        const addrint_value_maps_t& maps, const addrs_t& addrs) -> addrint_value_maps_t
+    {
+      addrint_value_maps_t projected_maps;
+
+      std::for_each(maps.begin(), maps.end(), [&](addrint_value_map_t addr_val_map)
+      {
+        addrint_value_map_t projected_map;
+        std::for_each(addrs.begin(), addrs.end(),
+                      [&projected_map, &addr_val_map](addrs_t::const_reference addr)
+        {
+          projected_map[addr] = addr_val_map[addr];
+        });
+
+        if (!map_exists_in_maps(projected_map, projected_maps))
+          projected_maps.push_back(projected_map);
+      });
+      return projected_maps;
+    };
+
+
     addrs_t addrs_a = get_addrs(cond_a.first.front());
     addrs_t addrs_b = get_addrs(cond_b.first.front());
-    addrs_t addrs_ab;
-    std::set_intersection(addrs_a.begin(), addrs_a.end(),
-                          addrs_b.begin(), addrs_b.end(), std::back_inserter(addrs_ab));
 
+    addrs_t addrs_aib = intersection(addrs_a, addrs_b);
+    addrs_t addrs_adb = difference(addrs_a, addrs_b);
+    addrs_t addrs_bda = difference(addrs_b, addrs_a);
+
+    addrint_value_maps_t maps_adb = maps_projection(cond_a.first, addrs_adb);
+    addrint_value_maps_t maps_bda = maps_projection(cond_b.first, addrs_bda);
+    // because the priority of b is higher than a, so use the values of b
+    addrint_value_maps_t maps_aib = maps_projection(cond_b.first, addrs_aib);
 
   };
 }
