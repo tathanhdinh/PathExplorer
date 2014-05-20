@@ -158,53 +158,6 @@ static auto stabilize (const conditions_t& input_cond) -> conditions_t
     });
   };
 
-//  // lambda calculating join (least upper bound or cartesian product) of two maps a and b: the
-//  // priority of the map b is higher on one of a, i.e. the map b is the condition of some (or
-//  // several branches) that are placed lower than one of a
-//  auto join_maps = [](const addrint_value_maps_t& cond_a,
-//                      const addrint_value_maps_t& cond_b) -> addrint_value_maps_t
-//  {
-//    addrint_value_maps_t joined_cond;
-//    addrint_value_map_t joined_map;
-
-//    std::for_each(cond_a.begin(), cond_a.end(), [&](addrint_value_maps_t::const_reference a_map)
-//    {
-//      std::for_each(cond_b.begin(), cond_b.end(), [&](addrint_value_maps_t::const_reference b_map)
-//      {
-//        joined_map = a_map;
-
-//        std::for_each(b_map.begin(), b_map.end(),
-//                      [&](addrint_value_maps_t::value_type::const_reference b_point)
-//        {
-//          // verify if the source of b_point exists in the a_map
-//          if (a_map.find(b_point.first) == a_map.end())
-//          {
-//            // does not exist, then add b_point into the joined map
-//            joined_map.insert(b_point);
-//          }
-//          else
-//          {
-////            tfm::format(std::cerr, "b's element %s exists in a\n", addrint_to_hexstring(b_point.first));
-//            // exists, then because the map b has a higher priority then its value will be used
-//            joined_map.find(b_point.first)->second = b_point.second;
-//          }
-//        });
-
-//        if (map_exists_in_maps(joined_map, joined_cond))
-//        {
-////          tfm::format(std::cerr, "joined condition exists\n");
-//        }
-//        else
-//        {
-////          tfm::format(std::cerr, "joined condition does not exist, add it\n");
-//          joined_cond.push_back(joined_map);
-//        }
-//      });
-//    });
-
-//    return joined_cond;
-//  };
-
   // calculating join (least upper bound or cartesian product) of two maps a and b: the
   // priority of the map b is higher on one of a, i.e. the map b is the condition of some (or
   // several branches) that are placed lower than one of a
