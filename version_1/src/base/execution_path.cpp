@@ -288,6 +288,23 @@ static auto stabilize (const conditions_t& input_cond) -> conditions_t
     return;
   };
 
+  auto replace_sub_cond_in_cond = [](const condition_t& replaced_cond,
+      const condition_t& replacing_cond, conditions_t& cond) -> void
+  {
+    std::any_of(cond.begin(), cond.end(), [&](conditions_t::reference examined_cond) -> bool
+    {
+      if (two_subconditions_are_identical(replaced_cond, examined_cond))
+      {
+        examined_cond = replacing_cond;
+        return true;
+      }
+      else
+      {
+        return false;
+      }
+    });
+  };
+
 
   // the following loop makes the condition converge on a stabilized state: it modifies the
   // condition by merging intersected sub-conditions until no such intersection is found
@@ -326,11 +343,12 @@ static auto stabilize (const conditions_t& input_cond) -> conditions_t
           // condition examining_cond will be modified
           auto cp_a = *sub_cond_a; auto cp_b = *sub_cond_b;
           erase_sub_cond_from_cond(cp_a, examined_cond);
-          erase_sub_cond_from_cond(cp_b, examined_cond);
+          replace_sub_cond_in_cond(cp_b, std::make_pair(joined_maps, joined_cfis), examined_cond);
+//          erase_sub_cond_from_cond(cp_b, examined_cond);
 
 //          tfm::format(std::cerr, "joined size %d\n", joined_maps.size());
           // add joined condition into the path condition
-          examined_cond.push_back(std::make_pair(joined_maps, joined_cfis));
+//          examined_cond.push_back(std::make_pair(joined_maps, joined_cfis));
 
           // because the curr_cond has been modified, both iterators cond_elem_a and cond_elem_b
           // have been made invalid, breakout to restart the verification

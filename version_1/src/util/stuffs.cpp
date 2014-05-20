@@ -233,8 +233,10 @@ auto save_cfi_inputs (const std::string& filename) -> void
         std::for_each(addr_value_map.begin(), addr_value_map.end(),
                       [&](addrint_value_map_t::const_reference addr_value)
         {
-          tfm::format(output_file, "%10s:%3d ", addrint_to_hexstring(addr_value.first),
-                      addr_value.second);
+//          tfm::format(output_file, "%10s:%3d ", addrint_to_hexstring(addr_value.first),
+//                      addr_value.second);
+          tfm::format(output_file, "%3d:%3d ",
+                      addr_value.first - received_msg_addr, addr_value.second);
         });
         tfm::format(output_file, "\n");
       });
@@ -302,8 +304,10 @@ auto save_path_condition (const conditions_t& cond, const std::string& filename)
           std::for_each(map_iter_pair.first->begin(), map_iter_pair.first->end(),
                         [&](addrint_value_map_t::const_reference addr_val)
           {
-            tfm::format(output_file, "%10s:%3d ", addrint_to_hexstring(addr_val.first),
-                        addr_val.second);
+//            tfm::format(output_file, "%10s:%3d ", addrint_to_hexstring(addr_val.first),
+//                        addr_val.second);
+            tfm::format(output_file, "%3d:%3d ",
+                        addr_val.first - received_msg_addr, addr_val.second);
           });
 
           map_iter_pair = std::make_pair(std::next(map_iter_pair.first), map_iter_pair.second);
@@ -313,7 +317,8 @@ auto save_path_condition (const conditions_t& cond, const std::string& filename)
           std::for_each(input_iter->begin()->begin(), input_iter->begin()->end(),
                         [&](addrint_value_map_t::const_reference addr_val)
           {
-            tfm::format(output_file, "%14s ", " ");
+//            tfm::format(output_file, "%14s ", " ");
+            tfm::format(output_file, "%7s ", " ");
           });
         }
         tfm::format(output_file, "| ");
