@@ -6,53 +6,53 @@
 
 typedef std::function<conditions_t ()> lazy_func_cond_t;
 
-/**
- * @brief higher_join_if_needed
- */
-lazy_func_cond_t higher_join_if_needed(lazy_func_cond_t in_cond)
-{
-  auto new_cond = [&]() -> conditions_t
-  {
-    conditions_t real_in_cond = in_cond();
-    return real_in_cond;
-  };
-  return new_cond;
-}
+///**
+// * @brief higher_join_if_needed
+// */
+//lazy_func_cond_t higher_join_if_needed(lazy_func_cond_t in_cond)
+//{
+//  auto new_cond = [&]() -> conditions_t
+//  {
+//    conditions_t real_in_cond = in_cond();
+//    return real_in_cond;
+//  };
+//  return new_cond;
+//}
 
 
-/**
- * @brief higher_fix
- */
-lazy_func_cond_t higher_fix(std::function<decltype(higher_join_if_needed)> join_func)
-{
-  // explicit Y combinator: Y f = f (Y f)
-//  return join_func(fix(join_func));
+///**
+// * @brief higher_fix
+// */
+//lazy_func_cond_t higher_fix(std::function<decltype(higher_join_if_needed)> join_func)
+//{
+//  // explicit Y combinator: Y f = f (Y f)
+////  return join_func(fix(join_func));
 
-  // implicit Y combinator: Y f = f (\x -> (Y f) x)
-  return std::bind(join_func, std::bind(&higher_fix, join_func))();
-}
-
-
-/**
- * @brief join_if_needed
- */
-conditions_t join_maps_in_condition(conditions_t in_cond)
-{
-  return in_cond;
-}
+//  // implicit Y combinator: Y f = f (\x -> (Y f) x)
+//  return std::bind(join_func, std::bind(&higher_fix, join_func))();
+//}
 
 
-/**
- * @brief fix
- */
-conditions_t y_fix(std::function<decltype(join_maps_in_condition)> join_func)
-{
-  // explicit Y combinator: Y f = f (Y f)
-//  return join_func(fix(join_func));
+///**
+// * @brief join_if_needed
+// */
+//conditions_t join_maps_in_condition(conditions_t in_cond)
+//{
+//  return in_cond;
+//}
 
-  // implicit Y combinator: Y f = f (\x -> (Y f) x)
-  return std::bind(join_func, std::bind(&y_fix, join_func))();
-}
+
+///**
+// * @brief fix
+// */
+//conditions_t y_fix(std::function<decltype(join_maps_in_condition)> join_func)
+//{
+//  // explicit Y combinator: Y f = f (Y f)
+////  return join_func(fix(join_func));
+
+//  // implicit Y combinator: Y f = f (\x -> (Y f) x)
+//  return std::bind(join_func, std::bind(&y_fix, join_func))();
+//}
 
 
 /**
@@ -348,6 +348,22 @@ static auto stabilize (const conditions_t& input_cond) -> conditions_t
   while (intersection_exists);
 
   return examined_cond;
+}
+
+
+auto fast_stabilize (const conditions_t& input_cond) -> conditions_t
+{
+  auto fast_join = [](const condition_t& cond_a, const condition_t& cond_b) -> condition_t
+  {
+    auto get_addrs = [](const addrint_value_map_t addrs_vals) -> std::vector<ADDRINT>
+    {
+      std::vector<ADDRINT> addrs;
+      std::for_each(addrs_vals.begin(), addrs_vals.end(), [&addrs](addrint_value_map_t::const_reference addr_val)
+      {
+        addrs.push_back(addr_val.first);
+      });
+    };
+  };
 }
 
 
