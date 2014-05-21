@@ -161,12 +161,12 @@ static auto stabilize (const conditions_t& input_cond) -> conditions_t
   // calculating join (least upper bound or cartesian product) of two maps a and b: the
   // priority of the map b is higher on one of a, i.e. the map b is the condition of some (or
   // several branches) that are placed lower than one of a
-  auto fast_join_maps = [](
-      const addrint_value_maps_t& maps_a, const addrint_value_maps_t& maps_b) -> addrint_value_maps_t
+  auto join_maps = [](const addrint_value_maps_t& maps_a,
+                      const addrint_value_maps_t& maps_b) -> addrint_value_maps_t
   {
-    auto get_addrs = [](const addrint_value_map_t addrs_vals) -> std::vector<ADDRINT>
+    auto get_addrs = [](const addrint_value_map_t addrs_vals) -> addrints_t
     {
-      addrs_t addrs;
+      addrints_t addrs;
       std::for_each(addrs_vals.begin(), addrs_vals.end(),
                     [&addrs](addrint_value_map_t::const_reference addr_val)
       {
@@ -176,24 +176,24 @@ static auto stabilize (const conditions_t& input_cond) -> conditions_t
       return addrs;
     };
 
-    auto intersection = [](const addrs_t& addrs_a, const addrs_t& addrs_b) -> addrs_t
+    auto intersection = [](const addrints_t& addrs_a, const addrints_t& addrs_b) -> addrints_t
     {
-      addrs_t addrs_aib;
+      addrints_t addrs_aib;
       std::set_intersection(addrs_a.begin(), addrs_a.end(),
                             addrs_b.begin(), addrs_b.end(), std::back_inserter(addrs_aib));
       return addrs_aib;
     };
 
-    auto difference = [](const addrs_t& addrs_a, const addrs_t& addrs_b) -> addrs_t
+    auto difference = [](const addrints_t& addrs_a, const addrints_t& addrs_b) -> addrints_t
     {
-      addrs_t addrs_adb;
+      addrints_t addrs_adb;
       std::set_difference(addrs_a.begin(), addrs_a.end(),
                           addrs_b.begin(), addrs_b.end(), std::back_inserter(addrs_adb));
       return addrs_adb;
     };
 
     auto maps_projection = [](
-        const addrint_value_maps_t& maps, const addrs_t& addrs) -> addrint_value_maps_t
+        const addrint_value_maps_t& maps, const addrints_t& addrs) -> addrint_value_maps_t
     {
       addrint_value_maps_t projected_maps;
 
@@ -201,7 +201,7 @@ static auto stabilize (const conditions_t& input_cond) -> conditions_t
       {
         addrint_value_map_t projected_map;
         std::for_each(addrs.begin(), addrs.end(),
-                      [&projected_map, &addr_val_map](addrs_t::const_reference addr)
+                      [&projected_map, &addr_val_map](addrints_t::const_reference addr)
         {
           projected_map[addr] = addr_val_map[addr];
         });
@@ -213,12 +213,12 @@ static auto stabilize (const conditions_t& input_cond) -> conditions_t
     };
 
 
-    addrs_t addrs_a = get_addrs(maps_a.front());
-    addrs_t addrs_b = get_addrs(maps_b.front());
+    addrints_t addrs_a = get_addrs(maps_a.front());
+    addrints_t addrs_b = get_addrs(maps_b.front());
 
-    addrs_t addrs_aib = intersection(addrs_a, addrs_b);
-    addrs_t addrs_adb = difference(addrs_a, addrs_b);
-    addrs_t addrs_bda = difference(addrs_b, addrs_a);
+    addrints_t addrs_aib = intersection(addrs_a, addrs_b);
+    addrints_t addrs_adb = difference(addrs_a, addrs_b);
+    addrints_t addrs_bda = difference(addrs_b, addrs_a);
 
     tfm::format(std::cerr, "%d %d %d\n", addrs_aib.size(), addrs_adb.size(), addrs_bda.size());
 
@@ -335,7 +335,7 @@ static auto stabilize (const conditions_t& input_cond) -> conditions_t
 //          tfm::format(std::cerr, "intersection detected\n");
 
           // then join their maps
-          auto joined_maps = /*join_maps*/fast_join_maps(sub_cond_a->first, sub_cond_b->first);
+          auto joined_maps = /*join_maps*/join_maps(sub_cond_a->first, sub_cond_b->first);
           // and join their cfi
           auto joined_cfis = join_cfis(sub_cond_a->second, sub_cond_b->second);
 
