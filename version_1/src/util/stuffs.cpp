@@ -306,7 +306,7 @@ auto save_path_condition (const conditions_t& cond, const std::string& filename)
           {
 //            tfm::format(output_file, "%10s:%3d ", addrint_to_hexstring(addr_val.first),
 //                        addr_val.second);
-            tfm::format(output_file, "%3d:%3d ",
+            tfm::format(output_file, "%-3d:%3d ",
                         addr_val.first - received_msg_addr, addr_val.second);
           });
 
@@ -321,7 +321,6 @@ auto save_path_condition (const conditions_t& cond, const std::string& filename)
             tfm::format(output_file, "%7s ", " ");
           });
         }
-        tfm::format(output_file, "| ");
 
         input_iter = std::next(input_iter);
       });
