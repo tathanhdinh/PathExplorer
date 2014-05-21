@@ -24,6 +24,7 @@ auto path_code_to_string  (const path_code_t& path_code) -> std::string
 //    if (code_elem) code_str.push_back('1');
 //    else code_str.push_back('0');
 
+    // use ternary operator
     code_str.push_back(code_elem ? '1' : '0');
   });
 
@@ -299,6 +300,7 @@ auto save_path_condition (const conditions_t& cond, const std::string& filename)
       std::for_each(map_iter_pairs.begin(), map_iter_pairs.end(),
                     [&](decltype(map_iter_pairs)::reference map_iter_pair)
       {
+//        tfm::format(output_file, "(");
         if (map_iter_pair.first != map_iter_pair.second)
         {
           std::for_each(map_iter_pair.first->begin(), map_iter_pair.first->end(),
@@ -306,7 +308,7 @@ auto save_path_condition (const conditions_t& cond, const std::string& filename)
           {
 //            tfm::format(output_file, "%10s:%3d ", addrint_to_hexstring(addr_val.first),
 //                        addr_val.second);
-            tfm::format(output_file, "%-3d:%3d ",
+            tfm::format(output_file, "%3d:%3d ",
                         addr_val.first - received_msg_addr, addr_val.second);
           });
 
@@ -321,6 +323,7 @@ auto save_path_condition (const conditions_t& cond, const std::string& filename)
             tfm::format(output_file, "%7s ", " ");
           });
         }
+        tfm::format(output_file, "|| ");
 
         input_iter = std::next(input_iter);
       });
