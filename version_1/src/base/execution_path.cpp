@@ -144,7 +144,7 @@ static auto are_isomorphic (const addrint_value_maps_t& maps_a,
  *                             A x ... x B x ...
  * of disjoint sub-conditions
  */
-static auto stabilize (const conditions_t& input_cond) -> conditions_t
+static auto stabilize (const conditions_t& raw_cond) -> conditions_t
 {
   // lambda verifying if two maps a and b have an intersection
   auto have_intersection = [](const addrint_value_map_t& map_a,
@@ -247,6 +247,8 @@ static auto stabilize (const conditions_t& input_cond) -> conditions_t
       });
     });
 
+    tfm::format(std::cerr, "joined map size %d\n", maps_ab.size());
+
     return maps_ab;
   };
 
@@ -308,7 +310,7 @@ static auto stabilize (const conditions_t& input_cond) -> conditions_t
 
   // the following loop makes the condition converge on a stabilized state: it modifies the
   // condition by merging intersected sub-conditions until no such intersection is found
-  conditions_t examined_cond = input_cond;
+  conditions_t examined_cond = raw_cond;
   bool intersection_exists;
 
   do
@@ -438,6 +440,13 @@ static auto calculate_from (const order_ins_map_t& current_path,
   });
 
   tfm::format(std::cerr, "stabilizing raw condition with size %d\n", raw_condition.size());
+  std::for_each(
+        raw_condition.begin(), raw_condition.end(), [](conditions_t::const_reference sub_cond)
+  {
+    tfm::format(std::cerr, "%d ", std::get<0>(sub_cond).size());
+  });
+  tfm::format(std::cerr, "\n");
+
   return stabilize(raw_condition);
 }
 
