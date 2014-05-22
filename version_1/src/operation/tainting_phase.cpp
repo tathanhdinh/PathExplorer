@@ -282,7 +282,7 @@ static inline auto analyze_executed_instructions () -> void
 static auto calculate_rollbacking_trace_length() -> void
 {
   rollbacking_trace_length = 0;
-  auto ins_iter = ins_at_order.rbegin();
+//  auto ins_iter = ins_at_order.rbegin();
   ptr_cond_direct_ins_t last_cfi;
 
   // reverse iterate in the list of executed instructions
@@ -299,13 +299,13 @@ static auto calculate_rollbacking_trace_length() -> void
 
 //  typedef decltype(ins_at_order) ins_at_order_t;
   std::any_of(std::next(ins_at_order.rbegin()), ins_at_order.rend(),
-              [&](decltype(ins_at_order)::const_reference ins_ord) -> bool
+              [&](decltype(ins_at_order)::const_reference order_ins) -> bool
   {
     // verify if the instruction is a CFI
-    if (ins_ord.second->is_cond_direct_cf)
+    if (order_ins.second->is_cond_direct_cf)
     {
       // and this CFI depends on the input
-      last_cfi = std::static_pointer_cast<cond_direct_instruction>(ins_ord.second);
+      last_cfi = std::static_pointer_cast<cond_direct_instruction>(/*ins_ord.second*/std::get<1>(order_ins));
       if (last_cfi->input_dep_addrs.empty())
       {
         last_cfi.reset(); return false;
@@ -411,8 +411,8 @@ auto generic_instruction (ADDRINT ins_addr, const CONTEXT* p_ctxt, THREADID thre
         if (ins_at_addr[ins_addr]->is_cond_direct_cf)
         {
           // duplicate a CFI (the default copy constructor is used)
-          auto current_cfi = std::static_pointer_cast<cond_direct_instruction>(ins_at_addr[ins_addr]);
-//          decltype(current_cfi) duplicated_cfi;
+          auto current_cfi =
+              std::static_pointer_cast<cond_direct_instruction>(ins_at_addr[ins_addr]);
 //          duplicated_cfi.reset(new cond_direct_instruction(*current_cfi));
           auto duplicated_cfi = std::make_shared<cond_direct_instruction>(*current_cfi);
           duplicated_cfi->exec_order = current_exec_order;
