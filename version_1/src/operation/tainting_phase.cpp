@@ -39,17 +39,17 @@ public:
  * @brief for each executed instruction in this tainting phase, determine the set of input memory
  * addresses that affect to the instruction.
  */
-static inline auto determine_cfi_input_dependency() -> void
+static auto determine_cfi_input_dependency() -> void
 {
 //  df_vertex_iter vertex_iter, last_vertex_iter;
-  df_vertex_iter last_vertex_iter;
+  df_vertex_iter last_vertex_iter, first_vertex_iter;
   df_bfs_visitor df_visitor;
 
   // for each vertice of the tainting graph
-  decltype(last_vertex_iter) first_vertex_iter;
+//  decltype(last_vertex_iter) first_vertex_iter;
   std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(dta_graph);
   std::for_each(first_vertex_iter, last_vertex_iter,
-                [df_visitor](decltype(*first_vertex_iter) vertex_desc)
+                [&df_visitor](decltype(*first_vertex_iter) vertex_desc)
   {
     // if it represents some memory address
     if (dta_graph[vertex_desc]->value.type() == typeid(ADDRINT))
@@ -64,7 +64,7 @@ static inline auto determine_cfi_input_dependency() -> void
 
         // for each visited edge
         std::for_each(visited_edges.begin(), visited_edges.end(),
-                      [mem_addr](df_edge_desc visited_edge_desc)
+                      [&mem_addr](df_edge_desc visited_edge_desc)
         {
           // the value of the edge is the execution order of the corresponding instruction
           auto visited_edge_exec_order = dta_graph[visited_edge_desc];
@@ -79,10 +79,10 @@ static inline auto determine_cfi_input_dependency() -> void
               auto visited_cfi = std::static_pointer_cast<cond_direct_instruction>(
                     ins_at_order[visited_edge_exec_order]);
               visited_cfi->input_dep_addrs.insert(mem_addr);
-#if !defined(NDEBUG)
+//#if !defined(NDEBUG)
 //              tfm::format(std::cerr, "the cfi at %d depends on the address %s\n",
 //                          visited_cfi->exec_order, addrint_to_hexstring(mem_addr));
-#endif
+//#endif
             }
           }
         });
@@ -158,21 +158,20 @@ static inline auto set_checkpoints_for_cfi(const ptr_cond_direct_ins_t& cfi) -> 
 /**
  * @brief save new tainted CFIs in this tainting phase
  */
-static inline auto save_detected_cfis () -> void
+static auto save_detected_cfis () -> void
 {
   if (ins_at_order.size() > 1)
   {
-//    typedef decltype(ins_at_order) ins_at_order_t;
     auto last_order_ins = *ins_at_order.rbegin();
     std::for_each(ins_at_order.begin(), ins_at_order.end(),
                   [&](decltype(ins_at_order)::const_reference order_ins)
     {
       // consider only the instruction that is not behind the exploring CFI
-      if ((!exploring_cfi || (exploring_cfi && (order_ins.first > exploring_cfi->exec_order))) &&
-          (order_ins.first < last_order_ins.first))
+      if ((!exploring_cfi || (exploring_cfi && (/*order_ins.first*/std::get<0>(order_ins) > exploring_cfi->exec_order))) &&
+          (/*order_ins.first*/std::get<0>(order_ins) < /*last_order_ins.first*/std::get<0>(last_order_ins)))
       {
         // verify if the instruction is a CFI
-        if (order_ins.second->is_cond_direct_cf)
+        if (/*order_ins.second*/std::get<1>(order_ins)->is_cond_direct_cf)
         {
           // then recast to get its type
           auto new_cfi = std::static_pointer_cast<cond_direct_instruction>(order_ins.second);
@@ -181,8 +180,8 @@ static inline auto save_detected_cfis () -> void
           {
             // then copy a fresh input for it
             new_cfi->fresh_input.reset(new UINT8[received_msg_size], std::default_delete<UINT8[]>());
-            std::copy(fresh_input.get(), fresh_input.get() + received_msg_size,
-                      new_cfi->fresh_input.get());
+            std::copy(fresh_input.get(),
+                      fresh_input.get() + received_msg_size, new_cfi->fresh_input.get());
 
             // set its checkpoints and save it
             set_checkpoints_for_cfi(new_cfi); detected_input_dep_cfis.push_back(new_cfi);
@@ -219,10 +218,10 @@ static inline auto calculate_path_code () -> void
     std::for_each(ins_at_order.begin(), ins_at_order.end(),
                   [&](decltype(ins_at_order)::const_reference order_ins)
     {
-      if (!exploring_cfi || (exploring_cfi && (order_ins.first > exploring_cfi->exec_order)))
+      if (!exploring_cfi || (exploring_cfi && (/*order_ins.first*/std::get<0>(order_ins) > exploring_cfi->exec_order)))
       {
 #if !defined(DISABLE_FSA)
-        explored_fsa->add_vertex(order_ins.second);
+        explored_fsa->add_vertex(/*order_ins.second*/std::get<1>(order_ins));
         if (prev_ins)
         {
           explored_fsa->add_edge(prev_ins->address, order_ins.second->address, current_path_code);
@@ -241,7 +240,7 @@ static inline auto calculate_path_code () -> void
 #endif
 
         // update the path code
-        if (order_ins.second->is_cond_direct_cf)
+        if (/*order_ins.second*/std::get<1>(order_ins)->is_cond_direct_cf)
         {
           auto current_cfi = std::static_pointer_cast<cond_direct_instruction>(order_ins.second);
           if (!current_cfi->input_dep_addrs.empty())
@@ -249,7 +248,7 @@ static inline auto calculate_path_code () -> void
             current_cfi->path_code = current_path_code; current_path_code.push_back(false);
           }
         }
-        prev_ins = order_ins.second;
+        prev_ins = /*order_ins.second*/std::get<1>(order_ins);
       }
     });
   }

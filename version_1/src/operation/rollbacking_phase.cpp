@@ -115,7 +115,7 @@ static auto random_update (addrint_value_map_t& updated_map) -> void
   auto idx = 0;
   T random_val = (*ptr_rand_engine)() % std::numeric_limits<T>::max();
   std::for_each(updated_map.begin(), updated_map.end(),
-                [&random_val,&idx](addrint_value_map_t::reference addr_val)
+                [&random_val, &idx](addrint_value_map_t::reference addr_val)
   {
     std::get<1>(addr_val) = (random_val >> idx) & 0xFF; idx += 8;
   });
@@ -172,7 +172,7 @@ static auto initialize_values_at_active_modified_addrs () -> void
 }
 
 
-static inline void rollback()
+static auto rollback () -> void
 {
   // verify if the number of used rollbacks has reached its bound
   if (used_rollback_num < max_rollback_num)
@@ -259,7 +259,7 @@ static auto calculate_tainting_fresh_input(
   std::for_each(modified_addrs_with_values.begin(), modified_addrs_with_values.end(),
                 [&](addrint_value_map_t::const_reference addr_value)
   {
-    fresh_input.get()[std::get<0>(addr_value) - received_msg_addr] = addr_value.second;
+    fresh_input.get()[std::get<0>(addr_value) - received_msg_addr] = /*addr_value.second*/std::get<1>(addr_value);
   });
 
   return;
