@@ -258,8 +258,6 @@ static auto calculate_tainting_fresh_input(
     const ptr_uint8_t selected_input, const addrint_value_map_t& modified_addrs_with_values) -> void
 {
   // make a copy in fresh input of the selected input
-//  tainting_input.reset(new UINT8[received_msg_size]);
-//  std::copy(selected_input.get(), selected_input.get() + received_msg_size, tainting_input.get());
   std::copy(selected_input.get(), selected_input.get() + received_msg_size, fresh_input.get());
 
   std::for_each(modified_addrs_with_values.begin(), modified_addrs_with_values.end(),
