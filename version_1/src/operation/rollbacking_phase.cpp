@@ -351,56 +351,6 @@ static auto prepare_new_tainting_phase () -> void
 {
   show_exploring_progress();
 
-//  auto cfi_iter = detected_input_dep_cfis.begin();
-//  // verify if there exists a resolved but unexplored CFI
-//  for (; cfi_iter != detected_input_dep_cfis.end(); ++cfi_iter)
-//  {
-//    if ((*cfi_iter)->is_resolved && !(*cfi_iter)->is_explored) break;
-//  }
-//  if (cfi_iter != detected_input_dep_cfis.end())
-//  {
-//    // exists, then verify if the number of used rollback time has exceeded its bounded value
-//    if (total_rollback_times >= max_total_rollback_times)
-//    {
-//      // exceeded, then stop exploring
-//#if !defined(NDEBUG)
-//      log_file << "stop exploring, number of used rollbacks exceeds its bounded value\n";
-//#endif
-//      PIN_ExitApplication(process_id);
-//    }
-//    else
-//    {
-//      // not exceeded yet, then set the CFI as explored
-//      exploring_cfi = *cfi_iter; exploring_cfi->is_explored = true;
-//      // calculate a new input for the next tainting phase
-//      calculate_tainting_fresh_input(exploring_cfi->fresh_input,
-//                                     exploring_cfi->second_input_projections[0]);
-
-//      // initialize new tainting phase
-//      current_running_phase = tainting_phase; tainting::initialize();
-
-//#if !defined(NDEBUG)
-//      tfm::format(log_file, "%s\nexplore the CFI %s at %d, start tainting\n",
-//                  "=================================================================================",
-//                  exploring_cfi->disassembled_name, exploring_cfi->exec_order);
-//      log_file.flush();
-//#endif
-
-//      // rollback to the first checkpoint with the new input
-//      PIN_RemoveInstrumentation();
-//      rollback_with_new_input(first_checkpoint, current_exec_order, received_msg_addr,
-//                              received_msg_size, fresh_input.get());
-//    }
-//  }
-//  else
-//  {
-//    // does not exist, namely all CFI are explored
-//#if !defined(NDEBUG)
-//    log_file << "stop exploring, all CFI have been explored\n";
-//#endif
-//    PIN_ExitApplication(process_id);
-//  }
-
   // verify if the number of used rollback time has exceeded its bounded value
   if (total_rollback_times >= max_total_rollback_times)
   {
