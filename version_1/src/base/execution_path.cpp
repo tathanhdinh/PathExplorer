@@ -25,11 +25,12 @@ static auto two_vmaps_are_identical (const addrint_value_maps_t& maps_a,
 }
 
 
-static auto two_subconditions_are_identical (const condition_t& cond_a,
-                                             const condition_t& cond_b) -> bool
+static auto two_subconditions_are_identical (const condition_t& sub_cond_a,
+                                             const condition_t& sub_cond_b) -> bool
 {
-  return (std::equal(cond_a.second.begin(), cond_a.second.end(), cond_b.second.begin()) &&
-          two_vmaps_are_identical(cond_a.first, cond_b.first));
+  return (std::equal(
+            std::get<1>(sub_cond_a).begin(), std::get<1>(sub_cond_a).end(), std::get<1>(sub_cond_b).begin()) &&
+          two_vmaps_are_identical(std::get<0>(sub_cond_a), std::get<0>(sub_cond_b)));
 }
 
 
