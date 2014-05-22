@@ -441,13 +441,20 @@ static auto calculate_from (const order_ins_map_t& current_path,
         if (current_cfi->is_resolved)
         {
           // look into the path code to know which condition should be added
-          if (!current_path_code[current_code_order])
-            raw_condition.push_back(
+//          if (!current_path_code[current_code_order])
+//            raw_condition.push_back(
+//                  std::make_pair(remove_duplicated(current_cfi->first_input_projections),
+//                                                   ptr_cond_direct_inss_t(1, current_cfi)));
+//          else raw_condition.push_back(
+//                std::make_pair(remove_duplicated(current_cfi->second_input_projections),
+//                                                      ptr_cond_direct_inss_t(1, current_cfi)));
+          !current_path_code[current_code_order] ?
+                raw_condition.push_back(
                   std::make_pair(remove_duplicated(current_cfi->first_input_projections),
-                                                   ptr_cond_direct_inss_t(1, current_cfi)));
-          else raw_condition.push_back(
-                std::make_pair(remove_duplicated(current_cfi->second_input_projections),
-                                                      ptr_cond_direct_inss_t(1, current_cfi)));
+                                 ptr_cond_direct_inss_t(1, current_cfi))) :
+                raw_condition.push_back(
+                  std::make_pair(remove_duplicated(current_cfi->second_input_projections),
+                                 ptr_cond_direct_inss_t(1, current_cfi)));
 
 //          tfm::format(std::cerr, "cfi is resolved\n");
         }
