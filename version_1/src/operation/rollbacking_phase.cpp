@@ -28,10 +28,6 @@ static addrint_value_map_t      active_modified_addrs_values;
 static ptr_uint8_t              tainting_input;
 static input_generation_mode    gen_mode;
 
-//UINT8                           byte_testing_value;
-//UINT16                          word_testing_value;
-//UINT32                          dword_testing_value;
-
 //std::function<addrint_value_map_t(const addrint_value_map_t&)>  generate_testing_input;
 
 typedef std::function<void(addrint_value_map_t&)> input_updater_t;
