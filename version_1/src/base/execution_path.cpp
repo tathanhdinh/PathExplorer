@@ -47,25 +47,42 @@ static auto map_exists_in_maps (const addrint_value_map_t& tested_map,
  */
 static auto remove_duplicated (const addrint_value_maps_t& input_maps) -> addrint_value_maps_t
 {
-  auto examined_maps = input_maps;
+//  addrint_value_maps_t result_maps/* = input_maps*/;
 
-  if (input_maps.size() > 1)
+//  if (input_maps.size() > 1)
+//  {
+////    examined_maps.push_back(input_maps.front());
+//    std::for_each(/*std::next(input_maps.begin())*/input_maps.begin(), input_maps.end(),
+//                  [&](addrint_value_maps_t::const_reference examined_map)
+//    {
+//      auto is_identical_with_current = std::bind(two_maps_are_identical, examined_map,
+//                                                 std::placeholders::_1);
+//      if (std::find_if(result_maps.begin(), result_maps.end(),
+//                       is_identical_with_current) == result_maps.end())
+//      {
+//        result_maps.push_back(examined_map);
+//      }
+//    });
+//  }
+
+  auto no_change = [&input_maps]() -> addrint_value_maps_t { return input_maps; };
+  auto remove_from = [&input_maps]() -> addrint_value_maps_t
   {
-    examined_maps.push_back(input_maps.front());
-    std::for_each(std::next(input_maps.begin()), input_maps.end(),
+    addrint_value_maps_t result_maps;
+    std::for_each(input_maps.begin(), input_maps.end(),
                   [&](addrint_value_maps_t::const_reference examined_map)
     {
-      auto is_identical_with_current = std::bind(two_maps_are_identical, examined_map,
+      auto is_identical = std::bind(two_maps_are_identical, examined_map,
                                                  std::placeholders::_1);
-      if (std::find_if(examined_maps.begin(), examined_maps.end(),
-                       is_identical_with_current) == examined_maps.end())
+      if (std::find_if(result_maps.begin(), result_maps.end(), is_identical) == result_maps.end())
       {
-        examined_maps.push_back(examined_map);
+        result_maps.push_back(examined_map);
       }
     });
-  }
+    return result_maps;
+  };
 
-  return examined_maps;
+  return input_maps.size() > 1 ? remove_from() : no_change();
 }
 
 
