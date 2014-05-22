@@ -295,8 +295,8 @@ static auto next_checkpoint_and_addrs (ptr_checkpoint_t input_checkpoint,
 /**
  * @brief calculate an input for the new tainting phase
  */
-static auto calculate_tainting_fresh_input(const ptr_uint8_t selected_input,
-                                           const addrint_value_map_t& modified_addrs_with_values) -> void
+static auto calculate_tainting_fresh_input(
+    const ptr_uint8_t selected_input, const addrint_value_map_t& modified_addrs_with_values) -> void
 {
   // make a copy in fresh input of the selected input
 //  tainting_input.reset(new UINT8[received_msg_size]);
@@ -313,7 +313,7 @@ static auto calculate_tainting_fresh_input(const ptr_uint8_t selected_input,
   std::for_each(modified_addrs_with_values.begin(), modified_addrs_with_values.end(),
                 [&](addrint_value_map_t::const_reference addr_value)
   {
-    fresh_input.get()[std::get<0>(addr_value)/*addr_value.first*/ - received_msg_addr] = addr_value.second;
+    fresh_input.get()[std::get<0>(addr_value) - received_msg_addr] = addr_value.second;
   });
 
   return;
@@ -339,7 +339,6 @@ static auto prepare_new_tainting_phase () -> void
   else
   {
     // not exceeded yet, then verify if there exists a resolved but unexplored CFI
-//    typedef decltype(detected_input_dep_cfis) cfis_t;
     if (std::any_of(detected_input_dep_cfis.begin(), detected_input_dep_cfis.end(),
                     [&](decltype(detected_input_dep_cfis)::reference cfi_elem) -> bool
     {
@@ -524,12 +523,10 @@ auto control_flow_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
               {
                 // the next checkpoint does not exist, all of its reserved tests have been used
                 active_cfi->is_bypassed = !active_cfi->is_resolved;
-                active_cfi->is_singular = active_cfi->is_bypassed &&
-                    (active_cfi->affecting_checkpoint_addrs_pairs.size() == 1) && (gen_mode == sequential);
-                total_rollback_times += active_cfi->used_rollback_num;
+                active_cfi->is_singular = (gen_mode == sequential) && active_cfi->is_bypassed &&
+                    (active_cfi->affecting_checkpoint_addrs_pairs.size() == 1);
 
-//                if (active_cfi->is_bypassed && (active_cfi->checkpoints.size() == 1) &&
-//                    (gen_mode == sequential)) active_cfi->is_singular = true;
+                total_rollback_times += active_cfi->used_rollback_num;
 #if !defined(NDEBUG)
                 if (active_cfi->is_bypassed)
                 {
@@ -560,19 +557,9 @@ auto control_flow_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
                       active_cfi->disassembled_name, active_cfi->exec_order,
                       active_checkpoint->exec_order, active_modified_addrs.size());
 #endif
-          // make a copy of the fresh input
-//          active_cfi->fresh_input.reset(new UINT8[received_msg_size]);
-//          std::copy(fresh_input.get(), fresh_input.get() + received_msg_size,
-//                    active_cfi->fresh_input.get());
-
           // push an input projection into the corresponding input list of the active CFI
           initialize_values_at_active_modified_addrs();
           active_cfi->first_input_projections.push_back(active_modified_addrs_values);
-//          if (active_cfi->first_input_projections.empty())
-//          {
-//            project_input_on_active_modified_addrs();
-//            active_cfi->first_input_projections.push_back(input_on_active_modified_addrs);
-//          }
 
           // and rollback to resolve this new active CFI
           rollback();
