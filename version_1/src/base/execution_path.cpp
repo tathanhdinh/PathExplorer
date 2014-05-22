@@ -25,8 +25,8 @@ static auto two_vmaps_are_identical (const addrint_value_maps_t& maps_a,
 }
 
 
-static auto two_subconditions_are_identical (const condition_t& sub_cond_a,
-                                             const condition_t& sub_cond_b) -> bool
+static auto two_sub_conds_are_identical (const condition_t& sub_cond_a,
+                                         const condition_t& sub_cond_b) -> bool
 {
   return (std::equal(std::get<1>(sub_cond_a).begin(),
                      std::get<1>(sub_cond_a).end(), std::get<1>(sub_cond_b).begin()) &&
@@ -292,18 +292,13 @@ static auto stabilize (const conditions_t& raw_cond) -> conditions_t
   {
 //    tfm::format(std::cerr, "erase sub condition, current size %d\n", cond.size());
 
-    auto predicate = std::bind(two_subconditions_are_identical, sub_cond, std::placeholders::_1);
+//    auto predicate = std::bind(two_sub_conds_are_identical, sub_cond, std::placeholders::_1);
 
-    auto cond_iter = std::find_if(cond.begin(), cond.end(), predicate);
-    if (cond_iter != cond.end())
-    {
-//      tfm::format(std::cerr, "sub condition found\n");
-      cond.erase(cond_iter);
-    }
-    else
-    {
-      tfm::format(std::cerr, "sub condition not found\n");
-    }
+    auto cond_iter = std::find_if(cond.begin(), cond.end(),
+                                  std::bind(two_sub_conds_are_identical,
+                                            sub_cond, std::placeholders::_1));
+    if (cond_iter != cond.end()) cond.erase(cond_iter);
+    else tfm::format(std::cerr, "sub condition not found\n");
 
     return;
   };
@@ -311,18 +306,25 @@ static auto stabilize (const conditions_t& raw_cond) -> conditions_t
   auto replace_sub_cond_in_cond = [](const condition_t& replaced_cond,
       const condition_t& replacing_cond, conditions_t& cond) -> void
   {
-    std::any_of(cond.begin(), cond.end(), [&](conditions_t::reference examined_cond) -> bool
-    {
-      if (two_subconditions_are_identical(replaced_cond, examined_cond))
-      {
-        examined_cond = replacing_cond;
-        return true;
-      }
-      else
-      {
-        return false;
-      }
-    });
+//    std::any_of(cond.begin(), cond.end(), [&](conditions_t::reference examined_cond) -> bool
+//    {
+//      if (two_subconditions_are_identical(replaced_cond, examined_cond))
+//      {
+//        examined_cond = replacing_cond;
+//        return true;
+//      }
+//      else
+//      {
+//        return false;
+//      }
+//    });
+
+//    auto idendical_pred = std::bind(two_subconditions_are_identical,
+//                                    replaced_cond, std::placeholders::_1);
+    auto replaced_cond_iter =
+        std::find_if(cond.begin(), cond.end(),
+                     std::bind(two_sub_conds_are_identical, replaced_cond, std::placeholders::_1));
+    if (replaced_cond_iter != cond.end()) *replaced_cond_iter = replacing_cond;
   };
 
 
