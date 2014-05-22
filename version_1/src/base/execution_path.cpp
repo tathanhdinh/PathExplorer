@@ -332,12 +332,10 @@ static auto stabilize (const conditions_t& input_cond) -> conditions_t
           // yes
           intersection_exists = true;
 
-//          tfm::format(std::cerr, "intersection detected\n");
-
           // then join their maps
-          auto joined_maps = /*join_maps*/join_maps(sub_cond_a->first, sub_cond_b->first);
+          auto joined_maps = join_maps(std::get<0>(*sub_cond_a) , std::get<0>(*sub_cond_b));
           // and join their cfi
-          auto joined_cfis = join_cfis(sub_cond_a->second, sub_cond_b->second);
+          auto joined_cfis = join_cfis(std::get<1>(*sub_cond_a), std::get<1>(*sub_cond_b));
 
           // erase sub-condition a and b from the path condition, NOTE the side-effect: the input
           // condition examining_cond will be modified
@@ -367,7 +365,7 @@ static auto stabilize (const conditions_t& input_cond) -> conditions_t
 /**
  * @brief verify if the condition is recursive
  */
-auto is_recursive(const conditions_t& stabilized_cond) -> bool
+auto is_recursive (const conditions_t& stabilized_cond) -> bool
 {
   return ((stabilized_cond.size() >= 2) &&
           (are_isomorphic(stabilized_cond.crbegin()->first,
@@ -378,7 +376,7 @@ auto is_recursive(const conditions_t& stabilized_cond) -> bool
 /**
  * @brief calculate the non-recursive order of the condition
  */
-auto order(const conditions_t& stabilized_cond) -> int
+auto order (const conditions_t& stabilized_cond) -> int
 {
   conditions_t::const_reverse_iterator examining_cond_iter = stabilized_cond.crbegin();
   std::all_of(stabilized_cond.crbegin(), stabilized_cond.crend(),
@@ -395,8 +393,8 @@ auto order(const conditions_t& stabilized_cond) -> int
 /**
  * @brief reconstruct path condition as a cartesian product A x ... x B x ...
  */
-static auto calculate_from(const order_ins_map_t& current_path,
-                           const path_code_t& current_path_code) -> conditions_t
+static auto calculate_from (const order_ins_map_t& current_path,
+                            const path_code_t& current_path_code) -> conditions_t
 {
   conditions_t raw_condition;
   std::size_t current_code_order = 0;
@@ -446,7 +444,7 @@ static auto calculate_from(const order_ins_map_t& current_path,
 /**
  * @brief constructor
  */
-execution_path::execution_path(const order_ins_map_t& path, const path_code_t& path_code)
+execution_path::execution_path (const order_ins_map_t& path, const path_code_t& path_code)
 {
   this->content = path;
   this->code = path_code;
@@ -456,7 +454,7 @@ execution_path::execution_path(const order_ins_map_t& path, const path_code_t& p
 /**
  * @brief calculate path condition
  */
-auto execution_path::calculate_condition() -> void
+auto execution_path::calculate_condition () -> void
 {
   this->condition = calculate_from(this->content, this->code);
   this->condition_is_recursive = is_recursive(this->condition);
@@ -486,7 +484,7 @@ auto execution_path::calculate_condition() -> void
 /**
  * @brief predict a lazy condition
  */
-auto execution_path::lazy_condition(int n) -> conditions_t
+auto execution_path::lazy_condition (int n) -> conditions_t
 {
   conditions_t lazy_cond(this->condition.begin(),
                          std::next(this->condition.begin(), std::min(n, this->condition_order)));
