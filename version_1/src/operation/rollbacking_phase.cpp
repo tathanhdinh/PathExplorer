@@ -179,7 +179,7 @@ static auto initialize_values_at_active_modified_addrs () -> void
 static inline void rollback()
 {
   // verify if the number of used rollbacks has reached its bound
-  if (used_rollback_num < /*max_rollback_num - 1*/max_rollback_num)
+  if (used_rollback_num < max_rollback_num)
   {
     // not reached yet, then just rollback again with a new value of the input
     active_cfi->used_rollback_num++; used_rollback_num++;
@@ -191,7 +191,7 @@ static inline void rollback()
   else
   {
     // already reached, then restore the orginal value of the input
-    if (used_rollback_num == /*max_rollback_num - 1*/max_rollback_num)
+    if (used_rollback_num == max_rollback_num)
     {
       active_cfi->used_rollback_num++; used_rollback_num++;
       rollback_with_original_input(active_checkpoint, current_exec_order);
@@ -218,54 +218,17 @@ static auto next_checkpoint_and_addrs (ptr_checkpoint_t input_checkpoint,
 {
   checkpoint_addrs_pair_t result;
 
-//  std::vector<checkpoint_with_modified_addrs>::iterator chkpnt_iter, nx_chkpnt_iter;
   // verify if there exist an enabled active checkpoint
-  if (/*active_checkpoint*/input_checkpoint)
+  if (input_checkpoint)
   {
     // exist, then find the next checkpoint in the checkpoint list of the current active CFI
-//    auto nx_chkpnt_iter = active_cfi->checkpoints.begin();
-//    auto chkpnt_iter = nx_chkpnt_iter;
-//    while (++nx_chkpnt_iter != active_cfi->checkpoints.end())
-//    {
-//      if (chkpnt_iter->first->exec_order == active_checkpoint->exec_order)
-//      {
-//        active_checkpoint = nx_chkpnt_iter->first; active_modified_addrs = nx_chkpnt_iter->second;
-//        break;
-//      }
-//      chkpnt_iter = nx_chkpnt_iter;
-//    }
-
-//    if (nx_chkpnt_iter == active_cfi->checkpoints.end())
-//    {
-//      active_checkpoint.reset(); active_modified_addrs.clear();
-//    }
-
-//    typedef decltype(active_cfi->affecting_checkpoint_addrs_pairs) checkpoints_t;
-    auto prev_elem = /*active_cfi*/input_cfi->affecting_checkpoint_addrs_pairs.front();
-//    if (!std::any_of(std::next(active_cfi->affecting_checkpoint_addrs_pairs.begin()),
-//                     active_cfi->affecting_checkpoint_addrs_pairs.end(),
-//                     [&](checkpoint_addrs_pairs_t::reference checkpoint_addrs_elem) -> bool
-//    {
-//      if (prev_elem.first->exec_order == active_checkpoint->exec_order)
-//      {
-////        active_checkpoint = checkpoint_addrs_elem.first;
-////        active_modified_addrs = checkpoint_addrs_elem.second;
-//        result = checkpoint_addrs_elem;
-//        return true;
-//      }
-//      else return false;
-//    }))
-//    {
-//      active_checkpoint.reset(); active_modified_addrs.clear();
-//    }
+    auto prev_elem = input_cfi->affecting_checkpoint_addrs_pairs.front();
     std::any_of(std::next(input_cfi->affecting_checkpoint_addrs_pairs.begin()),
                 input_cfi->affecting_checkpoint_addrs_pairs.end(),
                 [&](checkpoint_addrs_pairs_t::reference checkpoint_addrs_elem) -> bool
     {
       if (prev_elem.first->exec_order == input_checkpoint->exec_order)
       {
-//        active_checkpoint = checkpoint_addrs_elem.first;
-//        active_modified_addrs = checkpoint_addrs_elem.second;
         result = checkpoint_addrs_elem;
         return true;
       }
@@ -281,12 +244,8 @@ static auto next_checkpoint_and_addrs (ptr_checkpoint_t input_checkpoint,
   {
     // doest not exist, then the active checkpoint is assigned as the first checkpoint of the
     // current active CFI
-//    active_checkpoint = active_cfi->affecting_checkpoint_addrs_pairs[0].first;
-//    active_modified_addrs = active_cfi->affecting_checkpoint_addrs_pairs[0].second;
     result = input_cfi->affecting_checkpoint_addrs_pairs[0];
   }
-
-//  if (active_checkpoint) initialize_values_at_active_modified_addrs();
 
   return result;
 }
@@ -302,13 +261,6 @@ static auto calculate_tainting_fresh_input(
 //  tainting_input.reset(new UINT8[received_msg_size]);
 //  std::copy(selected_input.get(), selected_input.get() + received_msg_size, tainting_input.get());
   std::copy(selected_input.get(), selected_input.get() + received_msg_size, fresh_input.get());
-
-  // update this copy with new values at modified addresses
-//  auto addr_iter = modified_addrs_with_values.begin();
-//  for (; addr_iter != modified_addrs_with_values.end(); ++addr_iter)
-//  {
-//    fresh_input.get()[addr_iter->first - received_msg_addr] = addr_iter->second;
-//  }
 
   std::for_each(modified_addrs_with_values.begin(), modified_addrs_with_values.end(),
                 [&](addrint_value_map_t::const_reference addr_value)
@@ -591,20 +543,6 @@ auto mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length
     {
       // no, namely we are now in normal "forward" execution, so all checkpoint until the current
       // execution order need to track memory write instructions
-//      auto chkpnt_iter = saved_checkpoints.begin();
-//      for (; chkpnt_iter != saved_checkpoints.end(); ++chkpnt_iter)
-//      {
-//        if ((*chkpnt_iter)->exec_order <= current_exec_order)
-//        {
-//          (*chkpnt_iter)->mem_write_tracking(mem_addr, mem_length);
-//        }
-//        else
-//        {
-//          break;
-//        }
-//      }
-
-//      typedef decltype(saved_checkpoints) checkpoints_t;
       std::any_of(saved_checkpoints.begin(), saved_checkpoints.end(),
                   [&](decltype(saved_checkpoints)::reference checkpoint_elem) -> bool
       {
