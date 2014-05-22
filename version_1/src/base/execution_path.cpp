@@ -318,28 +318,29 @@ static auto stabilize (const conditions_t& input_cond) -> conditions_t
 //    tfm::format(std::cerr, "examined condition size %d\n", examined_cond.size());
 
     // for each pair of sub-conditions
-    for (auto sub_cond_a = examined_cond.begin(); sub_cond_a != examined_cond.end();
-         ++sub_cond_a)
+    for (auto sub_cond_a_iter = examined_cond.begin(); sub_cond_a_iter != examined_cond.end();
+         ++sub_cond_a_iter)
     {
 //      tfm::format(std::cerr, "a size %d\n", sub_cond_a->first.size());
-      for (auto sub_cond_b = std::next(sub_cond_a); sub_cond_b != examined_cond.end();
-           ++sub_cond_b)
+      for (auto sub_cond_b_iter = std::next(sub_cond_a_iter); sub_cond_b_iter != examined_cond.end();
+           ++sub_cond_b_iter)
       {
 //        tfm::format(std::cerr, "b size %d\n", sub_cond_b->first.size());
         // verify if they have intersection
-        if (have_intersection(*(sub_cond_a->first.begin()), *(sub_cond_b->first.begin())))
+        if (have_intersection(*(std::get<0>(*sub_cond_a_iter).begin()),
+                              *(std::get<0>(*sub_cond_b_iter).begin())))
         {
           // yes
           intersection_exists = true;
 
           // then join their maps
-          auto joined_maps = join_maps(std::get<0>(*sub_cond_a) , std::get<0>(*sub_cond_b));
+          auto joined_maps = join_maps(std::get<0>(*sub_cond_a_iter) , std::get<0>(*sub_cond_b_iter));
           // and join their cfi
-          auto joined_cfis = join_cfis(std::get<1>(*sub_cond_a), std::get<1>(*sub_cond_b));
+          auto joined_cfis = join_cfis(std::get<1>(*sub_cond_a_iter), std::get<1>(*sub_cond_b_iter));
 
           // erase sub-condition a and b from the path condition, NOTE the side-effect: the input
           // condition examining_cond will be modified
-          auto cp_a = *sub_cond_a; auto cp_b = *sub_cond_b;
+          auto cp_a = *sub_cond_a_iter; auto cp_b = *sub_cond_b_iter;
           erase_sub_cond_from_cond(cp_a, examined_cond);
           replace_sub_cond_in_cond(cp_b, std::make_pair(joined_maps, joined_cfis), examined_cond);
 //          erase_sub_cond_from_cond(cp_b, examined_cond);
