@@ -337,7 +337,7 @@ static auto calculate_tainting_fresh_input(const ptr_uint8_t selected_input,
   std::for_each(modified_addrs_with_values.begin(), modified_addrs_with_values.end(),
                 [&](addrint_value_map_t::const_reference addr_value)
   {
-    fresh_input.get()[addr_value.first - received_msg_addr] = addr_value.second;
+    fresh_input.get()[std::get<0>(addr_value)/*addr_value.first*/ - received_msg_addr] = addr_value.second;
   });
 
   return;
