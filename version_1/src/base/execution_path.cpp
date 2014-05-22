@@ -28,8 +28,8 @@ static auto two_vmaps_are_identical (const addrint_value_maps_t& maps_a,
 static auto two_subconditions_are_identical (const condition_t& sub_cond_a,
                                              const condition_t& sub_cond_b) -> bool
 {
-  return (std::equal(
-            std::get<1>(sub_cond_a).begin(), std::get<1>(sub_cond_a).end(), std::get<1>(sub_cond_b).begin()) &&
+  return (std::equal(std::get<1>(sub_cond_a).begin(),
+                     std::get<1>(sub_cond_a).end(), std::get<1>(sub_cond_b).begin()) &&
           two_vmaps_are_identical(std::get<0>(sub_cond_a), std::get<0>(sub_cond_b)));
 }
 
@@ -423,9 +423,11 @@ static auto calculate_from (const order_ins_map_t& current_path,
         {
           // look into the path code to know which condition should be added
           if (!current_path_code[current_code_order])
-            raw_condition.push_back(std::make_pair(current_cfi->first_input_projections,
+            raw_condition.push_back(
+                  std::make_pair(remove_duplicated(current_cfi->first_input_projections),
                                                    ptr_cond_direct_inss_t(1, current_cfi)));
-          else raw_condition.push_back(std::make_pair(current_cfi->second_input_projections,
+          else raw_condition.push_back(
+                std::make_pair(remove_duplicated(current_cfi->second_input_projections),
                                                       ptr_cond_direct_inss_t(1, current_cfi)));
 
 //          tfm::format(std::cerr, "cfi is resolved\n");
