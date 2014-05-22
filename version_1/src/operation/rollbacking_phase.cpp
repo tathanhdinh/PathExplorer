@@ -28,11 +28,11 @@ static addrint_value_map_t      active_modified_addrs_values;
 static ptr_uint8_t              tainting_input;
 static input_generation_mode    gen_mode;
 
-UINT8                           byte_testing_value;
-UINT16                          word_testing_value;
-UINT32                          dword_testing_value;
+//UINT8                           byte_testing_value;
+//UINT16                          word_testing_value;
+//UINT32                          dword_testing_value;
 
-std::function<addrint_value_map_t(const addrint_value_map_t&)>  generate_testing_input;
+//std::function<addrint_value_map_t(const addrint_value_map_t&)>  generate_testing_input;
 
 typedef std::function<void(addrint_value_map_t&)> input_updater_t;
 input_updater_t update_input;
@@ -45,15 +45,13 @@ namespace rollbacking
 /**
  * @brief randomized_generator
  */
-static auto randomized_generator (const addrint_value_map_t& input_map) -> addrint_value_map_t
+static auto simple_random_generator (const addrint_value_map_t& input_map) -> addrint_value_map_t
 {
   addrint_value_map_t output_map;
 
-//  typedef decltype(active_modified_addrs_values) addrs_values_t;
-  std::for_each(/*active_modified_addrs_values*/input_map.begin(), /*active_modified_addrs_values*/input_map.end(),
-                [&](/*addrs_values_t*/addrint_value_map_t::const_reference addr_value)
+  std::for_each(input_map.begin(), input_map.end(),
+                [&](addrint_value_map_t::const_reference addr_value)
   {
-//    addr_value.second = std::rand() % std::numeric_limits<UINT8>::max();
     output_map[addr_value.first] = std::rand() % std::numeric_limits<UINT8>::max();
   });
   return output_map;
@@ -64,17 +62,16 @@ static auto randomized_generator (const addrint_value_map_t& input_map) -> addri
  * the template function is conherent only where sizeof(T) = active_modified_addrs_values.size()
  */
 template <typename T>
-static auto generic_sequential_generator (const addrint_value_map_t& input_map) -> addrint_value_map_t
+static auto sequential_generator (const addrint_value_map_t& input_map) -> addrint_value_map_t
 {
   static T generic_testing_value = 0;
   addrint_value_map_t output_map;
 
-  // because sizeof(T) = active_modified_addrs_values.size(),
-  // all elements of active_modified_addrs_values will be updated
-  auto addr_value = /*active_modified_addrs_values*/input_map.begin();
+  // because: sizeof(T) = active_modified_addrs_values.size(), all elements of
+  // active_modified_addrs_values will be updated
+  auto addr_value = input_map.begin();
   for (auto idx = 0; idx < sizeof(T); ++idx)
   {
-//    addr_value->second = (generic_testing_value >> (idx * 8)) & 0xFF;
     output_map[addr_value->first] = (generic_testing_value >> (idx * 8)) & 0xFF;
     addr_value = std::next(addr_value);
   }
@@ -99,7 +96,7 @@ static auto sequential_update (addrint_value_map_t& updated_map) -> void
  * the template function is conherent only where sizeof(T) = active_modified_addrs_values.size()
  */
 template <typename T>
-static auto generic_randomized_generator (const addrint_value_map_t& input_map) -> addrint_value_map_t
+static auto random_generator (const addrint_value_map_t& input_map) -> addrint_value_map_t
 {
   static T generic_testing_value = 0;
   addrint_value_map_t output_map;
@@ -107,7 +104,6 @@ static auto generic_randomized_generator (const addrint_value_map_t& input_map) 
   auto addr_value = input_map.begin();
   for (auto idx = 0; idx < sizeof(T); ++idx)
   {
-//    addr_value->second = (generic_testing_value >> (idx * 8)) & 0xFF;
     output_map[addr_value->first] = (generic_testing_value >> (idx * 8)) & 0xFF;
     addr_value = std::next(addr_value);
   }
@@ -136,7 +132,6 @@ static auto random_update (addrint_value_map_t& updated_map) -> void
 static auto initialize_values_at_active_modified_addrs () -> void
 {
   active_modified_addrs_values.clear();
-//  typedef decltype(active_modified_addrs) addrs_t;
   std::for_each(active_modified_addrs.begin(), active_modified_addrs.end(),
                 [&](decltype(active_modified_addrs)::const_reference addr)
   {
@@ -149,29 +144,29 @@ static auto initialize_values_at_active_modified_addrs () -> void
   case 1:
     max_rollback_num = std::numeric_limits<UINT8>::max();
     gen_mode = sequential;
-    generate_testing_input = generic_sequential_generator<UINT8>;
+//    generate_testing_input = sequential_generator<UINT8>;
     update_input = sequential_update;
     break;
 
   case 2:
     max_rollback_num = std::numeric_limits<UINT16>::max();
     gen_mode = sequential;
-    generate_testing_input = generic_sequential_generator<UINT16>;
+//    generate_testing_input = sequential_generator<UINT16>;
     update_input = sequential_update;
     break;
 
-  case 4:
-    max_rollback_num = max_local_rollback_knob.Value();
-    gen_mode = randomized;
-//    generate_testing_values = generic_sequential_generator<UINT32>;
-    generate_testing_input = generic_randomized_generator<UINT32>;
-    update_input = random_update<UINT32>;
-    break;
+//  case 4:
+//    max_rollback_num = max_local_rollback_knob.Value();
+//    gen_mode = randomized;
+////    generate_testing_values = generic_sequential_generator<UINT32>;
+//    generate_testing_input = random_generator<UINT32>;
+//    update_input = random_update<UINT32>;
+//    break;
 
   default:
     max_rollback_num = max_local_rollback_knob.Value();
     gen_mode = randomized;
-    generate_testing_input = randomized_generator;
+//    generate_testing_input = simple_random_generator;
     update_input = random_update<UINT32>;
     break;
   }
@@ -179,25 +174,6 @@ static auto initialize_values_at_active_modified_addrs () -> void
   used_rollback_num = 0;
   return;
 }
-
-
-//static inline auto generate_testing_values () -> void
-//{
-//  /*addrint_value_map_t::iterator*/auto addr_iter = active_modified_addrs_values.begin();
-//  for (; addr_iter != active_modified_addrs_values.end(); ++addr_iter)
-//  {
-//    switch (gen_mode)
-//    {
-//    case randomized:
-//      addr_iter->second = rand() % std::numeric_limits<UINT8>::max(); break;
-//    case sequential:
-//      addr_iter->second++; break;
-//    default:
-//      break;
-//    }
-//  }
-//  return;
-//}
 
 
 static inline void rollback()
