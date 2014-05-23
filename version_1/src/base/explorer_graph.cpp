@@ -7,6 +7,7 @@
 #include <boost/graph/filtered_graph.hpp>
 #include <boost/graph/copy.hpp>
 #include <algorithm>
+#include <tuple>
 
 typedef ADDRINT                                               exp_vertex;
 typedef std::pair<std::vector<bool>, addrint_value_maps_t>    exp_edge;

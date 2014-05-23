@@ -17,6 +17,9 @@ static auto two_maps_are_identical (const addrint_value_map_t& map_a,
 }
 
 
+/**
+ * @brief two_vmaps_are_identical
+ */
 static auto two_vmaps_are_identical (const addrint_value_maps_t& maps_a,
                                      const addrint_value_maps_t& maps_b) -> bool
 {
@@ -25,6 +28,9 @@ static auto two_vmaps_are_identical (const addrint_value_maps_t& maps_a,
 }
 
 
+/**
+ * @brief two_sub_conds_are_identical
+ */
 static auto two_sub_conds_are_identical (const condition_t& sub_cond_a,
                                          const condition_t& sub_cond_b) -> bool
 {
@@ -34,6 +40,9 @@ static auto two_sub_conds_are_identical (const condition_t& sub_cond_a,
 }
 
 
+/**
+ * @brief map_exists_in_maps
+ */
 static auto map_exists_in_maps (const addrint_value_map_t& tested_map,
                                 const addrint_value_maps_t& maps) -> bool
 {
@@ -47,24 +56,6 @@ static auto map_exists_in_maps (const addrint_value_map_t& tested_map,
  */
 static auto remove_duplicated (const addrint_value_maps_t& input_maps) -> addrint_value_maps_t
 {
-//  addrint_value_maps_t result_maps/* = input_maps*/;
-
-//  if (input_maps.size() > 1)
-//  {
-////    examined_maps.push_back(input_maps.front());
-//    std::for_each(/*std::next(input_maps.begin())*/input_maps.begin(), input_maps.end(),
-//                  [&](addrint_value_maps_t::const_reference examined_map)
-//    {
-//      auto is_identical_with_current = std::bind(two_maps_are_identical, examined_map,
-//                                                 std::placeholders::_1);
-//      if (std::find_if(result_maps.begin(), result_maps.end(),
-//                       is_identical_with_current) == result_maps.end())
-//      {
-//        result_maps.push_back(examined_map);
-//      }
-//    });
-//  }
-
   auto no_change = [&input_maps]() -> addrint_value_maps_t { return input_maps; };
   auto remove_from = [&input_maps]() -> addrint_value_maps_t
   {

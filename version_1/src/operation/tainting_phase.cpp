@@ -297,7 +297,6 @@ static auto calculate_rollbacking_trace_length() -> void
 //    }
 //  }
 
-//  typedef decltype(ins_at_order) ins_at_order_t;
   std::any_of(std::next(ins_at_order.rbegin()), ins_at_order.rend(),
               [&](decltype(ins_at_order)::const_reference order_ins) -> bool
   {
@@ -326,7 +325,7 @@ static auto calculate_rollbacking_trace_length() -> void
 /**
  * @brief prepare_new_rollbacking_phase
  */
-static inline auto prepare_new_rollbacking_phase() -> void
+static auto prepare_new_rollbacking_phase() -> void
 {
   if (saved_checkpoints.empty())
   {
