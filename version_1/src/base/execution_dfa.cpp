@@ -27,6 +27,7 @@ auto execution_dfa::instance() -> ptr_exec_dfa_t
   if (!single_dfa_instance)
   {
     single_dfa_instance = std::make_shared<execution_dfa>(construction_key());
+    internal_dfa->clear();
   }
 
   return single_dfa_instance;
