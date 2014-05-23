@@ -281,10 +281,6 @@ static auto stabilize (const conditions_t& raw_cond) -> conditions_t
 
   auto erase_sub_cond_from_cond = [](const condition_t& sub_cond, conditions_t& cond) -> void
   {
-//    tfm::format(std::cerr, "erase sub condition, current size %d\n", cond.size());
-
-//    auto predicate = std::bind(two_sub_conds_are_identical, sub_cond, std::placeholders::_1);
-
     auto cond_iter = std::find_if(cond.begin(), cond.end(),
                                   std::bind(two_sub_conds_are_identical,
                                             sub_cond, std::placeholders::_1));
@@ -297,21 +293,6 @@ static auto stabilize (const conditions_t& raw_cond) -> conditions_t
   auto replace_sub_cond_in_cond = [](const condition_t& replaced_cond,
       const condition_t& replacing_cond, conditions_t& cond) -> void
   {
-//    std::any_of(cond.begin(), cond.end(), [&](conditions_t::reference examined_cond) -> bool
-//    {
-//      if (two_subconditions_are_identical(replaced_cond, examined_cond))
-//      {
-//        examined_cond = replacing_cond;
-//        return true;
-//      }
-//      else
-//      {
-//        return false;
-//      }
-//    });
-
-//    auto idendical_pred = std::bind(two_subconditions_are_identical,
-//                                    replaced_cond, std::placeholders::_1);
     auto replaced_cond_iter =
         std::find_if(cond.begin(), cond.end(),
                      std::bind(two_sub_conds_are_identical, replaced_cond, std::placeholders::_1));
@@ -356,11 +337,6 @@ static auto stabilize (const conditions_t& raw_cond) -> conditions_t
           auto cp_a = *sub_cond_a_iter; auto cp_b = *sub_cond_b_iter;
           erase_sub_cond_from_cond(cp_a, examined_cond);
           replace_sub_cond_in_cond(cp_b, std::make_pair(joined_maps, joined_cfis), examined_cond);
-//          erase_sub_cond_from_cond(cp_b, examined_cond);
-
-//          tfm::format(std::cerr, "joined size %d\n", joined_maps.size());
-          // add joined condition into the path condition
-//          examined_cond.push_back(std::make_pair(joined_maps, joined_cfis));
 
           // because the curr_cond has been modified, both iterators cond_elem_a and cond_elem_b
           // have been made invalid, breakout to restart the verification
