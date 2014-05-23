@@ -90,21 +90,6 @@ auto explorer_graph::add_vertex(ptr_instruction_t ins) -> void
 
 
 /**
- * @brief verify if two path codes are equal
- */
-//static inline bool path_codes_are_equal(const path_code_t& x, const path_code_t& y)
-//{
-//  if (x.size() == y.size())
-//  {
-//    path_code_t::const_iterator x_iter, y_iter;
-//    std::tie(x_iter, y_iter) = std::mismatch(x.begin(), x.end(), y.begin());
-//    if ((x_iter == x.end()) && (y_iter == y.end())) return true;
-//  }
-//  return false;
-//}
-
-
-/**
  * @brief add an edge into the explorer graph
  */
 auto explorer_graph::add_edge(ADDRINT ins_a_addr, ADDRINT ins_b_addr,
@@ -232,9 +217,9 @@ static auto nearest_cfi_vertex (exp_tree_vertex_desc start_vertex) -> exp_tree_v
     // not a cfi, then its neighbor number is 0 or 1
 //    auto start_vertex_desc = look_for_vertex(start_vertex, internal_exp_tree);
     if (boost::out_degree(start_vertex, internal_exp_tree) == 1)
-      return nearest_cfi_vertex(boost::target(*(boost::out_edges(start_vertex,
-                                                                 internal_exp_tree).first),
-                                              internal_exp_tree));
+      return nearest_cfi_vertex(
+            boost::target(*(boost::out_edges(start_vertex, internal_exp_tree).first),
+                          internal_exp_tree));
   }
 
   return boost::graph_traits<exp_tree_t>::null_vertex();

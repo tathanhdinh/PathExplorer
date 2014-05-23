@@ -7,6 +7,9 @@ auto addrint_to_hexstring       (ADDRINT input)                -> std::string;
 
 auto path_code_to_string        (const path_code_t& path_code) -> std::string;
 
+auto two_maps_are_identical     (const addrint_value_map_t& map_a,
+                                 const addrint_value_map_t& map_b) -> bool;
+
 auto is_input_dep_cfi           (ptr_instruction_t tested_ins) -> bool;
 
 auto is_resolved_cfi            (ptr_instruction_t tested_ins) -> bool;

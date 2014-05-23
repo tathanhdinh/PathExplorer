@@ -6,15 +6,15 @@
 
 typedef std::function<conditions_t ()> lazy_func_cond_t;
 
-/**
- * @brief verify if two map a and b are exactly equal, inspired from http://goo.gl/9W8Ws7
- */
-static auto two_maps_are_identical (const addrint_value_map_t& map_a,
-                                    const addrint_value_map_t& map_b) -> bool
-{
-  return ((map_a.size() == map_b.size()) &&
-          std::equal(map_a.begin(), map_a.end(), map_b.begin()));
-}
+///**
+// * @brief verify if two map a and b are exactly equal, inspired from http://goo.gl/9W8Ws7
+// */
+//static auto two_maps_are_identical (const addrint_value_map_t& map_a,
+//                                    const addrint_value_map_t& map_b) -> bool
+//{
+//  return ((map_a.size() == map_b.size()) &&
+//          std::equal(map_a.begin(), map_a.end(), map_b.begin()));
+//}
 
 
 /**

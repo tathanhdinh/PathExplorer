@@ -32,6 +32,17 @@ auto path_code_to_string  (const path_code_t& path_code) -> std::string
 }
 
 
+///**
+// * @brief verify if two map a and b are exactly equal, inspired from http://goo.gl/9W8Ws7
+// */
+//auto two_maps_are_identical (const addrint_value_map_t& map_a,
+//                             const addrint_value_map_t& map_b) -> bool
+//{
+//  return ((map_a.size() == map_b.size()) &&
+//          std::equal(map_a.begin(), map_a.end(), map_b.begin()));
+//}
+
+
 /**
  * @brief is_input_dep_cfi
  */
