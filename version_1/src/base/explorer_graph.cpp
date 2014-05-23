@@ -32,13 +32,12 @@ typedef boost::graph_traits<exp_tree_t>::edge_iterator        exp_tree_edge_iter
 
 typedef std::pair<exp_tree_edge_t, exp_tree_vertex_t>         exp_tree_with_root_t;
 
-
 /*================================================================================================*/
 
 static exp_graph_t            internal_exp_graph;
 static exp_graph_t            internal_exp_graph_simple;
-static ptr_explorer_graph_t single_graph_instance;
-static addrint_value_map_t  default_addrs_values;
+static ptr_explorer_graph_t   single_graph_instance;
+static addrint_value_map_t    default_addrs_values;
 
 static exp_tree_t             internal_exp_tree;
 static exp_tree_t             internal_exp_cfi_tree;
