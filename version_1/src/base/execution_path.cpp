@@ -328,7 +328,7 @@ static auto stabilize (const conditions_t& raw_cond) -> conditions_t
           intersection_exists = true;
 
           // then join their maps
-          auto joined_maps = join_maps(std::get<0>(*sub_cond_a_iter) , std::get<0>(*sub_cond_b_iter));
+          auto joined_maps = join_maps(std::get<0>(*sub_cond_a_iter), std::get<0>(*sub_cond_b_iter));
           // and join their cfi
           auto joined_cfis = join_cfis(std::get<1>(*sub_cond_a_iter), std::get<1>(*sub_cond_b_iter));
 
@@ -506,9 +506,9 @@ auto execution_path::lazy_condition (int n) -> conditions_t
 /**
  * @brief calculate conditions of all explored paths
  */
-auto calculate_exec_path_conditions(ptr_execution_paths_t& exec_paths) -> void
+auto calculate_exec_path_conditions(ptr_exec_paths_t& exec_paths) -> void
 {
-  std::for_each(exec_paths.begin(), exec_paths.end(), [](ptr_execution_paths_t::value_type path)
+  std::for_each(exec_paths.begin(), exec_paths.end(), [](ptr_exec_paths_t::value_type path)
   {
     path->calculate_condition();
   });
@@ -520,10 +520,10 @@ auto calculate_exec_path_conditions(ptr_execution_paths_t& exec_paths) -> void
 /**
  * @brief show_path_condition
  */
-auto show_path_condition(const ptr_execution_paths_t& exp_paths) -> void
+auto show_path_condition(const ptr_exec_paths_t& exec_paths) -> void
 {
   tfm::format(std::cout, "path conditions\n");
-  auto show_cond = [&](ptr_execution_paths_t::const_reference exp_path, int i) -> void
+  auto show_cond = [&](ptr_exec_paths_t::const_reference exp_path, int i) -> void
   {
     tfm::format(std::cout, "| ");
     std::for_each(exp_path->condition.at(i).first.begin()->begin(),
@@ -535,8 +535,7 @@ auto show_path_condition(const ptr_execution_paths_t& exp_paths) -> void
     return;
   };
 
-  std::for_each(exp_paths.begin(), exp_paths.end(),
-                [&](ptr_execution_paths_t::const_reference exp_path)
+  std::for_each(exec_paths.begin(), exec_paths.end(), [&](ptr_exec_paths_t::const_reference exp_path)
   {
     auto i = 0;
     for (; i < exp_path->condition_order; ++i) show_cond(exp_path, i);
@@ -547,7 +546,7 @@ auto show_path_condition(const ptr_execution_paths_t& exp_paths) -> void
 }
 
 
-auto show_path_condition(const ptr_execution_path_t& exp_path) -> void
+auto show_path_condition(const ptr_exec_path_t& exp_path) -> void
 {
 //  tfm::format(std::cout, "| ");
 //  std::for_each(exp_path->condition.at(i).first.begin()->begin(),

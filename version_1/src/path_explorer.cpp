@@ -29,8 +29,8 @@ UINT32                  current_exec_order;
 path_code_t             current_path_code;
 ptr_explorer_graph_t    explored_fsa;
 #endif
-ptr_execution_path_t    current_exec_path;
-ptr_execution_paths_t   explored_exec_paths;
+ptr_exec_path_t    current_exec_path;
+ptr_exec_paths_t   explored_exec_paths;
 
 ADDRINT                 received_msg_addr;
 UINT32                  received_msg_size;

@@ -34,7 +34,7 @@ public:
   auto save_to_file     (std::string filename)                      -> void;
 
 public:
-  explorer_graph(const private_construct_key& priv_key) {}
+  explorer_graph        (const private_construct_key& priv_key) {};
 };
 
 
