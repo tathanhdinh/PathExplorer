@@ -44,16 +44,20 @@ auto execution_dfa::add_exec_path (ptr_exec_path_t exec_path) -> void
       const addrint_value_maps_t& transition_cond) -> dfa_vertex_desc
   {
     if (current_state == boost::graph_traits<dfa_graph_t>::null_vertex())
-    {
       return boost::graph_traits<dfa_graph_t>::null_vertex();
-    }
     else
     {
       dfa_edge_iter trans_iter, last_trans_iter;
-      std::tie(trans_iter, last_trans_iter) = boost::out_edges(current_state, internal_dfa);
-      auto found_trans_iter =
-          std::find_if(trans_iter, last_trans_iter,
-                       std::bind(two_maps_are_identical, transition_cond, std::placeholders::_1));
+//      std::tie(trans_iter, last_trans_iter) = boost::out_edges(current_state, internal_dfa);
+//      auto found_trans_iter =
+//          std::find_if(trans_iter, last_trans_iter,
+//                       std::bind(two_maps_are_identical, transition_cond, std::placeholders::_1));
+//      return found_trans_iter == last_trans_iter ? boost::graph_traits<dfa_graph_t>::null_vertex() : boost::target(*found_trans_iter, internal_dfa);
+
+//      if (found_trans_iter == last_trans_iter)
+//        return boost::graph_traits<dfa_graph_t>::null_vertex();
+//      else
+//        return boost::target(*found_trans_iter, internal_dfa);
     }
   };
 
