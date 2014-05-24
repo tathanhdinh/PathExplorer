@@ -17,15 +17,15 @@ typedef std::function<conditions_t ()> lazy_func_cond_t;
 //}
 
 
-/**
- * @brief two_vmaps_are_identical
- */
-static auto two_vmaps_are_identical (const addrint_value_maps_t& maps_a,
-                                     const addrint_value_maps_t& maps_b) -> bool
-{
-  return ((maps_a.size() == maps_b.size()) &&
-          std::equal(maps_a.begin(), maps_a.end(), maps_b.begin(), two_maps_are_identical));
-}
+///**
+// * @brief two_vmaps_are_identical
+// */
+//static auto two_vmaps_are_identical (const addrint_value_maps_t& maps_a,
+//                                     const addrint_value_maps_t& maps_b) -> bool
+//{
+//  return ((maps_a.size() == maps_b.size()) &&
+//          std::equal(maps_a.begin(), maps_a.end(), maps_b.begin(), two_maps_are_identical));
+//}
 
 
 /**

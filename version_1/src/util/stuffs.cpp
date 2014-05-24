@@ -44,6 +44,32 @@ auto two_maps_are_identical (const addrint_value_map_t& map_a,
 
 
 /**
+ * @brief two_vmaps_are_identical
+ */
+auto two_vmaps_are_identical (const addrint_value_maps_t& maps_a,
+                              const addrint_value_maps_t& maps_b) -> bool
+{
+  return ((maps_a.size() == maps_b.size()) &&
+          std::equal(maps_a.begin(), maps_a.end(), maps_b.begin(), two_maps_are_identical));
+}
+
+
+/**
+ * @brief two_vmaps_are_isomorphic
+ */
+auto two_vmaps_are_isomorphic (const addrint_value_maps_t& maps_a,
+                               const addrint_value_maps_t& maps_b) -> bool
+{
+  auto predicate = [&maps_b](addrint_value_maps_t::const_reference addr_val) -> bool
+  {
+    return (std::find(maps_b.begin(), maps_b.end(), addr_val) != maps_b.end());
+  };
+
+  return ((maps_a.size() == maps_b.size()) && std::all_of(maps_a.begin(), maps_a.end(), predicate));
+}
+
+
+/**
  * @brief is_input_dep_cfi
  */
 auto is_input_dep_cfi (ptr_instruction_t tested_ins) -> bool

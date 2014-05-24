@@ -40,31 +40,51 @@ auto execution_dfa::instance() -> ptr_exec_dfa_t
 
 auto execution_dfa::add_exec_path (ptr_exec_path_t exec_path) -> void
 {
-  auto next_state = [](dfa_vertex_desc current_state,
+  auto get_next_state = [](dfa_vertex_desc current_state,
       const addrint_value_maps_t& transition_cond) -> dfa_vertex_desc
   {
     if (current_state == boost::graph_traits<dfa_graph_t>::null_vertex())
       return boost::graph_traits<dfa_graph_t>::null_vertex();
     else
     {
-      dfa_edge_iter trans_iter, last_trans_iter;
-//      std::tie(trans_iter, last_trans_iter) = boost::out_edges(current_state, internal_dfa);
-//      auto found_trans_iter =
-//          std::find_if(trans_iter, last_trans_iter,
-//                       std::bind(two_maps_are_identical, transition_cond, std::placeholders::_1));
-//      return found_trans_iter == last_trans_iter ? boost::graph_traits<dfa_graph_t>::null_vertex() : boost::target(*found_trans_iter, internal_dfa);
+      boost::graph_traits<dfa_graph_t>::out_edge_iterator trans_iter, last_trans_iter;
+      std::tie(trans_iter, last_trans_iter) = boost::out_edges(current_state, internal_dfa);
 
-//      if (found_trans_iter == last_trans_iter)
-//        return boost::graph_traits<dfa_graph_t>::null_vertex();
-//      else
-//        return boost::target(*found_trans_iter, internal_dfa);
+      auto predicate = [&transition_cond](dfa_edge_desc edge) -> bool
+      {
+        return two_vmaps_are_isomorphic(transition_cond, internal_dfa[edge]);
+      };
+
+      auto found_trans_iter = std::find_if(trans_iter, last_trans_iter, predicate);
+      return (found_trans_iter == last_trans_iter) ?
+            boost::graph_traits<dfa_graph_t>::null_vertex() :
+            boost::target(*found_trans_iter, internal_dfa);
     }
   };
 
+  auto prev_state = initial_state;
+  auto mismatch = (prev_state == boost::graph_traits<dfa_graph_t>::null_vertex());
   std::for_each(exec_path->condition.begin(), exec_path->condition.end(),
-                [](decltype(exec_path->condition)::const_reference sub_cond)
+                [&prev_state, &mismatch](decltype(exec_path->condition)::const_reference sub_cond)
   {
+    auto current_state = mismatch ?
+          boost::add_vertex(ptr_cond_direct_inss_t(), internal_dfa) :
+          get_next_state(prev_state, sub_cond);
 
+    mismatch = (current_state == boost::graph_traits<dfa_graph_t>::null_vertex());
+    if (mismatch)
+    {
+      if (prev_state != boost::graph_traits<dfa_graph_t>::null_vertex())
+      {
+        internal_dfa[prev_state] = std::get<1>(sub_cond);
+        boost::add_edge(prev_state, current_state, std::get<0>(sub_cond), internal_dfa);
+      }
+    }
+
+    if (initial_state == boost::graph_traits<dfa_graph_t>::null_vertex())
+      initial_state = current_state;
+
+    prev_state = current_state;
   });
 
   return;
