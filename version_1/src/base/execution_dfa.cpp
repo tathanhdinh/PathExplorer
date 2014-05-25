@@ -71,7 +71,7 @@ auto execution_dfa::add_exec_path (ptr_exec_path_t exec_path) -> void
   std::for_each(exec_path->condition.begin(), exec_path->condition.end(),
                 [&](decltype(exec_path->condition)::const_reference sub_cond)
   {
-    // trick: if mismatch is true then it will be never re-assigned to false
+    // trick: once mismatch is assigned to true then it will be never re-assigned to false
     auto current_state = mismatch ?
           boost::add_vertex(ptr_cond_direct_inss_t(), internal_dfa) :
           get_next_state(prev_state, std::get<0>(sub_cond));
@@ -85,6 +85,76 @@ auto execution_dfa::add_exec_path (ptr_exec_path_t exec_path) -> void
 
     prev_state = current_state;
   });
+
+  return;
+}
+
+
+/**
+ * @brief write_dfa_transition
+ */
+static auto write_dfa_transition(std::ofstream& label, dfa_edge_desc trans) -> void
+{
+//  auto simple_label = [](addrint_value_maps_t trans_cond) -> std::string
+//  {
+//    std::string result;
+//    if (trans_cond.size() <= 2)
+//    {
+//      result += "{ ";
+//      std::for_each(trans_cond.begin(), trans_cond.end(),
+//                    [&result](decltype(trans_cond)::const_reference cond_elem)
+//      {
+//        std::for_each(cond_elem.begin(), cond_elem.end(),
+//                      [&result, &cond_elem](addrint_value_map_t::const_reference addr_val)
+//        {
+//          result += static_cast<char>(std::get<1>(addr_val)); result += ' ';
+//        });
+//      });
+//      result += '}';
+//    }
+//    else
+//    {
+//      result += "not { ";
+
+//    }
+//    return result;
+//  };
+
+  addrint_value_maps_t trans_cond = internal_dfa[trans];
+  if (trans_cond.size() <= 2)
+  {
+    tfm::format(label, "{ ");
+    std::for_each(trans_cond.begin(), trans_cond.end(),
+                  [&label](decltype(trans_cond)::const_reference trans_elem)
+    {
+      std::for_each(trans_elem.begin(), trans_elem.end(),
+                    [&](addrint_value_map_t::const_reference addr_val)
+      {
+        tfm::format(label, "%d ", std::get<1>(addr_val));
+      });
+    });
+    tfm::format(label, "%s", "}");
+  }
+  else
+  {
+    tfm::format(label, "not {");
+    std::for_each(trans_cond.begin(), trans_cond.end(),
+                  [&label](decltype(trans_cond)::const_reference trans_elem)
+    {
+      for (auto val = 0; val <= std::numeric_limits<UINT8>::max(); ++val)
+      {
+        if (std::find_if_not(trans_elem.begin(), trans_elem.end(),
+                             [&val](addrint_value_map_t::const_reference addr_val)
+        {
+          return (std::get<1>(addr_val) == val);
+        }) == trans_elem.end())
+        {
+          tfm::format(label, "%d ", val);
+        }
+      }
+    });
+    tfm::format(label, "}");
+  }
 
   return;
 }
