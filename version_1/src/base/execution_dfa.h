@@ -17,7 +17,8 @@ public:
 
   static auto instance  ()                            -> ptr_exec_dfa_t;
 
-  auto add_exec_path    (ptr_exec_path_t exec_path)   -> void;
+//  auto add_exec_path    (ptr_exec_path_t exec_path)   -> void;
+  auto add_exec_paths   (ptr_exec_paths_t exec_paths) -> void;
   auto optimization     ()                            -> void;
   auto save_to_file     (const std::string& filename) -> void;
 };

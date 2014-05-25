@@ -134,7 +134,7 @@ auto start_exploring (VOID *data) -> VOID
   instrumentation::initialize();
 
   start_time = std::time(0); std::srand(static_cast<unsigned int>(start_time));
-  ptr_rand_engine = std::make_shared<std::default_random_engine>(std::random_device());
+  ptr_rand_engine = std::make_shared<std::default_random_engine>(std::random_device()());
 
   return;
 }
@@ -177,18 +177,14 @@ auto stop_exploring (INT32 code, VOID *data) -> VOID
               detected_input_dep_cfis.size());
   log_file.close();
 
+  calculate_exec_path_conditions(explored_exec_paths);
+
 #if !defined(NDEBUG)
 //  show_cfi_logged_inputs();
   tfm::format(std::cerr, "constructing DFA\n");
-  std::for_each(explored_exec_paths.begin(), explored_exec_paths.end(),
-                [](decltype(explored_exec_paths)::const_reference exec_path)
-  {
-    abstracted_dfa->add_exec_path(exec_path);
-  });
-  abstracted_dfa->save_to_file("dfa_" + process_id_str + ".dot");
+  abstracted_dfa->add_exec_paths(explored_exec_paths);
+  abstracted_dfa->save_to_file(process_id_str + ".dot");
 #endif
-
-  calculate_exec_path_conditions(explored_exec_paths);
 
 #if !defined(NDEBUG)
 //  show_path_condition(explored_exec_paths);

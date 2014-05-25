@@ -18,7 +18,7 @@
 #endif
 #endif
 
-#if _MSC_VER == 1600
+#if (_MSC_VER == 1600) || (_MSC_VER == 1700)
 #include <utility>
 #define decltype(...) \
   std::identity<decltype(__VA_ARGS__)>::type

@@ -42,7 +42,7 @@ auto execution_dfa::instance() -> ptr_exec_dfa_t
 /**
  * @brief execution_dfa::add_exec_path
  */
-auto execution_dfa::add_exec_path (ptr_exec_path_t exec_path) -> void
+static auto add_exec_path (ptr_exec_path_t exec_path) -> void
 {
   auto get_next_state = [](dfa_vertex_desc current_state,
       const addrint_value_maps_t& transition_cond) -> dfa_vertex_desc
@@ -66,6 +66,7 @@ auto execution_dfa::add_exec_path (ptr_exec_path_t exec_path) -> void
     }
   };
 
+
   // add the execution path into the DFA
   auto prev_state = initial_state; auto mismatch = false;
   std::for_each(exec_path->condition.begin(), exec_path->condition.end(),
@@ -77,15 +78,33 @@ auto execution_dfa::add_exec_path (ptr_exec_path_t exec_path) -> void
           get_next_state(prev_state, std::get<0>(sub_cond));
     mismatch = (current_state == boost::graph_traits<dfa_graph_t>::null_vertex());
 
+    tfm::format(std::cerr, "mistmatch: %b\n", mismatch);
+
     if (mismatch)
     {
       internal_dfa[prev_state] = std::get<1>(sub_cond);
+      tfm::format(std::cerr, "before adding transition\n");
       boost::add_edge(prev_state, current_state, std::get<0>(sub_cond), internal_dfa);
+      tfm::format(std::cerr, "after adding transition\n");
     }
 
     prev_state = current_state;
   });
 
+  return;
+}
+
+
+/**
+ * @brief execution_dfa::add_exec_paths
+ */
+auto execution_dfa::add_exec_paths (ptr_exec_paths_t exec_paths) -> void
+{
+  std::for_each(exec_paths.begin(),exec_paths.end(),
+                [](decltype(explored_exec_paths)::const_reference exec_path)
+  {
+    add_exec_path(exec_path);
+  });
   return;
 }
 
@@ -102,64 +121,114 @@ auto execution_dfa::optimization() -> void
 /**
  * @brief write_dfa_transition
  */
-static auto write_dfa_transition(std::ostream& label, dfa_edge_desc trans) -> void
-{
-  auto trans_cond = internal_dfa[trans];
-  if (trans_cond.size() <= 2)
-  {
-    tfm::format(label, "{ ");
-    std::for_each(trans_cond.begin(), trans_cond.end(),
-                  [&label](decltype(trans_cond)::const_reference trans_elem)
-    {
-      std::for_each(trans_elem.begin(), trans_elem.end(),
-                    [&](addrint_value_map_t::const_reference addr_val)
-      {
-        tfm::format(label, "%d ", std::get<1>(addr_val));
-      });
-    });
-    tfm::format(label, "%s", "}");
-  }
-  else
-  {
-    tfm::format(label, "not {");
-    std::for_each(trans_cond.begin(), trans_cond.end(),
-                  [&label](decltype(trans_cond)::const_reference trans_elem)
-    {
-      for (auto val = 0; val <= std::numeric_limits<UINT8>::max(); ++val)
-      {
-        if (std::find_if_not(trans_elem.begin(), trans_elem.end(),
-                             [&val](addrint_value_map_t::const_reference addr_val)
-        {
-          return (std::get<1>(addr_val) == val);
-        }) == trans_elem.end())
-        {
-          tfm::format(label, "%d ", val);
-        }
-      }
-    });
-    tfm::format(label, "}");
-  }
+//static auto write_dfa_transition(std::ostream& label, dfa_edge_desc trans) -> void
+//{
+//  auto trans_cond = internal_dfa[trans];
+//  if (trans_cond.size() <= 2)
+//  {
+//    tfm::format(label, "{ ");
+//    std::for_each(trans_cond.begin(), trans_cond.end(),
+//                  [&label](decltype(trans_cond)::const_reference trans_elem)
+//    {
+//      std::for_each(trans_elem.begin(), trans_elem.end(),
+//                    [&](addrint_value_map_t::const_reference addr_val)
+//      {
+//        tfm::format(label, "%d ", std::get<1>(addr_val));
+//      });
+//    });
+//    tfm::format(label, "%s", "}");
+//  }
+//  else
+//  {
+//    tfm::format(label, "not {");
+//    std::for_each(trans_cond.begin(), trans_cond.end(),
+//                  [&label](decltype(trans_cond)::const_reference trans_elem)
+//    {
+//      for (auto val = 0; val <= std::numeric_limits<UINT8>::max(); ++val)
+//      {
+//        if (std::find_if_not(trans_elem.begin(), trans_elem.end(),
+//                             [&val](addrint_value_map_t::const_reference addr_val)
+//        {
+//          return (std::get<1>(addr_val) == val);
+//        }) == trans_elem.end())
+//        {
+//          tfm::format(label, "%d ", val);
+//        }
+//      }
+//    });
+//    tfm::format(label, "}");
+//  }
 
-  return;
-}
+//  return;
+//}
 
 
 /**
  * @brief write_dfa_state
  */
-static auto write_dfa_state(std::ostream& label, dfa_vertex_desc state) -> void
-{
-  auto state_val = internal_dfa[state];
-  tfm::format(label, "%s:%s", addrint_to_hexstring(state_val.front()->address),
-              state_val.front()->disassembled_name);
-  return;
-}
+//static auto write_dfa_state(std::ostream& label, dfa_vertex_desc state) -> void
+//{
+//  auto state_val = internal_dfa[state];
+//  tfm::format(label, "%s:%s", addrint_to_hexstring(state_val.front()->address),
+//              state_val.front()->disassembled_name);
+//  return;
+//}
 
 /**
  * @brief execution_dfa::save_to_file
  */
 auto execution_dfa::save_to_file(const std::string& filename) -> void
 {
+  auto write_dfa_transition = [](std::ostream& label, dfa_edge_desc trans) -> void
+  {
+    auto trans_cond = internal_dfa[trans];
+    if (trans_cond.size() <= 2)
+    {
+      tfm::format(label, "{ ");
+      std::for_each(trans_cond.begin(), trans_cond.end(),
+                    [&label](decltype(trans_cond)::const_reference trans_elem)
+      {
+        std::for_each(trans_elem.begin(), trans_elem.end(),
+                      [&](addrint_value_map_t::const_reference addr_val)
+        {
+          tfm::format(label, "%d ", std::get<1>(addr_val));
+        });
+      });
+      tfm::format(label, "%s", "}");
+    }
+    else
+    {
+      tfm::format(label, "not {");
+      std::for_each(trans_cond.begin(), trans_cond.end(),
+                    [&label](decltype(trans_cond)::const_reference trans_elem)
+      {
+        for (auto val = 0; val <= std::numeric_limits<UINT8>::max(); ++val)
+        {
+          if (std::find_if_not(trans_elem.begin(), trans_elem.end(),
+                               [&val](addrint_value_map_t::const_reference addr_val)
+          {
+            return (std::get<1>(addr_val) == val);
+          }) == trans_elem.end())
+          {
+            tfm::format(label, "%d ", val);
+          }
+        }
+      });
+      tfm::format(label, "}");
+    }
+
+    return;
+  };
+
+  auto write_dfa_state = [](std::ostream& label, dfa_vertex_desc state) -> void
+  {
+    auto state_val = internal_dfa[state];
+    tfm::format(label, "%s:%s", addrint_to_hexstring(state_val.front()->address),
+                state_val.front()->disassembled_name);
+    return;
+  };
+
+
   std::ofstream dfa_file(("dfa_" + filename).c_str(), std::ofstream::out | std::ofstream::trunc);
   boost::write_graphviz(dfa_file, internal_dfa,
                         std::bind(write_dfa_state, std::placeholders::_1, std::placeholders::_2),
