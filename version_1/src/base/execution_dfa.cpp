@@ -93,34 +93,9 @@ auto execution_dfa::add_exec_path (ptr_exec_path_t exec_path) -> void
 /**
  * @brief write_dfa_transition
  */
-static auto write_dfa_transition(std::ofstream& label, dfa_edge_desc trans) -> void
+static auto write_dfa_transition(std::ostream& label, dfa_edge_desc trans) -> void
 {
-//  auto simple_label = [](addrint_value_maps_t trans_cond) -> std::string
-//  {
-//    std::string result;
-//    if (trans_cond.size() <= 2)
-//    {
-//      result += "{ ";
-//      std::for_each(trans_cond.begin(), trans_cond.end(),
-//                    [&result](decltype(trans_cond)::const_reference cond_elem)
-//      {
-//        std::for_each(cond_elem.begin(), cond_elem.end(),
-//                      [&result, &cond_elem](addrint_value_map_t::const_reference addr_val)
-//        {
-//          result += static_cast<char>(std::get<1>(addr_val)); result += ' ';
-//        });
-//      });
-//      result += '}';
-//    }
-//    else
-//    {
-//      result += "not { ";
-
-//    }
-//    return result;
-//  };
-
-  addrint_value_maps_t trans_cond = internal_dfa[trans];
+  auto trans_cond = internal_dfa[trans];
   if (trans_cond.size() <= 2)
   {
     tfm::format(label, "{ ");
@@ -161,10 +136,25 @@ static auto write_dfa_transition(std::ofstream& label, dfa_edge_desc trans) -> v
 
 
 /**
+ * @brief write_dfa_state
+ */
+static auto write_dfa_state(std::ostream& label, dfa_vertex_desc state) -> void
+{
+  auto state_val = internal_dfa[state];
+  tfm::format(label, "%s:%s", addrint_to_hexstring(state_val.front()->address),
+              state_val.front()->disassembled_name);
+  return;
+}
+
+/**
  * @brief execution_dfa::save_to_file
  */
 auto execution_dfa::save_to_file(const std::string& filename) -> void
 {
-
+  std::ofstream dfa_file(("dfa_" + filename).c_str(), std::ofstream::out | std::ofstream::trunc);
+  boost::write_graphviz(dfa_file, internal_dfa,
+                        std::bind(write_dfa_state, std::placeholders::_1, std::placeholders::_2),
+                        std::bind(write_dfa_transition, std::placeholders::_1, std::placeholders::_2));
+  dfa_file.close();
   return;
 }
