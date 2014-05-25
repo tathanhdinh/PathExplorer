@@ -25,6 +25,7 @@ static ptr_exec_dfa_t   single_dfa_instance;
 
 /*================================================================================================*/
 
+
 auto execution_dfa::instance() -> ptr_exec_dfa_t
 {
   if (!single_dfa_instance)
@@ -67,15 +68,15 @@ auto execution_dfa::add_exec_path (ptr_exec_path_t exec_path) -> void
 
   // add the execution path into the DFA
   auto prev_state = initial_state; auto mismatch = false;
-//  auto mismatch = (prev_state == boost::graph_traits<dfa_graph_t>::null_vertex());
   std::for_each(exec_path->condition.begin(), exec_path->condition.end(),
                 [&](decltype(exec_path->condition)::const_reference sub_cond)
   {
+    // trick: if mismatch is true then it will be never re-assigned to false
     auto current_state = mismatch ?
           boost::add_vertex(ptr_cond_direct_inss_t(), internal_dfa) :
           get_next_state(prev_state, std::get<0>(sub_cond));
-
     mismatch = (current_state == boost::graph_traits<dfa_graph_t>::null_vertex());
+
     if (mismatch)
     {
       internal_dfa[prev_state] = std::get<1>(sub_cond);
@@ -88,3 +89,12 @@ auto execution_dfa::add_exec_path (ptr_exec_path_t exec_path) -> void
   return;
 }
 
+
+/**
+ * @brief execution_dfa::save_to_file
+ */
+auto execution_dfa::save_to_file(const std::string& filename) -> void
+{
+
+  return;
+}

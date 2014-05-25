@@ -15,11 +15,11 @@ private:
 public:
   execution_dfa         (const construction_key& init_key) {};
 
-  static auto instance  ()                          -> ptr_exec_dfa_t;
+  static auto instance  ()                            -> ptr_exec_dfa_t;
 
-  auto add_exec_path    (ptr_exec_path_t exec_path) -> void;
-  auto optimization     ()                          -> void;
-  auto save_to_file     ()                          -> void;
+  auto add_exec_path    (ptr_exec_path_t exec_path)   -> void;
+  auto optimization     ()                            -> void;
+  auto save_to_file     (const std::string& filename) -> void;
 };
 
 #endif // EXECUTION_DFA_H
