@@ -6,27 +6,6 @@
 
 typedef std::function<conditions_t ()> lazy_func_cond_t;
 
-///**
-// * @brief verify if two map a and b are exactly equal, inspired from http://goo.gl/9W8Ws7
-// */
-//static auto two_maps_are_identical (const addrint_value_map_t& map_a,
-//                                    const addrint_value_map_t& map_b) -> bool
-//{
-//  return ((map_a.size() == map_b.size()) &&
-//          std::equal(map_a.begin(), map_a.end(), map_b.begin()));
-//}
-
-
-///**
-// * @brief two_vmaps_are_identical
-// */
-//static auto two_vmaps_are_identical (const addrint_value_maps_t& maps_a,
-//                                     const addrint_value_maps_t& maps_b) -> bool
-//{
-//  return ((maps_a.size() == maps_b.size()) &&
-//          std::equal(maps_a.begin(), maps_a.end(), maps_b.begin(), two_maps_are_identical));
-//}
-
 
 /**
  * @brief two_sub_conds_are_identical
@@ -256,7 +235,7 @@ static auto stabilize (const conditions_t& raw_cond) -> conditions_t
       });
     });
 
-    tfm::format(std::cerr, "joined map size %d\n", maps_ab.size());
+//    tfm::format(std::cerr, "joined map size %d\n", maps_ab.size());
 
     return maps_ab;
   };
@@ -389,8 +368,8 @@ static auto calculate_from (const order_ins_map_t& current_path,
   conditions_t raw_condition;
   std::size_t current_code_order = 0;
 
-  tfm::format(std::cerr, "----\ncurrent path length %d with code size %d: %s\n", current_path.size(),
-              current_path_code.size(), path_code_to_string(current_path_code));
+//  tfm::format(std::cerr, "----\ncurrent path length %d with code size %d: %s\n", current_path.size(),
+//              current_path_code.size(), path_code_to_string(current_path_code));
 
   std::for_each(current_path.begin(),
                 current_path.end(), [&](order_ins_map_t::const_reference order_ins)
@@ -427,21 +406,21 @@ static auto calculate_from (const order_ins_map_t& current_path,
         }
         else
         {
-          tfm::format(std::cerr, "cfi at %s is not resolved\n",
-                      addrint_to_hexstring(current_cfi->address));
+//          tfm::format(std::cerr, "cfi at %s is not resolved\n",
+//                      addrint_to_hexstring(current_cfi->address));
         }
         current_code_order++;
       }
     }
   });
 
-  tfm::format(std::cerr, "stabilizing raw condition with size %d\n", raw_condition.size());
-  std::for_each(
-        raw_condition.begin(), raw_condition.end(), [](conditions_t::const_reference sub_cond)
-  {
-    tfm::format(std::cerr, "%d ", std::get<0>(sub_cond).size());
-  });
-  tfm::format(std::cerr, "\n");
+//  tfm::format(std::cerr, "stabilizing raw condition with size %d\n", raw_condition.size());
+//  std::for_each(
+//        raw_condition.begin(), raw_condition.end(), [](conditions_t::const_reference sub_cond)
+//  {
+//    tfm::format(std::cerr, "%d ", std::get<0>(sub_cond).size());
+//  });
+//  tfm::format(std::cerr, "\n");
 
   return stabilize(raw_condition);
 }
@@ -467,17 +446,17 @@ auto execution_path::calculate_condition () -> void
   this->condition_order = order(this->condition);
 
 #if !defined(NDEBUG)
-  std::for_each(this->condition.begin(), this->condition.end(),
-                [](conditions_t::const_reference sub_cond)
-  {
-    tfm::format(std::cerr, "| ");
-    std::for_each(sub_cond.first.begin()->begin(), sub_cond.first.begin()->end(),
-                  [](addrint_value_map_t::const_reference addr_val)
-    {
-      tfm::format(std::cerr, "%s ", addrint_to_hexstring(addr_val.first));
-    });
-    tfm::format(std::cerr, "|\n");
-  });
+//  std::for_each(this->condition.begin(), this->condition.end(),
+//                [](conditions_t::const_reference sub_cond)
+//  {
+//    tfm::format(std::cerr, "| ");
+//    std::for_each(sub_cond.first.begin()->begin(), sub_cond.first.begin()->end(),
+//                  [](addrint_value_map_t::const_reference addr_val)
+//    {
+//      tfm::format(std::cerr, "%s ", addrint_to_hexstring(addr_val.first));
+//    });
+//    tfm::format(std::cerr, "|\n");
+//  });
 
   std::string output_filename = "path_" + path_code_to_string(this->code) +
       "_" + process_id_str + ".log";

@@ -68,7 +68,7 @@ static auto add_exec_path (ptr_exec_path_t exec_path) -> void
 
 
   // add the execution path into the DFA
-  tfm::format(std::cerr, "======\nadd a new execution path\n");
+//  tfm::format(std::cerr, "======\nadd a new execution path\n");
   auto prev_state = initial_state; auto mismatch = false;
   std::for_each(exec_path->condition.begin(), exec_path->condition.end(),
                 [&](decltype(exec_path->condition)::const_reference sub_cond)
@@ -195,7 +195,7 @@ auto execution_dfa::save_to_file(const std::string& filename) -> void
     auto trans_cond = internal_dfa[trans];
     if (trans_cond.size() <= 2)
     {
-      tfm::format(label, "{ ");
+      tfm::format(label, "[label=\"{ ");
       std::for_each(trans_cond.begin(), trans_cond.end(),
                     [&label](decltype(trans_cond)::const_reference trans_elem)
       {
@@ -205,12 +205,12 @@ auto execution_dfa::save_to_file(const std::string& filename) -> void
           tfm::format(label, "%d ", std::get<1>(addr_val));
         });
       });
-      tfm::format(label, "%s", "}");
+      tfm::format(label, "%s", "}\"]");
     }
     else
     {
 //      tfm::format(std::cerr, "condition size: %d\n", trans_cond.size());
-      tfm::format(label, "not {");
+      tfm::format(label, "[label=\"not {");
 
       auto value_exists = [&trans_cond](UINT8 value) -> bool
       {
@@ -227,7 +227,7 @@ auto execution_dfa::save_to_file(const std::string& filename) -> void
 
       for (auto val = 0; val <= std::numeric_limits<UINT8>::max(); ++val)
       {
-        if (value_exists(val)) tfm::format(label, "%d ", val);
+        if (!value_exists(val)) tfm::format(label, "%d ", val);
       }
 
 //      std::for_each(trans_cond.begin(), trans_cond.end(),
@@ -245,7 +245,7 @@ auto execution_dfa::save_to_file(const std::string& filename) -> void
 //          }
 //        }
 //      });
-      tfm::format(label, "}");
+      tfm::format(label, "}\"]");
     }
 
     return;
@@ -255,10 +255,10 @@ auto execution_dfa::save_to_file(const std::string& filename) -> void
   {
     auto state_val = internal_dfa[state];
     if (state_val.size() > 0)
-      tfm::format(label, "%s:%s", addrint_to_hexstring(state_val.front()->address),
+      tfm::format(label, "[label=\"<%s: %s>\"]", addrint_to_hexstring(state_val.front()->address),
                   state_val.front()->disassembled_name);
     else
-      tfm::format(label, "%c", 193);
+      tfm::format(label, "[label=\"unknown\"]");
     return;
   };
 
