@@ -81,7 +81,7 @@ static auto add_exec_path (ptr_exec_path_t exec_path) -> void
 //    mismatch = mismatch ?
 //          mismatch : (current_state == boost::graph_traits<dfa_graph_t>::null_vertex());
 
-    tfm::format(std::cerr, "mismatch: %b\n", mismatch);
+//    tfm::format(std::cerr, "mismatch: %b\n", mismatch);
 
     dfa_vertex_desc current_state;
     if (!mismatch)
@@ -93,10 +93,10 @@ static auto add_exec_path (ptr_exec_path_t exec_path) -> void
     if (mismatch)
     {
       internal_dfa[prev_state] = std::get<1>(sub_cond);
-      tfm::format(std::cerr, "before adding transition\n");
+//      tfm::format(std::cerr, "before adding transition\n");
       current_state = boost::add_vertex(ptr_cond_direct_inss_t(), internal_dfa);
       boost::add_edge(prev_state, current_state, std::get<0>(sub_cond), internal_dfa);
-      tfm::format(std::cerr, "after adding transition\n");
+//      tfm::format(std::cerr, "after adding transition\n");
     }
 
     prev_state = current_state;
@@ -209,22 +209,42 @@ auto execution_dfa::save_to_file(const std::string& filename) -> void
     }
     else
     {
+//      tfm::format(std::cerr, "condition size: %d\n", trans_cond.size());
       tfm::format(label, "not {");
-      std::for_each(trans_cond.begin(), trans_cond.end(),
-                    [&label](decltype(trans_cond)::const_reference trans_elem)
+
+      auto value_exists = [&trans_cond](UINT8 value) -> bool
       {
-        for (auto val = 0; val <= std::numeric_limits<UINT8>::max(); ++val)
+        return std::any_of(trans_cond.begin(), trans_cond.end(),
+                           [&value](addrint_value_maps_t::const_reference trans_elem)
         {
-          if (std::find_if(trans_elem.begin(), trans_elem.end(),
-                           [&val](addrint_value_map_t::const_reference addr_val)
+          return std::any_of(trans_elem.begin(), trans_elem.end(),
+                             [&](addrint_value_map_t::const_reference addr_val)
           {
-            return (std::get<1>(addr_val) == val);
-          }) == trans_elem.end())
-          {
-            tfm::format(label, "%d ", val);
-          }
-        }
-      });
+            return (std::get<1>(addr_val) == value);
+          });
+        });
+      };
+
+      for (auto val = 0; val <= std::numeric_limits<UINT8>::max(); ++val)
+      {
+        if (value_exists(val)) tfm::format(label, "%d ", val);
+      }
+
+//      std::for_each(trans_cond.begin(), trans_cond.end(),
+//                    [&label](decltype(trans_cond)::const_reference trans_elem)
+//      {
+//        for (auto val = 0; val <= std::numeric_limits<UINT8>::max(); ++val)
+//        {
+//          if (std::find_if(trans_elem.begin(), trans_elem.end(),
+//                           [&val](addrint_value_map_t::const_reference addr_val)
+//          {
+//            return (std::get<1>(addr_val) == val);
+//          }) == trans_elem.end())
+//          {
+//            tfm::format(label, "%d ", val);
+//          }
+//        }
+//      });
       tfm::format(label, "}");
     }
 
@@ -238,7 +258,7 @@ auto execution_dfa::save_to_file(const std::string& filename) -> void
       tfm::format(label, "%s:%s", addrint_to_hexstring(state_val.front()->address),
                   state_val.front()->disassembled_name);
     else
-      tfm::format(label, "%c,", 193);
+      tfm::format(label, "%c", 193);
     return;
   };
 
