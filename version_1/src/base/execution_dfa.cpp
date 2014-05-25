@@ -91,6 +91,15 @@ auto execution_dfa::add_exec_path (ptr_exec_path_t exec_path) -> void
 
 
 /**
+ * @brief execution_dfa::optimization
+ */
+auto execution_dfa::optimization() -> void
+{
+  return;
+}
+
+
+/**
  * @brief write_dfa_transition
  */
 static auto write_dfa_transition(std::ostream& label, dfa_edge_desc trans) -> void

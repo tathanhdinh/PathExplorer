@@ -25,12 +25,13 @@ ptr_cond_direct_inss_t  detected_input_dep_cfis;
 ptr_cond_direct_ins_t   exploring_cfi;
 
 UINT32                  current_exec_order;
-#if !defined(DISABLE_FSA)
 path_code_t             current_path_code;
 ptr_explorer_graph_t    explored_fsa;
-#endif
-ptr_exec_path_t    current_exec_path;
-ptr_exec_paths_t   explored_exec_paths;
+
+ptr_exec_dfa_t          abstracted_dfa;
+
+ptr_exec_path_t         current_exec_path;
+ptr_exec_paths_t        explored_exec_paths;
 
 ADDRINT                 received_msg_addr;
 UINT32                  received_msg_size;
@@ -102,9 +103,8 @@ auto start_exploring (VOID *data) -> VOID
   logged_syscall_index      = syscall_inexist;
 #endif
 
-#if !defined(DISABLE_FSA)
   explored_fsa              = explorer_graph::instance();
-#endif
+  abstracted_dfa            = execution_dfa::instance();
 
   exploring_cfi.reset();
   traced_thread_is_fixed    = false;
@@ -179,6 +179,13 @@ auto stop_exploring (INT32 code, VOID *data) -> VOID
 
 #if !defined(NDEBUG)
 //  show_cfi_logged_inputs();
+  tfm::format(std::cerr, "constructing DFA\n");
+  std::for_each(explored_exec_paths.begin(), explored_exec_paths.end(),
+                [](decltype(explored_exec_paths)::const_reference exec_path)
+  {
+    abstracted_dfa->add_exec_path(exec_path);
+  });
+  abstracted_dfa->save_to_file("dfa_" + process_id_str + ".dot");
 #endif
 
   calculate_exec_path_conditions(explored_exec_paths);

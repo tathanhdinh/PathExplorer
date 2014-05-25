@@ -12,6 +12,7 @@
 #include "base/execution_path.h"
 #include "util/tinyformat.h"
 #include "base/explorer_graph.h"
+#include "base/execution_dfa.h"
 
 typedef enum
 {
@@ -47,6 +48,8 @@ extern UINT32                   current_exec_order;
 
 extern path_code_t              current_path_code;
 extern ptr_explorer_graph_t     explored_fsa;
+
+extern ptr_exec_dfa_t           abstracted_dfa;
 
 extern ptr_exec_path_t          current_exec_path;
 extern ptr_exec_paths_t         explored_exec_paths;
