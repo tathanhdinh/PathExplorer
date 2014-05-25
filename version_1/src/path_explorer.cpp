@@ -183,6 +183,7 @@ auto stop_exploring (INT32 code, VOID *data) -> VOID
 //  show_cfi_logged_inputs();
   tfm::format(std::cerr, "constructing DFA\n");
   abstracted_dfa->add_exec_paths(explored_exec_paths);
+  tfm::format(std::cerr, "saving DFA to file\n");
   abstracted_dfa->save_to_file(process_id_str + ".dot");
 #endif
 

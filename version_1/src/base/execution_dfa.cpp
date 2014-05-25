@@ -68,22 +68,33 @@ static auto add_exec_path (ptr_exec_path_t exec_path) -> void
 
 
   // add the execution path into the DFA
+  tfm::format(std::cerr, "======\nadd a new execution path\n");
   auto prev_state = initial_state; auto mismatch = false;
   std::for_each(exec_path->condition.begin(), exec_path->condition.end(),
                 [&](decltype(exec_path->condition)::const_reference sub_cond)
   {
     // trick: once mismatch is assigned to true then it will be never re-assigned to false
-    auto current_state = mismatch ?
-          boost::add_vertex(ptr_cond_direct_inss_t(), internal_dfa) :
-          get_next_state(prev_state, std::get<0>(sub_cond));
-    mismatch = (current_state == boost::graph_traits<dfa_graph_t>::null_vertex());
+//    auto current_state = mismatch ?
+//          boost::add_vertex(ptr_cond_direct_inss_t(), internal_dfa) :
+//          get_next_state(prev_state, std::get<0>(sub_cond));
 
-    tfm::format(std::cerr, "mistmatch: %b\n", mismatch);
+//    mismatch = mismatch ?
+//          mismatch : (current_state == boost::graph_traits<dfa_graph_t>::null_vertex());
+
+    tfm::format(std::cerr, "mismatch: %b\n", mismatch);
+
+    dfa_vertex_desc current_state;
+    if (!mismatch)
+    {
+      current_state = get_next_state(prev_state, std::get<0>(sub_cond));
+      mismatch = (current_state == boost::graph_traits<dfa_graph_t>::null_vertex());
+    }
 
     if (mismatch)
     {
       internal_dfa[prev_state] = std::get<1>(sub_cond);
       tfm::format(std::cerr, "before adding transition\n");
+      current_state = boost::add_vertex(ptr_cond_direct_inss_t(), internal_dfa);
       boost::add_edge(prev_state, current_state, std::get<0>(sub_cond), internal_dfa);
       tfm::format(std::cerr, "after adding transition\n");
     }
@@ -204,8 +215,8 @@ auto execution_dfa::save_to_file(const std::string& filename) -> void
       {
         for (auto val = 0; val <= std::numeric_limits<UINT8>::max(); ++val)
         {
-          if (std::find_if_not(trans_elem.begin(), trans_elem.end(),
-                               [&val](addrint_value_map_t::const_reference addr_val)
+          if (std::find_if(trans_elem.begin(), trans_elem.end(),
+                           [&val](addrint_value_map_t::const_reference addr_val)
           {
             return (std::get<1>(addr_val) == val);
           }) == trans_elem.end())
@@ -223,11 +234,13 @@ auto execution_dfa::save_to_file(const std::string& filename) -> void
   auto write_dfa_state = [](std::ostream& label, dfa_vertex_desc state) -> void
   {
     auto state_val = internal_dfa[state];
-    tfm::format(label, "%s:%s", addrint_to_hexstring(state_val.front()->address),
-                state_val.front()->disassembled_name);
+    if (state_val.size() > 0)
+      tfm::format(label, "%s:%s", addrint_to_hexstring(state_val.front()->address),
+                  state_val.front()->disassembled_name);
+    else
+      tfm::format(label, "%c,", 193);
     return;
   };
-
 
   std::ofstream dfa_file(("dfa_" + filename).c_str(), std::ofstream::out | std::ofstream::trunc);
   boost::write_graphviz(dfa_file, internal_dfa,
