@@ -208,7 +208,7 @@ static auto stabilize (const conditions_t& raw_cond) -> conditions_t
     addrints_t addrs_adb = difference(addrs_a, addrs_b);
     addrints_t addrs_bda = difference(addrs_b, addrs_a);
 
-    tfm::format(std::cerr, "%d %d %d\n", addrs_aib.size(), addrs_adb.size(), addrs_bda.size());
+//    tfm::format(std::cerr, "%d %d %d\n", addrs_aib.size(), addrs_adb.size(), addrs_bda.size());
 
     addrint_value_maps_t maps_adb = maps_projection(maps_a, addrs_adb);
     addrint_value_maps_t maps_bda = maps_projection(maps_b, addrs_bda);

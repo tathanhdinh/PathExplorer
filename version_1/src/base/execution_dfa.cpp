@@ -210,7 +210,7 @@ auto execution_dfa::save_to_file(const std::string& filename) -> void
     else
     {
 //      tfm::format(std::cerr, "condition size: %d\n", trans_cond.size());
-      tfm::format(label, "[label=\"not {");
+      tfm::format(label, "[label=\"not { ");
 
       auto value_exists = [&trans_cond](UINT8 value) -> bool
       {
