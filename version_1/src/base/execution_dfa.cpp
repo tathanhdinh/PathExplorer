@@ -225,8 +225,24 @@ auto execution_dfa::optimization() -> void
     else return boost::graph_traits<dfa_graph_t>::null_vertex();
   };
 
-  auto find_equivalent_states = [](dfa_vertex_descs init_descs) -> dfa_vertex_descs
+  auto find_equivalent_states = [](const dfa_vertex_descs& init_states) -> dfa_vertex_descs
   {
+    auto result_states = init_states;
+    if (init_states.size() == 0)
+    {
+      dfa_vertex_iter first_state_iter, last_state_iter;
+      std::tie(first_state_iter, last_state_iter) = boost::vertices(internal_dfa);
+      std::for_each(first_state_iter, last_state_iter, [&result_states](dfa_vertex_desc state)
+      {
+        if (internal_dfa[state].size() == 0) result_states.push_back(state);
+      });
+    }
+    else
+    {
+      //
+    }
+
+    return result_states;
   };
 
 
