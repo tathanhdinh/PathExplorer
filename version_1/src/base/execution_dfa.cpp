@@ -3,6 +3,7 @@
 
 #include <numeric>
 #include <boost/graph/graphviz.hpp>
+#include <boost/graph/copy.hpp>
 
 typedef ptr_cond_direct_inss_t                                dfa_vertex;
 typedef addrint_value_maps_t                                  dfa_edge;
@@ -17,12 +18,10 @@ typedef boost::graph_traits<dfa_graph_t>::edge_iterator       dfa_edge_iter;
 
 typedef std::shared_ptr<dfa_graph_t>                          ptr_dfa_graph_t;
 
-
 /*================================================================================================*/
 
 static dfa_graph_t      internal_dfa;
 static dfa_vertex_desc  initial_state;
-
 
 static ptr_exec_dfa_t   single_dfa_instance;
 
@@ -149,11 +148,54 @@ auto execution_dfa::optimization() -> void
       return merge_two_cfis(cfis_a, internal_dfa[state_b]);
     };
 
-    ptr_cond_direct_inss_t new_state_prop;
-    new_state_prop = std::accumulate(equiv_states.begin(),
-                                     equiv_states.end(), new_state_prop, operation);
+    auto copy_transitions = [](dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> void
+    {
+      // copy in transitions
+      boost::graph_traits<dfa_graph_t>::in_edge_iterator in_edge_iter_a, in_edge_last_iter_a;
+      std::tie(in_edge_iter_a, in_edge_last_iter_a) = boost::in_edges(state_a, internal_dfa);
+      std::for_each(in_edge_iter_a, in_edge_last_iter_a, [&state_b](dfa_edge_desc trans)
+      {
+        boost::add_edge(boost::source(trans, internal_dfa),
+                        state_b, internal_dfa[trans], internal_dfa);
+      });
+
+      // copy out transitions
+      boost::graph_traits<dfa_graph_t>::out_edge_iterator out_edge_iter_a, out_edge_last_iter_a;
+      std::tie(out_edge_iter_a, out_edge_last_iter_a) = boost::out_edges(state_a, internal_dfa);
+      std::for_each(out_edge_iter_a, out_edge_last_iter_a, [&state_b](dfa_edge_desc trans)
+      {
+        boost::add_edge(state_b,
+                        boost::target(trans, internal_dfa), internal_dfa[trans], internal_dfa);
+      });
+
+      return;
+    };
+
+    auto erase_states = [](dfa_vertex_descs& states) -> void
+    {
+      std::vector<ptr_cond_direct_inss_t> state_contents;
+      std::for_each(states.begin(), states.end(), [&state_contents](dfa_vertex_desc state)
+      {
+        state_contents.push_back(internal_dfa[state]);
+      });
+
+
+      return;
+    };
+
+    auto new_state_prop = std::accumulate(equiv_states.begin(),
+                                          equiv_states.end(), ptr_cond_direct_inss_t(), operation);
 
     auto new_state = boost::add_vertex(new_state_prop, internal_dfa);
+    std::for_each(equiv_states.begin(), equiv_states.end(), [&](dfa_vertex_desc state)
+    {
+      copy_transitions(state, new_state);
+    });
+
+    std::for_each(equiv_states.begin(), equiv_states.end(), [&](dfa_vertex_desc state)
+    {
+
+    });
 
     return;
   };
@@ -186,7 +228,6 @@ auto execution_dfa::save_to_file(const std::string& filename) -> void
     }
     else
     {
-//      tfm::format(std::cerr, "condition size: %d\n", trans_cond.size());
       tfm::format(label, "[label=\"!{ ");
 
       auto value_exists = [&trans_cond](UINT8 value) -> bool
