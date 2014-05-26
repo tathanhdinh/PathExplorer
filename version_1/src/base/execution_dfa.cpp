@@ -143,14 +143,17 @@ auto execution_dfa::optimization() -> void
       return merged_cfis;
     };
 
-    auto merge_two_cfis_states = [&merge_two_cfis](
-        dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> ptr_cond_direct_inss_t
+    auto operation = [&merge_two_cfis](
+        ptr_cond_direct_inss_t cfis_a, dfa_vertex_desc state_b) -> ptr_cond_direct_inss_t
     {
-      return merge_two_cfis(internal_dfa[state_a], internal_dfa[state_b]);
+      return merge_two_cfis(cfis_a, internal_dfa[state_b]);
     };
 
-//    ptr_cond_direct_inss_t new_state_prop;
-//    new_state_prop = std::accumulate(equiv_states.begin(), equiv_states.end(), new_state_prop, merge_two_cfis_states);
+    ptr_cond_direct_inss_t new_state_prop;
+    new_state_prop = std::accumulate(equiv_states.begin(),
+                                     equiv_states.end(), new_state_prop, operation);
+
+    auto new_state = boost::add_vertex(new_state_prop, internal_dfa);
 
     return;
   };
