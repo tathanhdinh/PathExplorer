@@ -19,7 +19,7 @@ public:
 
 //  auto add_exec_path    (ptr_exec_path_t exec_path)   -> void;
   auto add_exec_paths   (ptr_exec_paths_t exec_paths) -> void;
-  auto optimization     ()                            -> void;
+  auto optimize         ()                            -> void;
   auto save_to_file     (const std::string& filename) -> void;
 };
 
