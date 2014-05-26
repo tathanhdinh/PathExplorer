@@ -74,15 +74,6 @@ static auto add_exec_path (ptr_exec_path_t exec_path) -> void
                 [&](decltype(exec_path->condition)::const_reference sub_cond)
   {
     // trick: once mismatch is assigned to true then it will be never re-assigned to false
-//    auto current_state = mismatch ?
-//          boost::add_vertex(ptr_cond_direct_inss_t(), internal_dfa) :
-//          get_next_state(prev_state, std::get<0>(sub_cond));
-
-//    mismatch = mismatch ?
-//          mismatch : (current_state == boost::graph_traits<dfa_graph_t>::null_vertex());
-
-//    tfm::format(std::cerr, "mismatch: %b\n", mismatch);
-
     dfa_vertex_desc current_state;
     if (!mismatch)
     {
@@ -92,11 +83,19 @@ static auto add_exec_path (ptr_exec_path_t exec_path) -> void
 
     if (mismatch)
     {
-      internal_dfa[prev_state] = std::get<1>(sub_cond);
-//      tfm::format(std::cerr, "before adding transition\n");
+//      internal_dfa[prev_state] = std::get<1>(sub_cond);
+//      internal_dfa[prev_state].insert(internal_dfa[prev_state].end(),
+//                                      std::get<1>(sub_cond).begin(), std::get<1>(sub_cond).end());
+      std::for_each(std::get<1>(sub_cond).begin(), std::get<1>(sub_cond).end(),
+                    [&](ptr_cond_direct_inss_t::const_reference cfi)
+      {
+        if (std::find(internal_dfa[prev_state].begin(),
+                      internal_dfa[prev_state].end(), cfi) == internal_dfa[prev_state].end())
+          internal_dfa[prev_state].push_back(cfi);
+      });
+
       current_state = boost::add_vertex(ptr_cond_direct_inss_t(), internal_dfa);
       boost::add_edge(prev_state, current_state, std::get<0>(sub_cond), internal_dfa);
-//      tfm::format(std::cerr, "after adding transition\n");
     }
 
     prev_state = current_state;
@@ -130,62 +129,6 @@ auto execution_dfa::optimization() -> void
 
 
 /**
- * @brief write_dfa_transition
- */
-//static auto write_dfa_transition(std::ostream& label, dfa_edge_desc trans) -> void
-//{
-//  auto trans_cond = internal_dfa[trans];
-//  if (trans_cond.size() <= 2)
-//  {
-//    tfm::format(label, "{ ");
-//    std::for_each(trans_cond.begin(), trans_cond.end(),
-//                  [&label](decltype(trans_cond)::const_reference trans_elem)
-//    {
-//      std::for_each(trans_elem.begin(), trans_elem.end(),
-//                    [&](addrint_value_map_t::const_reference addr_val)
-//      {
-//        tfm::format(label, "%d ", std::get<1>(addr_val));
-//      });
-//    });
-//    tfm::format(label, "%s", "}");
-//  }
-//  else
-//  {
-//    tfm::format(label, "not {");
-//    std::for_each(trans_cond.begin(), trans_cond.end(),
-//                  [&label](decltype(trans_cond)::const_reference trans_elem)
-//    {
-//      for (auto val = 0; val <= std::numeric_limits<UINT8>::max(); ++val)
-//      {
-//        if (std::find_if_not(trans_elem.begin(), trans_elem.end(),
-//                             [&val](addrint_value_map_t::const_reference addr_val)
-//        {
-//          return (std::get<1>(addr_val) == val);
-//        }) == trans_elem.end())
-//        {
-//          tfm::format(label, "%d ", val);
-//        }
-//      }
-//    });
-//    tfm::format(label, "}");
-//  }
-
-//  return;
-//}
-
-
-/**
- * @brief write_dfa_state
- */
-//static auto write_dfa_state(std::ostream& label, dfa_vertex_desc state) -> void
-//{
-//  auto state_val = internal_dfa[state];
-//  tfm::format(label, "%s:%s", addrint_to_hexstring(state_val.front()->address),
-//              state_val.front()->disassembled_name);
-//  return;
-//}
-
-/**
  * @brief execution_dfa::save_to_file
  */
 auto execution_dfa::save_to_file(const std::string& filename) -> void
@@ -210,7 +153,7 @@ auto execution_dfa::save_to_file(const std::string& filename) -> void
     else
     {
 //      tfm::format(std::cerr, "condition size: %d\n", trans_cond.size());
-      tfm::format(label, "[label=\"not { ");
+      tfm::format(label, "[label=\"!{ ");
 
       auto value_exists = [&trans_cond](UINT8 value) -> bool
       {
@@ -229,22 +172,6 @@ auto execution_dfa::save_to_file(const std::string& filename) -> void
       {
         if (!value_exists(val)) tfm::format(label, "%d ", val);
       }
-
-//      std::for_each(trans_cond.begin(), trans_cond.end(),
-//                    [&label](decltype(trans_cond)::const_reference trans_elem)
-//      {
-//        for (auto val = 0; val <= std::numeric_limits<UINT8>::max(); ++val)
-//        {
-//          if (std::find_if(trans_elem.begin(), trans_elem.end(),
-//                           [&val](addrint_value_map_t::const_reference addr_val)
-//          {
-//            return (std::get<1>(addr_val) == val);
-//          }) == trans_elem.end())
-//          {
-//            tfm::format(label, "%d ", val);
-//          }
-//        }
-//      });
       tfm::format(label, "}\"]");
     }
 
@@ -255,10 +182,19 @@ auto execution_dfa::save_to_file(const std::string& filename) -> void
   {
     auto state_val = internal_dfa[state];
     if (state_val.size() > 0)
-      tfm::format(label, "[label=\"<%s: %s>\"]", addrint_to_hexstring(state_val.front()->address),
-                  state_val.front()->disassembled_name);
-    else
-      tfm::format(label, "[label=\"unknown\"]");
+    {
+      tfm::format(label, "[label=\"");
+      std::for_each(state_val.begin(),
+                    state_val.end(), [&](decltype(state_val)::const_reference cfi)
+      {
+        tfm::format(label, "%s: %s\n", addrint_to_hexstring(cfi->address), cfi->disassembled_name);
+//        if (cfi != state_val.back()) tfm::format(label, "\n");
+      });
+      tfm::format(label, "\"]");
+//      tfm::format(label, "[label=\"<%s: %s>\"]", addrint_to_hexstring(state_val.front()->address),
+//                  state_val.front()->disassembled_name);
+    }
+    else tfm::format(label, "[label=\"unknown\"]");
     return;
   };
 

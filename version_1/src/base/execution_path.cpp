@@ -244,11 +244,12 @@ static auto stabilize (const conditions_t& raw_cond) -> conditions_t
   auto join_cfis = [](const ptr_cond_direct_inss_t& cfis_a,
                       const ptr_cond_direct_inss_t& cfis_b) -> ptr_cond_direct_inss_t
   {
+//    tfm::format(std::cerr, "add a new cfi into a sub-cond\n"); std:exit(1);
     auto joined_list = cfis_a;
     std::for_each(cfis_b.begin(), cfis_b.end(), [&](ptr_cond_direct_inss_t::const_reference cfi_b)
     {
       // verify if a element of cfis_b exists also in cfis_a
-      if (std::find(cfis_a.begin(), cfis_a.end(), cfi_b) != cfis_a.end())
+      if (std::find(cfis_a.begin(), cfis_a.end(), cfi_b) == cfis_a.end())
       {
         // does not exist, then add it
         joined_list.push_back(cfi_b);
