@@ -216,13 +216,23 @@ auto execution_dfa::optimization() -> void
     dfa_vertex_iter first_state_iter, last_state_iter;
     std::tie(first_state_iter, last_state_iter) = boost::vertices(internal_dfa);
 
-    auto new_state_iter = std::find_if(first_state_iter, last_state_iter, [&new_state_content](dfa_vertex_desc state)
+    auto new_state_iter = std::find_if(first_state_iter, last_state_iter,
+                                       [&new_state_content](dfa_vertex_desc state)
     {
       return (internal_dfa[state] == new_state_content);
     });
 
     if (new_state_iter != last_state_iter) return *new_state_iter;
     else return boost::graph_traits<dfa_graph_t>::null_vertex();
+  };
+
+  auto two_states_are_equivalent = [](dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> bool
+  {
+    boost::graph_traits<dfa_graph_t>::out_edge_iterator first_a_trans_iter, last_a_trans_iter;
+    std::tie(first_a_trans_iter, last_a_trans_iter) = boost::out_edges(state_a, internal_dfa);
+
+    boost::graph_traits<dfa_graph_t>::out_edge_iterator first_b_trans_iter, last_b_trans_iter;
+    std::tie(first_a_trans_iter, last_a_trans_iter) = boost::out_edges(state_b, internal_dfa);
   };
 
   auto find_equivalent_states = [](const dfa_vertex_descs& init_states) -> dfa_vertex_descs
