@@ -233,9 +233,22 @@ auto execution_dfa::optimization() -> void
 
     boost::graph_traits<dfa_graph_t>::out_edge_iterator first_b_trans_iter, last_b_trans_iter;
     std::tie(first_a_trans_iter, last_a_trans_iter) = boost::out_edges(state_b, internal_dfa);
+
+    // verifying if any transition of a is also one of b: because transitions of a and of b are full
+    // so this verification is sufficient to verify a and b are equivalent
+    return std::all_of(first_a_trans_iter, last_a_trans_iter, [&](dfa_edge_desc trans_a)
+    {
+      return std::any_of(first_b_trans_iter, last_b_trans_iter, [&](dfa_edge_desc trans_b)
+      {
+        return ((internal_dfa[boost::target(trans_a, internal_dfa)] ==
+            internal_dfa[boost::target(trans_b, internal_dfa)]) &&
+            two_vmaps_are_isomorphic(internal_dfa[trans_a], internal_dfa[trans_b]));
+      });
+    });
   };
 
-  auto find_equivalent_states = [](const dfa_vertex_descs& init_states) -> dfa_vertex_descs
+  auto find_equivalent_states =
+      [&two_states_are_equivalent](const dfa_vertex_descs& init_states) -> dfa_vertex_descs
   {
     auto result_states = init_states;
     if (init_states.size() == 0)
