@@ -127,7 +127,7 @@ auto execution_dfa::add_exec_paths (ptr_exec_paths_t exec_paths) -> void
 auto execution_dfa::optimization() -> void
 {
   // merge equivalent states into a single state
-  auto merge_equivalent_states = [](dfa_vertex_descs equiv_states) -> void
+  auto merge_equivalent_states = [](dfa_vertex_descs equiv_states) -> dfa_vertex_desc
   {
     auto merge_two_cfis = [](const ptr_cond_direct_inss_t& cfis_a,
         const ptr_cond_direct_inss_t& cfis_b) -> ptr_cond_direct_inss_t
@@ -179,26 +179,57 @@ auto execution_dfa::optimization() -> void
         state_contents.push_back(internal_dfa[state]);
       });
 
+      std::for_each(state_contents.begin(), state_contents.end(),
+                    [](ptr_cond_direct_inss_t content)
+      {
+        dfa_vertex_iter state_iter, last_state_iter;
+        std::tie(state_iter, last_state_iter) = boost::vertices(internal_dfa);
+        std::any_of(state_iter, last_state_iter, [&](dfa_vertex_desc state) -> bool
+        {
+          if (internal_dfa[state] == content)
+          {
+            boost::clear_vertex(state, internal_dfa); boost::remove_vertex(state, internal_dfa);
+            return true;
+          }
+          else return false;
+        });
+      });
 
       return;
     };
 
+    // add a new state reprenting the class of equivalent states
     auto new_state_prop = std::accumulate(equiv_states.begin(),
                                           equiv_states.end(), ptr_cond_direct_inss_t(), operation);
 
     auto new_state = boost::add_vertex(new_state_prop, internal_dfa);
+    auto new_state_content = internal_dfa[new_state];
     std::for_each(equiv_states.begin(), equiv_states.end(), [&](dfa_vertex_desc state)
     {
       copy_transitions(state, new_state);
     });
 
-    std::for_each(equiv_states.begin(), equiv_states.end(), [&](dfa_vertex_desc state)
-    {
+    // erase equivalent states
+    erase_states(equiv_states);
 
+    // get the descriptor of the new state in the new DFA
+    dfa_vertex_iter first_state_iter, last_state_iter;
+    std::tie(first_state_iter, last_state_iter) = boost::vertices(internal_dfa);
+
+    auto new_state_iter = std::find_if(first_state_iter, last_state_iter, [&new_state_content](dfa_vertex_desc state)
+    {
+      return (internal_dfa[state] == new_state_content);
     });
 
-    return;
+    if (new_state_iter != last_state_iter) return *new_state_iter;
+    else return boost::graph_traits<dfa_graph_t>::null_vertex();
   };
+
+  auto find_equivalent_states = [](dfa_vertex_descs init_descs) -> dfa_vertex_descs
+  {
+  };
+
+
 
   return;
 }
