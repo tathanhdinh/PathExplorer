@@ -1,6 +1,7 @@
 #include "execution_dfa.h"
 #include "../util/stuffs.h"
 
+#include <numeric>
 #include <boost/graph/graphviz.hpp>
 
 typedef ptr_cond_direct_inss_t                                dfa_vertex;
@@ -9,11 +10,13 @@ typedef boost::adjacency_list<boost::listS, boost::vecS,
                               boost::bidirectionalS,
                               dfa_vertex, dfa_edge>           dfa_graph_t;
 typedef boost::graph_traits<dfa_graph_t>::vertex_descriptor   dfa_vertex_desc;
+typedef std::vector<dfa_vertex_desc>                          dfa_vertex_descs;
 typedef boost::graph_traits<dfa_graph_t>::edge_descriptor     dfa_edge_desc;
 typedef boost::graph_traits<dfa_graph_t>::vertex_iterator     dfa_vertex_iter;
 typedef boost::graph_traits<dfa_graph_t>::edge_iterator       dfa_edge_iter;
 
 typedef std::shared_ptr<dfa_graph_t>                          ptr_dfa_graph_t;
+
 
 /*================================================================================================*/
 
@@ -124,6 +127,34 @@ auto execution_dfa::add_exec_paths (ptr_exec_paths_t exec_paths) -> void
  */
 auto execution_dfa::optimization() -> void
 {
+  // merge equivalent states into a single state
+  auto merge_equivalent_states = [](dfa_vertex_descs equiv_states) -> void
+  {
+    auto merge_two_cfis = [](const ptr_cond_direct_inss_t& cfis_a,
+        const ptr_cond_direct_inss_t& cfis_b) -> ptr_cond_direct_inss_t
+    {
+      ptr_cond_direct_inss_t merged_cfis = cfis_a;
+      std::for_each(cfis_b.begin(), cfis_b.end(),
+                    [&merged_cfis](ptr_cond_direct_inss_t::const_reference cfi_b)
+      {
+        if (std::find(merged_cfis.begin(),
+                      merged_cfis.end(), cfi_b) == merged_cfis.end()) merged_cfis.push_back(cfi_b);
+      });
+      return merged_cfis;
+    };
+
+    auto merge_two_cfis_states = [&merge_two_cfis](
+        dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> ptr_cond_direct_inss_t
+    {
+      return merge_two_cfis(internal_dfa[state_a], internal_dfa[state_b]);
+    };
+
+//    ptr_cond_direct_inss_t new_state_prop;
+//    new_state_prop = std::accumulate(equiv_states.begin(), equiv_states.end(), new_state_prop, merge_two_cfis_states);
+
+    return;
+  };
+
   return;
 }
 
