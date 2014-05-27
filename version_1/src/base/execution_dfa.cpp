@@ -444,14 +444,13 @@ auto execution_dfa::optimize() -> void
 
   auto representing_states = dfa_vertex_descs();
   auto equiv_states = dfa_vertex_descs();
-  bool fixpoint_not_reached = true;
 
-  while (fixpoint_not_reached)
+  while (true)
   {
     equiv_states = find_equivalent_states(representing_states);
-    fixpoint_not_reached = (equiv_states.size() > 1);
-    if (fixpoint_not_reached)
+    if (equiv_states.size() > 1)
       representing_states = merge_equivalent_states(equiv_states, representing_states);
+    else break;
   }
 
   // loop 0
