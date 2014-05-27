@@ -444,21 +444,70 @@ auto execution_dfa::optimize() -> void
 
   auto representing_states = dfa_vertex_descs();
   auto equiv_states = dfa_vertex_descs();
+  bool fixpoint_not_reached = true;
+
+  while (fixpoint_not_reached)
+  {
+    equiv_states = find_equivalent_states(representing_states);
+    fixpoint_not_reached = (equiv_states.size() > 1);
+    if (fixpoint_not_reached)
+      representing_states = merge_equivalent_states(equiv_states, representing_states);
+  }
 
   // loop 0
   equiv_states = find_equivalent_states(representing_states);
-//  representing_states.push_back(merge_equivalent_states(equiv_states));
-  representing_states = merge_equivalent_states(equiv_states, representing_states);
+  if (equiv_states.size() > 1)
+    representing_states = merge_equivalent_states(equiv_states, representing_states);
 
-  // loop 1
-  equiv_states = find_equivalent_states(representing_states);
-//  representing_states.push_back(merge_equivalent_states(equiv_states));
-  representing_states = merge_equivalent_states(equiv_states, representing_states);
+//  // loop 1
+//  equiv_states = find_equivalent_states(representing_states);
+//  if (equiv_states.size() > 1)
+//    representing_states = merge_equivalent_states(equiv_states, representing_states);
 
-  // loop 2
-  equiv_states = find_equivalent_states(representing_states);
-//  representing_states.push_back(merge_equivalent_states(equiv_states));
-  representing_states = merge_equivalent_states(equiv_states, representing_states);
+//  // loop 2
+//  equiv_states = find_equivalent_states(representing_states);
+//  if (equiv_states.size() > 1)
+//    representing_states = merge_equivalent_states(equiv_states, representing_states);
+
+//  // loop 3
+//  equiv_states = find_equivalent_states(representing_states);
+//  if (equiv_states.size() > 1)
+//    representing_states = merge_equivalent_states(equiv_states, representing_states);
+
+//  // loop 4
+//  equiv_states = find_equivalent_states(representing_states);
+//  if (equiv_states.size() > 1)
+//    representing_states = merge_equivalent_states(equiv_states, representing_states);
+
+//  // loop 5
+//  equiv_states = find_equivalent_states(representing_states);
+//  if (equiv_states.size() > 1)
+//    representing_states = merge_equivalent_states(equiv_states, representing_states);
+
+//  // loop 6
+//  equiv_states = find_equivalent_states(representing_states);
+//  if (equiv_states.size() > 1)
+//    representing_states = merge_equivalent_states(equiv_states, representing_states);
+
+//  // loop 7
+//  equiv_states = find_equivalent_states(representing_states);
+//  if (equiv_states.size() > 1)
+//    representing_states = merge_equivalent_states(equiv_states, representing_states);
+
+//  // loop 8
+//  equiv_states = find_equivalent_states(representing_states);
+//  if (equiv_states.size() > 1)
+//    representing_states = merge_equivalent_states(equiv_states, representing_states);
+
+//  // loop 9
+//  equiv_states = find_equivalent_states(representing_states);
+//  if (equiv_states.size() > 1)
+//    representing_states = merge_equivalent_states(equiv_states, representing_states);
+
+//  // loop 10 (fixpoint reached)
+//  equiv_states = find_equivalent_states(representing_states);
+//  if (equiv_states.size() > 1)
+//    representing_states = merge_equivalent_states(equiv_states, representing_states);
   return;
 }
 
