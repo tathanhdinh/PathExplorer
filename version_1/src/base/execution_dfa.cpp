@@ -181,8 +181,8 @@ auto execution_dfa::optimize() -> void
       });
 
       // then use these contents to remove states
-      std::for_each(/*state_contents.begin()*/std::begin(state_contents), /*state_contents.end()*/std::end(state_contents),
-                    [](ptr_cond_direct_inss_t content)
+      std::for_each(std::begin(state_contents),
+                    std::end(state_contents), [](ptr_cond_direct_inss_t content)
       {
         dfa_vertex_iter state_iter, last_state_iter;
         std::tie(state_iter, last_state_iter) = boost::vertices(internal_dfa);
@@ -190,7 +190,7 @@ auto execution_dfa::optimize() -> void
         {
           if (internal_dfa[state] == content)
           {
-            tfm::format(std::cerr, "remove state\n");
+//            tfm::format(std::cerr, "remove state\n");
             boost::clear_vertex(state, internal_dfa); boost::remove_vertex(state, internal_dfa);
             return true;
           }
@@ -286,11 +286,11 @@ auto execution_dfa::optimize() -> void
   {
     auto two_states_are_equivalent = [](dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> bool
     {
-      tfm::format(std::cerr, "verify %s:%s and %s:%s\n",
-                  addrint_to_hexstring(internal_dfa[state_a].front()->address),
-                  internal_dfa[state_a].front()->disassembled_name,
-                  addrint_to_hexstring(internal_dfa[state_b].front()->address),
-                  internal_dfa[state_b].front()->disassembled_name);
+//      tfm::format(std::cerr, "verify %s:%s and %s:%s\n",
+//                  addrint_to_hexstring(internal_dfa[state_a].front()->address),
+//                  internal_dfa[state_a].front()->disassembled_name,
+//                  addrint_to_hexstring(internal_dfa[state_b].front()->address),
+//                  internal_dfa[state_b].front()->disassembled_name);
 
       boost::graph_traits<dfa_graph_t>::out_edge_iterator first_a_trans_iter, last_a_trans_iter;
       std::tie(first_a_trans_iter, last_a_trans_iter) = boost::out_edges(state_a, internal_dfa);
@@ -304,16 +304,16 @@ auto execution_dfa::optimize() -> void
       {
         return std::any_of(first_b_trans_iter, last_b_trans_iter, [&](dfa_edge_desc trans_b)
         {
-          if (two_vmaps_are_isomorphic(internal_dfa[trans_a], internal_dfa[trans_b]))
-          {
-            tfm::format(std::cerr, "isomorphic transitions detected\n"); /*std::exit(1);*/
-          }
+//          if (two_vmaps_are_isomorphic(internal_dfa[trans_a], internal_dfa[trans_b]))
+//          {
+//            tfm::format(std::cerr, "isomorphic transitions detected\n"); /*std::exit(1);*/
+//          }
 
-          if ((internal_dfa[boost::target(trans_a, internal_dfa)] ==
-               internal_dfa[boost::target(trans_b, internal_dfa)]))
-          {
-            tfm::format(std::cerr, "two states the same target\n"); /*std::exit(1);*/
-          }
+//          if ((internal_dfa[boost::target(trans_a, internal_dfa)] ==
+//               internal_dfa[boost::target(trans_b, internal_dfa)]))
+//          {
+//            tfm::format(std::cerr, "two states the same target\n"); /*std::exit(1);*/
+//          }
 
           return ((internal_dfa[boost::target(trans_a, internal_dfa)] ==
               internal_dfa[boost::target(trans_b, internal_dfa)]) &&
@@ -366,7 +366,7 @@ auto execution_dfa::optimize() -> void
     }
     else
     {
-      tfm::format(std::cerr, "init size %d\n", init_states.size());
+      tfm::format(std::cerr, "initial states: %d\n", init_states.size());
 
       // get derived states: ones with all transitions to initial states
       auto derived_states = get_derived_states(init_states);
@@ -394,11 +394,11 @@ auto execution_dfa::optimize() -> void
           {
 //            tfm::format(std::cerr, "add new\n");
 //            tfm::format(std::cerr, "%d", internal_dfa[state].size());
-            tfm::format(std::cerr, "%s:%s = %s:%s\n",
-                        addrint_to_hexstring(internal_dfa[state_a].front()->address),
-                        internal_dfa[state_a].front()->disassembled_name,
-                        addrint_to_hexstring(internal_dfa[state].front()->address),
-                        internal_dfa[state].front()->disassembled_name);
+//            tfm::format(std::cerr, "%s:%s = %s:%s\n",
+//                        addrint_to_hexstring(internal_dfa[state_a].front()->address),
+//                        internal_dfa[state_a].front()->disassembled_name,
+//                        addrint_to_hexstring(internal_dfa[state].front()->address),
+//                        internal_dfa[state].front()->disassembled_name);
             result_states.push_back(state);
           }
         });
