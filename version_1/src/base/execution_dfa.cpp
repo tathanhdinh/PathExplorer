@@ -6,7 +6,9 @@
 #include <boost/graph/copy.hpp>
 
 typedef ptr_cond_direct_inss_t                                dfa_vertex;
+typedef std::vector<dfa_vertex>                               dfa_vertices;
 typedef addrint_value_maps_t                                  dfa_edge;
+typedef std::vector<dfa_edge>                                 dfa_edges;
 typedef boost::adjacency_list<boost::listS, boost::vecS,
                               boost::bidirectionalS,
                               dfa_vertex, dfa_edge>           dfa_graph_t;
@@ -112,7 +114,7 @@ static auto add_exec_path (ptr_exec_path_t exec_path) -> void
  */
 auto execution_dfa::add_exec_paths (ptr_exec_paths_t exec_paths) -> void
 {
-  std::for_each(exec_paths.begin(),exec_paths.end(),
+  std::for_each(/*exec_paths.begin()*/std::begin(exec_paths), std::end(exec_paths)/*exec_paths.end()*/,
                 [](decltype(explored_exec_paths)::const_reference exec_path)
   {
     add_exec_path(exec_path);
@@ -127,24 +129,25 @@ auto execution_dfa::add_exec_paths (ptr_exec_paths_t exec_paths) -> void
 auto execution_dfa::optimize() -> void
 {
   // merge equivalent states into a single state
-  auto merge_equivalent_states = [](dfa_vertex_descs equiv_states) -> dfa_vertex_desc
+  auto merge_equivalent_states = [](const dfa_vertex_descs& equiv_states,
+      const dfa_vertex_descs& representing_states) -> dfa_vertex_descs
   {
-    auto merge_two_cfis = [](const ptr_cond_direct_inss_t& cfis_a,
-        const ptr_cond_direct_inss_t& cfis_b) -> ptr_cond_direct_inss_t
+    auto merging_operator =
+        [](const ptr_cond_direct_inss_t& cfis_a, dfa_vertex_desc state_b) -> ptr_cond_direct_inss_t
     {
-      ptr_cond_direct_inss_t merged_cfis = cfis_a;
-      std::for_each(cfis_b.begin(), cfis_b.end(),
-                    [&merged_cfis](ptr_cond_direct_inss_t::const_reference cfi_b)
+      auto merge_two_cfis = [](const ptr_cond_direct_inss_t& cfis_a,
+          const ptr_cond_direct_inss_t& cfis_b) -> ptr_cond_direct_inss_t
       {
-        if (std::find(merged_cfis.begin(),
-                      merged_cfis.end(), cfi_b) == merged_cfis.end()) merged_cfis.push_back(cfi_b);
-      });
-      return merged_cfis;
-    };
+        ptr_cond_direct_inss_t merged_cfis = cfis_a;
+        std::for_each(/*cfis_b.begin()*/std::begin(cfis_b), /*cfis_b.end()*/std::end(cfis_b),
+                      [&merged_cfis](ptr_cond_direct_inss_t::const_reference cfi_b)
+        {
+          if (std::find(merged_cfis.begin(),
+                        merged_cfis.end(), cfi_b) == merged_cfis.end()) merged_cfis.push_back(cfi_b);
+        });
+        return merged_cfis;
+      };
 
-    auto operation = [&merge_two_cfis](
-        ptr_cond_direct_inss_t cfis_a, dfa_vertex_desc state_b) -> ptr_cond_direct_inss_t
-    {
       return merge_two_cfis(cfis_a, internal_dfa[state_b]);
     };
 
@@ -171,7 +174,7 @@ auto execution_dfa::optimize() -> void
       return;
     };
 
-    auto erase_states = [](dfa_vertex_descs& states) -> void
+    auto erase_states = [](const dfa_vertex_descs& states) -> void
     {
       // save contents of equivalent states
       std::vector<ptr_cond_direct_inss_t> state_contents;
@@ -201,20 +204,27 @@ auto execution_dfa::optimize() -> void
       return;
     };
 
-    auto find_state_by_content = [](const ptr_cond_direct_inss_t& content) -> dfa_vertex_desc
+    auto find_states_by_contents = [](const dfa_vertices& contents) -> dfa_vertex_descs
     {
       // get the descriptor of the new state in the new DFA
       dfa_vertex_iter first_state_iter, last_state_iter;
       std::tie(first_state_iter, last_state_iter) = boost::vertices(internal_dfa);
 
-      auto new_state_iter = std::find_if(first_state_iter, last_state_iter,
-                                         [&content](dfa_vertex_desc state)
+      auto states = dfa_vertex_descs();
+      std::for_each(std::begin(contents), std::end(contents), [&](const dfa_vertex& content)
       {
-        return (internal_dfa[state] == content);
-      });
+        auto new_state_iter = std::find_if(first_state_iter, last_state_iter,
+                                           [&content](dfa_vertex_desc state)
+        {
+          return (internal_dfa[state] == content);
+        });
 
-      if (new_state_iter != last_state_iter) return *new_state_iter;
-      else return boost::graph_traits<dfa_graph_t>::null_vertex();
+        if (new_state_iter != last_state_iter) states.push_back(*new_state_iter);
+        else states.push_back(boost::graph_traits<dfa_graph_t>::null_vertex());
+      });
+//      if (new_state_iter != last_state_iter) return *new_state_iter;
+//      else return boost::graph_traits<dfa_graph_t>::null_vertex();
+      return states;
     };
     
     auto erase_duplicated_transitions = [](dfa_vertex_desc state) -> void
@@ -250,19 +260,34 @@ auto execution_dfa::optimize() -> void
       return;
     };
 
-    // add a new state reprenting the class of equivalent states
-    auto new_state_prop = std::accumulate(equiv_states.begin(),
-                                          equiv_states.end(), ptr_cond_direct_inss_t(), operation);
+    // copy contents of the previous representing states
+    auto representing_state_contents = dfa_vertices();
+    std::for_each(std::begin(representing_states), std::end(representing_states),
+                  [&representing_state_contents](dfa_vertex_desc state)
+    {
+      representing_state_contents.push_back(internal_dfa[state]);
+    });
 
-    auto new_state = boost::add_vertex(new_state_prop, internal_dfa);
-    auto new_state_content = internal_dfa[new_state];
+    // add a new state reprenting the class of equivalent states
+    auto new_representing_state_content =
+        std::accumulate(equiv_states.begin(), equiv_states.end(), ptr_cond_direct_inss_t(),
+                        merging_operator);
+    auto new_representing_state = boost::add_vertex(new_representing_state_content, internal_dfa);
+
+    // add the state of the new representing state
+    representing_state_contents.push_back(new_representing_state_content);
+
+    // get the content of the new state
+//    auto new_state_content = internal_dfa[representing_state];
+
+    // copy transition
     std::for_each(equiv_states.begin(), equiv_states.end(), [&](dfa_vertex_desc state)
     {
-      copy_transitions(state, new_state);
+      copy_transitions(state, new_representing_state);
     });
 
     // erase duplicated transitions
-    erase_duplicated_transitions(new_state);
+    erase_duplicated_transitions(new_representing_state);
 
     // erase equivalent states
     erase_states(equiv_states);
@@ -279,7 +304,8 @@ auto execution_dfa::optimize() -> void
 
 //    if (new_state_iter != last_state_iter) return *new_state_iter;
 //    else return boost::graph_traits<dfa_graph_t>::null_vertex();
-    return find_state_by_content(new_state_content);
+//    return find_states_by_contents(new_state_content);
+    return find_states_by_contents(representing_state_contents);
   };
 
   auto find_equivalent_states = [](const dfa_vertex_descs& init_states) -> dfa_vertex_descs
@@ -417,20 +443,22 @@ auto execution_dfa::optimize() -> void
   };
 
   auto representing_states = dfa_vertex_descs();
+  auto equiv_states = dfa_vertex_descs();
 
   // loop 0
-  auto equiv_states = find_equivalent_states(/*dfa_vertex_descs()*/representing_states);
-//  auto representing_state = merge_equivalent_states(equiv_states);
-//  auto representing_states = dfa_vertex_descs(1, merge_equivalent_states(equiv_states));
-  representing_states.push_back(merge_equivalent_states(equiv_states));
+  equiv_states = find_equivalent_states(representing_states);
+//  representing_states.push_back(merge_equivalent_states(equiv_states));
+  representing_states = merge_equivalent_states(equiv_states, representing_states);
 
   // loop 1
   equiv_states = find_equivalent_states(representing_states);
-  representing_states.push_back(merge_equivalent_states(equiv_states));
+//  representing_states.push_back(merge_equivalent_states(equiv_states));
+  representing_states = merge_equivalent_states(equiv_states, representing_states);
 
   // loop 2
   equiv_states = find_equivalent_states(representing_states);
-  representing_states.push_back(merge_equivalent_states(equiv_states));
+//  representing_states.push_back(merge_equivalent_states(equiv_states));
+  representing_states = merge_equivalent_states(equiv_states, representing_states);
   return;
 }
 
