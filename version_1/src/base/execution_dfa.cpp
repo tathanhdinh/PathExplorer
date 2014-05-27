@@ -286,11 +286,11 @@ auto execution_dfa::optimize() -> void
   {
     auto two_states_are_equivalent = [](dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> bool
     {
-//      tfm::format(std::cerr, "verify %s:%s and %s:%s\n",
-//                  addrint_to_hexstring(internal_dfa[state_a].front()->address),
-//                  internal_dfa[state_a].front()->disassembled_name,
-//                  addrint_to_hexstring(internal_dfa[state_b].front()->address),
-//                  internal_dfa[state_b].front()->disassembled_name);
+      tfm::format(std::cerr, "verify %s:%s and %s:%s\n",
+                  addrint_to_hexstring(internal_dfa[state_a].front()->address),
+                  internal_dfa[state_a].front()->disassembled_name,
+                  addrint_to_hexstring(internal_dfa[state_b].front()->address),
+                  internal_dfa[state_b].front()->disassembled_name);
 
       boost::graph_traits<dfa_graph_t>::out_edge_iterator first_a_trans_iter, last_a_trans_iter;
       std::tie(first_a_trans_iter, last_a_trans_iter) = boost::out_edges(state_a, internal_dfa);
@@ -328,6 +328,10 @@ auto execution_dfa::optimize() -> void
       auto all_trans_to_equiv = [](
           dfa_vertex_desc state, const dfa_vertex_descs& init_states) -> bool
       {
+        tfm::format(std::cerr, "verify derived state %s:%s\n",
+                    addrint_to_hexstring(internal_dfa[state].front()->address),
+                    internal_dfa[state].front()->disassembled_name);
+
         boost::graph_traits<dfa_graph_t>::out_edge_iterator first_trans_iter, last_trans_iter;
         std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(state, internal_dfa);
 
@@ -343,6 +347,10 @@ auto execution_dfa::optimize() -> void
       std::tie(first_state_iter, last_state_iter) = boost::vertices(internal_dfa);
       std::for_each(first_state_iter, last_state_iter, [&](dfa_vertex_desc state)
       {
+//        tfm::format(std::cerr, "%s:%s\n",
+//                    addrint_to_hexstring(internal_dfa[state].front()->address),
+//                    internal_dfa[state].front()->disassembled_name);
+
         if ((std::find(initial_states.begin(),
                        initial_states.end(), state) == initial_states.end()) &&
             (all_trans_to_equiv(state, initial_states)))
@@ -408,12 +416,21 @@ auto execution_dfa::optimize() -> void
     return result_states;
   };
 
-  auto equiv_states = find_equivalent_states(dfa_vertex_descs());
-//  auto representing_state = merge_equivalent_states(equiv_states);
-  auto representing_states = dfa_vertex_descs(1, merge_equivalent_states(equiv_states));
+  auto representing_states = dfa_vertex_descs();
 
+  // loop 0
+  auto equiv_states = find_equivalent_states(/*dfa_vertex_descs()*/representing_states);
+//  auto representing_state = merge_equivalent_states(equiv_states);
+//  auto representing_states = dfa_vertex_descs(1, merge_equivalent_states(equiv_states));
+  representing_states.push_back(merge_equivalent_states(equiv_states));
+
+  // loop 1
   equiv_states = find_equivalent_states(representing_states);
-  merge_equivalent_states(equiv_states);
+  representing_states.push_back(merge_equivalent_states(equiv_states));
+
+  // loop 2
+  equiv_states = find_equivalent_states(representing_states);
+  representing_states.push_back(merge_equivalent_states(equiv_states));
   return;
 }
 
