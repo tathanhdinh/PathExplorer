@@ -277,6 +277,7 @@ auto execution_dfa::optimize() -> void
           derived_states.push_back(state);
       });
 
+      tfm::format(std::cerr, "derived states: %d\n", derived_states.size());
       return derived_states;
     };
 
