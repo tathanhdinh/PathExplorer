@@ -173,13 +173,15 @@ auto execution_dfa::optimize() -> void
 
     auto erase_states = [](dfa_vertex_descs& states) -> void
     {
+      // save contents of equivalent states
       std::vector<ptr_cond_direct_inss_t> state_contents;
       std::for_each(states.begin(), states.end(), [&state_contents](dfa_vertex_desc state)
       {
         state_contents.push_back(internal_dfa[state]);
       });
 
-      std::for_each(state_contents.begin(), state_contents.end(),
+      // then use these contents to remove states
+      std::for_each(/*state_contents.begin()*/std::begin(state_contents), /*state_contents.end()*/std::end(state_contents),
                     [](ptr_cond_direct_inss_t content)
       {
         dfa_vertex_iter state_iter, last_state_iter;
@@ -188,6 +190,7 @@ auto execution_dfa::optimize() -> void
         {
           if (internal_dfa[state] == content)
           {
+            tfm::format(std::cerr, "remove state\n");
             boost::clear_vertex(state, internal_dfa); boost::remove_vertex(state, internal_dfa);
             return true;
           }
@@ -230,12 +233,17 @@ auto execution_dfa::optimize() -> void
   {
     auto two_states_are_equivalent = [](dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> bool
     {
-      tfm::format(std::cerr, "verify if two states are equivalent\n");
+      tfm::format(std::cerr, "verify %s:%s and %s:%s\n",
+                  addrint_to_hexstring(internal_dfa[state_a].front()->address),
+                  internal_dfa[state_a].front()->disassembled_name,
+                  addrint_to_hexstring(internal_dfa[state_b].front()->address),
+                  internal_dfa[state_b].front()->disassembled_name);
+
       boost::graph_traits<dfa_graph_t>::out_edge_iterator first_a_trans_iter, last_a_trans_iter;
       std::tie(first_a_trans_iter, last_a_trans_iter) = boost::out_edges(state_a, internal_dfa);
 
       boost::graph_traits<dfa_graph_t>::out_edge_iterator first_b_trans_iter, last_b_trans_iter;
-      std::tie(first_a_trans_iter, last_a_trans_iter) = boost::out_edges(state_b, internal_dfa);
+      std::tie(first_b_trans_iter, last_b_trans_iter) = boost::out_edges(state_b, internal_dfa);
 
       // verifying if any transition of a is also one of b: because transitions of a and of b are
       // complete so this verification is sufficient to verify a and b are equivalent
@@ -243,6 +251,17 @@ auto execution_dfa::optimize() -> void
       {
         return std::any_of(first_b_trans_iter, last_b_trans_iter, [&](dfa_edge_desc trans_b)
         {
+          if (two_vmaps_are_isomorphic(internal_dfa[trans_a], internal_dfa[trans_b]))
+          {
+            tfm::format(std::cerr, "isomorphic transitions detected\n"); /*std::exit(1);*/
+          }
+
+          if ((internal_dfa[boost::target(trans_a, internal_dfa)] ==
+               internal_dfa[boost::target(trans_b, internal_dfa)]))
+          {
+            tfm::format(std::cerr, "two states the same target\n"); /*std::exit(1);*/
+          }
+
           return ((internal_dfa[boost::target(trans_a, internal_dfa)] ==
               internal_dfa[boost::target(trans_b, internal_dfa)]) &&
               two_vmaps_are_isomorphic(internal_dfa[trans_a], internal_dfa[trans_b]));
@@ -298,24 +317,37 @@ auto execution_dfa::optimize() -> void
 
       // get derived states: ones with all transitions to initial states
       auto derived_states = get_derived_states(init_states);
+      auto s_first_iter = std::begin(derived_states);
+      auto s_last_iter = std::end(derived_states);
 
       auto state_a = boost::graph_traits<dfa_graph_t>::null_vertex();
-      for (auto state_iter = derived_states.begin();
-           state_iter != derived_states.end(); ++state_iter)
+
+      for (auto s_iter = s_first_iter; s_iter != s_last_iter; ++s_iter)
       {
-        if (std::find(std::next(state_iter),
-                      derived_states.end(), *state_iter) != derived_states.end())
+        auto predicate = std::bind(two_states_are_equivalent, *s_iter, std::placeholders::_1);
+
+        if (std::find_if(std::next(s_iter), s_last_iter, predicate) != s_last_iter)
         {
-          state_a = *state_iter; break;
+          tfm::format(std::cerr, "equivalent state found\n"); /*std::exit(1);*/
+          state_a = *s_iter; break;
         }
       }
 
       if (state_a != boost::graph_traits<dfa_graph_t>::null_vertex())
       {
-        std::for_each(derived_states.begin(), derived_states.end(),
-                      [&](dfa_vertex_desc state)
+        std::for_each(s_first_iter, s_last_iter, [&](dfa_vertex_desc state)
         {
-          if (two_states_are_equivalent(state_a, state)) result_states.push_back(state);
+          if (two_states_are_equivalent(state_a, state))
+          {
+//            tfm::format(std::cerr, "add new\n");
+//            tfm::format(std::cerr, "%d", internal_dfa[state].size());
+            tfm::format(std::cerr, "%s:%s = %s:%s\n",
+                        addrint_to_hexstring(internal_dfa[state_a].front()->address),
+                        internal_dfa[state_a].front()->disassembled_name,
+                        addrint_to_hexstring(internal_dfa[state].front()->address),
+                        internal_dfa[state].front()->disassembled_name);
+            result_states.push_back(state);
+          }
         });
       }
     }

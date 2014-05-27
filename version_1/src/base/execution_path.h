@@ -23,14 +23,14 @@ public:
 
   execution_path(const order_ins_map_t& current_path, const path_code_t& current_path_code);
   auto calculate_condition() -> void;
-  auto lazy_condition(int n) -> conditions_t;
+//  auto lazy_condition(int n) -> conditions_t;
 };
 
 auto calculate_exec_path_conditions (ptr_exec_paths_t& exec_paths) -> void;
 
-#if !defined(NDEBUG)
-auto show_path_condition(const ptr_exec_paths_t& exec_paths) -> void;
-auto show_path_condition(const ptr_exec_path_t& exec_path) -> void;
-#endif
+//#if !defined(NDEBUG)
+//auto show_path_condition(const ptr_exec_paths_t& exec_paths) -> void;
+//auto show_path_condition(const ptr_exec_path_t& exec_path) -> void;
+//#endif
 
 #endif // EXECUTION_PATH_H

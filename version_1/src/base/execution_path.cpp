@@ -60,18 +60,18 @@ static auto remove_duplicated (const addrint_value_maps_t& input_maps) -> addrin
  * @brief verifying if two maps a and b are of the same type, i.e. the sets of addresses of a and
  * of b are the same
  */
-static auto are_of_the_same_type (const addrint_value_map_t& map_a,
-                                  const addrint_value_map_t& map_b) -> bool
-{
-  return ((map_a.size() == map_b.size()) &&
-          std::equal(map_a.begin(), map_a.end(), map_b.begin(),
-                     [](addrint_value_map_t::const_reference a_elem,
-                        addrint_value_map_t::const_reference b_elem)
-                     {
-                       // verify if the address in a is equal to the one in b
-                         return (a_elem.first == b_elem.first);
-                     }));
-};
+//static auto are_of_the_same_type (const addrint_value_map_t& map_a,
+//                                  const addrint_value_map_t& map_b) -> bool
+//{
+//  return ((map_a.size() == map_b.size()) &&
+//          std::equal(map_a.begin(), map_a.end(), map_b.begin(),
+//                     [](addrint_value_map_t::const_reference a_elem,
+//                        addrint_value_map_t::const_reference b_elem)
+//                     {
+//                       // verify if the address in a is equal to the one in b
+//                         return (a_elem.first == b_elem.first);
+//                     }));
+//};
 
 
 /**
@@ -86,17 +86,17 @@ static auto are_of_the_same_type (const addrint_value_map_t& map_a,
  *                                    map_b
  * commutative, and f follows the address ordering in A and B
  */
-static auto are_isomorphic (const addrint_value_map_t& map_a,
-                            const addrint_value_map_t& map_b) -> bool
-{
-  return ((map_a.size() == map_b.size()) &&
-          std::equal(map_a.begin(), map_a.end(), map_b.begin(),
-                     [](addrint_value_map_t::const_reference a_elem,
-                        addrint_value_map_t::const_reference b_elem)
-                     {
-                       return (a_elem.second == b_elem.second);
-                     }));
-}
+//static auto are_isomorphic (const addrint_value_map_t& map_a,
+//                            const addrint_value_map_t& map_b) -> bool
+//{
+//  return ((map_a.size() == map_b.size()) &&
+//          std::equal(map_a.begin(), map_a.end(), map_b.begin(),
+//                     [](addrint_value_map_t::const_reference a_elem,
+//                        addrint_value_map_t::const_reference b_elem)
+//                     {
+//                       return (a_elem.second == b_elem.second);
+//                     }));
+//}
 
 
 /**
@@ -111,20 +111,20 @@ static auto are_isomorphic (const addrint_value_map_t& map_a,
  *                                    map_b
  * commutative
  */
-static auto are_isomorphic (const addrint_value_maps_t& maps_a,
-                            const addrint_value_maps_t& maps_b) -> bool
-{
-  return ((maps_a.size() == maps_b.size()) &&
-          std::all_of(maps_a.begin(), maps_a.end(),
-                      [&](addrint_value_maps_t::const_reference maps_a_elem) -> bool
-  {
-    return std::any_of(maps_b.begin(), maps_b.end(),
-                       [&](addrint_value_maps_t::const_reference maps_b_elem) -> bool
-    {
-      return are_isomorphic(maps_a_elem, maps_b_elem);
-    });
-  }));
-}
+//static auto are_isomorphic (const addrint_value_maps_t& maps_a,
+//                            const addrint_value_maps_t& maps_b) -> bool
+//{
+//  return ((maps_a.size() == maps_b.size()) &&
+//          std::all_of(maps_a.begin(), maps_a.end(),
+//                      [&](addrint_value_maps_t::const_reference maps_a_elem) -> bool
+//  {
+//    return std::any_of(maps_b.begin(), maps_b.end(),
+//                       [&](addrint_value_maps_t::const_reference maps_b_elem) -> bool
+//    {
+//      return are_isomorphic(maps_a_elem, maps_b_elem);
+//    });
+//  }));
+//}
 
 
 /**
@@ -332,32 +332,32 @@ static auto stabilize (const conditions_t& raw_cond) -> conditions_t
 }
 
 
-/**
- * @brief verify if the condition is recursive
- */
-auto is_recursive (const conditions_t& stabilized_cond) -> bool
-{
-  return ((stabilized_cond.size() >= 2) &&
-          (are_isomorphic(stabilized_cond.crbegin()->first,
-                          std::next(stabilized_cond.crbegin())->first)));
-}
+///**
+// * @brief verify if the condition is recursive
+// */
+//auto is_recursive (const conditions_t& stabilized_cond) -> bool
+//{
+//  return ((stabilized_cond.size() >= 2) &&
+//          (are_isomorphic(stabilized_cond.crbegin()->first,
+//                          std::next(stabilized_cond.crbegin())->first)));
+//}
 
 
 /**
  * @brief calculate the non-recursive order of the condition
  */
-auto order (const conditions_t& stabilized_cond) -> int
-{
-  conditions_t::const_reverse_iterator examining_cond_iter = stabilized_cond.crbegin();
-  std::all_of(stabilized_cond.crbegin(), stabilized_cond.crend(),
-              [&](conditions_t::const_reference cond_elem) -> bool
-  {
-    return ((stabilized_cond.crend() - examining_cond_iter >= 2) &&
-            are_isomorphic(examining_cond_iter->first, (++examining_cond_iter)->first));
-  });
+//auto order (const conditions_t& stabilized_cond) -> int
+//{
+//  conditions_t::const_reverse_iterator examining_cond_iter = stabilized_cond.crbegin();
+//  std::all_of(stabilized_cond.crbegin(), stabilized_cond.crend(),
+//              [&](conditions_t::const_reference cond_elem) -> bool
+//  {
+//    return ((stabilized_cond.crend() - examining_cond_iter >= 2) &&
+//            are_isomorphic(examining_cond_iter->first, (++examining_cond_iter)->first));
+//  });
 
-  return stabilized_cond.crend() - examining_cond_iter;
-}
+//  return stabilized_cond.crend() - examining_cond_iter;
+//}
 
 
 /**
@@ -443,8 +443,8 @@ execution_path::execution_path (const order_ins_map_t& path, const path_code_t& 
 auto execution_path::calculate_condition () -> void
 {
   this->condition = calculate_from(this->content, this->code);
-  this->condition_is_recursive = is_recursive(this->condition);
-  this->condition_order = order(this->condition);
+//  this->condition_is_recursive = is_recursive(this->condition);
+//  this->condition_order = order(this->condition);
 
 #if !defined(NDEBUG)
 //  std::for_each(this->condition.begin(), this->condition.end(),
@@ -470,17 +470,17 @@ auto execution_path::calculate_condition () -> void
 /**
  * @brief predict a lazy condition
  */
-auto execution_path::lazy_condition (int n) -> conditions_t
-{
-  conditions_t lazy_cond(this->condition.begin(),
-                         std::next(this->condition.begin(), std::min(n, this->condition_order)));
-  if (this->condition_is_recursive)
-  {
-    while (this->condition_order < n--) lazy_cond.push_back(this->condition.back());
-  }
+//auto execution_path::lazy_condition (int n) -> conditions_t
+//{
+//  conditions_t lazy_cond(this->condition.begin(),
+//                         std::next(this->condition.begin(), std::min(n, this->condition_order)));
+//  if (this->condition_is_recursive)
+//  {
+//    while (this->condition_order < n--) lazy_cond.push_back(this->condition.back());
+//  }
 
-  return lazy_cond;
-}
+//  return lazy_cond;
+//}
 
 
 /**
@@ -500,34 +500,34 @@ auto calculate_exec_path_conditions(ptr_exec_paths_t& exec_paths) -> void
 /**
  * @brief show_path_condition
  */
-auto show_path_condition(const ptr_exec_paths_t& exec_paths) -> void
-{
-  tfm::format(std::cout, "path conditions\n");
-  auto show_cond = [&](ptr_exec_paths_t::const_reference exp_path, int i) -> void
-  {
-    tfm::format(std::cout, "| ");
-    std::for_each(exp_path->condition.at(i).first.begin()->begin(),
-                  exp_path->condition.at(i).first.begin()->end(),
-                  [&](addrint_value_map_t::const_reference cond_elem)
-    {
-      tfm::format(std::cout, "%s ", addrint_to_hexstring(cond_elem.first));
-    });
-    return;
-  };
+//auto show_path_condition(const ptr_exec_paths_t& exec_paths) -> void
+//{
+//  tfm::format(std::cout, "path conditions\n");
+//  auto show_cond = [&](ptr_exec_paths_t::const_reference exp_path, int i) -> void
+//  {
+//    tfm::format(std::cout, "| ");
+//    std::for_each(exp_path->condition.at(i).first.begin()->begin(),
+//                  exp_path->condition.at(i).first.begin()->end(),
+//                  [&](addrint_value_map_t::const_reference cond_elem)
+//    {
+//      tfm::format(std::cout, "%s ", addrint_to_hexstring(cond_elem.first));
+//    });
+//    return;
+//  };
 
-  std::for_each(exec_paths.begin(), exec_paths.end(), [&](ptr_exec_paths_t::const_reference exp_path)
-  {
-    auto i = 0;
-    for (; i < exp_path->condition_order; ++i) show_cond(exp_path, i);
-    if (exp_path->condition_is_recursive) tfm::format(std::cout, "|*\n");
-    else tfm::format(std::cout, "|\n");
-  });
-  return;
-}
+//  std::for_each(exec_paths.begin(), exec_paths.end(), [&](ptr_exec_paths_t::const_reference exp_path)
+//  {
+//    auto i = 0;
+//    for (; i < exp_path->condition_order; ++i) show_cond(exp_path, i);
+//    if (exp_path->condition_is_recursive) tfm::format(std::cout, "|*\n");
+//    else tfm::format(std::cout, "|\n");
+//  });
+//  return;
+//}
 
 
-auto show_path_condition(const ptr_exec_path_t& exp_path) -> void
-{
+//auto show_path_condition(const ptr_exec_path_t& exp_path) -> void
+//{
 //  tfm::format(std::cout, "| ");
 //  std::for_each(exp_path->condition.at(i).first.begin()->begin(),
 //                exp_path->condition.at(i).first.begin()->end(),
@@ -536,6 +536,6 @@ auto show_path_condition(const ptr_exec_path_t& exp_path) -> void
 //    tfm::format(std::cout, "%s ", addrint_to_hexstring(cond_elem.first));
 //  });
 
-  return;
-}
+//  return;
+//}
 #endif

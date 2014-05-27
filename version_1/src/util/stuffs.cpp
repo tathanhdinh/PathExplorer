@@ -54,18 +54,40 @@ auto two_vmaps_are_identical (const addrint_value_maps_t& maps_a,
 }
 
 
+auto two_maps_are_isomorphic (const addrint_value_map_t& map_a,
+                              const addrint_value_map_t& map_b) -> bool
+{
+  auto predicate = [](addrint_value_map_t::const_reference addr_val_a,
+      addrint_value_map_t::const_reference addr_val_b)
+  {
+    return (std::get<1>(addr_val_a) == std::get<1>(addr_val_b));
+  };
+  return ((map_a.size() == map_b.size()) &&
+          std::equal(std::begin(map_a), std::end(map_a), std::begin(map_b), predicate));
+}
+
+
 /**
  * @brief two_vmaps_are_isomorphic
  */
 auto two_vmaps_are_isomorphic (const addrint_value_maps_t& maps_a,
                                const addrint_value_maps_t& maps_b) -> bool
 {
-  auto predicate = [&maps_b](addrint_value_maps_t::const_reference addr_val) -> bool
+//  auto predicate = [&maps_b](addrint_value_maps_t::const_reference addr_val) -> bool
+//  {
+//    return (std::find(maps_b.begin(), maps_b.end(), addr_val) != maps_b.end());
+//  };
+
+//  return ((maps_a.size() == maps_b.size()) && std::all_of(maps_a.begin(), maps_a.end(), predicate));
+  auto map_a_in_maps_b = [&](addrint_value_maps_t::const_reference map_a) -> bool
   {
-    return (std::find(maps_b.begin(), maps_b.end(), addr_val) != maps_b.end());
+    return (std::find_if(std::begin(maps_b), std::end(maps_b),
+                        std::bind(two_maps_are_isomorphic, map_a, std::placeholders::_1))
+            != std::end(maps_b));
   };
 
-  return ((maps_a.size() == maps_b.size()) && std::all_of(maps_a.begin(), maps_a.end(), predicate));
+  return ((maps_a.size() == maps_b.size()) &&
+          std::all_of(std::begin(maps_a), std::end(maps_a), map_a_in_maps_b));
 }
 
 
