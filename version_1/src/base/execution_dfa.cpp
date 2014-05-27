@@ -201,6 +201,55 @@ auto execution_dfa::optimize() -> void
       return;
     };
 
+    auto find_state_by_content = [](const ptr_cond_direct_inss_t& content) -> dfa_vertex_desc
+    {
+      // get the descriptor of the new state in the new DFA
+      dfa_vertex_iter first_state_iter, last_state_iter;
+      std::tie(first_state_iter, last_state_iter) = boost::vertices(internal_dfa);
+
+      auto new_state_iter = std::find_if(first_state_iter, last_state_iter,
+                                         [&content](dfa_vertex_desc state)
+      {
+        return (internal_dfa[state] == content);
+      });
+
+      if (new_state_iter != last_state_iter) return *new_state_iter;
+      else return boost::graph_traits<dfa_graph_t>::null_vertex();
+    };
+    
+    auto erase_duplicated_transitions = [](dfa_vertex_desc state) -> void
+    {
+      auto same_transition = [](dfa_edge_desc trans_x, dfa_edge_desc trans_y) -> bool
+      {
+        return ((boost::target(trans_x, internal_dfa) == boost::target(trans_y, internal_dfa)) &&
+            two_vmaps_are_isomorphic(internal_dfa[trans_x], internal_dfa[trans_y]));
+      };
+
+      boost::graph_traits<dfa_graph_t>::out_edge_iterator first_trans_iter, last_trans_iter;
+      boost::graph_traits<dfa_graph_t>::out_edge_iterator trans_iter, next_trans_iter;
+      auto duplicated_trans_exists = true;
+      while (duplicated_trans_exists)
+      {
+        duplicated_trans_exists = false;
+        std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(state, internal_dfa);
+        trans_iter = first_trans_iter;
+        for (next_trans_iter = trans_iter;
+             trans_iter != last_trans_iter; trans_iter = next_trans_iter)
+        {
+//          ++next_trans_iter;
+          if (std::find_if(++next_trans_iter, last_trans_iter,
+                           std::bind(same_transition, *trans_iter, std::placeholders::_1))
+              != last_trans_iter)
+          {
+            duplicated_trans_exists = true; break;
+          }
+        }
+        if (duplicated_trans_exists) boost::remove_edge(*trans_iter, internal_dfa);
+      };
+
+      return;
+    };
+
     // add a new state reprenting the class of equivalent states
     auto new_state_prop = std::accumulate(equiv_states.begin(),
                                           equiv_states.end(), ptr_cond_direct_inss_t(), operation);
@@ -212,21 +261,25 @@ auto execution_dfa::optimize() -> void
       copy_transitions(state, new_state);
     });
 
+    // erase duplicated transitions
+    erase_duplicated_transitions(new_state);
+
     // erase equivalent states
     erase_states(equiv_states);
 
     // get the descriptor of the new state in the new DFA
-    dfa_vertex_iter first_state_iter, last_state_iter;
-    std::tie(first_state_iter, last_state_iter) = boost::vertices(internal_dfa);
+//    dfa_vertex_iter first_state_iter, last_state_iter;
+//    std::tie(first_state_iter, last_state_iter) = boost::vertices(internal_dfa);
 
-    auto new_state_iter = std::find_if(first_state_iter, last_state_iter,
-                                       [&new_state_content](dfa_vertex_desc state)
-    {
-      return (internal_dfa[state] == new_state_content);
-    });
+//    auto new_state_iter = std::find_if(first_state_iter, last_state_iter,
+//                                       [&new_state_content](dfa_vertex_desc state)
+//    {
+//      return (internal_dfa[state] == new_state_content);
+//    });
 
-    if (new_state_iter != last_state_iter) return *new_state_iter;
-    else return boost::graph_traits<dfa_graph_t>::null_vertex();
+//    if (new_state_iter != last_state_iter) return *new_state_iter;
+//    else return boost::graph_traits<dfa_graph_t>::null_vertex();
+    return find_state_by_content(new_state_content);
   };
 
   auto find_equivalent_states = [](const dfa_vertex_descs& init_states) -> dfa_vertex_descs
