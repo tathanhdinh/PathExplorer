@@ -99,25 +99,31 @@ static auto determine_cfi_input_dependency() -> void
  * rollback from the checkpoint with the modification on the affecting input addresses may change
  * the CFI's decision.
  */
-static inline auto set_checkpoints_for_cfi(const ptr_cond_direct_ins_t& cfi) -> void
+static auto set_checkpoints_for_cfi(/*const */ptr_cond_direct_ins_t/*&*/ cfi) -> void
 {
   auto dep_addrs = cfi->input_dep_addrs;
   decltype(dep_addrs) input_dep_addrs, new_dep_addrs, intersected_addrs;
   checkpoint_addrs_pair_t checkpoint_with_input_addrs;
 
-  for (auto chkpnt_iter = saved_checkpoints.begin(); chkpnt_iter != saved_checkpoints.end();
-       ++chkpnt_iter)
+  std::all_of(std::begin(saved_checkpoints), std::end(saved_checkpoints),
+              [&](decltype(saved_checkpoints)::value_type chkpnt) -> bool
   {
     // consider only checkpoints before the CFI
-    if ((*chkpnt_iter)->exec_order <= cfi->exec_order)
+    if (chkpnt->exec_order <= cfi->exec_order)
     {
       // find the input addresses of the checkpoint
       input_dep_addrs.clear();
-      auto addr_iter = (*chkpnt_iter)->input_dep_original_values.begin();
-      for (; addr_iter != (*chkpnt_iter)->input_dep_original_values.end(); ++addr_iter)
+      std::for_each(std::begin(chkpnt->input_dep_original_values),
+                    std::end(chkpnt->input_dep_original_values),
+                    [&input_dep_addrs](decltype(chkpnt->input_dep_original_values)::const_reference addr_val)
       {
-        input_dep_addrs.insert(addr_iter->first);
-      }
+        input_dep_addrs.insert(std::get<0>(addr_val));
+      });
+//      auto addr_iter = chkpnt->input_dep_original_values.begin();
+//      for (; addr_iter != chkpnt->input_dep_original_values.end(); ++addr_iter)
+//      {
+//        input_dep_addrs.insert(addr_iter->first);
+//      }
 
       // find the intersection between the input addresses of the checkpoint and the affecting input
       // addresses of the CFI
@@ -131,12 +137,8 @@ static inline auto set_checkpoints_for_cfi(const ptr_cond_direct_ins_t& cfi) -> 
         // not empty, then the checkpoint and the intersected addrs make a pair, namely when we need
         // to change the decision of the CFI then we should rollback to the checkpoint and modify some
         // value at the address of the intersected addrs
-        checkpoint_with_input_addrs = std::make_pair(*chkpnt_iter, intersected_addrs);
+        checkpoint_with_input_addrs = std::make_pair(chkpnt, intersected_addrs);
         cfi->affecting_checkpoint_addrs_pairs.push_back(checkpoint_with_input_addrs);
-//#if !defined(NDEBUG)
-//        tfm::format(std::cerr, "the cfi at %d has a checkpoint at %d\n", cfi->exec_order,
-//                    (*chkpnt_iter)->exec_order);
-//#endif
 
         // the addrs in the intersected set are subtracted from the original dep_addrs
         new_dep_addrs.clear();
@@ -144,12 +146,59 @@ static inline auto set_checkpoints_for_cfi(const ptr_cond_direct_ins_t& cfi) -> 
                             intersected_addrs.begin(), intersected_addrs.end(),
                             std::inserter(new_dep_addrs, new_dep_addrs.begin()));
         // if the rest is empty then we have finished
-        if (new_dep_addrs.empty()) break;
+        if (new_dep_addrs.empty()) return false;
         // but if it is not empty then we continue to the next checkpoint
         else dep_addrs = new_dep_addrs;
       }
     }
-  }
+    return true;
+  });
+
+//  for (auto chkpnt_iter = saved_checkpoints.begin(); chkpnt_iter != saved_checkpoints.end();
+//       ++chkpnt_iter)
+//  {
+//    // consider only checkpoints before the CFI
+//    if ((*chkpnt_iter)->exec_order <= cfi->exec_order)
+//    {
+//      // find the input addresses of the checkpoint
+//      input_dep_addrs.clear();
+//      auto addr_iter = (*chkpnt_iter)->input_dep_original_values.begin();
+//      for (; addr_iter != (*chkpnt_iter)->input_dep_original_values.end(); ++addr_iter)
+//      {
+//        input_dep_addrs.insert(addr_iter->first);
+//      }
+
+//      // find the intersection between the input addresses of the checkpoint and the affecting input
+//      // addresses of the CFI
+//      intersected_addrs.clear();
+//      std::set_intersection(input_dep_addrs.begin(), input_dep_addrs.end(),
+//                            dep_addrs.begin(), dep_addrs.end(),
+//                            std::inserter(intersected_addrs, intersected_addrs.begin()));
+//      // verify if the intersection is not empty
+//      if (!intersected_addrs.empty())
+//      {
+//        // not empty, then the checkpoint and the intersected addrs make a pair, namely when we need
+//        // to change the decision of the CFI then we should rollback to the checkpoint and modify some
+//        // value at the address of the intersected addrs
+//        checkpoint_with_input_addrs = std::make_pair(*chkpnt_iter, intersected_addrs);
+//        cfi->affecting_checkpoint_addrs_pairs.push_back(checkpoint_with_input_addrs);
+////#if !defined(NDEBUG)
+////        tfm::format(std::cerr, "the cfi at %d has a checkpoint at %d\n", cfi->exec_order,
+////                    (*chkpnt_iter)->exec_order);
+////#endif
+
+//        // the addrs in the intersected set are subtracted from the original dep_addrs
+//        new_dep_addrs.clear();
+//        std::set_difference(dep_addrs.begin(), dep_addrs.end(),
+//                            intersected_addrs.begin(), intersected_addrs.end(),
+//                            std::inserter(new_dep_addrs, new_dep_addrs.begin()));
+//        // if the rest is empty then we have finished
+//        if (new_dep_addrs.empty()) break;
+//        // but if it is not empty then we continue to the next checkpoint
+//        else dep_addrs = new_dep_addrs;
+//      }
+//    }
+//  }
 
   return;
 }
@@ -167,11 +216,11 @@ static auto save_detected_cfis () -> void
                   [&](decltype(ins_at_order)::const_reference order_ins)
     {
       // consider only the instruction that is not behind the exploring CFI
-      if ((!exploring_cfi || (exploring_cfi && (/*order_ins.first*/std::get<0>(order_ins) > exploring_cfi->exec_order))) &&
-          (/*order_ins.first*/std::get<0>(order_ins) < /*last_order_ins.first*/std::get<0>(last_order_ins)))
+      if ((!exploring_cfi || (exploring_cfi && (std::get<0>(order_ins) > exploring_cfi->exec_order))) &&
+          (std::get<0>(order_ins) < std::get<0>(last_order_ins)))
       {
         // verify if the instruction is a CFI
-        if (/*order_ins.second*/std::get<1>(order_ins)->is_cond_direct_cf)
+        if (std::get<1>(order_ins)->is_cond_direct_cf)
         {
           // then recast to get its type
           auto new_cfi = std::static_pointer_cast<cond_direct_instruction>(order_ins.second);
