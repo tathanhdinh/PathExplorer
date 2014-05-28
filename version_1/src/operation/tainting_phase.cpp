@@ -267,10 +267,10 @@ static inline auto calculate_path_code () -> void
     std::for_each(ins_at_order.begin(), ins_at_order.end(),
                   [&](decltype(ins_at_order)::const_reference order_ins)
     {
-      if (!exploring_cfi || (exploring_cfi && (/*order_ins.first*/std::get<0>(order_ins) > exploring_cfi->exec_order)))
+      if (!exploring_cfi || (exploring_cfi && (std::get<0>(order_ins) > exploring_cfi->exec_order)))
       {
 #if !defined(DISABLE_FSA)
-        explored_fsa->add_vertex(/*order_ins.second*/std::get<1>(order_ins));
+        explored_fsa->add_vertex(std::get<1>(order_ins));
         if (prev_ins)
         {
           explored_fsa->add_edge(prev_ins->address, order_ins.second->address, current_path_code);
@@ -289,7 +289,7 @@ static inline auto calculate_path_code () -> void
 #endif
 
         // update the path code
-        if (/*order_ins.second*/std::get<1>(order_ins)->is_cond_direct_cf)
+        if (std::get<1>(order_ins)->is_cond_direct_cf)
         {
           auto current_cfi = std::static_pointer_cast<cond_direct_instruction>(order_ins.second);
           if (!current_cfi->input_dep_addrs.empty())
@@ -297,7 +297,7 @@ static inline auto calculate_path_code () -> void
             current_cfi->path_code = current_path_code; current_path_code.push_back(false);
           }
         }
-        prev_ins = /*order_ins.second*/std::get<1>(order_ins);
+        prev_ins = std::get<1>(order_ins);
       }
     });
   }
