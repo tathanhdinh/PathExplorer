@@ -76,18 +76,6 @@ static auto sequential_generator (const addrint_value_map_t& input_map) -> addri
 }
 
 
-static auto sequential_update (addrint_value_map_t& updated_map) -> void
-{
-  auto cf = true;
-  std::for_each(updated_map.begin(), updated_map.end(),
-                [&cf](addrint_value_map_t::reference addr_val)
-  {
-    if (cf) cf = (++std::get<1>(addr_val) == 0);
-  });
-  return;
-}
-
-
 /**
  * the template function is conherent only where sizeof(T) = active_modified_addrs_values.size()
  */
@@ -109,6 +97,24 @@ static auto random_generator (const addrint_value_map_t& input_map) -> addrint_v
 }
 
 
+/**
+ * @brief sequential_update
+ */
+static auto sequential_update (addrint_value_map_t& updated_map) -> void
+{
+  auto cf = true;
+  std::for_each(std::begin(updated_map), std::end(updated_map),
+                [&cf](addrint_value_map_t::reference addr_val)
+  {
+    if (cf) cf = (++std::get<1>(addr_val) == 0);
+  });
+  return;
+}
+
+
+/**
+ *
+ */
 template <typename T>
 static auto random_update (addrint_value_map_t& updated_map) -> void
 {
@@ -128,7 +134,7 @@ static auto random_update (addrint_value_map_t& updated_map) -> void
 static auto initialize_values_at_active_modified_addrs () -> void
 {
   active_modified_addrs_values.clear();
-  std::for_each(active_modified_addrs.begin(), active_modified_addrs.end(),
+  std::for_each(std::begin(active_modified_addrs), std::end(active_modified_addrs),
                 [&](decltype(active_modified_addrs)::const_reference addr)
   {
 //    active_modified_addrs_values[addr] = 0;
@@ -256,10 +262,10 @@ static auto calculate_tainting_fresh_input(
   // make a copy in fresh input of the selected input
   std::copy(selected_input.get(), selected_input.get() + received_msg_size, fresh_input.get());
 
-  std::for_each(modified_addrs_with_values.begin(), modified_addrs_with_values.end(),
+  std::for_each(std::begin(modified_addrs_with_values), std::end(modified_addrs_with_values),
                 [&](addrint_value_map_t::const_reference addr_value)
   {
-    fresh_input.get()[std::get<0>(addr_value) - received_msg_addr] = /*addr_value.second*/std::get<1>(addr_value);
+    fresh_input.get()[std::get<0>(addr_value) - received_msg_addr] = std::get<1>(addr_value);
   });
 
   return;
@@ -285,7 +291,7 @@ static auto prepare_new_tainting_phase () -> void
   else
   {
     // not exceeded yet, then verify if there exists a resolved but unexplored CFI
-    if (std::any_of(detected_input_dep_cfis.begin(), detected_input_dep_cfis.end(),
+    if (std::any_of(std::begin(detected_input_dep_cfis), std::end(detected_input_dep_cfis),
                     [&](decltype(detected_input_dep_cfis)::reference cfi_elem) -> bool
     {
       if (cfi_elem->is_resolved && !cfi_elem->is_explored)
@@ -521,8 +527,8 @@ auto control_flow_instruction(ADDRINT ins_addr, THREADID thread_id) -> VOID
 /**
  * @brief tracking instructions that write memory
  */
-auto mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length,
-                           THREADID thread_id) -> VOID
+auto mem_write_instruction(ADDRINT ins_addr,
+                           ADDRINT mem_addr, UINT32 mem_length, THREADID thread_id) -> VOID
 {
   if (thread_id == traced_thread_id)
   {
@@ -537,7 +543,7 @@ auto mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_addr, UINT32 mem_length
     {
       // no, namely we are now in normal "forward" execution, so all checkpoint until the current
       // execution order need to track memory write instructions
-      std::any_of(saved_checkpoints.begin(), saved_checkpoints.end(),
+      std::any_of(std::begin(saved_checkpoints), std::end(saved_checkpoints),
                   [&](decltype(saved_checkpoints)::reference checkpoint_elem) -> bool
       {
         if (checkpoint_elem->exec_order <= current_exec_order)

@@ -106,7 +106,7 @@ auto rollback_with_original_input(ptr_checkpoint_t dest, UINT32& existing_exec_o
 //    PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_iter->first), &mem_iter->second, sizeof(UINT8));
 //  }
 
-  std::for_each(dest->input_dep_original_values.begin(), dest->input_dep_original_values.end(),
+  std::for_each(std::begin(dest->input_dep_original_values), std::end(dest->input_dep_original_values),
                 [](decltype(dest->input_dep_original_values)::const_reference addr_mem)
   {
     PIN_SafeCopy(reinterpret_cast<UINT8*>(addr_mem.first), &addr_mem.second, sizeof(UINT8));
@@ -149,7 +149,7 @@ auto rollback_with_modified_input(ptr_checkpoint_t dest, UINT32& existing_exec_o
 //  {
 //    PIN_SafeCopy(reinterpret_cast<UINT8*>(mem_iter->first), &mem_iter->second, sizeof(UINT8));
 //  }
-  std::for_each(modified_addrs_values.begin(), modified_addrs_values.end(),
+  std::for_each(std::begin(modified_addrs_values), std::end(modified_addrs_values),
                 [](addrint_value_map_t::const_reference addr_value)
   {
     PIN_SafeCopy(reinterpret_cast<UINT8*>(addr_value.first), &addr_value.second, sizeof(UINT8));
