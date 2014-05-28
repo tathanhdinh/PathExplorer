@@ -114,7 +114,7 @@ static auto add_exec_path (ptr_exec_path_t exec_path) -> void
  */
 auto execution_dfa::add_exec_paths (ptr_exec_paths_t exec_paths) -> void
 {
-  std::for_each(/*exec_paths.begin()*/std::begin(exec_paths), std::end(exec_paths)/*exec_paths.end()*/,
+  std::for_each(std::begin(exec_paths), std::end(exec_paths),
                 [](decltype(explored_exec_paths)::const_reference exec_path)
   {
     add_exec_path(exec_path);
@@ -139,7 +139,7 @@ auto execution_dfa::optimize() -> void
           const ptr_cond_direct_inss_t& cfis_b) -> ptr_cond_direct_inss_t
       {
         ptr_cond_direct_inss_t merged_cfis = cfis_a;
-        std::for_each(/*cfis_b.begin()*/std::begin(cfis_b), /*cfis_b.end()*/std::end(cfis_b),
+        std::for_each(std::begin(cfis_b), std::end(cfis_b),
                       [&merged_cfis](ptr_cond_direct_inss_t::const_reference cfi_b)
         {
           if (std::find(merged_cfis.begin(),
@@ -167,8 +167,8 @@ auto execution_dfa::optimize() -> void
       std::tie(out_edge_iter_a, out_edge_last_iter_a) = boost::out_edges(state_a, internal_dfa);
       std::for_each(out_edge_iter_a, out_edge_last_iter_a, [&state_b](dfa_edge_desc trans)
       {
-        boost::add_edge(state_b,
-                        boost::target(trans, internal_dfa), internal_dfa[trans], internal_dfa);
+        boost::add_edge(state_b, boost::target(trans, internal_dfa), internal_dfa[trans],
+                        internal_dfa);
       });
 
       return;
@@ -177,15 +177,15 @@ auto execution_dfa::optimize() -> void
     auto erase_states = [](const dfa_vertex_descs& states) -> void
     {
       // save contents of equivalent states
-      std::vector<ptr_cond_direct_inss_t> state_contents;
-      std::for_each(states.begin(), states.end(), [&state_contents](dfa_vertex_desc state)
+      dfa_vertices state_contents;
+      std::for_each(std::begin(states), std::end(states), [&state_contents](dfa_vertex_desc state)
       {
         state_contents.push_back(internal_dfa[state]);
       });
 
       // then use these contents to remove states
-      std::for_each(std::begin(state_contents),
-                    std::end(state_contents), [](ptr_cond_direct_inss_t content)
+      std::for_each(std::begin(state_contents), std::end(state_contents),
+                    [](ptr_cond_direct_inss_t content)
       {
         dfa_vertex_iter state_iter, last_state_iter;
         std::tie(state_iter, last_state_iter) = boost::vertices(internal_dfa);
@@ -270,7 +270,7 @@ auto execution_dfa::optimize() -> void
 
     // add a new state reprenting the class of equivalent states
     auto new_representing_state_content =
-        std::accumulate(equiv_states.begin(), equiv_states.end(), ptr_cond_direct_inss_t(),
+        std::accumulate(std::begin(equiv_states), std::end(equiv_states), ptr_cond_direct_inss_t(),
                         merging_operator);
     auto new_representing_state = boost::add_vertex(new_representing_state_content, internal_dfa);
 
@@ -281,7 +281,7 @@ auto execution_dfa::optimize() -> void
 //    auto new_state_content = internal_dfa[representing_state];
 
     // copy transition
-    std::for_each(equiv_states.begin(), equiv_states.end(), [&](dfa_vertex_desc state)
+    std::for_each(std::begin(equiv_states), std::end(equiv_states), [&](dfa_vertex_desc state)
     {
       copy_transitions(state, new_representing_state);
     });
@@ -312,11 +312,11 @@ auto execution_dfa::optimize() -> void
   {
     auto two_states_are_equivalent = [](dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> bool
     {
-      tfm::format(std::cerr, "verify %s:%s and %s:%s\n",
-                  addrint_to_hexstring(internal_dfa[state_a].front()->address),
-                  internal_dfa[state_a].front()->disassembled_name,
-                  addrint_to_hexstring(internal_dfa[state_b].front()->address),
-                  internal_dfa[state_b].front()->disassembled_name);
+//      tfm::format(std::cerr, "verify %s:%s and %s:%s\n",
+//                  addrint_to_hexstring(internal_dfa[state_a].front()->address),
+//                  internal_dfa[state_a].front()->disassembled_name,
+//                  addrint_to_hexstring(internal_dfa[state_b].front()->address),
+//                  internal_dfa[state_b].front()->disassembled_name);
 
       boost::graph_traits<dfa_graph_t>::out_edge_iterator first_a_trans_iter, last_a_trans_iter;
       std::tie(first_a_trans_iter, last_a_trans_iter) = boost::out_edges(state_a, internal_dfa);
@@ -354,17 +354,17 @@ auto execution_dfa::optimize() -> void
       auto all_trans_to_equiv = [](
           dfa_vertex_desc state, const dfa_vertex_descs& init_states) -> bool
       {
-        tfm::format(std::cerr, "verify derived state %s:%s\n",
-                    addrint_to_hexstring(internal_dfa[state].front()->address),
-                    internal_dfa[state].front()->disassembled_name);
+//        tfm::format(std::cerr, "verify derived state %s:%s\n",
+//                    addrint_to_hexstring(internal_dfa[state].front()->address),
+//                    internal_dfa[state].front()->disassembled_name);
 
         boost::graph_traits<dfa_graph_t>::out_edge_iterator first_trans_iter, last_trans_iter;
         std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(state, internal_dfa);
 
         return std::all_of(first_trans_iter, last_trans_iter, [&](dfa_edge_desc trans)
         {
-          return (std::find(init_states.begin(), init_states.end(),
-                            boost::target(trans, internal_dfa)) != init_states.end());
+          return (std::find(std::begin(init_states), std::end(init_states),
+                            boost::target(trans, internal_dfa)) != std::end(init_states));
         });
       };
 
@@ -377,8 +377,8 @@ auto execution_dfa::optimize() -> void
 //                    addrint_to_hexstring(internal_dfa[state].front()->address),
 //                    internal_dfa[state].front()->disassembled_name);
 
-        if ((std::find(initial_states.begin(),
-                       initial_states.end(), state) == initial_states.end()) &&
+        if ((std::find(std::begin(initial_states),
+                       std::end(initial_states), state) == std::end(initial_states)) &&
             (all_trans_to_equiv(state, initial_states)))
           derived_states.push_back(state);
       });
@@ -453,10 +453,10 @@ auto execution_dfa::optimize() -> void
     else break;
   }
 
-  // loop 0
-  equiv_states = find_equivalent_states(representing_states);
-  if (equiv_states.size() > 1)
-    representing_states = merge_equivalent_states(equiv_states, representing_states);
+//  // loop 0
+//  equiv_states = find_equivalent_states(representing_states);
+//  if (equiv_states.size() > 1)
+//    representing_states = merge_equivalent_states(equiv_states, representing_states);
 
 //  // loop 1
 //  equiv_states = find_equivalent_states(representing_states);
@@ -522,7 +522,7 @@ auto execution_dfa::save_to_file(const std::string& filename) -> void
     if (trans_cond.size() <= 2)
     {
       tfm::format(label, "[label=\"{ ");
-      std::for_each(trans_cond.begin(), trans_cond.end(),
+      std::for_each(/*trans_cond.begin()*/std::begin(trans_cond), /*trans_cond.end()*/std::end(trans_cond),
                     [&label](decltype(trans_cond)::const_reference trans_elem)
       {
         std::for_each(trans_elem.begin(), trans_elem.end(),
@@ -539,7 +539,7 @@ auto execution_dfa::save_to_file(const std::string& filename) -> void
 
       auto value_exists = [&trans_cond](UINT8 value) -> bool
       {
-        return std::any_of(trans_cond.begin(), trans_cond.end(),
+        return std::any_of(/*trans_cond.begin()*/std::begin(trans_cond), /*trans_cond.end()*/std::end(trans_cond),
                            [&value](addrint_value_maps_t::const_reference trans_elem)
         {
           return std::any_of(trans_elem.begin(), trans_elem.end(),
