@@ -292,19 +292,6 @@ auto execution_dfa::optimize() -> void
     // erase equivalent states
     erase_states(equiv_states);
 
-    // get the descriptor of the new state in the new DFA
-//    dfa_vertex_iter first_state_iter, last_state_iter;
-//    std::tie(first_state_iter, last_state_iter) = boost::vertices(internal_dfa);
-
-//    auto new_state_iter = std::find_if(first_state_iter, last_state_iter,
-//                                       [&new_state_content](dfa_vertex_desc state)
-//    {
-//      return (internal_dfa[state] == new_state_content);
-//    });
-
-//    if (new_state_iter != last_state_iter) return *new_state_iter;
-//    else return boost::graph_traits<dfa_graph_t>::null_vertex();
-//    return find_states_by_contents(new_state_content);
     return find_states_by_contents(representing_state_contents);
   };
 
@@ -330,17 +317,6 @@ auto execution_dfa::optimize() -> void
       {
         return std::any_of(first_b_trans_iter, last_b_trans_iter, [&](dfa_edge_desc trans_b)
         {
-//          if (two_vmaps_are_isomorphic(internal_dfa[trans_a], internal_dfa[trans_b]))
-//          {
-//            tfm::format(std::cerr, "isomorphic transitions detected\n"); /*std::exit(1);*/
-//          }
-
-//          if ((internal_dfa[boost::target(trans_a, internal_dfa)] ==
-//               internal_dfa[boost::target(trans_b, internal_dfa)]))
-//          {
-//            tfm::format(std::cerr, "two states the same target\n"); /*std::exit(1);*/
-//          }
-
           return ((internal_dfa[boost::target(trans_a, internal_dfa)] ==
               internal_dfa[boost::target(trans_b, internal_dfa)]) &&
               two_vmaps_are_isomorphic(internal_dfa[trans_a], internal_dfa[trans_b]));
@@ -453,57 +429,7 @@ auto execution_dfa::optimize() -> void
     else break;
   }
 
-//  // loop 0
-//  equiv_states = find_equivalent_states(representing_states);
-//  if (equiv_states.size() > 1)
-//    representing_states = merge_equivalent_states(equiv_states, representing_states);
-
-//  // loop 1
-//  equiv_states = find_equivalent_states(representing_states);
-//  if (equiv_states.size() > 1)
-//    representing_states = merge_equivalent_states(equiv_states, representing_states);
-
-//  // loop 2
-//  equiv_states = find_equivalent_states(representing_states);
-//  if (equiv_states.size() > 1)
-//    representing_states = merge_equivalent_states(equiv_states, representing_states);
-
-//  // loop 3
-//  equiv_states = find_equivalent_states(representing_states);
-//  if (equiv_states.size() > 1)
-//    representing_states = merge_equivalent_states(equiv_states, representing_states);
-
-//  // loop 4
-//  equiv_states = find_equivalent_states(representing_states);
-//  if (equiv_states.size() > 1)
-//    representing_states = merge_equivalent_states(equiv_states, representing_states);
-
-//  // loop 5
-//  equiv_states = find_equivalent_states(representing_states);
-//  if (equiv_states.size() > 1)
-//    representing_states = merge_equivalent_states(equiv_states, representing_states);
-
-//  // loop 6
-//  equiv_states = find_equivalent_states(representing_states);
-//  if (equiv_states.size() > 1)
-//    representing_states = merge_equivalent_states(equiv_states, representing_states);
-
-//  // loop 7
-//  equiv_states = find_equivalent_states(representing_states);
-//  if (equiv_states.size() > 1)
-//    representing_states = merge_equivalent_states(equiv_states, representing_states);
-
-//  // loop 8
-//  equiv_states = find_equivalent_states(representing_states);
-//  if (equiv_states.size() > 1)
-//    representing_states = merge_equivalent_states(equiv_states, representing_states);
-
-//  // loop 9
-//  equiv_states = find_equivalent_states(representing_states);
-//  if (equiv_states.size() > 1)
-//    representing_states = merge_equivalent_states(equiv_states, representing_states);
-
-//  // loop 10 (fixpoint reached)
+//  // loop
 //  equiv_states = find_equivalent_states(representing_states);
 //  if (equiv_states.size() > 1)
 //    representing_states = merge_equivalent_states(equiv_states, representing_states);
@@ -511,10 +437,26 @@ auto execution_dfa::optimize() -> void
 }
 
 
+auto execution_dfa::approximate () -> void
+{
+  // verify if the state a can be approximated by b
+  std::function<bool(dfa_vertex_desc, dfa_vertex_desc)> a_is_approx_by_b =
+      [](dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> bool
+  {
+    if (internal_dfa[state_b].empty()) return true;
+    else
+    {
+
+    }
+  };
+
+  return;
+}
+
 /**
  * @brief execution_dfa::save_to_file
  */
-auto execution_dfa::save_to_file(const std::string& filename) -> void
+auto execution_dfa::save_to_file (const std::string& filename) -> void
 {
   auto write_dfa_transition = [](std::ostream& label, dfa_edge_desc trans) -> void
   {

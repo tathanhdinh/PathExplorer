@@ -16,6 +16,9 @@ auto two_vmaps_are_identical    (const addrint_value_maps_t& maps_a,
 auto two_vmaps_are_isomorphic   (const addrint_value_maps_t& maps_a,
                                  const addrint_value_maps_t& maps_b) -> bool;
 
+auto lhs_vmaps_is_incl_in_rhs   (const addrint_value_maps_t& lhs_maps,
+                                 const addrint_value_maps_t& rhs_maps) -> bool;
+
 auto is_input_dep_cfi           (ptr_instruction_t tested_ins) -> bool;
 
 auto is_resolved_cfi            (ptr_instruction_t tested_ins) -> bool;
