@@ -93,8 +93,8 @@ static auto add_exec_path (ptr_exec_path_t exec_path) -> void
       std::for_each(std::get<1>(sub_cond).begin(), std::get<1>(sub_cond).end(),
                     [&](ptr_cond_direct_inss_t::const_reference cfi)
       {
-        if (std::find(internal_dfa[prev_state].begin(),
-                      internal_dfa[prev_state].end(), cfi) == internal_dfa[prev_state].end())
+        if (std::find(std::begin(internal_dfa[prev_state]), std::end(internal_dfa[prev_state]),
+                      cfi) == std::end(internal_dfa[prev_state]))
           internal_dfa[prev_state].push_back(cfi);
       });
 
@@ -522,7 +522,7 @@ auto execution_dfa::save_to_file(const std::string& filename) -> void
     if (trans_cond.size() <= 2)
     {
       tfm::format(label, "[label=\"{ ");
-      std::for_each(/*trans_cond.begin()*/std::begin(trans_cond), /*trans_cond.end()*/std::end(trans_cond),
+      std::for_each(std::begin(trans_cond), std::end(trans_cond),
                     [&label](decltype(trans_cond)::const_reference trans_elem)
       {
         std::for_each(trans_elem.begin(), trans_elem.end(),
@@ -539,7 +539,7 @@ auto execution_dfa::save_to_file(const std::string& filename) -> void
 
       auto value_exists = [&trans_cond](UINT8 value) -> bool
       {
-        return std::any_of(/*trans_cond.begin()*/std::begin(trans_cond), /*trans_cond.end()*/std::end(trans_cond),
+        return std::any_of(std::begin(trans_cond), std::end(trans_cond),
                            [&value](addrint_value_maps_t::const_reference trans_elem)
         {
           return std::any_of(trans_elem.begin(), trans_elem.end(),
