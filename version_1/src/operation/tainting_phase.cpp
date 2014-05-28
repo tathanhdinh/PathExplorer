@@ -353,7 +353,7 @@ static auto calculate_rollbacking_trace_length() -> void
     if (order_ins.second->is_cond_direct_cf)
     {
       // and this CFI depends on the input
-      last_cfi = std::static_pointer_cast<cond_direct_instruction>(/*ins_ord.second*/std::get<1>(order_ins));
+      last_cfi = std::static_pointer_cast<cond_direct_instruction>(std::get<1>(order_ins));
       if (last_cfi->input_dep_addrs.empty())
       {
         last_cfi.reset(); return false;
@@ -585,32 +585,52 @@ auto mem_write_instruction(ADDRINT ins_addr, ADDRINT mem_written_addr, UINT32 me
  * @param idx
  * @return
  */
-static inline auto source_variables(UINT32 ins_exec_order) -> std::set<df_vertex_desc>
+static auto source_variables(UINT32 ins_exec_order) -> std::set<df_vertex_desc>
 {
   df_vertex_desc_set src_vertex_descs;
 
-  std::for_each(ins_at_order[ins_exec_order]->src_operands.begin(),
-                ins_at_order[ins_exec_order]->src_operands.end(), [&](ptr_operand_t opr)
+  std::for_each(std::begin(ins_at_order[ins_exec_order]->src_operands),
+                std::end(ins_at_order[ins_exec_order]->src_operands), [&](ptr_operand_t opr)
   {
-    // verify if the current source operand is
-    auto outer_vertex_iter = dta_outer_vertices.begin();
-    for (; outer_vertex_iter != dta_outer_vertices.end(); ++outer_vertex_iter)
-    {
-      // found in the outer interface
-      if ((opr->value.type() == dta_graph[*outer_vertex_iter]->value.type()) &&
-          (opr->name == dta_graph[*outer_vertex_iter]->name))
-      {
-        src_vertex_descs.insert(*outer_vertex_iter);
-        break;
-      }
-    }
+//    // verify if the current source operand is
+//    auto outer_vertex_iter = dta_outer_vertices.begin();
+//    for (; outer_vertex_iter != dta_outer_vertices.end(); ++outer_vertex_iter)
+//    {
+//      // found in the outer interface
+//      if ((opr->value.type() == dta_graph[*outer_vertex_iter]->value.type()) &&
+//          (opr->name == dta_graph[*outer_vertex_iter]->name))
+//      {
+//        src_vertex_descs.insert(*outer_vertex_iter);
+//        break;
+//      }
+//    }
 
-    // not found
-    if (outer_vertex_iter == dta_outer_vertices.end())
+//    // not found
+//    if (outer_vertex_iter == dta_outer_vertices.end())
+//    {
+//      auto new_vertex_desc = boost::add_vertex(opr, dta_graph);
+//      dta_outer_vertices.insert(new_vertex_desc); src_vertex_descs.insert(new_vertex_desc);
+//    }
+
+    // verify if the current source operand is
+    if (!std::any_of(std::begin(dta_outer_vertices), std::end(dta_outer_vertices),
+                     [&](decltype(dta_outer_vertices)::const_reference outer_vertex) -> bool
     {
+       // found in the outer interface
+       if ((opr->value.type() == dta_graph[outer_vertex]->value.type()) &&
+           (opr->name == dta_graph[outer_vertex]->name))
+       {
+         src_vertex_descs.insert(outer_vertex);
+         return true;
+       }
+       else return false;
+    }))
+    {
+      // not found
       auto new_vertex_desc = boost::add_vertex(opr, dta_graph);
       dta_outer_vertices.insert(new_vertex_desc); src_vertex_descs.insert(new_vertex_desc);
     }
+
   });
 
   return src_vertex_descs;
@@ -680,11 +700,9 @@ auto graphical_propagation (ADDRINT ins_addr, THREADID thread_id) -> VOID
     auto src_vertex_descs = source_variables(current_exec_order);
     auto dst_vertex_descs = destination_variables(current_exec_order);
 
-    std::for_each(src_vertex_descs.begin(), src_vertex_descs.end(),
-                  [&](df_vertex_desc src_desc)
+    std::for_each(src_vertex_descs.begin(), src_vertex_descs.end(), [&](df_vertex_desc src_desc)
     {
-      std::for_each(dst_vertex_descs.begin(), dst_vertex_descs.end(),
-                    [&](df_vertex_desc dst_desc)
+      std::for_each(dst_vertex_descs.begin(), dst_vertex_descs.end(), [&](df_vertex_desc dst_desc)
       {
         boost::add_edge(src_desc, dst_desc, current_exec_order, dta_graph);
       });
