@@ -46,67 +46,7 @@ auto execution_dfa::instance() -> ptr_exec_dfa_t
 /**
  * @brief execution_dfa::add_exec_path
  */
-static auto add_exec_path (ptr_exec_path_t exec_path) -> void
-{
-  auto get_next_state = [](dfa_vertex_desc current_state,
-      const addrint_value_maps_t& transition_cond) -> dfa_vertex_desc
-  {
-    if (current_state == boost::graph_traits<dfa_graph_t>::null_vertex())
-      return boost::graph_traits<dfa_graph_t>::null_vertex();
-    else
-    {
-      boost::graph_traits<dfa_graph_t>::out_edge_iterator trans_iter, last_trans_iter;
-      std::tie(trans_iter, last_trans_iter) = boost::out_edges(current_state, internal_dfa);
 
-      auto predicate = [&transition_cond](dfa_edge_desc edge) -> bool
-      {
-        return two_vmaps_are_isomorphic(transition_cond, internal_dfa[edge]);
-      };
-
-      auto found_trans_iter = std::find_if(trans_iter, last_trans_iter, predicate);
-      return (found_trans_iter == last_trans_iter) ?
-            boost::graph_traits<dfa_graph_t>::null_vertex() :
-            boost::target(*found_trans_iter, internal_dfa);
-    }
-  };
-
-
-  // add the execution path into the DFA
-//  tfm::format(std::cerr, "======\nadd a new execution path\n");
-  auto prev_state = initial_state; auto mismatch = false;
-  std::for_each(std::begin(exec_path->condition), std::end(exec_path->condition),
-                [&](decltype(exec_path->condition)::const_reference sub_cond)
-  {
-    // trick: once mismatch is assigned to true then it will be never re-assigned to false
-    dfa_vertex_desc current_state;
-    if (!mismatch)
-    {
-      current_state = get_next_state(prev_state, std::get<0>(sub_cond));
-      mismatch = (current_state == boost::graph_traits<dfa_graph_t>::null_vertex());
-    }
-
-    if (mismatch)
-    {
-//      internal_dfa[prev_state] = std::get<1>(sub_cond);
-//      internal_dfa[prev_state].insert(internal_dfa[prev_state].end(),
-//                                      std::get<1>(sub_cond).begin(), std::get<1>(sub_cond).end());
-      std::for_each(std::begin(std::get<1>(sub_cond)), std::end(std::get<1>(sub_cond)),
-                    [&](ptr_cond_direct_inss_t::const_reference cfi)
-      {
-        if (std::find(std::begin(internal_dfa[prev_state]), std::end(internal_dfa[prev_state]),
-                      cfi) == std::end(internal_dfa[prev_state]))
-          internal_dfa[prev_state].push_back(cfi);
-      });
-
-      current_state = boost::add_vertex(ptr_cond_direct_inss_t(), internal_dfa);
-      boost::add_edge(prev_state, current_state, std::get<0>(sub_cond), internal_dfa);
-    }
-
-    prev_state = current_state;
-  });
-
-  return;
-}
 
 
 /**
@@ -114,8 +54,71 @@ static auto add_exec_path (ptr_exec_path_t exec_path) -> void
  */
 auto execution_dfa::add_exec_paths (ptr_exec_paths_t exec_paths) -> void
 {
+  auto add_exec_path = [](ptr_exec_path_t exec_path) -> void
+  {
+    auto get_next_state = [](dfa_vertex_desc current_state,
+        const addrint_value_maps_t& transition_cond) -> dfa_vertex_desc
+    {
+      if (current_state == boost::graph_traits<dfa_graph_t>::null_vertex())
+        return boost::graph_traits<dfa_graph_t>::null_vertex();
+      else
+      {
+        boost::graph_traits<dfa_graph_t>::out_edge_iterator first_trans_iter, last_trans_iter;
+        std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(current_state, internal_dfa);
+
+        auto predicate = [&transition_cond](dfa_edge_desc edge) -> bool
+        {
+          return two_vmaps_are_isomorphic(transition_cond, internal_dfa[edge]);
+        };
+
+        auto found_trans_iter = std::find_if(first_trans_iter, last_trans_iter, predicate);
+        return (found_trans_iter == last_trans_iter) ?
+              boost::graph_traits<dfa_graph_t>::null_vertex() :
+              boost::target(*found_trans_iter, internal_dfa);
+      }
+    };
+
+
+    // add the execution path into the DFA
+  //  tfm::format(std::cerr, "======\nadd a new execution path\n");
+    auto prev_state = initial_state; auto mismatch = false;
+    std::for_each(std::begin(exec_path->condition), std::end(exec_path->condition),
+                  [&](decltype(exec_path->condition)::const_reference sub_cond)
+    {
+      // trick: once mismatch is assigned to true then it will be never re-assigned to false
+//      dfa_vertex_desc current_state;
+      auto current_state = boost::graph_traits<dfa_graph_t>::null_vertex();
+      if (!mismatch)
+      {
+        current_state = get_next_state(prev_state, std::get<0>(sub_cond));
+        mismatch = (current_state == boost::graph_traits<dfa_graph_t>::null_vertex());
+      }
+
+      if (mismatch)
+      {
+  //      internal_dfa[prev_state] = std::get<1>(sub_cond);
+  //      internal_dfa[prev_state].insert(internal_dfa[prev_state].end(),
+  //                                      std::get<1>(sub_cond).begin(), std::get<1>(sub_cond).end());
+        std::for_each(std::begin(std::get<1>(sub_cond)), std::end(std::get<1>(sub_cond)),
+                      [&](ptr_cond_direct_inss_t::const_reference cfi)
+        {
+          if (std::find(std::begin(internal_dfa[prev_state]), std::end(internal_dfa[prev_state]),
+                        cfi) == std::end(internal_dfa[prev_state]))
+            internal_dfa[prev_state].push_back(cfi);
+        });
+
+        current_state = boost::add_vertex(ptr_cond_direct_inss_t(), internal_dfa);
+        boost::add_edge(prev_state, current_state, std::get<0>(sub_cond), internal_dfa);
+      }
+
+      prev_state = current_state;
+    });
+
+    return;
+  };
+
   std::for_each(std::begin(exec_paths), std::end(exec_paths),
-                [](decltype(explored_exec_paths)::const_reference exec_path)
+                [&](decltype(explored_exec_paths)::const_reference exec_path)
   {
     add_exec_path(exec_path);
   });
@@ -138,7 +141,7 @@ auto execution_dfa::optimize() -> void
       auto merge_two_cfis = [](const ptr_cond_direct_inss_t& cfis_a,
           const ptr_cond_direct_inss_t& cfis_b) -> ptr_cond_direct_inss_t
       {
-        ptr_cond_direct_inss_t merged_cfis = cfis_a;
+        /*ptr_cond_direct_inss_t*/auto merged_cfis = cfis_a;
         std::for_each(std::begin(cfis_b), std::end(cfis_b),
                       [&merged_cfis](ptr_cond_direct_inss_t::const_reference cfi_b)
         {
@@ -177,7 +180,8 @@ auto execution_dfa::optimize() -> void
     auto erase_states = [](const dfa_vertex_descs& states) -> void
     {
       // save contents of equivalent states
-      dfa_vertices state_contents;
+//      dfa_vertices state_contents;
+      auto state_contents = dfa_vertices();
       std::for_each(std::begin(states), std::end(states), [&state_contents](dfa_vertex_desc state)
       {
         state_contents.push_back(internal_dfa[state]);
@@ -363,7 +367,8 @@ auto execution_dfa::optimize() -> void
       return derived_states;
     };
 
-    dfa_vertex_descs result_states;
+    auto result_states = dfa_vertex_descs();
+//    dfa_vertex_descs result_states;
     dfa_vertex_iter first_state_iter, last_state_iter;
     std::tie(first_state_iter, last_state_iter) = boost::vertices(internal_dfa);
 
