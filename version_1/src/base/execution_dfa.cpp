@@ -74,7 +74,7 @@ static auto add_exec_path (ptr_exec_path_t exec_path) -> void
   // add the execution path into the DFA
 //  tfm::format(std::cerr, "======\nadd a new execution path\n");
   auto prev_state = initial_state; auto mismatch = false;
-  std::for_each(exec_path->condition.begin(), exec_path->condition.end(),
+  std::for_each(std::begin(exec_path->condition), std::end(exec_path->condition),
                 [&](decltype(exec_path->condition)::const_reference sub_cond)
   {
     // trick: once mismatch is assigned to true then it will be never re-assigned to false
@@ -90,7 +90,7 @@ static auto add_exec_path (ptr_exec_path_t exec_path) -> void
 //      internal_dfa[prev_state] = std::get<1>(sub_cond);
 //      internal_dfa[prev_state].insert(internal_dfa[prev_state].end(),
 //                                      std::get<1>(sub_cond).begin(), std::get<1>(sub_cond).end());
-      std::for_each(std::get<1>(sub_cond).begin(), std::get<1>(sub_cond).end(),
+      std::for_each(std::begin(std::get<1>(sub_cond)), std::end(std::get<1>(sub_cond)),
                     [&](ptr_cond_direct_inss_t::const_reference cfi)
       {
         if (std::find(std::begin(internal_dfa[prev_state]), std::end(internal_dfa[prev_state]),
@@ -142,8 +142,8 @@ auto execution_dfa::optimize() -> void
         std::for_each(std::begin(cfis_b), std::end(cfis_b),
                       [&merged_cfis](ptr_cond_direct_inss_t::const_reference cfi_b)
         {
-          if (std::find(merged_cfis.begin(),
-                        merged_cfis.end(), cfi_b) == merged_cfis.end()) merged_cfis.push_back(cfi_b);
+          if (std::find(std::begin(merged_cfis), std::end(merged_cfis),
+                        cfi_b) == std::end(merged_cfis)) merged_cfis.push_back(cfi_b);
         });
         return merged_cfis;
       };
