@@ -486,8 +486,8 @@ auto execution_dfa::approximate () -> void
             auto trans_b_iter = std::find_if(first_trans_b_iter,
                                              last_trans_b_iter, approx_predicate);
             if (trans_b_iter != last_trans_b_iter)
-              return boost::target(*trans_b_iter, internal_dfa).empty();
-            else return false
+              return internal_dfa[boost::target(*trans_b_iter, internal_dfa)].empty();
+            else return false;
           }
         });
       }
