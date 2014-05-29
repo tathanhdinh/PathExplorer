@@ -442,13 +442,17 @@ auto execution_dfa::optimize() -> void
 }
 
 
+/**
+ * @brief execution_dfa::approximate
+ */
 auto execution_dfa::approximate () -> void
 {
-  // verify if the state a can be approximated by b
-  std::function<bool(dfa_vertex_desc, dfa_vertex_desc)> a_is_approx_by_b =
+  // verify if the state b can be approximated by a, namely b "less than or equal" a
+  std::function<bool(dfa_vertex_desc, dfa_vertex_desc)> b_approximate_a =
       [](dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> bool
   {
-    if (internal_dfa[state_b].empty()) return true;
+    if (internal_dfa[state_b].empty() ||
+        (internal_dfa[state_a] == internal_dfa[state_b])) return true;
     else
     {
 
