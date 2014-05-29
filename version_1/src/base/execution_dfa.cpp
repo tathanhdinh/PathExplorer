@@ -498,8 +498,7 @@ auto execution_dfa::approximate () -> void
     }
   };
 
-  auto construct_approx_table =
-      [](std::function<bool(dfa_vertex_desc, dfa_vertex_desc)>& compare_func) -> void
+  auto construct_approx_table = [&is_approximable]() -> void
   {
     dfa_vertex_iter first_vertex_iter, last_vertex_iter;
     std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
@@ -507,12 +506,12 @@ auto execution_dfa::approximate () -> void
     {
       std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_b)
       {
-        if (compare_func(state_a, state_b))
+        if (is_approximable(state_a, state_b))
         {
           approx_prop[std::make_pair(state_a, state_b)] = more_than;
           approx_prop[std::make_pair(state_b, state_a)] = less_than;
         }
-        else if (compare_func(state_b, state_a))
+        else if (is_approximable(state_b, state_a))
         {
           approx_prop[std::make_pair(state_b, state_a)] = more_than;
           approx_prop[std::make_pair(state_a, state_b)] = less_than;
@@ -526,7 +525,11 @@ auto execution_dfa::approximate () -> void
     });
   };
 
-  auto construct_approx_dag = []()
+  auto construct_approx_dag = []() -> void
+  {
+
+    return;
+  };
 
   return;
 }
