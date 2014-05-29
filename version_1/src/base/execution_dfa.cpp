@@ -542,10 +542,11 @@ auto execution_dfa::approximate () -> void
       std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_b)
       {
         is_direct_connected[std::make_pair(state_a, state_b)] =
-            (approx_relation[std::make_pair(state_a, state_b)] == more_than) &&
+            (approx_relation.at(std::make_pair(state_a, state_b)) == more_than) &&
             std::none_of(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_c)
         {
-
+          return (approx_relation.at(std::make_pair(state_a, state_c)) &&
+              approx_relation.at(std::make_pair(state_c, state_b)));
         });
       });
     });
