@@ -534,20 +534,59 @@ auto execution_dfa::approximate () -> void
   auto construct_approx_dag =
       [](const approx_table_t& approx_relation, dfa_graph_t& approx_graph) -> void
   {
-    auto is_direct_connected = std::map<state_pair_t, bool>();
+    auto find_state_by_content = [&approx_graph](dfa_vertex_iter first_iter,
+        dfa_vertex_iter last_iter, dfa_vertex content) -> dfa_vertex_desc
+    {
+      auto content_equal_predicate = [&](dfa_vertex_desc state) -> bool
+      {
+        return (approx_graph[state] == content);
+      };
 
+      auto state_iter = std::find_if(first_iter, last_iter, content_equal_predicate);
+      if (state_iter == last_iter)
+        return boost::graph_traits<dfa_graph_t>::null_vertex();
+      else return *state_iter;
+    };
+
+    // construct a direction connected table
+    auto is_direct_connected = std::map<state_pair_t, bool>();
     auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
     std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_a)
     {
       std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_b)
       {
-        is_direct_connected[std::make_pair(state_a, state_b)] =
+        is_direct_connected[std::make_pair(state_a, state_b)] = (state_a != state_b) &&
             (approx_relation.at(std::make_pair(state_a, state_b)) == more_than) &&
             std::none_of(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_c)
         {
           return (approx_relation.at(std::make_pair(state_a, state_c)) &&
               approx_relation.at(std::make_pair(state_c, state_b)));
         });
+      });
+    });
+
+    // construct the approximation DAG
+    // add states
+    std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state)
+    {
+      boost::add_vertex(internal_dfa[state], approx_graph);
+    });
+
+    // add edge
+    auto first_dag_vertex_iter = dfa_vertex_iter(); auto last_dag_vertex_iter = dfa_vertex_iter();
+    std::tie(first_dag_vertex_iter, last_dag_vertex_iter) = boost::vertices(approx_graph);
+    std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_a)
+    {
+      std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_b)
+      {
+        if (is_direct_connected[std::make_pair(state_a, state_b)])
+        {
+          auto state_a_in_dag = find_state_by_content(first_dag_vertex_iter,
+                                                      last_vertex_iter, internal_dfa[state_a]);
+          auto state_b_in_dag = find_state_by_content(first_dag_vertex_iter,
+                                                      last_vertex_iter, internal_dfa[state_b]);
+          boost::add_edge(state_a_in_dag, state_b_in_dag, dfa_edge(), approx_graph);
+        }
       });
     });
 
