@@ -535,7 +535,21 @@ auto execution_dfa::approximate () -> void
       [](const approx_table_t& approx_relation, dfa_graph_t& approx_graph) -> void
   {
     auto is_direct_connected = std::map<state_pair_t, bool>();
-    auto
+
+    auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
+    std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_a)
+    {
+      std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_b)
+      {
+        is_direct_connected[std::make_pair(state_a, state_b)] =
+            (approx_relation[std::make_pair(state_a, state_b)] == more_than) &&
+            std::none_of(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_c)
+        {
+
+        });
+      });
+    });
+
     return;
   };
 
