@@ -498,6 +498,7 @@ auto execution_dfa::approximate () -> void
     }
   };
 
+
   dfa_vertex_iter first_vertex_iter, last_vertex_iter;
   std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
   std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_a)
