@@ -25,6 +25,16 @@ typedef std::shared_ptr<dfa_graph_t>                          ptr_dfa_graph_t;
 static dfa_graph_t      internal_dfa;
 static dfa_vertex_desc  initial_state;
 
+enum ordering_t
+{
+  uncomparable = 0,
+  less_than    = 1,
+  more_than    = 2
+};
+
+static dfa_graph_t      approx_dag;
+static std::map< std::pair<dfa_vertex_desc, dfa_vertex_desc>, ordering_t > approx_prop;
+
 static ptr_exec_dfa_t   single_dfa_instance;
 
 /*================================================================================================*/
@@ -44,12 +54,6 @@ auto execution_dfa::instance() -> ptr_exec_dfa_t
 
 
 /**
- * @brief execution_dfa::add_exec_path
- */
-
-
-
-/**
  * @brief execution_dfa::add_exec_paths
  */
 auto execution_dfa::add_exec_paths (ptr_exec_paths_t exec_paths) -> void
@@ -66,12 +70,12 @@ auto execution_dfa::add_exec_paths (ptr_exec_paths_t exec_paths) -> void
         boost::graph_traits<dfa_graph_t>::out_edge_iterator first_trans_iter, last_trans_iter;
         std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(current_state, internal_dfa);
 
-        auto predicate = [&transition_cond](dfa_edge_desc edge) -> bool
+        auto iso_predicate = [&transition_cond](dfa_edge_desc edge) -> bool
         {
           return two_vmaps_are_isomorphic(transition_cond, internal_dfa[edge]);
         };
 
-        auto found_trans_iter = std::find_if(first_trans_iter, last_trans_iter, predicate);
+        auto found_trans_iter = std::find_if(first_trans_iter, last_trans_iter, iso_predicate);
         return (found_trans_iter == last_trans_iter) ?
               boost::graph_traits<dfa_graph_t>::null_vertex() :
               boost::target(*found_trans_iter, internal_dfa);
@@ -141,7 +145,7 @@ auto execution_dfa::optimize() -> void
       auto merge_two_cfis = [](const ptr_cond_direct_inss_t& cfis_a,
           const ptr_cond_direct_inss_t& cfis_b) -> ptr_cond_direct_inss_t
       {
-        /*ptr_cond_direct_inss_t*/auto merged_cfis = cfis_a;
+        auto merged_cfis = cfis_a;
         std::for_each(std::begin(cfis_b), std::end(cfis_b),
                       [&merged_cfis](ptr_cond_direct_inss_t::const_reference cfi_b)
         {
@@ -483,8 +487,8 @@ auto execution_dfa::approximate () -> void
               return a_vmaps_is_included_in_b(internal_dfa[trans_a], internal_dfa[trans]);
             };
 
-            auto trans_b_iter = std::find_if(first_trans_b_iter,
-                                             last_trans_b_iter, approx_predicate);
+            auto trans_b_iter =
+                std::find_if(first_trans_b_iter, last_trans_b_iter, approx_predicate);
             if (trans_b_iter != last_trans_b_iter)
               return internal_dfa[boost::target(*trans_b_iter, internal_dfa)].empty();
             else return false;
@@ -493,6 +497,30 @@ auto execution_dfa::approximate () -> void
       }
     }
   };
+
+  dfa_vertex_iter first_vertex_iter, last_vertex_iter;
+  std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
+  std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_a)
+  {
+    std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_b)
+    {
+      if (is_approximable(state_a, state_b))
+      {
+        approx_prop[std::make_pair(state_a, state_b)] = more_than;
+        approx_prop[std::make_pair(state_b, state_a)] = less_than;
+      }
+      else if (is_approximable(state_b, state_a))
+      {
+        approx_prop[std::make_pair(state_b, state_a)] = more_than;
+        approx_prop[std::make_pair(state_a, state_b)] = less_than;
+      }
+      else
+      {
+        approx_prop[std::make_pair(state_a, state_b)] = uncomparable;
+        approx_prop[std::make_pair(state_b, state_a)] = uncomparable;
+      }
+    });
+  });
 
   return;
 }
