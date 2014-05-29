@@ -33,7 +33,7 @@ enum ordering_t
 };
 
 static dfa_graph_t      approx_dag;
-static std::map< std::pair<dfa_vertex_desc, dfa_vertex_desc>, ordering_t > approx_prop;
+static std::map< std::pair<dfa_vertex_desc, dfa_vertex_desc>, ordering_t > approx_table;
 
 static ptr_exec_dfa_t   single_dfa_instance;
 
@@ -498,30 +498,35 @@ auto execution_dfa::approximate () -> void
     }
   };
 
-
-  dfa_vertex_iter first_vertex_iter, last_vertex_iter;
-  std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
-  std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_a)
+  auto construct_approx_table =
+      [](std::function<bool(dfa_vertex_desc, dfa_vertex_desc)>& compare_func) -> void
   {
-    std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_b)
+    dfa_vertex_iter first_vertex_iter, last_vertex_iter;
+    std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
+    std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_a)
     {
-      if (is_approximable(state_a, state_b))
+      std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_b)
       {
-        approx_prop[std::make_pair(state_a, state_b)] = more_than;
-        approx_prop[std::make_pair(state_b, state_a)] = less_than;
-      }
-      else if (is_approximable(state_b, state_a))
-      {
-        approx_prop[std::make_pair(state_b, state_a)] = more_than;
-        approx_prop[std::make_pair(state_a, state_b)] = less_than;
-      }
-      else
-      {
-        approx_prop[std::make_pair(state_a, state_b)] = uncomparable;
-        approx_prop[std::make_pair(state_b, state_a)] = uncomparable;
-      }
+        if (compare_func(state_a, state_b))
+        {
+          approx_prop[std::make_pair(state_a, state_b)] = more_than;
+          approx_prop[std::make_pair(state_b, state_a)] = less_than;
+        }
+        else if (compare_func(state_b, state_a))
+        {
+          approx_prop[std::make_pair(state_b, state_a)] = more_than;
+          approx_prop[std::make_pair(state_a, state_b)] = less_than;
+        }
+        else
+        {
+          approx_prop[std::make_pair(state_a, state_b)] = uncomparable;
+          approx_prop[std::make_pair(state_b, state_a)] = uncomparable;
+        }
+      });
     });
-  });
+  };
+
+  auto construct_approx_dag = []()
 
   return;
 }
