@@ -91,6 +91,21 @@ auto two_vmaps_are_isomorphic (const addrint_value_maps_t& maps_a,
 }
 
 
+auto a_vmaps_is_included_in_b (const addrint_value_maps_t& maps_a,
+                               const addrint_value_maps_t& maps_b) -> bool
+{
+  auto map_a_in_maps_b = [&](addrint_value_maps_t::const_reference map_a) -> bool
+  {
+    return (std::find_if(std::begin(maps_b), std::end(maps_b),
+                        std::bind(two_maps_are_isomorphic, map_a, std::placeholders::_1))
+            != std::end(maps_b));
+  };
+
+  return ((maps_a.size() < maps_b.size()) &&
+          std::all_of(std::begin(maps_a), std::end(maps_a), map_a_in_maps_b));
+}
+
+
 /**
  * @brief is_input_dep_cfi
  */

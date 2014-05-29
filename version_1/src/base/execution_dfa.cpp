@@ -448,14 +448,49 @@ auto execution_dfa::optimize() -> void
 auto execution_dfa::approximate () -> void
 {
   // verify if the state b can be approximated by a, namely b "less than or equal" a
-  std::function<bool(dfa_vertex_desc, dfa_vertex_desc)> b_approximate_a =
-      [](dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> bool
+  std::function<bool(dfa_vertex_desc, dfa_vertex_desc)> is_approximable =
+      [&is_approximable](dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> bool
   {
     if (internal_dfa[state_b].empty() ||
         (internal_dfa[state_a] == internal_dfa[state_b])) return true;
     else
     {
+      if (internal_dfa[state_a].empty()) return false;
+      else
+      {
+        // now both a and b are not empty
+        boost::graph_traits<dfa_graph_t>::out_edge_iterator first_trans_a_iter, last_trans_a_iter;
+        std::tie(first_trans_a_iter, last_trans_a_iter) = boost::out_edges(state_a, internal_dfa);
 
+        boost::graph_traits<dfa_graph_t>::out_edge_iterator first_trans_b_iter, last_trans_b_iter;
+        std::tie(first_trans_b_iter, last_trans_b_iter) = boost::out_edges(state_b, internal_dfa);
+
+        return std::all_of(first_trans_a_iter, last_trans_a_iter, [&](dfa_edge_desc trans_a)
+        {
+          auto iso_predicate = [&trans_a](dfa_edge_desc trans) -> bool
+          {
+            return two_vmaps_are_isomorphic(internal_dfa[trans_a], internal_dfa[trans]);
+          };
+
+          auto trans_b_iter = std::find_if(first_trans_b_iter, last_trans_b_iter, iso_predicate);
+          if (trans_b_iter != last_trans_b_iter)
+            return is_approximable(boost::target(trans_a, internal_dfa),
+                                   boost::target(*trans_b_iter, internal_dfa));
+          else
+          {
+            auto approx_predicate = [&trans_a](dfa_edge_desc trans) -> bool
+            {
+              return a_vmaps_is_included_in_b(internal_dfa[trans_a], internal_dfa[trans]);
+            };
+
+            auto trans_b_iter = std::find_if(first_trans_b_iter,
+                                             last_trans_b_iter, approx_predicate);
+            if (trans_b_iter != last_trans_b_iter)
+              return boost::target(*trans_b_iter, internal_dfa).empty();
+            else return false
+          }
+        });
+      }
     }
   };
 
@@ -531,7 +566,8 @@ auto execution_dfa::save_to_file (const std::string& filename) -> void
     return;
   };
 
-  std::ofstream dfa_file(("dfa_" + filename).c_str(), std::ofstream::out | std::ofstream::trunc);
+  auto dfa_file = std::ofstream(("dfa_" + filename).c_str(),
+                                std::ofstream::out | std::ofstream::trunc);
   boost::write_graphviz(dfa_file, internal_dfa,
                         std::bind(write_dfa_state, std::placeholders::_1, std::placeholders::_2),
                         std::bind(write_dfa_transition, std::placeholders::_1, std::placeholders::_2));
