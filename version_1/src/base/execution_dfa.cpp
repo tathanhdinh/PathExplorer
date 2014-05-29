@@ -17,6 +17,7 @@ typedef std::vector<dfa_vertex_desc>                          dfa_vertex_descs;
 typedef boost::graph_traits<dfa_graph_t>::edge_descriptor     dfa_edge_desc;
 typedef boost::graph_traits<dfa_graph_t>::vertex_iterator     dfa_vertex_iter;
 typedef boost::graph_traits<dfa_graph_t>::edge_iterator       dfa_edge_iter;
+typedef boost::graph_traits<dfa_graph_t>::out_edge_iterator   dfa_out_edge_iter;
 
 typedef std::shared_ptr<dfa_graph_t>                          ptr_dfa_graph_t;
 
@@ -24,16 +25,6 @@ typedef std::shared_ptr<dfa_graph_t>                          ptr_dfa_graph_t;
 
 static dfa_graph_t      internal_dfa;
 static dfa_vertex_desc  initial_state;
-
-enum ordering_t
-{
-  uncomparable = 0,
-  less_than    = 1,
-  more_than    = 2
-};
-
-static dfa_graph_t      approx_dag;
-static std::map< std::pair<dfa_vertex_desc, dfa_vertex_desc>, ordering_t > approx_table;
 
 static ptr_exec_dfa_t   single_dfa_instance;
 
@@ -451,8 +442,21 @@ auto execution_dfa::optimize() -> void
  */
 auto execution_dfa::approximate () -> void
 {
+  enum ordering_t
+  {
+    uncomparable = 0,
+    less_than    = 1,
+    more_than    = 2
+  };
+  typedef std::pair<dfa_vertex_desc, dfa_vertex_desc>           state_pair_t;
+  typedef std::map<state_pair_t , ordering_t>                   approx_table_t;
+  typedef std::function<bool(dfa_vertex_desc, dfa_vertex_desc)> approx_calculation_t;
+
+  dfa_graph_t     approx_dag;
+  approx_table_t  approx_table;
+
   // verify if the state b can be approximated by a, namely b "less than or equal" a
-  std::function<bool(dfa_vertex_desc, dfa_vertex_desc)> is_approximable =
+  approx_calculation_t is_approximable =
       [&is_approximable](dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> bool
   {
     if (internal_dfa[state_b].empty() ||
@@ -498,36 +502,40 @@ auto execution_dfa::approximate () -> void
     }
   };
 
-  auto construct_approx_table = [&is_approximable]() -> void
+  auto construct_approx_table =
+      [](approx_calculation_t& approx_func, approx_table_t& approximation_table) -> void
   {
-    dfa_vertex_iter first_vertex_iter, last_vertex_iter;
+    auto first_vertex_iter = dfa_vertex_iter();
+    auto last_vertex_iter = dfa_vertex_iter();
     std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
     std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_a)
     {
       std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_b)
       {
-        if (is_approximable(state_a, state_b))
+        if (approx_func(state_a, state_b))
         {
-          approx_prop[std::make_pair(state_a, state_b)] = more_than;
-          approx_prop[std::make_pair(state_b, state_a)] = less_than;
+          approximation_table[std::make_pair(state_a, state_b)] = more_than;
+          approximation_table[std::make_pair(state_b, state_a)] = less_than;
         }
-        else if (is_approximable(state_b, state_a))
+        else if (approx_func(state_b, state_a))
         {
-          approx_prop[std::make_pair(state_b, state_a)] = more_than;
-          approx_prop[std::make_pair(state_a, state_b)] = less_than;
+          approximation_table[std::make_pair(state_b, state_a)] = more_than;
+          approximation_table[std::make_pair(state_a, state_b)] = less_than;
         }
         else
         {
-          approx_prop[std::make_pair(state_a, state_b)] = uncomparable;
-          approx_prop[std::make_pair(state_b, state_a)] = uncomparable;
+          approximation_table[std::make_pair(state_a, state_b)] = uncomparable;
+          approximation_table[std::make_pair(state_b, state_a)] = uncomparable;
         }
       });
     });
   };
 
-  auto construct_approx_dag = []() -> void
+  auto construct_approx_dag =
+      [](const approx_table_t& approx_relation, dfa_graph_t& approx_graph) -> void
   {
-
+    auto is_direct_connected = std::map<state_pair_t, bool>();
+    auto
     return;
   };
 
