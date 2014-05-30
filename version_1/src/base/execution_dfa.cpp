@@ -389,7 +389,6 @@ auto execution_dfa::optimize () -> void
     };
 
     auto result_states = dfa_vertex_descs();
-//    dfa_vertex_iter first_state_iter, last_state_iter;
     auto first_state_iter = dfa_vertex_iter(); auto last_state_iter = dfa_vertex_iter();
     std::tie(first_state_iter, last_state_iter) = boost::vertices(internal_dfa);
 
@@ -417,7 +416,7 @@ auto execution_dfa::optimize () -> void
 
         if (std::find_if(std::next(s_iter), s_last_iter, predicate) != s_last_iter)
         {
-          tfm::format(std::cerr, "equivalent state found\n"); /*std::exit(1);*/
+          tfm::format(std::cerr, "equivalent state found\n");
           state_a = *s_iter; break;
         }
       }
