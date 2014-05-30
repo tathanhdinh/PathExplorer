@@ -122,6 +122,24 @@ auto execution_dfa::add_exec_paths (ptr_exec_paths_t exec_paths) -> void
 
 
 /**
+ * @brief merge_state_contents
+ */
+static auto merge_state_contents (const dfa_vertex& content_a,
+                                  const dfa_vertex& content_b) -> dfa_vertex
+{
+  auto merged_content = content_a;
+  std::for_each(std::begin(content_b), std::end(content_b),
+                [&merged_content](dfa_vertex::const_reference sub_content)
+  {
+    if (std::find(std::begin(merged_content),
+                  std::end(merged_content), sub_content) == std::end(merged_content))
+      merged_content.push_back(sub_content);
+  });
+  return merged_content;
+}
+
+
+/**
  * @brief execution_dfa::optimization
  */
 auto execution_dfa::optimize() -> void
@@ -130,24 +148,24 @@ auto execution_dfa::optimize() -> void
   auto merge_equivalent_states = [](const dfa_vertex_descs& equiv_states,
       const dfa_vertex_descs& representing_states) -> dfa_vertex_descs
   {
-    auto merging_operator =
-        [](const ptr_cond_direct_inss_t& cfis_a, dfa_vertex_desc state_b) -> ptr_cond_direct_inss_t
-    {
-      auto merge_two_cfis = [](const ptr_cond_direct_inss_t& cfis_a,
-          const ptr_cond_direct_inss_t& cfis_b) -> ptr_cond_direct_inss_t
-      {
-        auto merged_cfis = cfis_a;
-        std::for_each(std::begin(cfis_b), std::end(cfis_b),
-                      [&merged_cfis](ptr_cond_direct_inss_t::const_reference cfi_b)
-        {
-          if (std::find(std::begin(merged_cfis), std::end(merged_cfis),
-                        cfi_b) == std::end(merged_cfis)) merged_cfis.push_back(cfi_b);
-        });
-        return merged_cfis;
-      };
+//    auto merge_state_labels =
+//        [](const ptr_cond_direct_inss_t& cfis_a, dfa_vertex_desc state_b) -> ptr_cond_direct_inss_t
+//    {
+//      auto merge_two_cfis = [](const ptr_cond_direct_inss_t& cfis_a,
+//          const ptr_cond_direct_inss_t& cfis_b) -> ptr_cond_direct_inss_t
+//      {
+//        auto merged_cfis = cfis_a;
+//        std::for_each(std::begin(cfis_b), std::end(cfis_b),
+//                      [&merged_cfis](ptr_cond_direct_inss_t::const_reference cfi_b)
+//        {
+//          if (std::find(std::begin(merged_cfis), std::end(merged_cfis),
+//                        cfi_b) == std::end(merged_cfis)) merged_cfis.push_back(cfi_b);
+//        });
+//        return merged_cfis;
+//      };
 
-      return merge_two_cfis(cfis_a, internal_dfa[state_b]);
-    };
+//      return merge_two_cfis(cfis_a, internal_dfa[state_b]);
+//    };
 
     auto copy_transitions = [](dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> void
     {
@@ -268,9 +286,14 @@ auto execution_dfa::optimize() -> void
     });
 
     // add a new state reprenting the class of equivalent states
+    auto accum_op = [](const dfa_vertex& init_content, dfa_vertex_desc state) -> dfa_vertex
+    {
+      return merge_state_contents(init_content, internal_dfa[state]);
+    };
+
     auto new_representing_state_content =
         std::accumulate(std::begin(equiv_states), std::end(equiv_states), ptr_cond_direct_inss_t(),
-                        merging_operator);
+                        /*merge_state_labels*/accum_op);
     auto new_representing_state = boost::add_vertex(new_representing_state_content, internal_dfa);
 
     // add the state of the new representing state
@@ -571,8 +594,7 @@ auto execution_dfa::approximate () -> void
     {
       boost::add_vertex(internal_dfa[state], approx_graph);
     });
-
-    // add edge
+    // add edges
     auto first_dag_vertex_iter = dfa_vertex_iter(); auto last_dag_vertex_iter = dfa_vertex_iter();
     std::tie(first_dag_vertex_iter, last_dag_vertex_iter) = boost::vertices(approx_graph);
     std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_a)
@@ -589,6 +611,28 @@ auto execution_dfa::approximate () -> void
         }
       });
     });
+    // erase isolated states
+    auto isolated_vertex_exists = true;
+    while (isolated_vertex_exists)
+    {
+      isolated_vertex_exists = false;
+      std::tie(first_dag_vertex_iter, last_dag_vertex_iter) = boost::vertices(approx_graph);
+
+      auto isolated_predicate = [&](dfa_vertex_desc state) -> bool
+      {
+        return (boost::in_degree(state, approx_graph) == 0) &&
+            (boost::out_degree(state, approx_graph) == 0);
+      };
+
+      auto isolated_state_iter = std::find_if(first_dag_vertex_iter,
+                                              last_dag_vertex_iter, isolated_predicate);
+      if (isolated_state_iter != last_dag_vertex_iter)
+      {
+        isolated_vertex_exists = true;
+        boost::clear_vertex(*isolated_state_iter, approx_graph);
+        boost::remove_vertex(*isolated_state_iter, approx_graph);
+      }
+    }
 
     return;
   };
