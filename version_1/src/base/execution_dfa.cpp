@@ -476,9 +476,6 @@ auto execution_dfa::approximate () -> void
   typedef std::pair<dfa_vertex_desc, dfa_vertex_desc> state_pair_t;
   typedef std::map<state_pair_t , ordering_t>         approx_table_t;
 
-  dfa_graph_t     approx_dag;
-  approx_table_t  approx_table;
-
   auto construct_approx_table = [](approx_table_t& approximation_table) -> void
   {
     typedef std::function<bool(dfa_vertex_desc, dfa_vertex_desc)> approx_calculation_t;
@@ -686,28 +683,39 @@ auto execution_dfa::approximate () -> void
 
   auto select_approximable_states = [](const dfa_graph_t& approx_graph) -> state_pair_t
   {
-    auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
-    std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(approx_graph);
+    auto first_dag_vertex_iter = dfa_vertex_iter(); auto last_dag_vertex_iter = dfa_vertex_iter();
+    std::tie(first_dag_vertex_iter, last_dag_vertex_iter) = boost::vertices(approx_graph);
+
+    auto first_dfa_vertex_iter = dfa_vertex_iter(); auto last_dfa_vertex_iter = dfa_vertex_iter();
+    std::tie(first_dfa_vertex_iter, last_dfa_vertex_iter) = boost::vertices(internal_dfa);
 
     // find root
     auto root_predicate = [&approx_graph](dfa_vertex_desc state) -> bool
     {
       return (boost::in_degree(state, approx_graph) == 0);
     };
-    auto root_vertex_iter = std::find_if(first_vertex_iter, last_vertex_iter, root_predicate);
-    if (root_vertex_iter == last_vertex_iter)
+    auto root_vertex_iter =
+        std::find_if(first_dag_vertex_iter, last_dag_vertex_iter, root_predicate);
+    if (root_vertex_iter == last_dag_vertex_iter)
       return std::make_pair(boost::graph_traits<dfa_graph_t>::null_vertex(),
                             boost::graph_traits<dfa_graph_t>::null_vertex());
     else
     {
       auto root_state = *root_vertex_iter;
       if (boost::out_degree(root_state, approx_graph) == 0)
-        return std::make_pair(root_state, boost::graph_traits<dfa_graph_t>::null_vertex());
+        return std::make_pair(find_state_by_content(first_dfa_vertex_iter,
+                                                    last_dfa_vertex_iter, approx_graph[root_state]),
+                              boost::graph_traits<dfa_graph_t>::null_vertex());
       else
       {
-        auto first_out_edge_iter = dfa_out_edge_iter(); /*auto last_out_edge_iter = dfa_out_edge_iter();*/
+        auto first_out_edge_iter = dfa_out_edge_iter();
         std::tie(first_out_edge_iter, std::ignore) = boost::out_edges(root_state, approx_graph);
-        return std::make_pair(root_state, boost::target(*first_out_edge_iter, approx_graph));
+        auto approx_root_state = boost::target(*first_out_edge_iter, approx_graph);
+
+        return std::make_pair(find_state_by_content(first_dfa_vertex_iter, last_dfa_vertex_iter,
+                                                    approx_graph[root_state]),
+                              find_state_by_content(first_dfa_vertex_iter, last_dfa_vertex_iter,
+                                                    approx_graph[approx_root_state]));
       }
     }
   };
@@ -716,15 +724,17 @@ auto execution_dfa::approximate () -> void
   merge_states_t merge_approximated_states = [&merge_approximated_states](
       dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> dfa_vertex_desc
   {
+    // get the transition from a to b
+    auto loopback_trans = internal_dfa[std::get<0>(boost::edge(state_a, state_b, internal_dfa))];
+
     auto merged_content = merge_state_contents(internal_dfa[state_a], internal_dfa[state_b]);
     auto merged_state = boost::add_vertex(merged_content, internal_dfa);
 
-
-
     copy_transitions_from_state_to_state(state_a, merged_state);
     copy_transitions_from_state_to_state(state_b, merged_state);
+    boost::add_edge(merged_state, merged_state, loopback_trans, internal_dfa);
 
-    if (internal_dfa[state_b].size() > 0)
+    if (!internal_dfa[state_b].empty())
     {
       auto first_a_trans_iter = dfa_out_edge_iter(); auto last_a_trans_iter = dfa_out_edge_iter();
       std::tie(first_a_trans_iter, last_a_trans_iter) = boost::out_edges(state_a, internal_dfa);
@@ -753,7 +763,7 @@ auto execution_dfa::approximate () -> void
     return merged_state;
   }; // end of merge_approximated_states lambda
 
-  auto erase_states_from_root_content = [](dfa_vertex content) -> void
+  auto erase_states_from_root_content = [](const dfa_vertex& content) -> void
   {
     typedef std::function<dfa_vertices(dfa_vertex_desc)> get_contents_from_root_t;
     get_contents_from_root_t get_contents_from_root = [&get_contents_from_root](
@@ -789,6 +799,9 @@ auto execution_dfa::approximate () -> void
 
     return;
   }; // end of erase_states_from_root lambda
+
+  dfa_graph_t     approx_dag;
+  approx_table_t  approx_table;
 
   construct_approx_table(approx_table);
   construct_approx_dag(approx_table, approx_dag);
