@@ -668,7 +668,7 @@ auto execution_dfa::approximate () -> void
         }
       });
     });
-  };
+  }; // end of construct_approx_table lambda
 
   auto construct_approx_dag =
       [](const approx_table_t& approx_relation, dfa_graph_t& approx_graph) -> void
@@ -749,9 +749,8 @@ auto execution_dfa::approximate () -> void
         boost::remove_vertex(*isolated_state_iter, approx_graph);
       }
     }
-
     return;
-  };
+  }; // end of construct_approx_dag lambda
 
   return;
 }
