@@ -256,7 +256,7 @@ static auto erase_duplicated_transitions (dfa_vertex_desc state) -> void
 /**
  * @brief execution_dfa::optimization
  */
-auto execution_dfa::optimize() -> void
+auto execution_dfa::optimize () -> void
 {
   // merge equivalent states into a single state
   auto merge_equivalent_states = [](const dfa_vertex_descs& equiv_states,
@@ -763,6 +763,38 @@ auto execution_dfa::approximate () -> void
     return;
   }; // end of construct_approx_dag lambda
 
+  auto save_approx_dag = [](std::string& filename, const dfa_graph_t& approx_graph) -> void
+  {
+    auto write_dag_state = [&approx_graph](std::ostream& label, dfa_vertex_desc state) -> void
+    {
+      auto content = approx_graph[state];
+      if (content.size() > 0)
+      {
+        tfm::format(label, "[label=\"");
+        std::for_each(content.begin(), content.end(), [&](decltype(content)::const_reference cfi)
+        {
+          tfm::format(label, "%s: %s\n", addrint_to_hexstring(cfi->address), cfi->disassembled_name);
+        });
+        tfm::format(label, "\"]");
+      }
+      else tfm::format(label, "[label=\"unknown\"]");
+      return;
+    };
+
+    auto write_dag_rel = [&approx_graph](std::ostream& label, dfa_edge_desc relation) -> void
+    {
+      tfm::format(label, "[label=\"\"]");
+      return;
+    };
+
+    auto approx_dag_file = std::ofstream(filename.c_str(),
+                                         std::ofstream::out | std::ofstream::trunc);
+    boost::write_graphviz(approx_dag_file, approx_graph, write_dag_state, write_dag_rel);
+    approx_dag_file.close();
+
+    return;
+  }; // end of save_approx_dag lambda
+
   auto select_approximable_states = [](const dfa_graph_t& approx_graph) -> state_pair_t
   {
     auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
@@ -789,8 +821,6 @@ auto execution_dfa::approximate () -> void
         return std::make_pair(root_state, boost::target(*first_out_edge_iter, approx_graph));
       }
     }
-
-//    std::for_each(first_vertex_itern last_vertex_iter, [&](dfa_vertex_desc state) {})
   };
 
   typedef std::function<dfa_vertex_desc(dfa_vertex_desc, dfa_vertex_desc)> merge_states_t;
@@ -832,7 +862,7 @@ auto execution_dfa::approximate () -> void
     return merged_state;
   }; // end of merge_approximated_states lambda
 
-  auto erase_states_from_root = [](dfa_vertex_desc state) -> void
+  auto erase_states_from_root_content = [](dfa_vertex content) -> void
   {
     typedef std::function<dfa_vertices(dfa_vertex_desc)> get_contents_from_root_t;
     get_contents_from_root_t get_contents_from_root = [&get_contents_from_root](
@@ -856,7 +886,11 @@ auto execution_dfa::approximate () -> void
       return contents;
     };
 
-    auto contents = get_contents_from_root(state);
+    auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
+    std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
+
+    auto contents = get_contents_from_root(find_state_by_content(first_vertex_iter,
+                                                                 last_vertex_iter, content));
     std::for_each(std::begin(contents), std::end(contents), [&](const dfa_vertex& content)
     {
       erase_state_by_content(content);
@@ -867,6 +901,19 @@ auto execution_dfa::approximate () -> void
 
   construct_approx_table(approx_table);
   construct_approx_dag(approx_table, approx_dag);
+  save_approx_dag("dag_" + process_id_str, approx_dag);
+
+  auto state_a = dfa_vertex_desc(); auto state_b = dfa_vertex_desc();
+  std::tie(state_a, state_b) = select_approximable_states(approx_dag);
+  if ((state_a != boost::graph_traits<dfa_graph_t>::null_vertex()) &&
+      (state_b != boost::graph_traits<dfa_graph_t>::null_vertex()))
+  {
+    merge_approximated_states(state_a, state_b);
+
+    auto content_a = internal_dfa[state_a]; auto content_b = internal_dfa[state_b];
+    erase_states_from_root_content(content_a);
+    erase_states_from_root_content(content_b);
+  }
 
   return;
 }
