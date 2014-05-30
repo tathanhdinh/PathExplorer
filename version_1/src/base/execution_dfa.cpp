@@ -188,6 +188,9 @@ static auto erase_state_by_content (const dfa_vertex& content) -> void
 }
 
 
+/**
+ * @brief copy_transitions_from_state_to_state
+ */
 static auto copy_transitions_from_state_to_state (dfa_vertex_desc state_a,
                                                   dfa_vertex_desc state_b) -> void
 {
@@ -208,6 +211,43 @@ static auto copy_transitions_from_state_to_state (dfa_vertex_desc state_a,
     boost::add_edge(state_b, boost::target(trans, internal_dfa), internal_dfa[trans],
                     internal_dfa);
   });
+
+  return;
+};
+
+
+/**
+ * @brief erase_duplicated_transitions
+ */
+static auto erase_duplicated_transitions (dfa_vertex_desc state) -> void
+{
+  auto same_transition = [](dfa_edge_desc trans_x, dfa_edge_desc trans_y) -> bool
+  {
+    return ((boost::target(trans_x, internal_dfa) == boost::target(trans_y, internal_dfa)) &&
+        two_vmaps_are_isomorphic(internal_dfa[trans_x], internal_dfa[trans_y]));
+  };
+
+  boost::graph_traits<dfa_graph_t>::out_edge_iterator first_trans_iter, last_trans_iter;
+  boost::graph_traits<dfa_graph_t>::out_edge_iterator trans_iter, next_trans_iter;
+  auto duplicated_trans_exists = true;
+  while (duplicated_trans_exists)
+  {
+    duplicated_trans_exists = false;
+    std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(state, internal_dfa);
+    trans_iter = first_trans_iter;
+    for (next_trans_iter = trans_iter;
+         trans_iter != last_trans_iter; trans_iter = next_trans_iter)
+    {
+      ++next_trans_iter;
+      if (std::find_if(next_trans_iter, last_trans_iter,
+                       std::bind(same_transition, *trans_iter, std::placeholders::_1))
+          != last_trans_iter)
+      {
+        duplicated_trans_exists = true; break;
+      }
+    }
+    if (duplicated_trans_exists) boost::remove_edge(*trans_iter, internal_dfa);
+  };
 
   return;
 };
@@ -320,38 +360,38 @@ auto execution_dfa::optimize() -> void
       return states;
     };
     
-    auto erase_duplicated_transitions = [](dfa_vertex_desc state) -> void
-    {
-      auto same_transition = [](dfa_edge_desc trans_x, dfa_edge_desc trans_y) -> bool
-      {
-        return ((boost::target(trans_x, internal_dfa) == boost::target(trans_y, internal_dfa)) &&
-            two_vmaps_are_isomorphic(internal_dfa[trans_x], internal_dfa[trans_y]));
-      };
+//    auto erase_duplicated_transitions = [](dfa_vertex_desc state) -> void
+//    {
+//      auto same_transition = [](dfa_edge_desc trans_x, dfa_edge_desc trans_y) -> bool
+//      {
+//        return ((boost::target(trans_x, internal_dfa) == boost::target(trans_y, internal_dfa)) &&
+//            two_vmaps_are_isomorphic(internal_dfa[trans_x], internal_dfa[trans_y]));
+//      };
 
-      boost::graph_traits<dfa_graph_t>::out_edge_iterator first_trans_iter, last_trans_iter;
-      boost::graph_traits<dfa_graph_t>::out_edge_iterator trans_iter, next_trans_iter;
-      auto duplicated_trans_exists = true;
-      while (duplicated_trans_exists)
-      {
-        duplicated_trans_exists = false;
-        std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(state, internal_dfa);
-        trans_iter = first_trans_iter;
-        for (next_trans_iter = trans_iter;
-             trans_iter != last_trans_iter; trans_iter = next_trans_iter)
-        {
-//          ++next_trans_iter;
-          if (std::find_if(++next_trans_iter, last_trans_iter,
-                           std::bind(same_transition, *trans_iter, std::placeholders::_1))
-              != last_trans_iter)
-          {
-            duplicated_trans_exists = true; break;
-          }
-        }
-        if (duplicated_trans_exists) boost::remove_edge(*trans_iter, internal_dfa);
-      };
+//      boost::graph_traits<dfa_graph_t>::out_edge_iterator first_trans_iter, last_trans_iter;
+//      boost::graph_traits<dfa_graph_t>::out_edge_iterator trans_iter, next_trans_iter;
+//      auto duplicated_trans_exists = true;
+//      while (duplicated_trans_exists)
+//      {
+//        duplicated_trans_exists = false;
+//        std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(state, internal_dfa);
+//        trans_iter = first_trans_iter;
+//        for (next_trans_iter = trans_iter;
+//             trans_iter != last_trans_iter; trans_iter = next_trans_iter)
+//        {
+////          ++next_trans_iter;
+//          if (std::find_if(++next_trans_iter, last_trans_iter,
+//                           std::bind(same_transition, *trans_iter, std::placeholders::_1))
+//              != last_trans_iter)
+//          {
+//            duplicated_trans_exists = true; break;
+//          }
+//        }
+//        if (duplicated_trans_exists) boost::remove_edge(*trans_iter, internal_dfa);
+//      };
 
-      return;
-    };
+//      return;
+//    };
 
     // copy contents of the previous representing states
     auto representing_state_contents = dfa_vertices();
@@ -633,19 +673,19 @@ auto execution_dfa::approximate () -> void
   auto construct_approx_dag =
       [](const approx_table_t& approx_relation, dfa_graph_t& approx_graph) -> void
   {
-    auto find_state_by_content = [&approx_graph](dfa_vertex_iter first_iter,
-        dfa_vertex_iter last_iter, dfa_vertex content) -> dfa_vertex_desc
-    {
-      auto content_equal_predicate = [&](dfa_vertex_desc state) -> bool
-      {
-        return (approx_graph[state] == content);
-      };
+//    auto find_state_by_content = [&approx_graph](dfa_vertex_iter first_iter,
+//        dfa_vertex_iter last_iter, dfa_vertex content) -> dfa_vertex_desc
+//    {
+//      auto content_equal_predicate = [&](dfa_vertex_desc state) -> bool
+//      {
+//        return (approx_graph[state] == content);
+//      };
 
-      auto state_iter = std::find_if(first_iter, last_iter, content_equal_predicate);
-      if (state_iter == last_iter)
-        return boost::graph_traits<dfa_graph_t>::null_vertex();
-      else return *state_iter;
-    };
+//      auto state_iter = std::find_if(first_iter, last_iter, content_equal_predicate);
+//      if (state_iter == last_iter)
+//        return boost::graph_traits<dfa_graph_t>::null_vertex();
+//      else return *state_iter;
+//    };
 
     // construct a direction connected table
     auto is_direct_connected = std::map<state_pair_t, bool>();
