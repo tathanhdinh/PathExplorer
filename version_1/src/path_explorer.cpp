@@ -179,7 +179,6 @@ auto stop_exploring (INT32 code, VOID *data) -> VOID
 
   calculate_exec_path_conditions(explored_exec_paths);
 
-#if !defined(NDEBUG)
 //  show_cfi_logged_inputs();
   tfm::format(std::cerr, "constructing raw DFA\n");
   abstracted_dfa->add_exec_paths(explored_exec_paths);
@@ -187,12 +186,11 @@ auto stop_exploring (INT32 code, VOID *data) -> VOID
   tfm::format(std::cerr, "optimizing raw DFA\n");
   abstracted_dfa->optimize();
 
-  tfm::format(std::cerr, "abstracting DFA\n");
-  abstracted_dfa->approximate();
+//  tfm::format(std::cerr, "abstracting DFA\n");
+//  abstracted_dfa->approximate();
 
   tfm::format(std::cerr, "saving DFA to file\n");
   abstracted_dfa->save_to_file(process_id_str + ".dot");
-#endif
 
 #if !defined(NDEBUG)
 //  show_path_condition(explored_exec_paths);

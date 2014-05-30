@@ -47,7 +47,7 @@ auto execution_dfa::instance() -> ptr_exec_dfa_t
 /**
  * @brief execution_dfa::add_exec_paths
  */
-auto execution_dfa::add_exec_paths (ptr_exec_paths_t exec_paths) -> void
+auto execution_dfa::add_exec_paths (const ptr_exec_paths_t& exec_paths) -> void
 {
   auto add_exec_path = [](ptr_exec_path_t exec_path) -> void
   {
@@ -172,19 +172,6 @@ static auto erase_state_by_content (const dfa_vertex& content) -> void
     boost::clear_vertex(state, internal_dfa); boost::remove_vertex(state, internal_dfa);
   }
   return;
-
-//  std::any_of(first_state_iter, last_state_iter, [&](dfa_vertex_desc state) -> bool
-//  {
-//    if (internal_dfa[state] == content)
-//    {
-////            tfm::format(std::cerr, "remove state\n");
-//      boost::clear_vertex(state, internal_dfa); boost::remove_vertex(state, internal_dfa);
-//      return true;
-//    }
-//    else return false;
-//  });
-
-  return;
 }
 
 
@@ -262,52 +249,9 @@ auto execution_dfa::optimize () -> void
   auto merge_equivalent_states = [](const dfa_vertex_descs& equiv_states,
       const dfa_vertex_descs& representing_states) -> dfa_vertex_descs
   {
-//    auto merge_state_labels =
-//        [](const ptr_cond_direct_inss_t& cfis_a, dfa_vertex_desc state_b) -> ptr_cond_direct_inss_t
-//    {
-//      auto merge_two_cfis = [](const ptr_cond_direct_inss_t& cfis_a,
-//          const ptr_cond_direct_inss_t& cfis_b) -> ptr_cond_direct_inss_t
-//      {
-//        auto merged_cfis = cfis_a;
-//        std::for_each(std::begin(cfis_b), std::end(cfis_b),
-//                      [&merged_cfis](ptr_cond_direct_inss_t::const_reference cfi_b)
-//        {
-//          if (std::find(std::begin(merged_cfis), std::end(merged_cfis),
-//                        cfi_b) == std::end(merged_cfis)) merged_cfis.push_back(cfi_b);
-//        });
-//        return merged_cfis;
-//      };
-
-//      return merge_two_cfis(cfis_a, internal_dfa[state_b]);
-//    };
-
-//    auto copy_transitions = [](dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> void
-//    {
-//      // copy in transitions
-//      boost::graph_traits<dfa_graph_t>::in_edge_iterator in_edge_iter_a, in_edge_last_iter_a;
-//      std::tie(in_edge_iter_a, in_edge_last_iter_a) = boost::in_edges(state_a, internal_dfa);
-//      std::for_each(in_edge_iter_a, in_edge_last_iter_a, [&state_b](dfa_edge_desc trans)
-//      {
-//        boost::add_edge(boost::source(trans, internal_dfa),
-//                        state_b, internal_dfa[trans], internal_dfa);
-//      });
-
-//      // copy out transitions
-//      boost::graph_traits<dfa_graph_t>::out_edge_iterator out_edge_iter_a, out_edge_last_iter_a;
-//      std::tie(out_edge_iter_a, out_edge_last_iter_a) = boost::out_edges(state_a, internal_dfa);
-//      std::for_each(out_edge_iter_a, out_edge_last_iter_a, [&state_b](dfa_edge_desc trans)
-//      {
-//        boost::add_edge(state_b, boost::target(trans, internal_dfa), internal_dfa[trans],
-//                        internal_dfa);
-//      });
-
-//      return;
-//    };
-
     auto erase_states = [](const dfa_vertex_descs& states) -> void
     {
       // save contents of equivalent states
-//      dfa_vertices state_contents;
       auto state_contents = dfa_vertices();
       std::for_each(std::begin(states), std::end(states), [&state_contents](dfa_vertex_desc state)
       {
@@ -318,18 +262,6 @@ auto execution_dfa::optimize () -> void
       std::for_each(std::begin(state_contents), std::end(state_contents),
                     [](ptr_cond_direct_inss_t content)
       {
-//        dfa_vertex_iter state_iter, last_state_iter;
-//        std::tie(state_iter, last_state_iter) = boost::vertices(internal_dfa);
-//        std::any_of(state_iter, last_state_iter, [&](dfa_vertex_desc state) -> bool
-//        {
-//          if (internal_dfa[state] == content)
-//          {
-////            tfm::format(std::cerr, "remove state\n");
-//            boost::clear_vertex(state, internal_dfa); boost::remove_vertex(state, internal_dfa);
-//            return true;
-//          }
-//          else return false;
-//        });
         erase_state_by_content(content);
       });
 
@@ -340,20 +272,11 @@ auto execution_dfa::optimize () -> void
     {
       // get the descriptor of the new state in the new DFA
       auto first_state_iter = dfa_vertex_iter(); auto last_state_iter = dfa_vertex_iter();
-//      dfa_vertex_iter first_state_iter, last_state_iter;
       std::tie(first_state_iter, last_state_iter) = boost::vertices(internal_dfa);
 
       auto states = dfa_vertex_descs();
       std::for_each(std::begin(contents), std::end(contents), [&](const dfa_vertex& content)
       {
-//        auto new_state_iter = std::find_if(first_state_iter, last_state_iter,
-//                                           [&content](dfa_vertex_desc state)
-//        {
-//          return (internal_dfa[state] == content);
-//        });
-
-//        if (new_state_iter != last_state_iter) states.push_back(*new_state_iter);
-//        else states.push_back(boost::graph_traits<dfa_graph_t>::null_vertex());
         auto new_state = find_state_by_content(first_state_iter, last_state_iter, content);
         if (new_state != boost::graph_traits<dfa_graph_t>::null_vertex())
           states.push_back(new_state);
@@ -361,39 +284,6 @@ auto execution_dfa::optimize () -> void
       return states;
     };
     
-//    auto erase_duplicated_transitions = [](dfa_vertex_desc state) -> void
-//    {
-//      auto same_transition = [](dfa_edge_desc trans_x, dfa_edge_desc trans_y) -> bool
-//      {
-//        return ((boost::target(trans_x, internal_dfa) == boost::target(trans_y, internal_dfa)) &&
-//            two_vmaps_are_isomorphic(internal_dfa[trans_x], internal_dfa[trans_y]));
-//      };
-
-//      boost::graph_traits<dfa_graph_t>::out_edge_iterator first_trans_iter, last_trans_iter;
-//      boost::graph_traits<dfa_graph_t>::out_edge_iterator trans_iter, next_trans_iter;
-//      auto duplicated_trans_exists = true;
-//      while (duplicated_trans_exists)
-//      {
-//        duplicated_trans_exists = false;
-//        std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(state, internal_dfa);
-//        trans_iter = first_trans_iter;
-//        for (next_trans_iter = trans_iter;
-//             trans_iter != last_trans_iter; trans_iter = next_trans_iter)
-//        {
-////          ++next_trans_iter;
-//          if (std::find_if(++next_trans_iter, last_trans_iter,
-//                           std::bind(same_transition, *trans_iter, std::placeholders::_1))
-//              != last_trans_iter)
-//          {
-//            duplicated_trans_exists = true; break;
-//          }
-//        }
-//        if (duplicated_trans_exists) boost::remove_edge(*trans_iter, internal_dfa);
-//      };
-
-//      return;
-//    };
-
     // copy contents of the previous representing states
     auto representing_state_contents = dfa_vertices();
     std::for_each(std::begin(representing_states), std::end(representing_states),
@@ -499,15 +389,15 @@ auto execution_dfa::optimize () -> void
     };
 
     auto result_states = dfa_vertex_descs();
-//    dfa_vertex_descs result_states;
-    dfa_vertex_iter first_state_iter, last_state_iter;
+//    dfa_vertex_iter first_state_iter, last_state_iter;
+    auto first_state_iter = dfa_vertex_iter(); auto last_state_iter = dfa_vertex_iter();
     std::tie(first_state_iter, last_state_iter) = boost::vertices(internal_dfa);
 
-    if (init_states.size() == 0)
+    if (init_states.empty()/*size() == 0*/)
     {
       std::for_each(first_state_iter, last_state_iter, [&result_states](dfa_vertex_desc state)
       {
-        if (internal_dfa[state].size() == 0) result_states.push_back(state);
+        if (internal_dfa[state].empty()/*size() == 0*/) result_states.push_back(state);
       });
     }
     else
@@ -829,6 +719,8 @@ auto execution_dfa::approximate () -> void
   {
     auto merged_content = merge_state_contents(internal_dfa[state_a], internal_dfa[state_b]);
     auto merged_state = boost::add_vertex(merged_content, internal_dfa);
+
+
 
     copy_transitions_from_state_to_state(state_a, merged_state);
     copy_transitions_from_state_to_state(state_b, merged_state);
