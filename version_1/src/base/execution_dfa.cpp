@@ -140,6 +140,54 @@ static auto merge_state_contents (const dfa_vertex& content_a,
 
 
 /**
+ * @brief find_state_by_content
+ */
+auto find_state_by_content (dfa_vertex_iter first_state_iter, dfa_vertex_iter last_state_iter,
+                            const dfa_vertex& content) -> dfa_vertex_desc
+{
+  auto state_iter =
+      std::find_if(first_state_iter, last_state_iter, [&content](dfa_vertex_desc state)
+  {
+    return (internal_dfa[state] == content);
+  });
+
+  if (state_iter == last_state_iter)
+    return boost::graph_traits<dfa_graph_t>::null_vertex();
+  else return *state_iter;
+};
+
+
+/**
+ * @brief erase_state_by_content
+ */
+auto erase_state_by_content (const dfa_vertex& content) -> void
+{
+  auto first_state_iter = dfa_vertex_iter(); auto last_state_iter = dfa_vertex_iter();
+  std::tie(first_state_iter, last_state_iter) = boost::vertices(internal_dfa);
+
+  auto state = find_state_by_content(first_state_iter, last_state_iter, content);
+  if (state != boost::graph_traits<dfa_graph_t>::null_vertex())
+  {
+    boost::clear_vertex(state, internal_dfa); boost::remove_vertex(state, internal_dfa);
+  }
+  return;
+
+//  std::any_of(first_state_iter, last_state_iter, [&](dfa_vertex_desc state) -> bool
+//  {
+//    if (internal_dfa[state] == content)
+//    {
+////            tfm::format(std::cerr, "remove state\n");
+//      boost::clear_vertex(state, internal_dfa); boost::remove_vertex(state, internal_dfa);
+//      return true;
+//    }
+//    else return false;
+//  });
+
+  return;
+}
+
+
+/**
  * @brief execution_dfa::optimization
  */
 auto execution_dfa::optimize() -> void
@@ -204,18 +252,19 @@ auto execution_dfa::optimize() -> void
       std::for_each(std::begin(state_contents), std::end(state_contents),
                     [](ptr_cond_direct_inss_t content)
       {
-        dfa_vertex_iter state_iter, last_state_iter;
-        std::tie(state_iter, last_state_iter) = boost::vertices(internal_dfa);
-        std::any_of(state_iter, last_state_iter, [&](dfa_vertex_desc state) -> bool
-        {
-          if (internal_dfa[state] == content)
-          {
-//            tfm::format(std::cerr, "remove state\n");
-            boost::clear_vertex(state, internal_dfa); boost::remove_vertex(state, internal_dfa);
-            return true;
-          }
-          else return false;
-        });
+//        dfa_vertex_iter state_iter, last_state_iter;
+//        std::tie(state_iter, last_state_iter) = boost::vertices(internal_dfa);
+//        std::any_of(state_iter, last_state_iter, [&](dfa_vertex_desc state) -> bool
+//        {
+//          if (internal_dfa[state] == content)
+//          {
+////            tfm::format(std::cerr, "remove state\n");
+//            boost::clear_vertex(state, internal_dfa); boost::remove_vertex(state, internal_dfa);
+//            return true;
+//          }
+//          else return false;
+//        });
+        erase_state_by_content(content);
       });
 
       return;
@@ -230,17 +279,18 @@ auto execution_dfa::optimize() -> void
       auto states = dfa_vertex_descs();
       std::for_each(std::begin(contents), std::end(contents), [&](const dfa_vertex& content)
       {
-        auto new_state_iter = std::find_if(first_state_iter, last_state_iter,
-                                           [&content](dfa_vertex_desc state)
-        {
-          return (internal_dfa[state] == content);
-        });
+//        auto new_state_iter = std::find_if(first_state_iter, last_state_iter,
+//                                           [&content](dfa_vertex_desc state)
+//        {
+//          return (internal_dfa[state] == content);
+//        });
 
-        if (new_state_iter != last_state_iter) states.push_back(*new_state_iter);
-        else states.push_back(boost::graph_traits<dfa_graph_t>::null_vertex());
+//        if (new_state_iter != last_state_iter) states.push_back(*new_state_iter);
+//        else states.push_back(boost::graph_traits<dfa_graph_t>::null_vertex());
+        auto new_state = find_state_by_content(first_state_iter, last_state_iter, content);
+        if (new_state != boost::graph_traits<dfa_graph_t>::null_vertex())
+          states.push_back(new_state);
       });
-//      if (new_state_iter != last_state_iter) return *new_state_iter;
-//      else return boost::graph_traits<dfa_graph_t>::null_vertex();
       return states;
     };
     
