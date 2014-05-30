@@ -584,63 +584,62 @@ auto execution_dfa::approximate () -> void
     less_than    = 1,
     more_than    = 2
   };
-  typedef std::pair<dfa_vertex_desc, dfa_vertex_desc>           state_pair_t;
-  typedef std::map<state_pair_t , ordering_t>                   approx_table_t;
-  typedef std::function<bool(dfa_vertex_desc, dfa_vertex_desc)> approx_calculation_t;
+  typedef std::pair<dfa_vertex_desc, dfa_vertex_desc> state_pair_t;
+  typedef std::map<state_pair_t , ordering_t>         approx_table_t;
 
   dfa_graph_t     approx_dag;
   approx_table_t  approx_table;
 
-  // verify if the state b can be approximated by a, namely b "less than or equal" a
-  approx_calculation_t is_approximable =
-      [&is_approximable](dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> bool
+  auto construct_approx_table = [](approx_table_t& approximation_table) -> void
   {
-    if (internal_dfa[state_b].empty() ||
-        (internal_dfa[state_a] == internal_dfa[state_b])) return true;
-    else
+    typedef std::function<bool(dfa_vertex_desc, dfa_vertex_desc)> approx_calculation_t;
+    // verify if the state b can be approximated by a, namely b "less than or equal" a
+    approx_calculation_t is_approximable = [&is_approximable](
+        dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> bool
     {
-      if (internal_dfa[state_a].empty()) return false;
+      if (internal_dfa[state_b].empty() ||
+          (internal_dfa[state_a] == internal_dfa[state_b])) return true;
       else
       {
-        // now both a and b are not empty
-        boost::graph_traits<dfa_graph_t>::out_edge_iterator first_trans_a_iter, last_trans_a_iter;
-        std::tie(first_trans_a_iter, last_trans_a_iter) = boost::out_edges(state_a, internal_dfa);
-
-        boost::graph_traits<dfa_graph_t>::out_edge_iterator first_trans_b_iter, last_trans_b_iter;
-        std::tie(first_trans_b_iter, last_trans_b_iter) = boost::out_edges(state_b, internal_dfa);
-
-        return std::all_of(first_trans_a_iter, last_trans_a_iter, [&](dfa_edge_desc trans_a)
+        if (internal_dfa[state_a].empty()) return false;
+        else
         {
-          auto iso_predicate = [&trans_a](dfa_edge_desc trans) -> bool
-          {
-            return two_vmaps_are_isomorphic(internal_dfa[trans_a], internal_dfa[trans]);
-          };
+          // now both a and b are not empty
+          boost::graph_traits<dfa_graph_t>::out_edge_iterator first_trans_a_iter, last_trans_a_iter;
+          std::tie(first_trans_a_iter, last_trans_a_iter) = boost::out_edges(state_a, internal_dfa);
 
-          auto trans_b_iter = std::find_if(first_trans_b_iter, last_trans_b_iter, iso_predicate);
-          if (trans_b_iter != last_trans_b_iter)
-            return is_approximable(boost::target(trans_a, internal_dfa),
-                                   boost::target(*trans_b_iter, internal_dfa));
-          else
+          boost::graph_traits<dfa_graph_t>::out_edge_iterator first_trans_b_iter, last_trans_b_iter;
+          std::tie(first_trans_b_iter, last_trans_b_iter) = boost::out_edges(state_b, internal_dfa);
+
+          return std::all_of(first_trans_a_iter, last_trans_a_iter, [&](dfa_edge_desc trans_a)
           {
-            auto approx_predicate = [&trans_a](dfa_edge_desc trans) -> bool
+            auto iso_predicate = [&trans_a](dfa_edge_desc trans) -> bool
             {
-              return a_vmaps_is_included_in_b(internal_dfa[trans_a], internal_dfa[trans]);
+              return two_vmaps_are_isomorphic(internal_dfa[trans_a], internal_dfa[trans]);
             };
 
-            auto trans_b_iter =
-                std::find_if(first_trans_b_iter, last_trans_b_iter, approx_predicate);
+            auto trans_b_iter = std::find_if(first_trans_b_iter, last_trans_b_iter, iso_predicate);
             if (trans_b_iter != last_trans_b_iter)
-              return internal_dfa[boost::target(*trans_b_iter, internal_dfa)].empty();
-            else return false;
-          }
-        });
-      }
-    }
-  };
+              return is_approximable(boost::target(trans_a, internal_dfa),
+                                     boost::target(*trans_b_iter, internal_dfa));
+            else
+            {
+              auto approx_predicate = [&trans_a](dfa_edge_desc trans) -> bool
+              {
+                return a_vmaps_is_included_in_b(internal_dfa[trans_a], internal_dfa[trans]);
+              };
 
-  auto construct_approx_table =
-      [](approx_calculation_t& approx_func, approx_table_t& approximation_table) -> void
-  {
+              auto trans_b_iter =
+                  std::find_if(first_trans_b_iter, last_trans_b_iter, approx_predicate);
+              if (trans_b_iter != last_trans_b_iter)
+                return internal_dfa[boost::target(*trans_b_iter, internal_dfa)].empty();
+              else return false;
+            }
+          });
+        }
+      }
+    };
+
     auto first_vertex_iter = dfa_vertex_iter();
     auto last_vertex_iter = dfa_vertex_iter();
     std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
@@ -648,12 +647,12 @@ auto execution_dfa::approximate () -> void
     {
       std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_b)
       {
-        if (approx_func(state_a, state_b))
+        if (is_approximable(state_a, state_b))
         {
           approximation_table[std::make_pair(state_a, state_b)] = more_than;
           approximation_table[std::make_pair(state_b, state_a)] = less_than;
         }
-        else if (approx_func(state_b, state_a))
+        else if (is_approximable(state_b, state_a))
         {
           approximation_table[std::make_pair(state_b, state_a)] = more_than;
           approximation_table[std::make_pair(state_a, state_b)] = less_than;
@@ -667,8 +666,8 @@ auto execution_dfa::approximate () -> void
     });
   }; // end of construct_approx_table lambda
 
-  auto construct_approx_dag =
-      [](const approx_table_t& approx_relation, dfa_graph_t& approx_graph) -> void
+  auto construct_approx_dag = [](
+      const approx_table_t& approx_relation, dfa_graph_t& approx_graph) -> void
   {
     // construct a direction connected table
     auto construct_direct_connected_table = [](const approx_table_t& approx_relation,
@@ -763,6 +762,81 @@ auto execution_dfa::approximate () -> void
 
     return;
   }; // end of construct_approx_dag lambda
+
+  typedef std::function<dfa_vertex_desc(dfa_vertex_desc, dfa_vertex_desc)> merge_states_t;
+  merge_states_t merge_approximated_states = [&merge_approximated_states](
+      dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> dfa_vertex_desc
+  {
+    auto merged_content = merge_state_contents(internal_dfa[state_a], internal_dfa[state_b]);
+    auto merged_state = boost::add_vertex(merged_content, internal_dfa);
+
+    copy_transitions_from_state_to_state(state_a, merged_state);
+    copy_transitions_from_state_to_state(state_b, merged_state);
+
+    if (internal_dfa[state_b].size() > 0)
+    {
+      auto first_a_trans_iter = dfa_out_edge_iter(); auto last_a_trans_iter = dfa_out_edge_iter();
+      std::tie(first_a_trans_iter, last_a_trans_iter) = boost::out_edges(state_a, internal_dfa);
+
+      auto first_b_trans_iter = dfa_out_edge_iter(); auto last_b_trans_iter = dfa_out_edge_iter();
+      std::tie(first_b_trans_iter, last_b_trans_iter) = boost::out_edges(state_b, internal_dfa);
+
+      std::for_each(first_a_trans_iter, last_a_trans_iter, [&](dfa_edge_desc trans_a)
+      {
+        auto approx_predicate = [&trans_a](dfa_edge_desc trans) -> bool
+        {
+          return a_vmaps_is_included_in_b(internal_dfa[trans_a], internal_dfa[trans]);
+        };
+
+        auto corr_b_trans_iter = std::find_if(first_b_trans_iter,
+                                              last_b_trans_iter, approx_predicate);
+
+        auto next_state_a = boost::target(trans_a, internal_dfa);
+        auto next_state_b = boost::target(*corr_b_trans_iter, internal_dfa);
+
+        auto next_merged_state = merge_approximated_states(next_state_a, next_state_b);
+        boost::add_edge(merged_state, next_merged_state, internal_dfa[trans_a], internal_dfa);
+      });
+    }
+
+    return merged_state;
+  }; // end of merge_approximated_states lambda
+
+  auto erase_states_from_root = [](dfa_vertex_desc state) -> void
+  {
+    typedef std::function<dfa_vertices(dfa_vertex_desc)> get_contents_from_root_t;
+    get_contents_from_root_t get_contents_from_root = [&get_contents_from_root](
+        dfa_vertex_desc state) -> dfa_vertices
+    {
+      auto contents = dfa_vertices();
+
+      if (internal_dfa[state].size() > 0)
+      {
+        contents.push_back(internal_dfa[state]);
+
+        auto first_trans_iter = dfa_out_edge_iter(); auto last_trans_iter = dfa_out_edge_iter();
+        std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(state, internal_dfa);
+        std::for_each(first_trans_iter, last_trans_iter, [&](dfa_edge_desc trans)
+        {
+          auto sub_contents = get_contents_from_root(boost::target(trans, internal_dfa));
+          contents.insert(std::begin(contents), std::begin(sub_contents), std::end(sub_contents));
+        });
+      }
+
+      return contents;
+    };
+
+    auto contents = get_contents_from_root(state);
+    std::for_each(std::begin(contents), std::end(contents), [&](const dfa_vertex& content)
+    {
+      erase_state_by_content(content);
+    });
+
+    return;
+  }; // end of erase_states_from_root lambda
+
+  construct_approx_table(approx_table);
+  construct_approx_dag(approx_table, approx_dag);
 
   return;
 }
