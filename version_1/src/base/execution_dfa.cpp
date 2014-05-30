@@ -142,8 +142,9 @@ static auto merge_state_contents (const dfa_vertex& content_a,
 /**
  * @brief find_state_by_content
  */
-auto find_state_by_content (dfa_vertex_iter first_state_iter, dfa_vertex_iter last_state_iter,
-                            const dfa_vertex& content) -> dfa_vertex_desc
+static auto find_state_by_content (dfa_vertex_iter first_state_iter,
+                                   dfa_vertex_iter last_state_iter,
+                                   const dfa_vertex& content) -> dfa_vertex_desc
 {
   auto state_iter =
       std::find_if(first_state_iter, last_state_iter, [&content](dfa_vertex_desc state)
@@ -160,7 +161,7 @@ auto find_state_by_content (dfa_vertex_iter first_state_iter, dfa_vertex_iter la
 /**
  * @brief erase_state_by_content
  */
-auto erase_state_by_content (const dfa_vertex& content) -> void
+static auto erase_state_by_content (const dfa_vertex& content) -> void
 {
   auto first_state_iter = dfa_vertex_iter(); auto last_state_iter = dfa_vertex_iter();
   std::tie(first_state_iter, last_state_iter) = boost::vertices(internal_dfa);
@@ -185,6 +186,31 @@ auto erase_state_by_content (const dfa_vertex& content) -> void
 
   return;
 }
+
+
+static auto copy_transitions_from_state_to_state (dfa_vertex_desc state_a,
+                                                  dfa_vertex_desc state_b) -> void
+{
+  // copy in transitions
+  boost::graph_traits<dfa_graph_t>::in_edge_iterator in_edge_iter_a, in_edge_last_iter_a;
+  std::tie(in_edge_iter_a, in_edge_last_iter_a) = boost::in_edges(state_a, internal_dfa);
+  std::for_each(in_edge_iter_a, in_edge_last_iter_a, [&state_b](dfa_edge_desc trans)
+  {
+    boost::add_edge(boost::source(trans, internal_dfa),
+                    state_b, internal_dfa[trans], internal_dfa);
+  });
+
+  // copy out transitions
+  boost::graph_traits<dfa_graph_t>::out_edge_iterator out_edge_iter_a, out_edge_last_iter_a;
+  std::tie(out_edge_iter_a, out_edge_last_iter_a) = boost::out_edges(state_a, internal_dfa);
+  std::for_each(out_edge_iter_a, out_edge_last_iter_a, [&state_b](dfa_edge_desc trans)
+  {
+    boost::add_edge(state_b, boost::target(trans, internal_dfa), internal_dfa[trans],
+                    internal_dfa);
+  });
+
+  return;
+};
 
 
 /**
@@ -215,28 +241,28 @@ auto execution_dfa::optimize() -> void
 //      return merge_two_cfis(cfis_a, internal_dfa[state_b]);
 //    };
 
-    auto copy_transitions = [](dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> void
-    {
-      // copy in transitions
-      boost::graph_traits<dfa_graph_t>::in_edge_iterator in_edge_iter_a, in_edge_last_iter_a;
-      std::tie(in_edge_iter_a, in_edge_last_iter_a) = boost::in_edges(state_a, internal_dfa);
-      std::for_each(in_edge_iter_a, in_edge_last_iter_a, [&state_b](dfa_edge_desc trans)
-      {
-        boost::add_edge(boost::source(trans, internal_dfa),
-                        state_b, internal_dfa[trans], internal_dfa);
-      });
+//    auto copy_transitions = [](dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> void
+//    {
+//      // copy in transitions
+//      boost::graph_traits<dfa_graph_t>::in_edge_iterator in_edge_iter_a, in_edge_last_iter_a;
+//      std::tie(in_edge_iter_a, in_edge_last_iter_a) = boost::in_edges(state_a, internal_dfa);
+//      std::for_each(in_edge_iter_a, in_edge_last_iter_a, [&state_b](dfa_edge_desc trans)
+//      {
+//        boost::add_edge(boost::source(trans, internal_dfa),
+//                        state_b, internal_dfa[trans], internal_dfa);
+//      });
 
-      // copy out transitions
-      boost::graph_traits<dfa_graph_t>::out_edge_iterator out_edge_iter_a, out_edge_last_iter_a;
-      std::tie(out_edge_iter_a, out_edge_last_iter_a) = boost::out_edges(state_a, internal_dfa);
-      std::for_each(out_edge_iter_a, out_edge_last_iter_a, [&state_b](dfa_edge_desc trans)
-      {
-        boost::add_edge(state_b, boost::target(trans, internal_dfa), internal_dfa[trans],
-                        internal_dfa);
-      });
+//      // copy out transitions
+//      boost::graph_traits<dfa_graph_t>::out_edge_iterator out_edge_iter_a, out_edge_last_iter_a;
+//      std::tie(out_edge_iter_a, out_edge_last_iter_a) = boost::out_edges(state_a, internal_dfa);
+//      std::for_each(out_edge_iter_a, out_edge_last_iter_a, [&state_b](dfa_edge_desc trans)
+//      {
+//        boost::add_edge(state_b, boost::target(trans, internal_dfa), internal_dfa[trans],
+//                        internal_dfa);
+//      });
 
-      return;
-    };
+//      return;
+//    };
 
     auto erase_states = [](const dfa_vertex_descs& states) -> void
     {
@@ -355,7 +381,7 @@ auto execution_dfa::optimize() -> void
     // copy transition
     std::for_each(std::begin(equiv_states), std::end(equiv_states), [&](dfa_vertex_desc state)
     {
-      copy_transitions(state, new_representing_state);
+      copy_transitions_from_state_to_state(state, new_representing_state);
     });
 
     // erase duplicated transitions
