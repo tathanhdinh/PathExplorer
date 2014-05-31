@@ -155,7 +155,7 @@ static auto find_state_by_content (dfa_vertex_iter first_state_iter,
   if (state_iter == last_state_iter)
     return boost::graph_traits<dfa_graph_t>::null_vertex();
   else return *state_iter;
-};
+}
 
 
 /**
@@ -200,7 +200,7 @@ static auto copy_transitions_from_state_to_state (dfa_vertex_desc state_a,
   });
 
   return;
-};
+}
 
 
 /**
@@ -237,7 +237,7 @@ static auto erase_duplicated_transitions (dfa_vertex_desc state) -> void
   };
 
   return;
-};
+}
 
 
 /**
@@ -384,7 +384,7 @@ auto execution_dfa::optimize () -> void
           derived_states.push_back(state);
       });
 
-      tfm::format(std::cerr, "derived states: %d\n", derived_states.size());
+//      tfm::format(std::cerr, "derived states: %d\n", derived_states.size());
       return derived_states;
     };
 
@@ -401,7 +401,7 @@ auto execution_dfa::optimize () -> void
     }
     else
     {
-      tfm::format(std::cerr, "initial states: %d\n", init_states.size());
+//      tfm::format(std::cerr, "initial states: %d\n", init_states.size());
 
       // get derived states: ones with all transitions to initial states
       auto derived_states = get_derived_states(init_states);
@@ -416,7 +416,7 @@ auto execution_dfa::optimize () -> void
 
         if (std::find_if(std::next(s_iter), s_last_iter, predicate) != s_last_iter)
         {
-          tfm::format(std::cerr, "equivalent state found\n");
+//          tfm::format(std::cerr, "equivalent state found\n");
           state_a = *s_iter; break;
         }
       }
@@ -571,8 +571,9 @@ auto execution_dfa::approximate () -> void
               (approx_relation.at(std::make_pair(state_a, state_b)) == more_than) &&
               std::none_of(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_c)
           {
-            return (approx_relation.at(std::make_pair(state_a, state_c)) &&
-                approx_relation.at(std::make_pair(state_c, state_b)));
+            return ((state_c != state_a) && (state_c != state_b) &&
+                    approx_relation.at(std::make_pair(state_a, state_c)) &&
+                    approx_relation.at(std::make_pair(state_c, state_b)));
           });
         });
       });
@@ -592,6 +593,7 @@ auto execution_dfa::approximate () -> void
       {
         boost::add_vertex(internal_dfa[state], approx_graph);
       });
+
       // add edges
       auto first_dag_vertex_iter = dfa_vertex_iter(); auto last_dag_vertex_iter = dfa_vertex_iter();
       std::tie(first_dag_vertex_iter, last_dag_vertex_iter) = boost::vertices(approx_graph);
@@ -602,9 +604,9 @@ auto execution_dfa::approximate () -> void
           if (is_direct_connected.at(std::make_pair(state_a, state_b)))
           {
             auto state_a_in_dag = find_state_by_content(first_dag_vertex_iter,
-                                                        last_vertex_iter, internal_dfa[state_a]);
+                                                        last_dag_vertex_iter, internal_dfa[state_a]);
             auto state_b_in_dag = find_state_by_content(first_dag_vertex_iter,
-                                                        last_vertex_iter, internal_dfa[state_b]);
+                                                        last_dag_vertex_iter, internal_dfa[state_b]);
             boost::add_edge(state_a_in_dag, state_b_in_dag, dfa_edge(), approx_graph);
           }
         });
@@ -642,8 +644,14 @@ auto execution_dfa::approximate () -> void
     };
 
     auto is_direct_connected = std::map<state_pair_t, bool>();
+
+    tfm::format(std::cerr, "constructing direct relation table\n");
     construct_direct_connected_table(approx_relation, is_direct_connected);
+
+    tfm::format(std::cerr, "adding states and relations\n");
     add_states_and_approx_relations(is_direct_connected, approx_graph);
+
+    tfm::format(std::cerr, "removing isolated states\n");
     erase_isolated_states(approx_graph);
 
     return;
@@ -803,8 +811,13 @@ auto execution_dfa::approximate () -> void
   dfa_graph_t     approx_dag;
   approx_table_t  approx_table;
 
+  tfm::format(std::cerr, "constructing approximation table\n");
   construct_approx_table(approx_table);
+
+  tfm::format(std::cerr, "constructing approximation DAG\n");
   construct_approx_dag(approx_table, approx_dag);
+
+  tfm::format(std::cerr, "saving approximation DAG\n");
   save_approx_dag("dag_" + process_id_str, approx_dag);
 
   auto state_a = dfa_vertex_desc(); auto state_b = dfa_vertex_desc();
