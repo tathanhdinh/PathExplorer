@@ -345,7 +345,7 @@ auto save_cfi_inputs (const std::string& filename) -> void
 }
 
 
-auto save_path_condition (const conditions_t& cond, const std::string& filename)  -> void
+static auto save_path_condition (const conditions_t& cond, const std::string& filename)  -> void
 {
   auto save_path_inputs = [](
       const std::vector<addrint_value_maps_t>& inputs, std::ofstream& output_file) -> void

@@ -157,8 +157,8 @@ auto stop_exploring (INT32 code, VOID *data) -> VOID
   tfm::format(std::cerr, "extracting CFI tree\n");
   explored_fsa->extract_cfi_tree();
 
-  tfm::format(std::cerr, "saving CFI inputs\n");
-  save_cfi_inputs(process_id_str + "_cfi_inputs.log");
+//  tfm::format(std::cerr, "saving CFI inputs\n");
+//  save_cfi_inputs(process_id_str + "_cfi_inputs.log");
 
   tfm::format(std::cerr, "saving all trees\n");
   explored_fsa->save_to_file(process_id_str + "_path_explorer_explored_fsa.dot");

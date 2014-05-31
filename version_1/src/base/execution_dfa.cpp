@@ -18,6 +18,7 @@ typedef boost::graph_traits<dfa_graph_t>::edge_descriptor     dfa_edge_desc;
 typedef boost::graph_traits<dfa_graph_t>::vertex_iterator     dfa_vertex_iter;
 typedef boost::graph_traits<dfa_graph_t>::edge_iterator       dfa_edge_iter;
 typedef boost::graph_traits<dfa_graph_t>::out_edge_iterator   dfa_out_edge_iter;
+typedef boost::graph_traits<dfa_graph_t>::in_edge_iterator    dfa_in_edge_iter;
 
 typedef std::shared_ptr<dfa_graph_t>                          ptr_dfa_graph_t;
 
@@ -142,18 +143,19 @@ static auto merge_state_contents (const dfa_vertex& content_a,
 /**
  * @brief find_state_by_content
  */
-static auto find_state_by_content (dfa_vertex_iter first_state_iter,
-                                   dfa_vertex_iter last_state_iter,
+static auto find_state_by_content (const dfa_graph_t& graph,
                                    const dfa_vertex& content) -> dfa_vertex_desc
 {
-  auto state_iter =
-      std::find_if(first_state_iter, last_state_iter, [&content](dfa_vertex_desc state)
+  auto first_state_iter = dfa_vertex_iter(); auto last_state_iter = dfa_vertex_iter();
+  std::tie(first_state_iter, last_state_iter) = boost::vertices(graph);
+
+  auto state_iter = std::find_if(first_state_iter,
+                                 last_state_iter, [&content](dfa_vertex_desc state)
   {
     return (internal_dfa[state] == content);
   });
 
-  if (state_iter == last_state_iter)
-    return boost::graph_traits<dfa_graph_t>::null_vertex();
+  if (state_iter == last_state_iter) return boost::graph_traits<dfa_graph_t>::null_vertex();
   else return *state_iter;
 }
 
@@ -161,16 +163,22 @@ static auto find_state_by_content (dfa_vertex_iter first_state_iter,
 /**
  * @brief erase_state_by_content
  */
-static auto erase_state_by_content (const dfa_vertex& content) -> void
+static auto erase_state_by_content (dfa_graph_t& graph, const dfa_vertex& content) -> void
 {
-  auto first_state_iter = dfa_vertex_iter(); auto last_state_iter = dfa_vertex_iter();
-  std::tie(first_state_iter, last_state_iter) = boost::vertices(internal_dfa);
+//  auto first_state_iter = dfa_vertex_iter(); auto last_state_iter = dfa_vertex_iter();
+//  std::tie(first_state_iter, last_state_iter) = boost::vertices(internal_dfa);
 
-  auto state = find_state_by_content(first_state_iter, last_state_iter, content);
+//  auto state = find_state_by_content(first_state_iter, last_state_iter, content);
+//  if (state != boost::graph_traits<dfa_graph_t>::null_vertex())
+//  {
+//    boost::clear_vertex(state, internal_dfa); boost::remove_vertex(state, internal_dfa);
+//  }
+  auto state = find_state_by_content(graph, content);
   if (state != boost::graph_traits<dfa_graph_t>::null_vertex())
   {
-    boost::clear_vertex(state, internal_dfa); boost::remove_vertex(state, internal_dfa);
+    boost::clear_vertex(state, graph); boost::remove_vertex(state, graph);
   }
+
   return;
 }
 
@@ -178,25 +186,26 @@ static auto erase_state_by_content (const dfa_vertex& content) -> void
 /**
  * @brief copy_transitions_from_state_to_state
  */
-static auto copy_transitions_from_state_to_state (dfa_vertex_desc state_a,
+static auto copy_transitions_from_state_to_state (dfa_graph_t& graph,
+                                                  dfa_vertex_desc state_a,
                                                   dfa_vertex_desc state_b) -> void
 {
   // copy in transitions
-  boost::graph_traits<dfa_graph_t>::in_edge_iterator in_edge_iter_a, in_edge_last_iter_a;
-  std::tie(in_edge_iter_a, in_edge_last_iter_a) = boost::in_edges(state_a, internal_dfa);
-  std::for_each(in_edge_iter_a, in_edge_last_iter_a, [&state_b](dfa_edge_desc trans)
+  auto in_edge_first_iter_a = dfa_in_edge_iter(); auto in_edge_last_iter_a = dfa_in_edge_iter();
+  std::tie(in_edge_first_iter_a, in_edge_last_iter_a) = boost::in_edges(state_a, graph);
+
+  std::for_each(in_edge_first_iter_a, in_edge_last_iter_a, [&](dfa_edge_desc trans)
   {
-    boost::add_edge(boost::source(trans, internal_dfa),
-                    state_b, internal_dfa[trans], internal_dfa);
+    boost::add_edge(boost::source(trans, graph), state_b, graph[trans], graph);
   });
 
   // copy out transitions
-  boost::graph_traits<dfa_graph_t>::out_edge_iterator out_edge_iter_a, out_edge_last_iter_a;
-  std::tie(out_edge_iter_a, out_edge_last_iter_a) = boost::out_edges(state_a, internal_dfa);
-  std::for_each(out_edge_iter_a, out_edge_last_iter_a, [&state_b](dfa_edge_desc trans)
+  auto out_edge_first_iter_a = dfa_out_edge_iter(); auto out_edge_last_iter_a = dfa_out_edge_iter();
+  std::tie(out_edge_first_iter_a, out_edge_last_iter_a) = boost::out_edges(state_a, graph);
+
+  std::for_each(out_edge_first_iter_a, out_edge_last_iter_a, [&](dfa_edge_desc trans)
   {
-    boost::add_edge(state_b, boost::target(trans, internal_dfa), internal_dfa[trans],
-                    internal_dfa);
+    boost::add_edge(state_b, boost::target(trans, graph), graph[trans], graph);
   });
 
   return;
@@ -214,8 +223,8 @@ static auto erase_duplicated_transitions (dfa_vertex_desc state) -> void
         two_vmaps_are_isomorphic(internal_dfa[trans_x], internal_dfa[trans_y]));
   };
 
-  boost::graph_traits<dfa_graph_t>::out_edge_iterator first_trans_iter, last_trans_iter;
-  boost::graph_traits<dfa_graph_t>::out_edge_iterator trans_iter, next_trans_iter;
+  auto first_trans_iter = dfa_out_edge_iter(); auto last_trans_iter = dfa_out_edge_iter();
+  auto trans_iter = dfa_out_edge_iter(); auto next_trans_iter = dfa_out_edge_iter();
   auto duplicated_trans_exists = true;
   while (duplicated_trans_exists)
   {
@@ -589,14 +598,17 @@ auto execution_dfa::approximate () -> void
       std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
 
       // add states
+      tfm::format(std::cerr, "adding states\n");
       std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state)
       {
         boost::add_vertex(internal_dfa[state], approx_graph);
       });
 
       // add edges
+      tfm::format(std::cerr, "adding relations\n");
       auto first_dag_vertex_iter = dfa_vertex_iter(); auto last_dag_vertex_iter = dfa_vertex_iter();
       std::tie(first_dag_vertex_iter, last_dag_vertex_iter) = boost::vertices(approx_graph);
+
       std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_a)
       {
         std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_b)
@@ -607,6 +619,7 @@ auto execution_dfa::approximate () -> void
                                                         last_dag_vertex_iter, internal_dfa[state_a]);
             auto state_b_in_dag = find_state_by_content(first_dag_vertex_iter,
                                                         last_dag_vertex_iter, internal_dfa[state_b]);
+            tfm::format(std::cerr, "add edge\n");
             boost::add_edge(state_a_in_dag, state_b_in_dag, dfa_edge(), approx_graph);
           }
         });
