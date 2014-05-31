@@ -278,8 +278,6 @@ auto execution_dfa::optimize () -> void
     auto find_states_by_contents = [](const dfa_vertices& contents) -> dfa_vertex_descs
     {
       // get the descriptor of the new state in the new DFA
-//      auto first_state_iter = dfa_vertex_iter(); auto last_state_iter = dfa_vertex_iter();
-//      std::tie(first_state_iter, last_state_iter) = boost::vertices(internal_dfa);
 
       auto states = dfa_vertex_descs();
       std::for_each(std::begin(contents), std::end(contents), [&](const dfa_vertex& content)
@@ -499,10 +497,14 @@ auto execution_dfa::approximate () -> void
         else
         {
           // now both a and b are not empty
-          boost::graph_traits<dfa_graph_t>::out_edge_iterator first_trans_a_iter, last_trans_a_iter;
+//          boost::graph_traits<dfa_graph_t>::out_edge_iterator first_trans_a_iter, last_trans_a_iter;
+          auto first_trans_a_iter = dfa_out_edge_iter();
+          auto last_trans_a_iter = dfa_out_edge_iter();
           std::tie(first_trans_a_iter, last_trans_a_iter) = boost::out_edges(state_a, internal_dfa);
 
-          boost::graph_traits<dfa_graph_t>::out_edge_iterator first_trans_b_iter, last_trans_b_iter;
+//          boost::graph_traits<dfa_graph_t>::out_edge_iterator first_trans_b_iter, last_trans_b_iter;
+          auto first_trans_b_iter = dfa_out_edge_iter();
+          auto last_trans_b_iter = dfa_out_edge_iter();
           std::tie(first_trans_b_iter, last_trans_b_iter) = boost::out_edges(state_b, internal_dfa);
 
           return std::all_of(first_trans_a_iter, last_trans_a_iter, [&](dfa_edge_desc trans_a)
