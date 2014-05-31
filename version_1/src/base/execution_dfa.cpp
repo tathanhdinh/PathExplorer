@@ -3,7 +3,6 @@
 
 #include <numeric>
 #include <boost/graph/graphviz.hpp>
-#include <boost/graph/copy.hpp>
 
 typedef ptr_cond_direct_inss_t                                dfa_vertex;
 typedef std::vector<dfa_vertex>                               dfa_vertices;
@@ -37,7 +36,7 @@ auto execution_dfa::instance() -> ptr_exec_dfa_t
   if (!single_dfa_instance)
   {
     single_dfa_instance = std::make_shared<execution_dfa>(construction_key());
-    internal_dfa.clear(); /*initial_state = boost::graph_traits<dfa_graph_t>::null_vertex();*/
+    internal_dfa.clear();
     initial_state = boost::add_vertex(ptr_cond_direct_inss_t(), internal_dfa);
   }
 
@@ -483,6 +482,7 @@ auto execution_dfa::approximate () -> void
   };
   typedef std::pair<dfa_vertex_desc, dfa_vertex_desc> state_pair_t;
   typedef std::map<state_pair_t , ordering_t>         approx_table_t;
+  typedef std::map<state_pair_t, bool>                direct_connection_rel_t;
 
   auto construct_approx_table = [](approx_table_t& approximation_table) -> void
   {
@@ -564,9 +564,12 @@ auto execution_dfa::approximate () -> void
       const approx_table_t& approx_relation, dfa_graph_t& approx_graph) -> void
   {
     // construct a direction connected table
-    auto construct_direct_connected_table = [](const approx_table_t& approx_relation,
-        std::map<state_pair_t, bool> is_direct_connected) -> void
+    auto construct_direct_connected_table = [](
+        const approx_table_t& approx_relation) -> direct_connection_rel_t
     {
+//      direct_connection_rel_t is_direct_connected;
+      auto is_direct_connected = direct_connection_rel_t();
+
       auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
       std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
 
@@ -586,12 +589,12 @@ auto execution_dfa::approximate () -> void
         });
       });
 
-      return;
+      return is_direct_connected;
     };
 
     // construct the approximation DAG
-    auto add_states_and_approx_relations = [](
-        const std::map<state_pair_t, bool>& is_direct_connected, dfa_graph_t& approx_graph) -> void
+    auto add_states_and_relations = [](
+        const direct_connection_rel_t& is_direct_connected, dfa_graph_t& approx_graph) -> void
     {
       auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
       std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
@@ -614,6 +617,7 @@ auto execution_dfa::approximate () -> void
         {
           if (is_direct_connected.at(std::make_pair(state_a, state_b)))
           {
+            tfm::format(std::cerr, "look for states\n");
             auto state_a_in_dag = find_state_by_content(approx_graph, internal_dfa[state_a]);
             auto state_b_in_dag = find_state_by_content(approx_graph, internal_dfa[state_b]);
             tfm::format(std::cerr, "add edge\n");
@@ -653,13 +657,11 @@ auto execution_dfa::approximate () -> void
       return;
     };
 
-    auto is_direct_connected = std::map<state_pair_t, bool>();
-
     tfm::format(std::cerr, "constructing direct relation table\n");
-    construct_direct_connected_table(approx_relation, is_direct_connected);
+    auto is_direct_connected = construct_direct_connected_table(approx_relation);
 
     tfm::format(std::cerr, "adding states and relations\n");
-    add_states_and_approx_relations(is_direct_connected, approx_graph);
+    add_states_and_relations(is_direct_connected, approx_graph);
 
     tfm::format(std::cerr, "removing isolated states\n");
     erase_isolated_states(approx_graph);
