@@ -673,6 +673,7 @@ auto execution_dfa::approximate () -> void
   {
     auto write_dag_state = [&approx_graph](std::ostream& label, dfa_vertex_desc state) -> void
     {
+      tfm::format(std::cerr, "start write state\n");
       auto content = approx_graph[state];
       if (content.size() > 0)
       {
@@ -684,12 +685,15 @@ auto execution_dfa::approximate () -> void
         tfm::format(label, "\"]");
       }
       else tfm::format(label, "[label=\"unknown\"]");
+      tfm::format(std::cerr, "end write state\n");
       return;
     };
 
     auto write_dag_rel = [&approx_graph](std::ostream& label, dfa_edge_desc relation) -> void
     {
+      tfm::format(std::cerr, "start write relation\n");
       tfm::format(label, "[label=\"\"]");
+      tfm::format(std::cerr, "end write relation\n");
       return;
     };
 
@@ -827,8 +831,9 @@ auto execution_dfa::approximate () -> void
   construct_approx_dag(approx_table, approx_dag);
 
   tfm::format(std::cerr, "saving approximation DAG\n");
-  save_approx_dag("dag_" + process_id_str, approx_dag);
+  save_approx_dag("dag_" + process_id_str + ".dot", approx_dag);
 
+  tfm::format(std::cerr, "merging approximated states\n");
   auto state_a = dfa_vertex_desc(); auto state_b = dfa_vertex_desc();
   std::tie(state_a, state_b) = select_approximable_states(approx_dag);
   if ((state_a != boost::graph_traits<dfa_graph_t>::null_vertex()) &&
