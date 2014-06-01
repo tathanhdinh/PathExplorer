@@ -192,7 +192,7 @@ auto stop_exploring (INT32 code, VOID *data) -> VOID
   tfm::format(std::cerr, "abstracting DFA\n");
   abstracted_dfa->approximate();
 
-  tfm::format(std::cerr, "saving DFA to file\n");
+  tfm::format(std::cerr, "saving abstracted DFA to file\n");
   abstracted_dfa->save_to_file("abstracted_" + process_id_str + ".dot");
 
 #if !defined(NDEBUG)
