@@ -743,33 +743,33 @@ auto execution_dfa::approximate () -> void
       return;
     };
 
-    auto erase_isolated_states = [](dfa_graph_t& approx_graph) -> void
-    {
-      auto first_dag_vertex_iter = dfa_vertex_iter(); auto last_dag_vertex_iter = dfa_vertex_iter();
-      auto isolated_vertex_exists = true;
+//    auto erase_isolated_states = [](dfa_graph_t& approx_graph) -> void
+//    {
+//      auto first_dag_vertex_iter = dfa_vertex_iter(); auto last_dag_vertex_iter = dfa_vertex_iter();
+//      auto isolated_vertex_exists = true;
 
-      while (isolated_vertex_exists)
-      {
-        isolated_vertex_exists = false;
-        std::tie(first_dag_vertex_iter, last_dag_vertex_iter) = boost::vertices(approx_graph);
+//      while (isolated_vertex_exists)
+//      {
+//        isolated_vertex_exists = false;
+//        std::tie(first_dag_vertex_iter, last_dag_vertex_iter) = boost::vertices(approx_graph);
 
-        auto isolated_predicate = [&](dfa_vertex_desc state) -> bool
-        {
-          return (boost::in_degree(state, approx_graph) == 0) &&
-              (boost::out_degree(state, approx_graph) == 0);
-        };
+//        auto isolated_predicate = [&](dfa_vertex_desc state) -> bool
+//        {
+//          return (boost::in_degree(state, approx_graph) == 0) &&
+//              (boost::out_degree(state, approx_graph) == 0);
+//        };
 
-        auto isolated_state_iter = std::find_if(first_dag_vertex_iter,
-                                                last_dag_vertex_iter, isolated_predicate);
-        if (isolated_state_iter != last_dag_vertex_iter)
-        {
-          isolated_vertex_exists = true;
-          boost::clear_vertex(*isolated_state_iter, approx_graph);
-          boost::remove_vertex(*isolated_state_iter, approx_graph);
-        }
-      }
-      return;
-    };
+//        auto isolated_state_iter = std::find_if(first_dag_vertex_iter,
+//                                                last_dag_vertex_iter, isolated_predicate);
+//        if (isolated_state_iter != last_dag_vertex_iter)
+//        {
+//          isolated_vertex_exists = true;
+//          boost::clear_vertex(*isolated_state_iter, approx_graph);
+//          boost::remove_vertex(*isolated_state_iter, approx_graph);
+//        }
+//      }
+//      return;
+//    };
 
     tfm::format(std::cerr, "constructing direct relation table\n");
     auto is_direct_connected = construct_direct_connected_table(approx_relation);
@@ -787,27 +787,24 @@ auto execution_dfa::approximate () -> void
   {
     auto write_dag_state = [&approx_graph](std::ostream& label, dfa_vertex_desc state) -> void
     {
-      tfm::format(std::cerr, "start write state\n");
       auto content = approx_graph[state];
       if (content.size() > 0)
       {
         tfm::format(label, "[label=\"");
         std::for_each(content.begin(), content.end(), [&](decltype(content)::const_reference cfi)
         {
-          tfm::format(label, "%s: %s\n", addrint_to_hexstring(cfi->address), cfi->disassembled_name);
+          tfm::format(label, "%s: %s\n",
+                      addrint_to_hexstring(cfi->address), cfi->disassembled_name);
         });
         tfm::format(label, "\"]");
       }
       else tfm::format(label, "[label=\"unknown\"]");
-      tfm::format(std::cerr, "end write state\n");
       return;
     };
 
     auto write_dag_rel = [&approx_graph](std::ostream& label, dfa_edge_desc relation) -> void
     {
-      tfm::format(std::cerr, "start write relation\n");
       tfm::format(label, "[label=\"\"]");
-      tfm::format(std::cerr, "end write relation\n");
       return;
     };
 
