@@ -687,36 +687,59 @@ auto execution_dfa::approximate () -> void
     auto add_states_and_relations = [](
         const direct_connection_rel_t& is_direct_connected, dfa_graph_t& approx_graph) -> void
     {
-      auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
-      std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
+//      auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
+//      std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
 
-      // add states
-      tfm::format(std::cerr, "adding states\n");
-      std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state)
+//      // add states
+//      tfm::format(std::cerr, "adding states\n");
+//      std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state)
+//      {
+//        boost::add_vertex(internal_dfa[state], approx_graph);
+//      });
+
+//      // add edges
+//      tfm::format(std::cerr, "adding relations\n");
+//      auto first_dag_vertex_iter = dfa_vertex_iter(); auto last_dag_vertex_iter = dfa_vertex_iter();
+//      std::tie(first_dag_vertex_iter, last_dag_vertex_iter) = boost::vertices(approx_graph);
+
+//      std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_a)
+//      {
+//        std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_b)
+//        {
+//          if (is_direct_connected.at(std::make_pair(state_a, state_b)))
+//          {
+//            tfm::format(std::cerr, "look for states\n");
+//            auto state_a_in_dag = find_state_by_content(approx_graph, internal_dfa[state_a]);
+//            auto state_b_in_dag = find_state_by_content(approx_graph, internal_dfa[state_b]);
+//            tfm::format(std::cerr, "add edge\n");
+//            boost::add_edge(state_a_in_dag, state_b_in_dag, dfa_edge(), approx_graph);
+//          }
+//        });
+//      });
+
+      std::for_each(std::begin(is_direct_connected), std::end(is_direct_connected),
+                    [&](direct_connection_rel_t::const_reference states_rel)
       {
-        boost::add_vertex(internal_dfa[state], approx_graph);
-      });
-
-      // add edges
-      tfm::format(std::cerr, "adding relations\n");
-      auto first_dag_vertex_iter = dfa_vertex_iter(); auto last_dag_vertex_iter = dfa_vertex_iter();
-      std::tie(first_dag_vertex_iter, last_dag_vertex_iter) = boost::vertices(approx_graph);
-
-      std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_a)
-      {
-        std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_b)
+        auto add_state_from_dfa_to_dag = [&](dfa_vertex_desc dfa_state) -> dfa_vertex_desc
         {
-          if (is_direct_connected.at(std::make_pair(state_a, state_b)))
-          {
-            tfm::format(std::cerr, "look for states\n");
-            auto state_a_in_dag = find_state_by_content(approx_graph, internal_dfa[state_a]);
-            auto state_b_in_dag = find_state_by_content(approx_graph, internal_dfa[state_b]);
-            tfm::format(std::cerr, "add edge\n");
-            boost::add_edge(state_a_in_dag, state_b_in_dag, dfa_edge(), approx_graph);
-          }
-        });
-      });
+          auto content = internal_dfa[dfa_state];
+          auto dag_state = find_state_by_content(approx_graph, content);
 
+          if (dag_state == boost::graph_traits<dfa_graph_t>::null_vertex())
+            dag_state = boost::add_vertex(content, approx_graph);
+
+          return dag_state;
+        };
+
+        if (std::get<1>(states_rel))
+        {
+          auto state_a = add_state_from_dfa_to_dag(std::get<0>(std::get<0>(states_rel)));
+          auto state_b = add_state_from_dfa_to_dag(std::get<1>(std::get<0>(states_rel)));
+
+          if (!std::get<1>(boost::edge(state_a, state_b, approx_graph)))
+            boost::add_edge(state_a, state_b, dfa_edge(), approx_graph);
+        }
+      });
       return;
     };
 
@@ -751,11 +774,11 @@ auto execution_dfa::approximate () -> void
     tfm::format(std::cerr, "constructing direct relation table\n");
     auto is_direct_connected = construct_direct_connected_table(approx_relation);
 
-    tfm::format(std::cerr, "adding states and relations\n");
+    tfm::format(std::cerr, "adding states and relations in to DAG\n");
     add_states_and_relations(is_direct_connected, approx_graph);
 
-    tfm::format(std::cerr, "removing isolated states\n");
-    erase_isolated_states(approx_graph);
+//    tfm::format(std::cerr, "removing isolated states\n");
+//    erase_isolated_states(approx_graph);
 
     return;
   }; // end of construct_approx_dag lambda
