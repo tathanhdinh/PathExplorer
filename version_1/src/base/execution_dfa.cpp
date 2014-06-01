@@ -148,10 +148,9 @@ static auto find_state_by_content (const dfa_graph_t& graph,
   auto first_state_iter = dfa_vertex_iter(); auto last_state_iter = dfa_vertex_iter();
   std::tie(first_state_iter, last_state_iter) = boost::vertices(graph);
 
-  auto state_iter = std::find_if(first_state_iter,
-                                 last_state_iter, [&content](dfa_vertex_desc state)
+  auto state_iter = std::find_if(first_state_iter, last_state_iter, [&](dfa_vertex_desc state)
   {
-    return (internal_dfa[state] == content);
+    return (graph[state] == content);
   });
 
   if (state_iter == last_state_iter) return boost::graph_traits<dfa_graph_t>::null_vertex();
@@ -589,7 +588,7 @@ auto execution_dfa::approximate () -> void
       });
 //      tfm::format(std::cerr, "ddd\n");
     }
-    tfm::format(std::cerr, "counting\n");
+//    tfm::format(std::cerr, "counting\n");
     tfm::format(std::cerr, "%d approximable pair(s) founded\n",
                 std::count_if(std::begin(approximation_table), std::end(approximation_table),
                               [](approx_table_t::const_reference rel) -> bool
@@ -733,8 +732,31 @@ auto execution_dfa::approximate () -> void
 
         if (std::get<1>(states_rel))
         {
+//          tfm::format(std::cerr, "direct approximable pair found\n");
+//          tfm::format(std::cerr, "state a: \n");
+//          std::for_each(std::begin(internal_dfa[std::get<0>(std::get<0>(states_rel))]),
+//              std::end(internal_dfa[std::get<0>(std::get<0>(states_rel))]),
+//                        [&](dfa_vertex::const_reference cfi)
+//          {
+//            tfm::format(std::cerr, "%s: %s\n",
+//                        addrint_to_hexstring(cfi->address), cfi->disassembled_name);
+//          });
+//          tfm::format(std::cerr, "state b: \n");
+//          std::for_each(std::begin(internal_dfa[std::get<1>(std::get<0>(states_rel))]),
+//              std::end(internal_dfa[std::get<1>(std::get<0>(states_rel))]),
+//                        [&](dfa_vertex::const_reference cfi)
+//          {
+//            tfm::format(std::cerr, "%s: %s\n",
+//                        addrint_to_hexstring(cfi->address), cfi->disassembled_name);
+//          });
+
+//          if (internal_dfa[std::get<0>(std::get<0>(states_rel))].empty()) std::exit(1);
+
           auto state_a = add_state_from_dfa_to_dag(std::get<0>(std::get<0>(states_rel)));
+//          if (approx_graph[state_a].empty()) std::exit(1);
           auto state_b = add_state_from_dfa_to_dag(std::get<1>(std::get<0>(states_rel)));
+
+//          if (approx_graph[state_a].empty()) std::exit(1);
 
           if (!std::get<1>(boost::edge(state_a, state_b, approx_graph)))
             boost::add_edge(state_a, state_b, dfa_edge(), approx_graph);
