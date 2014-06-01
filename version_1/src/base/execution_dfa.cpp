@@ -466,74 +466,131 @@ auto execution_dfa::optimize () -> void
 }
 
 
+static auto get_contents_from_root (dfa_vertex_desc state) -> dfa_vertices
+{
+  auto contents = dfa_vertices();
+
+  if (internal_dfa[state].size() > 0)
+  {
+    contents.push_back(internal_dfa[state]);
+
+    auto first_trans_iter = dfa_out_edge_iter(); auto last_trans_iter = dfa_out_edge_iter();
+    std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(state, internal_dfa);
+
+    std::for_each(first_trans_iter, last_trans_iter, [&](dfa_edge_desc trans)
+    {
+      auto sub_contents = get_contents_from_root(boost::target(trans, internal_dfa));
+      contents.insert(std::begin(contents), std::begin(sub_contents), std::end(sub_contents));
+    });
+  }
+
+  return contents;
+};
+
+
+static auto get_states_from_root (dfa_vertex_desc state) -> dfa_vertex_descs
+{
+  auto states = dfa_vertex_descs();
+
+  if (!internal_dfa[state].empty())
+  {
+    states.push_back(state);
+
+    auto first_trans_iter = dfa_out_edge_iter(); auto last_trans_iter = dfa_out_edge_iter();
+    std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(state, internal_dfa);
+
+    std::for_each(first_trans_iter, last_trans_iter, [&](dfa_edge_desc trans)
+    {
+      auto sub_states = get_states_from_root(boost::target(trans, internal_dfa));
+      std::copy_if(std::begin(sub_states), std::end(sub_states), std::back_inserter(states),
+                   [&](dfa_vertex_desc state) -> bool
+      {
+        return (std::find(std::begin(states), std::end(states), state) != std::end(states));
+      });
+    });
+  }
+
+  return states;
+}
+
+
 //typedef std::function<dfa_vertex_desc(dfa_vertex_desc, dfa_vertex_desc)> merge_states_t;
 static auto merge_approximable_states (dfa_vertex_desc state_a,
                                        dfa_vertex_desc state_b) -> dfa_vertex_desc
 {
-  tfm::format(std::cerr, "state a has %d child: \n", boost::out_degree(state_a, internal_dfa));
-  std::for_each(std::begin(internal_dfa[state_a]), std::end(internal_dfa[state_a]),
-                [&](dfa_vertex::const_reference cfi)
-  {
-    tfm::format(std::cerr, "%s: %s\n",
-                addrint_to_hexstring(cfi->address), cfi->disassembled_name);
-  });
-  tfm::format(std::cerr, "state b has %d child: \n", boost::out_degree(state_b, internal_dfa));
-  std::for_each(std::begin(internal_dfa[state_b]), std::end(internal_dfa[state_b]),
-                [&](dfa_vertex::const_reference cfi)
-  {
-    tfm::format(std::cerr, "%s: %s\n",
-                addrint_to_hexstring(cfi->address), cfi->disassembled_name);
-  });
-  std::exit(1);
+//  tfm::format(std::cerr, "state a has %d child: \n", boost::out_degree(state_a, internal_dfa));
+//  std::for_each(std::begin(internal_dfa[state_a]), std::end(internal_dfa[state_a]),
+//                [&](dfa_vertex::const_reference cfi)
+//  {
+//    tfm::format(std::cerr, "%s: %s\n",
+//                addrint_to_hexstring(cfi->address), cfi->disassembled_name);
+//  });
+//  tfm::format(std::cerr, "state b has %d child: \n", boost::out_degree(state_b, internal_dfa));
+//  std::for_each(std::begin(internal_dfa[state_b]), std::end(internal_dfa[state_b]),
+//                [&](dfa_vertex::const_reference cfi)
+//  {
+//    tfm::format(std::cerr, "%s: %s\n",
+//                addrint_to_hexstring(cfi->address), cfi->disassembled_name);
+//  });
 
 //     get the transition from a to b
 //    auto loopback_trans = internal_dfa[std::get<0>(boost::edge(state_a, state_b, internal_dfa))];
 
-  // add merged state
-  auto merged_content = merge_state_contents(internal_dfa[state_a], internal_dfa[state_b]);
-  auto merged_state = boost::add_vertex(merged_content, internal_dfa);
-
-  copy_transitions_from_state_to_state(internal_dfa, state_a, merged_state);
-  copy_transitions_from_state_to_state(internal_dfa, state_b, merged_state);
-
-  // add loopback transition
-//    boost::add_edge(merged_state, merged_state, loopback_trans, internal_dfa);
-//    tfm::format(std::cerr, "loopback transition added\n");
-
-  if ((boost::out_degree(state_a, internal_dfa) > 0) &&
-      (boost::out_degree(state_b, internal_dfa) > 0))
+  if (state_a == state_b)
+    return state_a;
+  else
   {
-    // merge child states of roots a and b
-    auto first_a_trans_iter = dfa_out_edge_iter(); auto last_a_trans_iter = dfa_out_edge_iter();
-    std::tie(first_a_trans_iter, last_a_trans_iter) = boost::out_edges(state_a, internal_dfa);
+    // add merged state
+    auto merged_content = merge_state_contents(internal_dfa[state_a], internal_dfa[state_b]);
+    auto merged_state = boost::add_vertex(merged_content, internal_dfa);
 
-    auto first_b_trans_iter = dfa_out_edge_iter(); auto last_b_trans_iter = dfa_out_edge_iter();
-    std::tie(first_b_trans_iter, last_b_trans_iter) = boost::out_edges(state_b, internal_dfa);
+  //  copy_transitions_from_state_to_state(internal_dfa, state_a, merged_state);
+  //  copy_transitions_from_state_to_state(internal_dfa, state_b, merged_state);
 
-    tfm::format(std::cerr, "continue with %d child states\n",
-                std::distance(first_a_trans_iter, last_a_trans_iter));
-    std::for_each(first_a_trans_iter, last_a_trans_iter, [&](dfa_edge_desc trans_a)
+    // add loopback transition
+  //    boost::add_edge(merged_state, merged_state, loopback_trans, internal_dfa);
+  //    tfm::format(std::cerr, "loopback transition added\n");
+
+    if ((boost::out_degree(state_a, internal_dfa) > 0) &&
+        (boost::out_degree(state_b, internal_dfa) > 0))
     {
-      auto approx_predicate = [&trans_a](dfa_edge_desc trans) -> bool
+      // merge child states of roots a and b
+      auto first_a_trans_iter = dfa_out_edge_iter(); auto last_a_trans_iter = dfa_out_edge_iter();
+      std::tie(first_a_trans_iter, last_a_trans_iter) = boost::out_edges(state_a, internal_dfa);
+
+      auto first_b_trans_iter = dfa_out_edge_iter(); auto last_b_trans_iter = dfa_out_edge_iter();
+      std::tie(first_b_trans_iter, last_b_trans_iter) = boost::out_edges(state_b, internal_dfa);
+
+      tfm::format(std::cerr, "continue with %d child states\n",
+                  std::distance(first_a_trans_iter, last_a_trans_iter));
+      std::for_each(first_a_trans_iter, last_a_trans_iter, [&](dfa_edge_desc trans_a)
       {
-        return (two_vmaps_are_isomorphic(internal_dfa[trans_a], internal_dfa[trans]) ||
-                a_vmaps_is_included_in_b(internal_dfa[trans_a], internal_dfa[trans]));
-      };
+        auto approx_predicate = [&trans_a](dfa_edge_desc trans) -> bool
+        {
+          return (two_vmaps_are_isomorphic(internal_dfa[trans_a], internal_dfa[trans]) ||
+                  a_vmaps_is_included_in_b(internal_dfa[trans_a], internal_dfa[trans]));
+        };
 
-      tfm::format(std::cerr, "look in %d corresponding child states\n",
-                  std::distance(first_b_trans_iter, last_b_trans_iter));
-      auto corr_b_trans_iter = std::find_if(first_b_trans_iter,
-                                            last_b_trans_iter, approx_predicate);
+        tfm::format(std::cerr, "look in %d corresponding child states\n",
+                    std::distance(first_b_trans_iter, last_b_trans_iter));
+        auto corr_b_trans_iter = std::find_if(first_b_trans_iter,
+                                              last_b_trans_iter, approx_predicate);
 
-      auto next_state_a = boost::target(trans_a, internal_dfa);
-      auto next_state_b = boost::target(*corr_b_trans_iter, internal_dfa);
+        auto next_state_a = boost::target(trans_a, internal_dfa);
+        auto next_state_b = boost::target(*corr_b_trans_iter, internal_dfa);
 
-      auto next_merged_state = merge_approximable_states(next_state_a, next_state_b);
-      boost::add_edge(merged_state, next_merged_state, internal_dfa[trans_a], internal_dfa);
-    });
+        auto next_merged_state = merge_approximable_states(next_state_a, next_state_b);
+        boost::add_edge(merged_state, next_merged_state, internal_dfa[trans_a], internal_dfa);
+      });
+    }
+
+  //  copy_transitions_from_state_to_state(internal_dfa, state_a, merged_state);
+  //  copy_transitions_from_state_to_state(internal_dfa, state_b, merged_state);
+
+    return merged_state;
   }
 
-  return merged_state;
+
 };
 
 /**
@@ -993,29 +1050,9 @@ auto execution_dfa::approximate () -> void
 
    // end of merge_approximated_states lambda
 
-  auto erase_states_from_root_content = [](const dfa_vertex& content) -> void
+  auto erase_from_root_content = [](const dfa_vertex& content) -> void
   {
-    typedef std::function<dfa_vertices(dfa_vertex_desc)> get_contents_from_root_t;
-    get_contents_from_root_t get_contents_from_root = [&get_contents_from_root](
-        dfa_vertex_desc state) -> dfa_vertices
-    {
-      auto contents = dfa_vertices();
 
-      if (internal_dfa[state].size() > 0)
-      {
-        contents.push_back(internal_dfa[state]);
-
-        auto first_trans_iter = dfa_out_edge_iter(); auto last_trans_iter = dfa_out_edge_iter();
-        std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(state, internal_dfa);
-        std::for_each(first_trans_iter, last_trans_iter, [&](dfa_edge_desc trans)
-        {
-          auto sub_contents = get_contents_from_root(boost::target(trans, internal_dfa));
-          contents.insert(std::begin(contents), std::begin(sub_contents), std::end(sub_contents));
-        });
-      }
-
-      return contents;
-    };
 
 //    auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
 //    std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
@@ -1028,6 +1065,18 @@ auto execution_dfa::approximate () -> void
 
     return;
   }; // end of erase_states_from_root lambda
+
+  auto use_state_to_abstract_state = [](dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> void
+  {
+    // add merged state
+//    auto merged_content = merge_state_contents(internal_dfa[state_a], internal_dfa[state_b]);
+//    auto merged_state = boost::add_vertex(merged_content, internal_dfa);
+
+    // add loopback transition
+    auto loopback_trans = internal_dfa[std::get<0>(boost::edge(state_a, state_b, internal_dfa))];
+    boost::add_edge(state_a, state_a, loopback_trans, internal_dfa);
+    return;
+  };
 
   dfa_graph_t     approx_dag;
   approx_table_t  approx_table;
