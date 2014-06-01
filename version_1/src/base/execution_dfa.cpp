@@ -497,17 +497,15 @@ auto execution_dfa::approximate () -> void
         else
         {
           // now both a and b are not empty
-//          boost::graph_traits<dfa_graph_t>::out_edge_iterator first_trans_a_iter, last_trans_a_iter;
           auto first_trans_a_iter = dfa_out_edge_iter();
           auto last_trans_a_iter = dfa_out_edge_iter();
           std::tie(first_trans_a_iter, last_trans_a_iter) = boost::out_edges(state_a, internal_dfa);
 
-//          boost::graph_traits<dfa_graph_t>::out_edge_iterator first_trans_b_iter, last_trans_b_iter;
           auto first_trans_b_iter = dfa_out_edge_iter();
           auto last_trans_b_iter = dfa_out_edge_iter();
           std::tie(first_trans_b_iter, last_trans_b_iter) = boost::out_edges(state_b, internal_dfa);
 
-          return std::all_of(first_trans_a_iter, last_trans_a_iter, [&](dfa_edge_desc trans_a)
+          /*auto approximable =*/return std::all_of(first_trans_a_iter, last_trans_a_iter, [&](dfa_edge_desc trans_a)
           {
             auto iso_predicate = [&trans_a](dfa_edge_desc trans) -> bool
             {
@@ -516,8 +514,11 @@ auto execution_dfa::approximate () -> void
 
             auto trans_b_iter = std::find_if(first_trans_b_iter, last_trans_b_iter, iso_predicate);
             if (trans_b_iter != last_trans_b_iter)
+            {
+//              tfm::format(std::cerr, "continue with child\n");
               return is_approximable(boost::target(trans_a, internal_dfa),
                                      boost::target(*trans_b_iter, internal_dfa));
+            }
             else
             {
               auto approx_predicate = [&trans_a](dfa_edge_desc trans) -> bool
@@ -525,13 +526,37 @@ auto execution_dfa::approximate () -> void
                 return a_vmaps_is_included_in_b(internal_dfa[trans_a], internal_dfa[trans]);
               };
 
-              auto trans_b_iter =
-                  std::find_if(first_trans_b_iter, last_trans_b_iter, approx_predicate);
-              if (trans_b_iter != last_trans_b_iter)
-                return internal_dfa[boost::target(*trans_b_iter, internal_dfa)].empty();
-              else return false;
+              trans_b_iter = std::find_if(first_trans_b_iter, last_trans_b_iter, approx_predicate);
+
+              return (trans_b_iter != last_trans_b_iter) ?
+                    internal_dfa[boost::target(*trans_b_iter, internal_dfa)].empty() : false;
+
+//              if (trans_b_iter != last_trans_b_iter)
+//                return internal_dfa[boost::target(*trans_b_iter, internal_dfa)].empty();
+//              else return false;
             }
           });
+
+//          if (approximable)
+//          {
+//            tfm::format(std::cerr, "approximable pair found\n");
+//            tfm::format(std::cerr, "state a: \n");
+//            std::for_each(std::begin(internal_dfa[state_a]), std::end(internal_dfa[state_a]),
+//                          [&](dfa_vertex::const_reference cfi)
+//            {
+//              tfm::format(std::cerr, "%s: %s\n",
+//                          addrint_to_hexstring(cfi->address), cfi->disassembled_name);
+//            });
+//            tfm::format(std::cerr, "state b: \n");
+//            std::for_each(std::begin(internal_dfa[state_b]), std::end(internal_dfa[state_b]),
+//                          [&](dfa_vertex::const_reference cfi)
+//            {
+//              tfm::format(std::cerr, "%s: %s\n",
+//                          addrint_to_hexstring(cfi->address), cfi->disassembled_name);
+//            });
+//            if (internal_dfa[state_a].size() == 1 && internal_dfa[state_b].size() == 2) std::exit(1);
+//          }
+//          return approximable;
         }
       }
     };
@@ -539,27 +564,61 @@ auto execution_dfa::approximate () -> void
     auto first_vertex_iter = dfa_vertex_iter();
     auto last_vertex_iter = dfa_vertex_iter();
     std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
-    std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_a)
+    for (auto iter_a = first_vertex_iter; iter_a != last_vertex_iter; ++iter_a)
     {
-      std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_b)
+      auto iter_b = iter_a;
+      std::for_each(++iter_b, last_vertex_iter, [&](dfa_vertex_desc state_b)
       {
-        if (is_approximable(state_a, state_b))
+//        tfm::format(std::cerr, "sp");
+        if (is_approximable(*iter_a, state_b))
         {
-          approximation_table[std::make_pair(state_a, state_b)] = more_than;
-          approximation_table[std::make_pair(state_b, state_a)] = less_than;
+          approximation_table[std::make_pair(*iter_a, state_b)] = more_than;
+          approximation_table[std::make_pair(state_b, *iter_a)] = less_than;
         }
-        else if (is_approximable(state_b, state_a))
+        else if (is_approximable(state_b, *iter_a))
         {
-          approximation_table[std::make_pair(state_b, state_a)] = more_than;
-          approximation_table[std::make_pair(state_a, state_b)] = less_than;
+          approximation_table[std::make_pair(*iter_a, state_b)] = less_than;
+          approximation_table[std::make_pair(state_b, *iter_a)] = more_than;
         }
         else
         {
-          approximation_table[std::make_pair(state_a, state_b)] = uncomparable;
-          approximation_table[std::make_pair(state_b, state_a)] = uncomparable;
+          approximation_table[std::make_pair(*iter_a, state_b)] = uncomparable;
+          approximation_table[std::make_pair(state_b, *iter_a)] = uncomparable;
         }
+//        tfm::format(std::cerr, "sss\n");
       });
-    });
+//      tfm::format(std::cerr, "ddd\n");
+    }
+    tfm::format(std::cerr, "counting\n");
+    tfm::format(std::cerr, "%d approximable pair(s) founded\n",
+                std::count_if(std::begin(approximation_table), std::end(approximation_table),
+                              [](approx_table_t::const_reference rel) -> bool
+                {
+                  return (std::get<1>(rel) != uncomparable);
+                }));
+
+//    std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_a)
+//    {
+//      std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_b)
+//      {
+//        if (is_approximable(state_a, state_b))
+//        {
+//          approximation_table[std::make_pair(state_a, state_b)] = more_than;
+//          approximation_table[std::make_pair(state_b, state_a)] = less_than;
+//        }
+//        else if (is_approximable(state_b, state_a))
+//        {
+//          approximation_table[std::make_pair(state_b, state_a)] = more_than;
+//          approximation_table[std::make_pair(state_a, state_b)] = less_than;
+//        }
+//        else
+//        {
+//          approximation_table[std::make_pair(state_a, state_b)] = uncomparable;
+//          approximation_table[std::make_pair(state_b, state_a)] = uncomparable;
+//        }
+//      });
+//    });
+//    tfm::format(std::cerr, "gghe\n");
   }; // end of construct_approx_table lambda
 
   auto construct_approx_dag = [](
@@ -579,17 +638,47 @@ auto execution_dfa::approximate () -> void
       {
         std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_b)
         {
-          is_direct_connected[std::make_pair(state_a, state_b)] =
-              (state_a != state_b) &&
-              (approx_relation.at(std::make_pair(state_a, state_b)) == more_than) &&
-              std::none_of(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_c)
+          if (state_a != state_b)
           {
-            return ((state_c != state_a) && (state_c != state_b) &&
-                    approx_relation.at(std::make_pair(state_a, state_c)) &&
-                    approx_relation.at(std::make_pair(state_c, state_b)));
-          });
+            is_direct_connected[std::make_pair(state_a, state_b)] =
+                (approx_relation.at(std::make_pair(state_a, state_b)) == more_than) &&
+                std::none_of(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_c)
+                {
+                  return ((state_c != state_a) && (state_c != state_b) &&
+                          (approx_relation.at(std::make_pair(state_a, state_c)) == more_than) &&
+                          (approx_relation.at(std::make_pair(state_c, state_b)) == more_than));
+                });
+
+//            if (is_direct_connected[std::make_pair(state_a, state_b)])
+//            {
+//              tfm::format(std::cerr, "direct approximable pair found\n");
+//              tfm::format(std::cerr, "state a: \n");
+//              std::for_each(std::begin(internal_dfa[state_a]), std::end(internal_dfa[state_a]),
+//                            [&](dfa_vertex::const_reference cfi)
+//              {
+//                tfm::format(std::cerr, "%s: %s\n",
+//                            addrint_to_hexstring(cfi->address), cfi->disassembled_name);
+//              });
+//              tfm::format(std::cerr, "state b: \n");
+//              std::for_each(std::begin(internal_dfa[state_b]), std::end(internal_dfa[state_b]),
+//                            [&](dfa_vertex::const_reference cfi)
+//              {
+//                tfm::format(std::cerr, "%s: %s\n",
+//                            addrint_to_hexstring(cfi->address), cfi->disassembled_name);
+//              });
+//            }
+          }
         });
       });
+
+      tfm::format(std::cerr, "approximation relation size %d\n",
+                  std::count_if(std::begin(is_direct_connected),
+                                std::end(is_direct_connected),
+                                [&](direct_connection_rel_t::const_reference direct_rel) -> bool
+      {
+                    return std::get<1>(direct_rel);
+                  }));
+//      std::exit(1);
 
       return is_direct_connected;
     };
@@ -833,7 +922,7 @@ auto execution_dfa::approximate () -> void
   construct_approx_dag(approx_table, approx_dag);
 
   tfm::format(std::cerr, "saving approximation DAG\n");
-  save_approx_dag("dag_" + process_id_str + ".dot", approx_dag);
+  save_approx_dag("dag_" + process_id_str + ".dot", approx_dag); std::exit(1);
 
   tfm::format(std::cerr, "merging approximated states\n");
   auto state_a = dfa_vertex_desc(); auto state_b = dfa_vertex_desc();
