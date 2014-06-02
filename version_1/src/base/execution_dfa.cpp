@@ -505,7 +505,7 @@ static auto get_states_from_root (dfa_vertex_desc state) -> dfa_vertex_descs
       std::copy_if(std::begin(sub_states), std::end(sub_states), std::back_inserter(states),
                    [&](dfa_vertex_desc state) -> bool
       {
-        return (std::find(std::begin(states), std::end(states), state) != std::end(states));
+        return (std::find(std::begin(states), std::end(states), state) == std::end(states));
       });
     });
   }
@@ -1075,6 +1075,45 @@ auto execution_dfa::approximate () -> void
     // add loopback transition
     auto loopback_trans = internal_dfa[std::get<0>(boost::edge(state_a, state_b, internal_dfa))];
     boost::add_edge(state_a, state_a, loopback_trans, internal_dfa);
+
+    // erase transitions to/from b
+    auto sub_states_b = get_states_from_root(state_b);
+    tfm::format(std::cerr, "sub-states of b: %d\n", sub_states_b.size());
+    auto incident_predicate = [&sub_states_b](dfa_edge_desc trans) -> bool
+    {
+      return ((std::find(std::begin(sub_states_b), std::end(sub_states_b),
+                         boost::source(trans, internal_dfa)) != std::end(sub_states_b)) ||
+              (std::find(std::begin(sub_states_b), std::end(sub_states_b),
+                         boost::target(trans, internal_dfa)) != std::end(sub_states_b)));
+    };
+    boost::remove_edge_if(incident_predicate, internal_dfa);
+
+    // erase isolated states
+    auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
+    auto isolated_state_exists = true;
+
+    while (isolated_state_exists)
+    {
+      isolated_state_exists = false;
+      std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
+
+      auto isolated_predicate = [&](dfa_vertex_desc state) -> bool
+      {
+        return ((boost::in_degree(state, internal_dfa) == 0) &&
+                (boost::out_degree(state, internal_dfa) == 0));
+      };
+
+      auto isolated_state_iter =
+          std::find_if(first_vertex_iter, last_vertex_iter, isolated_predicate);
+
+      if (isolated_state_iter != last_vertex_iter)
+      {
+        isolated_state_exists = true;
+        boost::clear_vertex(*isolated_state_iter, internal_dfa);
+        boost::remove_vertex(*isolated_state_iter, internal_dfa);
+      }
+    }
+
     return;
   };
 
@@ -1098,7 +1137,9 @@ auto execution_dfa::approximate () -> void
       (state_b != boost::graph_traits<dfa_graph_t>::null_vertex()))
   {
     tfm::format(std::cerr, "merging approximable states\n");
-    merge_approximable_states(state_a, state_b);
+    use_state_to_abstract_state(state_a, state_b);
+
+//    merge_approximable_states(state_a, state_b);
 
 //    auto content_a = internal_dfa[state_a]; auto content_b = internal_dfa[state_b];
 //    erase_states_from_root_content(content_a);
