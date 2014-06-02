@@ -636,6 +636,67 @@ static auto matching_state_pairs_from (dfa_vertex_desc state_a,
 }
 
 
+typedef std::vector<dfa_vertex_descs>       dfa_vertex_partition_t;
+typedef dfa_vertex_partition_t::iterator    dfa_vertex_partition_iter_t;
+static auto get_equivalence_classes (const state_pairs_t matching_pairs) -> dfa_vertex_partition_t
+{
+  auto equiv_classes = dfa_vertex_partition_t();
+
+  auto representing_class = [&equiv_classes](dfa_vertex_desc state) -> dfa_vertex_partition_iter_t
+  {
+    return std::find_if(std::begin(equiv_classes), std::end(equiv_classes),
+                        [&](const dfa_vertex_descs& states)
+    {
+      return (std::find(std::begin(states), std::end(states), state) != std::end(states));
+    });
+  };
+
+  std::for_each(std::begin(matching_pairs), std::end(matching_pairs),
+                [&](const state_pair_t& state_pair)
+  {
+    auto state_a = std::get<0>(state_pair); auto state_b = std::get<1>(state_pair);
+
+    auto class_a_iter = representing_class(state_a); auto class_a = *class_a_iter;
+    auto class_b_iter = representing_class(state_b); auto class_b = *class_b_iter;
+
+    if ((class_a_iter != std::end(equiv_classes)) && (class_b_iter != std::end(equiv_classes)))
+    {
+      if (class_a_iter != class_b_iter)
+      {
+        // merge two equivalence classes: c = a + b
+        auto class_c = class_a;
+        class_c.insert(std::end(class_c), std::begin(class_b), std::end(class_b));
+
+        // remove a and b
+        equiv_classes.erase(std::find(std::begin(equiv_classes), std::end(equiv_classes), class_a));
+        equiv_classes.erase(std::find(std::begin(equiv_classes), std::end(equiv_classes), class_b));
+
+        // add c = a + b
+        equiv_classes.push_back(class_c);
+      }
+    }
+    else
+    {
+      if ((class_a_iter == std::end(equiv_classes)) && (class_b_iter == std::end(equiv_classes)))
+      {
+        auto class_ab = dfa_vertex_descs();
+        class_ab.push_back(state_a); class_ab.push_back(state_b);
+
+        equiv_classes.push_back(class_ab);
+      }
+      else
+      {
+        if (class_a_iter != std::end(equiv_classes)) class_a_iter->push_back(state_b);
+        else class_b_iter->push_back(state_a);
+      }
+    }
+  });
+
+  return equiv_classes;
+}
+
+
+
 /**
  * @brief execution_dfa::approximate
  */
@@ -1120,6 +1181,101 @@ auto execution_dfa::approximate () -> void
     return;
   };
 
+  auto state_abstract_state = [&](dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> void
+  {
+    auto matching_pairs = matching_state_pairs_from(state_a, state_b);
+    auto equiv_classes = get_equivalence_classes(matching_pairs);
+
+    auto rep_state_equiv_states = std::map<dfa_vertex_desc, dfa_vertex_descs>();
+
+    auto get_rep_state = [&rep_state_equiv_states](dfa_vertex_desc state) -> dfa_vertex_desc
+    {
+      auto rep_equiv_iter =
+          std::find_if(std::begin(rep_state_equiv_states), std::end(rep_state_equiv_states),
+                       [&](std::map<dfa_vertex_desc, dfa_vertex_descs>::const_reference rep_equiv)
+      {
+        auto equiv_states = std::get<1>(rep_equiv);
+        return (std::find(std::begin(equiv_states),
+                          std::end(equiv_states), state) != std::end(equiv_states));
+      });
+
+      if (rep_equiv_iter == std::end(rep_state_equiv_states))
+        return boost::graph_traits<dfa_graph_t>::null_vertex();
+      else return std::get<0>(*rep_equiv_iter);
+    };
+
+    auto add_out_transitions = [&](dfa_vertex_desc state) -> void
+    {
+      auto rep_state = get_rep_state(state);
+      if (rep_state == boost::graph_traits<dfa_graph_t>::null_vertex()) rep_state = state;
+
+      auto first_out_edge_iter = dfa_out_edge_iter();
+      auto last_out_edge_iter = dfa_out_edge_iter();
+
+      std::tie(first_out_edge_iter, last_out_edge_iter) = boost::out_edges(state, internal_dfa);
+
+      std::for_each(first_out_edge_iter, last_out_edge_iter, [&](dfa_edge_desc trans)
+      {
+        auto next_state = boost::target(trans, internal_dfa);
+        auto rep_next_state = get_rep_state(next_state);
+
+        if (rep_next_state != boost::graph_traits<dfa_graph_t>::null_vertex())
+        {
+          boost::add_edge(rep_state, rep_next_state, internal_dfa[trans], internal_dfa);
+        }
+      });
+
+      return;
+    };
+
+    std::for_each(std::begin(equiv_classes), std::end(equiv_classes),
+                  [&](const dfa_vertex_descs equiv_states)
+    {
+      auto rep_state_content =
+          std::accumulate(std::begin(equiv_states), std::end(equiv_states), dfa_vertex(),
+                          [&](const dfa_vertex& init_content, dfa_vertex_desc state)
+      {
+        return merge_state_contents(init_content, internal_dfa[state]);
+      });
+      auto rep_state = boost::add_vertex(rep_state_content, internal_dfa);
+      rep_state_equiv_states[rep_state] = equiv_states;
+    });
+
+    auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
+    std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
+
+    std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state)
+    {
+      // not a representing state
+      if (rep_state_equiv_states.find(state) != std::end(rep_state_equiv_states))
+      {
+        add_out_transitions(state);
+      }
+    });
+
+    auto abstracted_states = dfa_vertex_descs();
+    std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state)
+    {
+      if (get_rep_state(state) == boost::graph_traits<dfa_graph_t>::null_vertex())
+        abstracted_states.push_back(state);
+    });
+
+    auto abstracted_state_contents = dfa_vertices();
+    std::for_each(std::begin(abstracted_states), std::end(abstracted_states),
+                  [&](dfa_vertex_desc state)
+    {
+      abstracted_state_contents.push_back(internal_dfa[state]);
+    });
+
+    std::for_each(std::begin(abstracted_state_contents), std::end(abstracted_state_contents),
+                  [&](const dfa_vertex content)
+    {
+      erase_state_by_content(internal_dfa, content);
+    });
+
+    return;
+  };
+
   dfa_graph_t     approx_dag;
   approx_table_t  approx_table;
 
@@ -1139,8 +1295,9 @@ auto execution_dfa::approximate () -> void
   if ((state_a != boost::graph_traits<dfa_graph_t>::null_vertex()) &&
       (state_b != boost::graph_traits<dfa_graph_t>::null_vertex()))
   {
-    tfm::format(std::cerr, "merging approximable states\n");
-    use_state_to_abstract_state(state_a, state_b);
+    tfm::format(std::cerr, "abstracting states\n");
+    state_abstract_state(state_a, state_b);
+//    use_state_to_abstract_state(state_a, state_b);
 
 //    merge_approximable_states(state_a, state_b);
 
