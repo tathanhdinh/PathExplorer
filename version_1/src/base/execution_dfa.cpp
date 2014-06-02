@@ -192,6 +192,8 @@ static auto copy_transitions_from_state_to_state (dfa_graph_t& graph,
   auto in_edge_first_iter_a = dfa_in_edge_iter(); auto in_edge_last_iter_a = dfa_in_edge_iter();
   std::tie(in_edge_first_iter_a, in_edge_last_iter_a) = boost::in_edges(state_a, graph);
 
+//  tfm::format(std::cerr, "copy %d in transitions\n",
+//              std::distance(in_edge_first_iter_a, in_edge_last_iter_a));
   std::for_each(in_edge_first_iter_a, in_edge_last_iter_a, [&](dfa_edge_desc trans)
   {
     boost::add_edge(boost::source(trans, graph), state_b, graph[trans], graph);
@@ -201,6 +203,8 @@ static auto copy_transitions_from_state_to_state (dfa_graph_t& graph,
   auto out_edge_first_iter_a = dfa_out_edge_iter(); auto out_edge_last_iter_a = dfa_out_edge_iter();
   std::tie(out_edge_first_iter_a, out_edge_last_iter_a) = boost::out_edges(state_a, graph);
 
+//  tfm::format(std::cerr, "copy %d out transitions\n",
+//              std::distance(out_edge_first_iter_a, out_edge_last_iter_a));
   std::for_each(out_edge_first_iter_a, out_edge_last_iter_a, [&](dfa_edge_desc trans)
   {
     boost::add_edge(state_b, boost::target(trans, graph), graph[trans], graph);
@@ -593,6 +597,45 @@ auto static longest_path_length_from (dfa_vertex_desc state, const dfa_graph_t& 
 }
 
 
+typedef std::pair<dfa_vertex_desc, dfa_vertex_desc> state_pair_t;
+typedef std::vector<state_pair_t>                   state_pairs_t;
+static auto matching_state_pairs_from (dfa_vertex_desc state_a,
+                                       dfa_vertex_desc state_b) -> state_pairs_t
+{
+  auto matching_pairs = state_pairs_t();
+  if (!internal_dfa[state_a].empty() && !internal_dfa[state_b].empty())
+  {
+    matching_pairs.push_back(std::make_pair(state_a, state_b));
+
+    auto first_trans_a_iter = dfa_out_edge_iter(); auto last_trans_a_iter = dfa_out_edge_iter();
+    std::tie(first_trans_a_iter, last_trans_a_iter) = boost::out_edges(state_a, internal_dfa);
+
+    auto first_trans_b_iter = dfa_out_edge_iter(); auto last_trans_b_iter = dfa_out_edge_iter();
+    std::tie(first_trans_b_iter, last_trans_b_iter) = boost::out_edges(state_b, internal_dfa);
+
+    std::for_each(first_trans_a_iter, last_trans_a_iter, [&](dfa_edge_desc trans_a)
+    {
+      auto matching_predicate = [&trans_a](dfa_edge_desc trans) -> bool
+      {
+        return (two_vmaps_are_isomorphic(internal_dfa[trans_a], internal_dfa[trans]) ||
+                a_vmaps_is_included_in_b(internal_dfa[trans_a], internal_dfa[trans]));
+      };
+
+      auto trans_b = *std::find_if(first_trans_b_iter, last_trans_b_iter, matching_predicate);
+      auto sub_matching_pairs = matching_state_pairs_from(boost::target(trans_a, internal_dfa),
+                                                          boost::target(trans_b, internal_dfa));
+      std::copy_if(std::begin(sub_matching_pairs), std::end(sub_matching_pairs),
+                   std::back_inserter(matching_pairs), [&](state_pair_t sub_pair) -> bool
+      {
+        return (std::find(std::begin(matching_pairs),
+                          std::end(matching_pairs), sub_pair) == std::end(matching_pairs));
+      });
+    });
+  }
+  return matching_pairs;
+}
+
+
 /**
  * @brief execution_dfa::approximate
  */
@@ -967,8 +1010,6 @@ auto execution_dfa::approximate () -> void
 
   auto erase_from_root_content = [](const dfa_vertex& content) -> void
   {
-
-
 //    auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
 //    std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
 
@@ -983,25 +1024,72 @@ auto execution_dfa::approximate () -> void
 
   auto use_state_to_abstract_state = [](dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> void
   {
-    // add merged state
-//    auto merged_content = merge_state_contents(internal_dfa[state_a], internal_dfa[state_b]);
-//    auto merged_state = boost::add_vertex(merged_content, internal_dfa);
+    auto matching_pairs = matching_state_pairs_from(state_a, state_b);
+    auto sub_states_b = get_states_from_root(state_b);
+
+    tfm::format(std::cerr, "matching pairs: %d\n", matching_pairs.size());
+
+//    // copy transitions to children of b
+//    std::for_each(std::begin(matching_pairs), std::end(matching_pairs),
+//                  [&](decltype(matching_pairs)::const_reference state_pair)
+//    {
+//      auto first_to_b_trans = dfa_in_edge_iter(); auto last_to_b_trans = dfa_in_edge_iter();
+//      std::tie(first_to_b_trans, last_to_b_trans) = boost::in_edges(state_b, internal_dfa);
+
+//      std::for_each(first_to_b_trans, last_to_b_trans, [&](dfa_edge_desc trans)
+//      {
+//        boost::add_edge(boost::source(trans, internal_dfa), state_a,
+//                        internal_dfa[trans], internal_dfa);
+//      });
+//    });
+
+
+//    auto incident_predicate = [&sub_states_b](dfa_edge_desc trans) -> bool
+//    {
+//      return ((std::find(std::begin(sub_states_b), std::end(sub_states_b),
+//                         boost::source(trans, internal_dfa)) != std::end(sub_states_b)) ||
+//              (std::find(std::begin(sub_states_b), std::end(sub_states_b),
+//                         boost::target(trans, internal_dfa)) != std::end(sub_states_b)));
+//    };
+//    boost::remove_edge_if(incident_predicate, internal_dfa);
 
     // add loopback transition
-    auto loopback_trans = internal_dfa[std::get<0>(boost::edge(state_a, state_b, internal_dfa))];
-    boost::add_edge(state_a, state_a, loopback_trans, internal_dfa);
+//    auto loopback_trans = internal_dfa[std::get<0>(boost::edge(state_a, state_b, internal_dfa))];
+//    boost::add_edge(state_a, state_a, loopback_trans, internal_dfa);
 
-    // erase transitions to/from b
-    auto sub_states_b = get_states_from_root(state_b);
+    // erase transitions from children of b
     tfm::format(std::cerr, "sub-states of b: %d\n", sub_states_b.size());
-    auto incident_predicate = [&sub_states_b](dfa_edge_desc trans) -> bool
+
+    auto from_incident_predicate = [&sub_states_b](dfa_edge_desc trans) -> bool
     {
       return ((std::find(std::begin(sub_states_b), std::end(sub_states_b),
-                         boost::source(trans, internal_dfa)) != std::end(sub_states_b)) ||
+                         boost::source(trans, internal_dfa)) != std::end(sub_states_b)) /*||
               (std::find(std::begin(sub_states_b), std::end(sub_states_b),
-                         boost::target(trans, internal_dfa)) != std::end(sub_states_b)));
+                         boost::target(trans, internal_dfa)) != std::end(sub_states_b))*/);
     };
-    boost::remove_edge_if(incident_predicate, internal_dfa);
+    boost::remove_edge_if(from_incident_predicate, internal_dfa);
+
+//     copy transtions to children of b to a
+    std::for_each(std::begin(matching_pairs), std::end(matching_pairs),
+                  [&](decltype(matching_pairs)::const_reference state_pair)
+    {
+      auto first_to_b_trans = dfa_in_edge_iter(); auto last_to_b_trans = dfa_in_edge_iter();
+      std::tie(first_to_b_trans, last_to_b_trans) = boost::in_edges(state_b, internal_dfa);
+
+      std::for_each(first_to_b_trans, last_to_b_trans, [&](dfa_edge_desc trans)
+      {
+        boost::add_edge(boost::source(trans, internal_dfa), state_a,
+                        internal_dfa[trans], internal_dfa);
+      });
+    });
+
+//     erase transitions to children of b
+    auto to_incident_predicate = [&sub_states_b](dfa_edge_desc trans) -> bool
+    {
+      return (std::find(std::begin(sub_states_b), std::end(sub_states_b),
+                        boost::target(trans, internal_dfa)) != std::end(sub_states_b));
+    };
+    boost::remove_edge_if(to_incident_predicate, internal_dfa);
 
     // erase isolated states
     auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
