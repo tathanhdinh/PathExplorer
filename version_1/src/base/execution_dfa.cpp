@@ -644,6 +644,7 @@ static auto get_equivalence_classes (const state_pairs_t matching_pairs) -> dfa_
 
   auto representing_class = [&equiv_classes](dfa_vertex_desc state) -> dfa_vertex_partition_iter_t
   {
+    tfm::format(std::cerr, "hssd\n");
     return std::find_if(std::begin(equiv_classes), std::end(equiv_classes),
                         [&](const dfa_vertex_descs& states)
     {
@@ -656,13 +657,18 @@ static auto get_equivalence_classes (const state_pairs_t matching_pairs) -> dfa_
   {
     auto state_a = std::get<0>(state_pair); auto state_b = std::get<1>(state_pair);
 
-    auto class_a_iter = representing_class(state_a); auto class_a = *class_a_iter;
-    auto class_b_iter = representing_class(state_b); auto class_b = *class_b_iter;
+    auto class_a_iter = representing_class(state_a); /*auto class_a = *class_a_iter;*/
+    auto class_b_iter = representing_class(state_b); /*auto class_b = *class_b_iter;*/
+
 
     if ((class_a_iter != std::end(equiv_classes)) && (class_b_iter != std::end(equiv_classes)))
     {
       if (class_a_iter != class_b_iter)
       {
+        auto class_a = *class_a_iter; auto class_b = *class_b_iter;
+
+        tfm::format(std::cerr, "merging a and b\n");
+
         // merge two equivalence classes: c = a + b
         auto class_c = class_a;
         class_c.insert(std::end(class_c), std::begin(class_b), std::end(class_b));
@@ -1184,7 +1190,10 @@ auto execution_dfa::approximate () -> void
   auto state_abstract_state = [&](dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> void
   {
     auto matching_pairs = matching_state_pairs_from(state_a, state_b);
+    tfm::format(std::cerr, "matching pairs: %d\n", matching_pairs.size());
+
     auto equiv_classes = get_equivalence_classes(matching_pairs);
+    tfm::format(std::cerr, "equivalence classes: %d\n", equiv_classes.size());
 
     auto rep_state_equiv_states = std::map<dfa_vertex_desc, dfa_vertex_descs>();
 
@@ -1228,6 +1237,7 @@ auto execution_dfa::approximate () -> void
       return;
     };
 
+    tfm::format(std::cerr, "add representing states\n");
     std::for_each(std::begin(equiv_classes), std::end(equiv_classes),
                   [&](const dfa_vertex_descs equiv_states)
     {
@@ -1244,6 +1254,7 @@ auto execution_dfa::approximate () -> void
     auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
     std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
 
+    tfm::format(std::cerr, "add transitions for representing states\n");
     std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state)
     {
       // not a representing state
@@ -1256,7 +1267,7 @@ auto execution_dfa::approximate () -> void
     auto abstracted_states = dfa_vertex_descs();
     std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state)
     {
-      if (get_rep_state(state) == boost::graph_traits<dfa_graph_t>::null_vertex())
+      if (get_rep_state(state) != boost::graph_traits<dfa_graph_t>::null_vertex())
         abstracted_states.push_back(state);
     });
 
@@ -1267,6 +1278,7 @@ auto execution_dfa::approximate () -> void
       abstracted_state_contents.push_back(internal_dfa[state]);
     });
 
+    tfm::format(std::cerr, "erase abstracted states\n");
     std::for_each(std::begin(abstracted_state_contents), std::end(abstracted_state_contents),
                   [&](const dfa_vertex content)
     {
