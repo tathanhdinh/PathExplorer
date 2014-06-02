@@ -945,13 +945,21 @@ auto execution_dfa::approximate () -> void
 //                                  approx_graph[boost::target(*selected_dag_trans_iter,
 //                                                             approx_graph)]));
 
-      auto selected_root_iter =
-          std::max_element(std::begin(roots), std::end(roots),
+      auto selected_root =
+          *std::max_element(std::begin(roots), std::end(roots),
                            [&](dfa_vertex_desc state_a, dfa_vertex_desc state_b)
       {
         return (longest_path_length_from(state_a, approx_graph) <
                 longest_path_length_from(state_b, approx_graph));
       });
+
+      auto first_trans_iter = dfa_out_edge_iter();
+      std::tie(first_trans_iter, std::ignore) = boost::out_edges(selected_root, approx_graph);
+
+      return std::make_pair(find_state_by_content(internal_dfa, approx_graph[selected_root]),
+                            find_state_by_content(internal_dfa,
+                                                  approx_graph[boost::target(*first_trans_iter,
+                                                                             approx_graph)]));
     }
   };
 
