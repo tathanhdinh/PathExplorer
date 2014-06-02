@@ -644,7 +644,7 @@ static auto get_equivalence_classes (const state_pairs_t matching_pairs) -> dfa_
 
   auto representing_class = [&equiv_classes](dfa_vertex_desc state) -> dfa_vertex_partition_iter_t
   {
-    tfm::format(std::cerr, "hssd\n");
+//    tfm::format(std::cerr, "hssd\n");
     return std::find_if(std::begin(equiv_classes), std::end(equiv_classes),
                         [&](const dfa_vertex_descs& states)
     {
@@ -1203,6 +1203,7 @@ auto execution_dfa::approximate () -> void
           std::find_if(std::begin(rep_state_equiv_states), std::end(rep_state_equiv_states),
                        [&](std::map<dfa_vertex_desc, dfa_vertex_descs>::const_reference rep_equiv)
       {
+//        tfm::format(std::cerr, "find representing state\n");
         auto equiv_states = std::get<1>(rep_equiv);
         return (std::find(std::begin(equiv_states),
                           std::end(equiv_states), state) != std::end(equiv_states));
@@ -1210,7 +1211,11 @@ auto execution_dfa::approximate () -> void
 
       if (rep_equiv_iter == std::end(rep_state_equiv_states))
         return boost::graph_traits<dfa_graph_t>::null_vertex();
-      else return std::get<0>(*rep_equiv_iter);
+      else
+      {
+//        tfm::format(std::cerr, "representing state found\n");
+        return std::get<0>(*rep_equiv_iter);
+      }
     };
 
     auto add_out_transitions = [&](dfa_vertex_desc state) -> void
@@ -1231,6 +1236,14 @@ auto execution_dfa::approximate () -> void
         if (rep_next_state != boost::graph_traits<dfa_graph_t>::null_vertex())
         {
           boost::add_edge(rep_state, rep_next_state, internal_dfa[trans], internal_dfa);
+          tfm::format(std::cerr, "add transition to representing state\n");
+        }
+        else
+        {
+          if (rep_state_equiv_states.find(rep_state) != std::end(rep_state_equiv_states))
+          {
+            boost::add_edge(rep_state, next_state, internal_dfa[trans], internal_dfa);
+          }
         }
       });
 
@@ -1258,7 +1271,7 @@ auto execution_dfa::approximate () -> void
     std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state)
     {
       // not a representing state
-      if (rep_state_equiv_states.find(state) != std::end(rep_state_equiv_states))
+      if (rep_state_equiv_states.find(state) == std::end(rep_state_equiv_states))
       {
         add_out_transitions(state);
       }
@@ -1267,8 +1280,11 @@ auto execution_dfa::approximate () -> void
     auto abstracted_states = dfa_vertex_descs();
     std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state)
     {
-      if (get_rep_state(state) != boost::graph_traits<dfa_graph_t>::null_vertex())
-        abstracted_states.push_back(state);
+      if (rep_state_equiv_states.find(state) == std::end(rep_state_equiv_states))
+      {
+        if (get_rep_state(state) != boost::graph_traits<dfa_graph_t>::null_vertex())
+          abstracted_states.push_back(state);
+      }
     });
 
     auto abstracted_state_contents = dfa_vertices();
