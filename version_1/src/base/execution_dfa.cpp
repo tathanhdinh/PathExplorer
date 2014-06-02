@@ -518,24 +518,6 @@ static auto get_states_from_root (dfa_vertex_desc state) -> dfa_vertex_descs
 static auto merge_approximable_states (dfa_vertex_desc state_a,
                                        dfa_vertex_desc state_b) -> dfa_vertex_desc
 {
-//  tfm::format(std::cerr, "state a has %d child: \n", boost::out_degree(state_a, internal_dfa));
-//  std::for_each(std::begin(internal_dfa[state_a]), std::end(internal_dfa[state_a]),
-//                [&](dfa_vertex::const_reference cfi)
-//  {
-//    tfm::format(std::cerr, "%s: %s\n",
-//                addrint_to_hexstring(cfi->address), cfi->disassembled_name);
-//  });
-//  tfm::format(std::cerr, "state b has %d child: \n", boost::out_degree(state_b, internal_dfa));
-//  std::for_each(std::begin(internal_dfa[state_b]), std::end(internal_dfa[state_b]),
-//                [&](dfa_vertex::const_reference cfi)
-//  {
-//    tfm::format(std::cerr, "%s: %s\n",
-//                addrint_to_hexstring(cfi->address), cfi->disassembled_name);
-//  });
-
-//     get the transition from a to b
-//    auto loopback_trans = internal_dfa[std::get<0>(boost::edge(state_a, state_b, internal_dfa))];
-
   if (state_a == state_b)
     return state_a;
   else
@@ -589,9 +571,27 @@ static auto merge_approximable_states (dfa_vertex_desc state_a,
 
     return merged_state;
   }
-
-
 };
+
+
+auto static longest_path_length_from (dfa_vertex_desc state, const dfa_graph_t& graph) -> int
+{
+  if (boost::out_degree(state, graph) == 0)
+    return 0;
+  else
+  {
+    auto path_lengths = std::vector<int>();
+    auto first_trans_iter = dfa_out_edge_iter(); auto last_trans_iter = dfa_out_edge_iter();
+    std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(state, graph);
+    std::for_each(first_trans_iter, last_trans_iter, [&](dfa_edge_desc trans)
+    {
+      path_lengths.push_back(longest_path_length_from(boost::target(trans, graph), graph));
+    });
+
+    return (1 + *std::max_element(std::begin(path_lengths), std::end(path_lengths)));
+  }
+}
+
 
 /**
  * @brief execution_dfa::approximate
@@ -615,7 +615,7 @@ auto execution_dfa::approximate () -> void
     approx_calculation_t is_approximable = [&is_approximable](
         dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> bool
     {
-      if (internal_dfa[state_b].empty() ||
+      if (/*internal_dfa[state_b].empty()*/(boost::out_degree(state_b, internal_dfa) == 0) ||
           (internal_dfa[state_a] == internal_dfa[state_b])) return true;
       else
       {
@@ -722,29 +722,6 @@ auto execution_dfa::approximate () -> void
                 {
                   return (std::get<1>(rel) != uncomparable);
                 }));
-
-//    std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_a)
-//    {
-//      std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_b)
-//      {
-//        if (is_approximable(state_a, state_b))
-//        {
-//          approximation_table[std::make_pair(state_a, state_b)] = more_than;
-//          approximation_table[std::make_pair(state_b, state_a)] = less_than;
-//        }
-//        else if (is_approximable(state_b, state_a))
-//        {
-//          approximation_table[std::make_pair(state_b, state_a)] = more_than;
-//          approximation_table[std::make_pair(state_a, state_b)] = less_than;
-//        }
-//        else
-//        {
-//          approximation_table[std::make_pair(state_a, state_b)] = uncomparable;
-//          approximation_table[std::make_pair(state_b, state_a)] = uncomparable;
-//        }
-//      });
-//    });
-//    tfm::format(std::cerr, "gghe\n");
   }; // end of construct_approx_table lambda
 
   auto construct_approx_dag = [](
@@ -813,36 +790,6 @@ auto execution_dfa::approximate () -> void
     auto add_states_and_relations = [](
         const direct_connection_rel_t& is_direct_connected, dfa_graph_t& approx_graph) -> void
     {
-//      auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
-//      std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
-
-//      // add states
-//      tfm::format(std::cerr, "adding states\n");
-//      std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state)
-//      {
-//        boost::add_vertex(internal_dfa[state], approx_graph);
-//      });
-
-//      // add edges
-//      tfm::format(std::cerr, "adding relations\n");
-//      auto first_dag_vertex_iter = dfa_vertex_iter(); auto last_dag_vertex_iter = dfa_vertex_iter();
-//      std::tie(first_dag_vertex_iter, last_dag_vertex_iter) = boost::vertices(approx_graph);
-
-//      std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_a)
-//      {
-//        std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_b)
-//        {
-//          if (is_direct_connected.at(std::make_pair(state_a, state_b)))
-//          {
-//            tfm::format(std::cerr, "look for states\n");
-//            auto state_a_in_dag = find_state_by_content(approx_graph, internal_dfa[state_a]);
-//            auto state_b_in_dag = find_state_by_content(approx_graph, internal_dfa[state_b]);
-//            tfm::format(std::cerr, "add edge\n");
-//            boost::add_edge(state_a_in_dag, state_b_in_dag, dfa_edge(), approx_graph);
-//          }
-//        });
-//      });
-
       std::for_each(std::begin(is_direct_connected), std::end(is_direct_connected),
                     [&](direct_connection_rel_t::const_reference states_rel)
       {
@@ -886,34 +833,6 @@ auto execution_dfa::approximate () -> void
       });
       return;
     };
-
-//    auto erase_isolated_states = [](dfa_graph_t& approx_graph) -> void
-//    {
-//      auto first_dag_vertex_iter = dfa_vertex_iter(); auto last_dag_vertex_iter = dfa_vertex_iter();
-//      auto isolated_vertex_exists = true;
-
-//      while (isolated_vertex_exists)
-//      {
-//        isolated_vertex_exists = false;
-//        std::tie(first_dag_vertex_iter, last_dag_vertex_iter) = boost::vertices(approx_graph);
-
-//        auto isolated_predicate = [&](dfa_vertex_desc state) -> bool
-//        {
-//          return (boost::in_degree(state, approx_graph) == 0) &&
-//              (boost::out_degree(state, approx_graph) == 0);
-//        };
-
-//        auto isolated_state_iter = std::find_if(first_dag_vertex_iter,
-//                                                last_dag_vertex_iter, isolated_predicate);
-//        if (isolated_state_iter != last_dag_vertex_iter)
-//        {
-//          isolated_vertex_exists = true;
-//          boost::clear_vertex(*isolated_state_iter, approx_graph);
-//          boost::remove_vertex(*isolated_state_iter, approx_graph);
-//        }
-//      }
-//      return;
-//    };
 
     tfm::format(std::cerr, "constructing direct relation table\n");
     auto is_direct_connected = construct_direct_connected_table(approx_relation);
@@ -981,22 +900,25 @@ auto execution_dfa::approximate () -> void
     // find roots
     auto root_predicate = [&](dfa_vertex_desc state) -> bool
     {
-      if ((boost::in_degree(state, approx_graph) != 0) ||
-          (boost::out_degree(state, approx_graph) == 0)) return false;
-      else
-      {
-        auto first_dag_out_edge_iter = dfa_out_edge_iter();
-        auto last_dag_out_edge_iter = dfa_out_edge_iter();
-        std::tie(first_dag_out_edge_iter,
-                 last_dag_out_edge_iter) = boost::out_edges(state, approx_graph);
+//      if ((boost::in_degree(state, approx_graph) != 0) ||
+//          (boost::out_degree(state, approx_graph) == 0)) return false;
+//      else
+//      {
+//        auto first_dag_out_edge_iter = dfa_out_edge_iter();
+//        auto last_dag_out_edge_iter = dfa_out_edge_iter();
+//        std::tie(first_dag_out_edge_iter,
+//                 last_dag_out_edge_iter) = boost::out_edges(state, approx_graph);
 
-        return std::any_of(first_dag_out_edge_iter, last_dag_out_edge_iter,
-                           [&](dfa_edge_desc trans) -> bool
-        {
-          return (!approx_graph[boost::target(trans, approx_graph)].empty() &&
-                  dag_transition_in_dfa(trans));
-        });
-      }
+//        return std::any_of(first_dag_out_edge_iter, last_dag_out_edge_iter,
+//                           [&](dfa_edge_desc trans) -> bool
+//        {
+//          return (!approx_graph[boost::target(trans, approx_graph)].empty() &&
+//                  dag_transition_in_dfa(trans));
+//        });
+//      }
+
+      return ((boost::in_degree(state, approx_graph) == 0) &&
+              (boost::out_degree(state, approx_graph) != 0));
     };
 
     auto roots = dfa_vertex_descs();
@@ -1010,42 +932,27 @@ auto execution_dfa::approximate () -> void
     else
     {
       tfm::format(std::cerr, "approximable states found\n");
-      auto first_trans_iter = dfa_out_edge_iter(); auto last_trans_iter = dfa_out_edge_iter();
-      std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(roots.front(), approx_graph);
+//      auto first_trans_iter = dfa_out_edge_iter(); auto last_trans_iter = dfa_out_edge_iter();
+//      std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(roots.front(), approx_graph);
 
-      auto selected_dag_trans_iter = std::find_if(first_trans_iter,
-                                                  last_trans_iter, dag_transition_in_dfa);
-      return std::make_pair(
-            find_state_by_content(internal_dfa,
-                                  approx_graph[boost::source(*selected_dag_trans_iter,
-                                                             approx_graph)]),
-            find_state_by_content(internal_dfa,
-                                  approx_graph[boost::target(*selected_dag_trans_iter,
-                                                             approx_graph)]));
+//      auto selected_dag_trans_iter = std::find_if(first_trans_iter,
+//                                                  last_trans_iter, dag_transition_in_dfa);
+//      return std::make_pair(
+//            find_state_by_content(internal_dfa,
+//                                  approx_graph[boost::source(*selected_dag_trans_iter,
+//                                                             approx_graph)]),
+//            find_state_by_content(internal_dfa,
+//                                  approx_graph[boost::target(*selected_dag_trans_iter,
+//                                                             approx_graph)]));
+
+      auto selected_root_iter =
+          std::max_element(std::begin(roots), std::end(roots),
+                           [&](dfa_vertex_desc state_a, dfa_vertex_desc state_b)
+      {
+        return (longest_path_length_from(state_a, approx_graph) <
+                longest_path_length_from(state_b, approx_graph));
+      });
     }
-
-//    auto root_vertex_iter =
-//        std::find_if(first_dag_vertex_iter, last_dag_vertex_iter, root_predicate);
-
-//    if (root_vertex_iter == last_dag_vertex_iter)
-//      return std::make_pair(boost::graph_traits<dfa_graph_t>::null_vertex(),
-//                            boost::graph_traits<dfa_graph_t>::null_vertex());
-//    else
-//    {
-//      auto root_state = *root_vertex_iter;
-//      if (boost::out_degree(root_state, approx_graph) == 0)
-//        return std::make_pair(find_state_by_content(internal_dfa, approx_graph[root_state]),
-//                              boost::graph_traits<dfa_graph_t>::null_vertex());
-//      else
-//      {
-//        auto first_out_edge_iter = dfa_out_edge_iter();
-//        std::tie(first_out_edge_iter, std::ignore) = boost::out_edges(root_state, approx_graph);
-//        auto approx_root_state = boost::target(*first_out_edge_iter, approx_graph);
-
-//        return std::make_pair(find_state_by_content(internal_dfa, approx_graph[root_state]),
-//                              find_state_by_content(internal_dfa, approx_graph[approx_root_state]));
-//      }
-//    }
   };
 
    // end of merge_approximated_states lambda
