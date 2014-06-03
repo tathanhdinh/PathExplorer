@@ -15,4 +15,5 @@
 ##### Known bugs:
 
 * Does not work for multiple threads programs yet.
+* (Not a bug but) because of heavily using several C++11 features (lambda, type deduction, etc) the code cannot be compiled in old C++ compilers (e.g. VS(i) where i < 10).
 
