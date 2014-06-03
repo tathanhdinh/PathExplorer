@@ -470,52 +470,52 @@ auto execution_dfa::optimize () -> void
 }
 
 
-static auto get_contents_from_root (dfa_vertex_desc state) -> dfa_vertices
-{
-  auto contents = dfa_vertices();
+//static auto get_contents_from_root (dfa_vertex_desc state) -> dfa_vertices
+//{
+//  auto contents = dfa_vertices();
 
-  if (internal_dfa[state].size() > 0)
-  {
-    contents.push_back(internal_dfa[state]);
+//  if (internal_dfa[state].size() > 0)
+//  {
+//    contents.push_back(internal_dfa[state]);
 
-    auto first_trans_iter = dfa_out_edge_iter(); auto last_trans_iter = dfa_out_edge_iter();
-    std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(state, internal_dfa);
+//    auto first_trans_iter = dfa_out_edge_iter(); auto last_trans_iter = dfa_out_edge_iter();
+//    std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(state, internal_dfa);
 
-    std::for_each(first_trans_iter, last_trans_iter, [&](dfa_edge_desc trans)
-    {
-      auto sub_contents = get_contents_from_root(boost::target(trans, internal_dfa));
-      contents.insert(std::begin(contents), std::begin(sub_contents), std::end(sub_contents));
-    });
-  }
+//    std::for_each(first_trans_iter, last_trans_iter, [&](dfa_edge_desc trans)
+//    {
+//      auto sub_contents = get_contents_from_root(boost::target(trans, internal_dfa));
+//      contents.insert(std::begin(contents), std::begin(sub_contents), std::end(sub_contents));
+//    });
+//  }
 
-  return contents;
-};
+//  return contents;
+//};
 
 
-static auto get_states_from_root (dfa_vertex_desc state) -> dfa_vertex_descs
-{
-  auto states = dfa_vertex_descs();
+//static auto get_states_from_root (dfa_vertex_desc state) -> dfa_vertex_descs
+//{
+//  auto states = dfa_vertex_descs();
 
-  if (!internal_dfa[state].empty())
-  {
-    states.push_back(state);
+//  if (!internal_dfa[state].empty())
+//  {
+//    states.push_back(state);
 
-    auto first_trans_iter = dfa_out_edge_iter(); auto last_trans_iter = dfa_out_edge_iter();
-    std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(state, internal_dfa);
+//    auto first_trans_iter = dfa_out_edge_iter(); auto last_trans_iter = dfa_out_edge_iter();
+//    std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(state, internal_dfa);
 
-    std::for_each(first_trans_iter, last_trans_iter, [&](dfa_edge_desc trans)
-    {
-      auto sub_states = get_states_from_root(boost::target(trans, internal_dfa));
-      std::copy_if(std::begin(sub_states), std::end(sub_states), std::back_inserter(states),
-                   [&](dfa_vertex_desc state) -> bool
-      {
-        return (std::find(std::begin(states), std::end(states), state) == std::end(states));
-      });
-    });
-  }
+//    std::for_each(first_trans_iter, last_trans_iter, [&](dfa_edge_desc trans)
+//    {
+//      auto sub_states = get_states_from_root(boost::target(trans, internal_dfa));
+//      std::copy_if(std::begin(sub_states), std::end(sub_states), std::back_inserter(states),
+//                   [&](dfa_vertex_desc state) -> bool
+//      {
+//        return (std::find(std::begin(states), std::end(states), state) == std::end(states));
+//      });
+//    });
+//  }
 
-  return states;
-}
+//  return states;
+//}
 
 
 //typedef std::function<dfa_vertex_desc(dfa_vertex_desc, dfa_vertex_desc)> merge_states_t;
