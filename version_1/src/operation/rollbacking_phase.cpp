@@ -218,7 +218,8 @@ static auto rollback () -> void
 static auto next_checkpoint_and_addrs (ptr_checkpoint_t input_checkpoint,
                                        ptr_cond_direct_ins_t input_cfi) -> checkpoint_addrs_pair_t
 {
-  checkpoint_addrs_pair_t result;
+//  checkpoint_addrs_pair_t result;
+  auto result = checkpoint_addrs_pair_t();
 
   // verify if there exist an enabled active checkpoint
   if (input_checkpoint)

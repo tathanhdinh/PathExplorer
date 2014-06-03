@@ -98,8 +98,13 @@ auto explorer_graph::add_edge(ADDRINT ins_a_addr, ADDRINT ins_b_addr,
 {
 //  tfm::format(std::cerr, "add edge <%s -> %s>\n", addrint_to_hexstring(ins_a_addr),
 //              addrint_to_hexstring(ins_b_addr));
-  exp_vertex_desc ins_a_desc, ins_b_desc;
-  exp_vertex_iter vertex_iter, last_vertex_iter;
+//  exp_vertex_desc ins_a_desc, ins_b_desc;
+//  auto ins_a_desc = exp_vertex_desc(); auto ins_b_desc = exp_vertex_desc();
+  auto ins_a_desc = boost::graph_traits<exp_graph_t>::null_vertex();
+  auto ins_b_desc = boost::graph_traits<exp_graph_t>::null_vertex();
+
+  auto vertex_iter = exp_vertex_iter(); auto last_vertex_iter = exp_vertex_iter();
+//  exp_vertex_iter vertex_iter, last_vertex_iter;
 
   // look for descriptors of instruction a and b
   std::tie(vertex_iter, last_vertex_iter) = boost::vertices(internal_exp_graph);
@@ -172,7 +177,8 @@ auto explorer_graph::add_edge(ADDRINT ins_a_addr, ADDRINT ins_b_addr,
   }
 
   // verify if the edge from a to b exists
-  bool edge_exists;
+//  bool edge_exists;
+  auto edge_exists = false;
   std::tie(std::ignore, edge_exists) = boost::edge(ins_a_desc, ins_b_desc,
                                                    internal_exp_graph_simple);
   // no, then add a new edge with empty label

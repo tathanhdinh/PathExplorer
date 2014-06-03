@@ -154,7 +154,7 @@ static auto stabilize (const conditions_t& raw_cond) -> conditions_t
   {
     auto get_addrs = [](const addrint_value_map_t addrs_vals) -> addrints_t
     {
-      addrints_t addrs;
+      /*addrints_t*/auto addrs = addrints_t();
       std::for_each(addrs_vals.begin(), addrs_vals.end(),
                     [&addrs](addrint_value_map_t::const_reference addr_val)
       {
@@ -166,7 +166,7 @@ static auto stabilize (const conditions_t& raw_cond) -> conditions_t
 
     auto intersection = [](const addrints_t& addrs_a, const addrints_t& addrs_b) -> addrints_t
     {
-      addrints_t addrs_aib;
+      /*addrints_t*/auto addrs_aib = addrints_t();
       std::set_intersection(addrs_a.begin(), addrs_a.end(),
                             addrs_b.begin(), addrs_b.end(), std::back_inserter(addrs_aib));
       return addrs_aib;
@@ -174,7 +174,7 @@ static auto stabilize (const conditions_t& raw_cond) -> conditions_t
 
     auto difference = [](const addrints_t& addrs_a, const addrints_t& addrs_b) -> addrints_t
     {
-      addrints_t addrs_adb;
+      /*addrints_t*/ auto addrs_adb = addrints_t();
       std::set_difference(addrs_a.begin(), addrs_a.end(),
                           addrs_b.begin(), addrs_b.end(), std::back_inserter(addrs_adb));
       return addrs_adb;
@@ -367,7 +367,7 @@ static auto calculate_from (const order_ins_map_t& current_path,
                             const path_code_t& current_path_code) -> conditions_t
 {
   /*conditions_t*/auto raw_condition = conditions_t();
-  std::size_t current_code_order = 0;
+  /*std::size_t*/auto current_code_order = 0;
 
 //  tfm::format(std::cerr, "----\ncurrent path length %d with code size %d: %s\n", current_path.size(),
 //              current_path_code.size(), path_code_to_string(current_path_code));
