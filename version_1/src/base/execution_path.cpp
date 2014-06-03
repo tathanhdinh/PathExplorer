@@ -201,22 +201,22 @@ static auto stabilize (const conditions_t& raw_cond) -> conditions_t
     };
 
 
-    addrints_t addrs_a = get_addrs(maps_a.front());
-    addrints_t addrs_b = get_addrs(maps_b.front());
+    /*addrints_t*/auto addrs_a = get_addrs(maps_a.front());
+    /*addrints_t*/auto addrs_b = get_addrs(maps_b.front());
 
-    addrints_t addrs_aib = intersection(addrs_a, addrs_b);
-    addrints_t addrs_adb = difference(addrs_a, addrs_b);
-    addrints_t addrs_bda = difference(addrs_b, addrs_a);
+    /*addrints_t*/auto addrs_aib = intersection(addrs_a, addrs_b);
+    /*addrints_t*/auto addrs_adb = difference(addrs_a, addrs_b);
+    /*addrints_t*/auto addrs_bda = difference(addrs_b, addrs_a);
 
 //    tfm::format(std::cerr, "%d %d %d\n", addrs_aib.size(), addrs_adb.size(), addrs_bda.size());
 
-    addrint_value_maps_t maps_adb = maps_projection(maps_a, addrs_adb);
-    addrint_value_maps_t maps_bda = maps_projection(maps_b, addrs_bda);
+    /*addrint_value_maps_t*/auto maps_adb = maps_projection(maps_a, addrs_adb);
+    /*addrint_value_maps_t*/auto maps_bda = maps_projection(maps_b, addrs_bda);
     // because the priority of b is higher than a, so use the values of b
-    addrint_value_maps_t maps_aib = maps_projection(maps_b, addrs_aib);
+    /*addrint_value_maps_t*/auto maps_aib = maps_projection(maps_b, addrs_aib);
 
     // calculate the cartesian product of 3 maps
-    addrint_value_maps_t maps_ab;
+    /*addrint_value_maps_t*/auto maps_ab = addrint_value_maps_t();
     std::for_each(maps_adb.begin(), maps_adb.end(),
                   [&](addrint_value_maps_t::const_reference map_adb)
     {
@@ -282,8 +282,8 @@ static auto stabilize (const conditions_t& raw_cond) -> conditions_t
 
   // the following loop makes the condition converge on a stabilized state: it modifies the
   // condition by merging intersected sub-conditions until no such intersection is found
-  conditions_t examined_cond = raw_cond;
-  bool intersection_exists;
+  /*conditions_t*/auto examined_cond = raw_cond;
+  /*bool*/ auto intersection_exists = false;
 
   do
   {
@@ -366,7 +366,7 @@ static auto stabilize (const conditions_t& raw_cond) -> conditions_t
 static auto calculate_from (const order_ins_map_t& current_path,
                             const path_code_t& current_path_code) -> conditions_t
 {
-  conditions_t raw_condition;
+  /*conditions_t*/auto raw_condition = conditions_t();
   std::size_t current_code_order = 0;
 
 //  tfm::format(std::cerr, "----\ncurrent path length %d with code size %d: %s\n", current_path.size(),
