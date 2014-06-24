@@ -1389,8 +1389,10 @@ auto execution_dfa::approximate () -> void
     return;
   }; // end of state_abstract_state lambda
 
-  dfa_graph_t     approx_dag;
-  approx_table_t  approx_table;
+//  dfa_graph_t     approx_dag;
+  auto approx_dag = dfa_graph_t();
+  auto approx_table = approx_table_t();
+//  approx_table_t  approx_table;
 
   tfm::format(std::cerr, "constructing approximation table\n");
   construct_approx_table(approx_table);
