@@ -14,6 +14,7 @@ typedef boost::adjacency_list<boost::listS, boost::vecS,
 typedef boost::graph_traits<dfa_graph_t>::vertex_descriptor   dfa_vertex_desc;
 typedef std::vector<dfa_vertex_desc>                          dfa_vertex_descs;
 typedef boost::graph_traits<dfa_graph_t>::edge_descriptor     dfa_edge_desc;
+typedef std::vector<dfa_edge_desc>                            dfa_edge_descs;
 typedef boost::graph_traits<dfa_graph_t>::vertex_iterator     dfa_vertex_iter;
 typedef boost::graph_traits<dfa_graph_t>::edge_iterator       dfa_edge_iter;
 typedef boost::graph_traits<dfa_graph_t>::out_edge_iterator   dfa_out_edge_iter;
@@ -1021,7 +1022,49 @@ auto execution_dfa::approximate () -> void
 //        tfm::format(std::cerr, "representing state found\n");
         return std::get<0>(*rep_equiv_iter);
       }
-    };
+    }; // end of get_representing_state lambda
+
+//    auto add_out_trans = [&](dfa_vertex_desc state) -> void
+//    {
+//      auto first_out_edge_iter = dfa_out_edge_iter();
+//      auto last_out_edge_iter = dfa_out_edge_iter();
+//      std::tie(first_out_edge_iter, last_out_edge_iter) = boost::out_edges(state, internal_dfa);
+
+//      auto rep_state = get_representing_state(state);
+//      auto state_has_rep = (rep_state != boost::graph_traits<dfa_graph_t>::null_vertex());
+
+//      auto trans_to_or_from_rep = dfa_edge_descs();
+//      std::copy_if(first_out_edge_iter, last_out_edge_iter,
+//                   std::back_inserter(trans_to_or_from_rep), [&](dfa_edge_desc trans)
+//      {
+//        return (state_has_rep ||
+//                (get_representing_state(boost::target(trans, internal_dfa))
+//                 != boost::graph_traits<dfa_graph_t>::null_vertex()));
+//      });
+
+//      auto unique_trans = dfa_edge_descs();
+//      std::copy_if(trans_to_or_from_rep.begin(), trans_to_or_from_rep.end(),
+//                   std::back_inserter(unique_trans), [&](dfa_edge_desc trans)
+//      {
+//        auto next_state = boost::target(trans, internal_dfa);
+//        auto next_rep_state = get_representing_state(state);
+//        if (next_rep_state == boost::graph_traits<dfa_graph_t>::null_vertex())
+//          next_rep_state = next_state;
+
+//        return (std::count_if(std::begin(trans_to_or_from_rep), std::end(trans_to_or_from_rep),
+//                              [&](dfa_edge_desc local_trans)
+//        {
+//          auto local_next_state = boost::target(local_trans, internal_dfa);
+//          auto local_next_rep_state = get_representing_state(local_next_state);
+//          if (local_next_rep_state == boost::graph_traits<dfa_graph_t>::null_vertex())
+//            local_next_rep_state = local_next_state;
+
+
+//        }) == 1);
+//      });
+
+//      return;
+//    };
 
     auto add_out_transitions = [&](dfa_vertex_desc state) -> void
     {
@@ -1050,16 +1093,15 @@ auto execution_dfa::approximate () -> void
         {
           auto first_iter = dfa_out_edge_iter();
           auto last_iter = dfa_out_edge_iter();
-          std::tie(first_iter, last_iter) = boost::out_edges(rep_state, internal_dfa);
 
+          std::tie(first_iter, last_iter) = boost::out_edges(rep_state, internal_dfa);
           if (std::find_if(first_iter, last_iter, [&](dfa_edge_desc local_trans) -> bool
           {
             auto duplicated_trans =
                            (boost::target(local_trans, internal_dfa) == rep_next_state) &&
                            two_vmaps_are_isomorphic(internal_dfa[trans], internal_dfa[local_trans]);
 
-            auto not_to_final =
-                           !internal_dfa[boost::target(local_trans, internal_dfa)].empty();
+            auto not_to_final = !internal_dfa[boost::target(local_trans, internal_dfa)].empty();
 
             auto has_another_strong_trans_to_final =
                            internal_dfa[rep_next_state].empty() &&
@@ -1102,39 +1144,33 @@ auto execution_dfa::approximate () -> void
       return;
     };
 
+    auto erase_redundant_transitions = [&](dfa_vertex_desc state) -> void
+    {
+      auto first_out_edge_iter = dfa_out_edge_iter();
+      auto last_out_edge_iter = dfa_out_edge_iter();
+      std::tie(first_out_edge_iter, last_out_edge_iter) = boost::out_edges(state, internal_dfa);
 
-//    auto erase_duplicated_transitions = [&](dfa_vertex_desc state) -> void
-//    {
-//      auto first_trans_iter = dfa_out_edge_iter(); auto last_trans_iter = dfa_out_edge_iter();
-//      auto current_trans_iter = first_trans_iter; auto next_trans_iter = current_trans_iter;
+      auto to_final_edge_iter = std::find_if(first_out_edge_iter, last_out_edge_iter,
+                                             [&](dfa_edge_desc trans)
+      {
+        return internal_dfa[boost::target(trans, internal_dfa)].empty();
+      });
 
-//      bool duplicated_trans_exists = true;
-//      while (duplicated_trans_exists)
-//      {
-//        duplicated_trans_exists = false;
-//        std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(state, internal_dfa);
+      if (to_final_edge_iter != last_out_edge_iter)
+      {
+        auto same_to_nonfinal_edge_iter = std::find_if(first_out_edge_iter, last_out_edge_iter,
+                                                       [&](dfa_edge_desc trans) -> bool
+        {
+          return (!internal_dfa[boost::target(trans, internal_dfa)].empty() &&
+                  two_vmaps_are_isomorphic(internal_dfa[trans], internal_dfa[*to_final_edge_iter]));
+        });
 
-//        if (first_trans_iter != last_trans_iter)
-//        {
-//          auto current_trans_content = internal_dfa[*first_trans_iter];
-//          auto current_trans_target = boost::target(*first_trans_iter, internal_dfa);
-//          auto trans = *first_trans_iter;
+        if (same_to_nonfinal_edge_iter != last_out_edge_iter)
+          boost::remove_edge(same_to_nonfinal_edge_iter, internal_dfa);
+      }
 
-//          if (std::find_if(++first_trans_iter, last_trans_iter,
-//                                         [&](dfa_edge_desc trans)
-//          {
-//            return ((boost::target(trans, internal_dfa) == current_trans_target) &&
-//                    two_vmaps_are_isomorphic(internal_dfa[trans], current_trans_content));
-//          }) != last_trans_iter)
-//          {
-//            boost::remove_edge(trans, internal_dfa);
-//            duplicated_trans_exists = true;
-//          }
-//        }
-//      }
-
-//      return;
-//    };
+      return;
+    };
 
     tfm::format(std::cerr, "adding representing states\n");
     std::for_each(std::begin(equiv_classes), std::end(equiv_classes),
@@ -1163,32 +1199,6 @@ auto execution_dfa::approximate () -> void
       }
     });
 
-//    tfm::format(std::cerr, "removing duplicated transitions from representing states\n");
-//    auto first_edge_iter = dfa_edge_iter(); auto last_edge_iter = dfa_edge_iter();
-//    std::tie(first_edge_iter, last_edge_iter) = boost::edges(internal_dfa);
-//    auto current_edge_iter = first_edge_iter; auto next_edge_iter = current_edge_iter;
-//    for (; current_edge_iter != last_edge_iter; current_edge_iter = next_edge_iter)
-//    {
-//      ++next_edge_iter;
-//      if (std::find_if())
-//    }
-
-//    std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
-//    auto current_iter = first_vertex_iter; auto next_iter = current_iter;
-//    for (; current_iter != last_vertex_iter; current_iter = next_iter)
-//    {
-//      ++next_iter;
-//      if (std::find_if(next_iter, last_vertex_iter, [&](dfa_)))
-//    }
-
-//    std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state)
-//    {
-//      if (rep_state_equiv_states.find(state) != std::end(rep_state_equiv_states))
-//      {
-//        erase_duplicated_transitions(state);
-//      }
-//    });
-
     tfm::format(std::cerr, "removing concrete states\n");
     auto concrete_states = dfa_vertex_descs();
     std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state)
@@ -1198,6 +1208,15 @@ auto execution_dfa::approximate () -> void
         // condition to verify if a state is concrete or not
         if (get_representing_state(state) != boost::graph_traits<dfa_graph_t>::null_vertex())
           concrete_states.push_back(state);
+      }
+    });
+
+    tfm::format(std::cerr, "removing redundant transitions\n");
+    std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state)
+    {
+      if (rep_state_equiv_states.find(state) != std::end(rep_state_equiv_states))
+      {
+        erase_redundant_transitions(state);
       }
     });
 
