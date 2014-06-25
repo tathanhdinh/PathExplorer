@@ -997,6 +997,7 @@ auto execution_dfa::approximate () -> void
     std::copy_if(first_dag_vertex_iter, last_dag_vertex_iter, std::back_inserter(roots),
                  [&approx_graph](dfa_vertex_desc state)
     {
+      // root predicate
       return ((boost::in_degree(state, approx_graph) == 0) &&
               (boost::out_degree(state, approx_graph) != 0));
     });
