@@ -802,9 +802,7 @@ auto execution_dfa::approximate () -> void
           approximation_table[std::make_pair(*iter_a, state_b)] = uncomparable;
           approximation_table[std::make_pair(state_b, *iter_a)] = uncomparable;
         }
-//        tfm::format(std::cerr, "sss\n");
       });
-//      tfm::format(std::cerr, "ddd\n");
     }
 
     tfm::format(std::cerr, "%d approximable pair(s) found\n",
