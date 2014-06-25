@@ -1166,7 +1166,7 @@ auto execution_dfa::approximate () -> void
         });
 
         if (same_to_nonfinal_edge_iter != last_out_edge_iter)
-          boost::remove_edge(same_to_nonfinal_edge_iter, internal_dfa);
+          boost::remove_edge(to_final_edge_iter, internal_dfa);
       }
 
       return;
