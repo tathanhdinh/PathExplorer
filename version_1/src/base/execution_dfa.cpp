@@ -954,46 +954,8 @@ auto execution_dfa::approximate () -> void
     auto first_dag_vertex_iter = dfa_vertex_iter(); auto last_dag_vertex_iter = dfa_vertex_iter();
     std::tie(first_dag_vertex_iter, last_dag_vertex_iter) = boost::vertices(approx_graph);
 
-//    auto first_dfa_vertex_iter = dfa_vertex_iter(); auto last_dfa_vertex_iter = dfa_vertex_iter();
-//    std::tie(first_dfa_vertex_iter, last_dfa_vertex_iter) = boost::vertices(internal_dfa);
-
-//    auto dag_transition_in_dfa = [&approx_graph](dfa_edge_desc trans) -> bool
-//    {
-//      auto dfa_state_a =
-//          find_state_by_content(internal_dfa, approx_graph[boost::source(trans, approx_graph)]);
-//      auto dfa_state_b =
-//          find_state_by_content(internal_dfa, approx_graph[boost::target(trans, approx_graph)]);
-
-//      return std::get<1>(boost::edge(dfa_state_a, dfa_state_b, internal_dfa));
-//    };
-
     // find roots
-    auto root_predicate = [&](dfa_vertex_desc state) -> bool
-    {
-//      if ((boost::in_degree(state, approx_graph) != 0) ||
-//          (boost::out_degree(state, approx_graph) == 0)) return false;
-//      else
-//      {
-//        auto first_dag_out_edge_iter = dfa_out_edge_iter();
-//        auto last_dag_out_edge_iter = dfa_out_edge_iter();
-//        std::tie(first_dag_out_edge_iter,
-//                 last_dag_out_edge_iter) = boost::out_edges(state, approx_graph);
-
-//        return std::any_of(first_dag_out_edge_iter, last_dag_out_edge_iter,
-//                           [&](dfa_edge_desc trans) -> bool
-//        {
-//          return (!approx_graph[boost::target(trans, approx_graph)].empty() &&
-//                  dag_transition_in_dfa(trans));
-//        });
-//      }
-
-      return ((boost::in_degree(state, approx_graph) == 0) &&
-              (boost::out_degree(state, approx_graph) != 0));
-    };
-
     auto roots = dfa_vertex_descs();
-//    std::copy_if(first_dag_vertex_iter, last_dag_vertex_iter,
-//                 std::back_inserter(roots), root_predicate);
     std::copy_if(first_dag_vertex_iter, last_dag_vertex_iter, std::back_inserter(roots),
                  [&approx_graph](dfa_vertex_desc state)
     {
@@ -1010,18 +972,6 @@ auto execution_dfa::approximate () -> void
     else
     {
       tfm::format(std::cerr, "approximable states found\n");
-//      auto first_trans_iter = dfa_out_edge_iter(); auto last_trans_iter = dfa_out_edge_iter();
-//      std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(roots.front(), approx_graph);
-
-//      auto selected_dag_trans_iter = std::find_if(first_trans_iter,
-//                                                  last_trans_iter, dag_transition_in_dfa);
-//      return std::make_pair(
-//            find_state_by_content(internal_dfa,
-//                                  approx_graph[boost::source(*selected_dag_trans_iter,
-//                                                             approx_graph)]),
-//            find_state_by_content(internal_dfa,
-//                                  approx_graph[boost::target(*selected_dag_trans_iter,
-//                                                             approx_graph)]));
 
       auto selected_root =
           *std::max_element(std::begin(roots), std::end(roots),
