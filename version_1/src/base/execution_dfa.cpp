@@ -660,7 +660,6 @@ static auto get_equivalence_classes (const state_pairs_t& matching_pairs) -> dfa
     auto class_a_iter = find_representing_class(state_a, equiv_classes);
     auto class_b_iter = find_representing_class(state_b, equiv_classes);
 
-
     if ((class_a_iter != std::end(equiv_classes)) && (class_b_iter != std::end(equiv_classes)))
     {
       if (class_a_iter != class_b_iter)
@@ -1009,8 +1008,8 @@ auto execution_dfa::approximate () -> void
     };
 
     auto roots = dfa_vertex_descs();
-    std::copy_if(first_dag_vertex_iter,
-                 last_dag_vertex_iter, std::back_inserter(roots), root_predicate);
+    std::copy_if(first_dag_vertex_iter, last_dag_vertex_iter,
+                 std::back_inserter(roots), root_predicate);
     if (roots.empty())
     {
       return std::make_pair(boost::graph_traits<dfa_graph_t>::null_vertex(),
@@ -1049,120 +1048,6 @@ auto execution_dfa::approximate () -> void
                                                                              approx_graph)]));
     }
   };
-
-   // end of merge_approximated_states lambda
-
-//  auto erase_from_root_content = [](const dfa_vertex& content) -> void
-//  {
-////    auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
-////    std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
-
-//    auto contents = get_contents_from_root(find_state_by_content(internal_dfa, content));
-//    std::for_each(std::begin(contents), std::end(contents), [&](const dfa_vertex& content)
-//    {
-//      erase_state_by_content(internal_dfa, content);
-//    });
-
-//    return;
-//  }; // end of erase_states_from_root lambda
-
-//  auto use_state_to_abstract_state = [](dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> void
-//  {
-//    auto matching_pairs = matching_state_pairs_from(state_a, state_b);
-//    auto sub_states_b = get_states_from_root(state_b);
-
-//    tfm::format(std::cerr, "matching pairs: %d\n", matching_pairs.size());
-
-////    // copy transitions to children of b
-////    std::for_each(std::begin(matching_pairs), std::end(matching_pairs),
-////                  [&](decltype(matching_pairs)::const_reference state_pair)
-////    {
-////      auto first_to_b_trans = dfa_in_edge_iter(); auto last_to_b_trans = dfa_in_edge_iter();
-////      std::tie(first_to_b_trans, last_to_b_trans) = boost::in_edges(state_b, internal_dfa);
-
-////      std::for_each(first_to_b_trans, last_to_b_trans, [&](dfa_edge_desc trans)
-////      {
-////        boost::add_edge(boost::source(trans, internal_dfa), state_a,
-////                        internal_dfa[trans], internal_dfa);
-////      });
-////    });
-
-
-////    auto incident_predicate = [&sub_states_b](dfa_edge_desc trans) -> bool
-////    {
-////      return ((std::find(std::begin(sub_states_b), std::end(sub_states_b),
-////                         boost::source(trans, internal_dfa)) != std::end(sub_states_b)) ||
-////              (std::find(std::begin(sub_states_b), std::end(sub_states_b),
-////                         boost::target(trans, internal_dfa)) != std::end(sub_states_b)));
-////    };
-////    boost::remove_edge_if(incident_predicate, internal_dfa);
-
-//    // add loopback transition
-////    auto loopback_trans = internal_dfa[std::get<0>(boost::edge(state_a, state_b, internal_dfa))];
-////    boost::add_edge(state_a, state_a, loopback_trans, internal_dfa);
-
-//    // erase transitions from children of b
-//    tfm::format(std::cerr, "sub-states of b: %d\n", sub_states_b.size());
-
-//    auto from_incident_predicate = [&sub_states_b](dfa_edge_desc trans) -> bool
-//    {
-//      return ((std::find(std::begin(sub_states_b), std::end(sub_states_b),
-//                         boost::source(trans, internal_dfa)) != std::end(sub_states_b)) /*||
-//              (std::find(std::begin(sub_states_b), std::end(sub_states_b),
-//                         boost::target(trans, internal_dfa)) != std::end(sub_states_b))*/);
-//    };
-//    boost::remove_edge_if(from_incident_predicate, internal_dfa);
-
-////     copy transtions to children of b to a
-//    std::for_each(std::begin(matching_pairs), std::end(matching_pairs),
-//                  [&](decltype(matching_pairs)::const_reference state_pair)
-//    {
-//      auto first_to_b_trans = dfa_in_edge_iter(); auto last_to_b_trans = dfa_in_edge_iter();
-//      std::tie(first_to_b_trans, last_to_b_trans) = boost::in_edges(state_b, internal_dfa);
-
-//      std::for_each(first_to_b_trans, last_to_b_trans, [&](dfa_edge_desc trans)
-//      {
-//        boost::add_edge(boost::source(trans, internal_dfa), state_a,
-//                        internal_dfa[trans], internal_dfa);
-//      });
-//    });
-
-////     erase transitions to children of b
-//    auto to_incident_predicate = [&sub_states_b](dfa_edge_desc trans) -> bool
-//    {
-//      return (std::find(std::begin(sub_states_b), std::end(sub_states_b),
-//                        boost::target(trans, internal_dfa)) != std::end(sub_states_b));
-//    };
-//    boost::remove_edge_if(to_incident_predicate, internal_dfa);
-
-//    // erase isolated states
-//    auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
-//    auto isolated_state_exists = true;
-
-//    while (isolated_state_exists)
-//    {
-//      isolated_state_exists = false;
-//      std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
-
-//      auto isolated_predicate = [&](dfa_vertex_desc state) -> bool
-//      {
-//        return ((boost::in_degree(state, internal_dfa) == 0) &&
-//                (boost::out_degree(state, internal_dfa) == 0));
-//      };
-
-//      auto isolated_state_iter =
-//          std::find_if(first_vertex_iter, last_vertex_iter, isolated_predicate);
-
-//      if (isolated_state_iter != last_vertex_iter)
-//      {
-//        isolated_state_exists = true;
-//        boost::clear_vertex(*isolated_state_iter, internal_dfa);
-//        boost::remove_vertex(*isolated_state_iter, internal_dfa);
-//      }
-//    }
-
-//    return;
-//  };
 
   auto state_abstract_state = [&](dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> void
   {

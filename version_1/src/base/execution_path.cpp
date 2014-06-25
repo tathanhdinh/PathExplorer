@@ -4,7 +4,7 @@
 #include <functional>
 #include <algorithm>
 
-typedef std::function<conditions_t ()> lazy_func_cond_t;
+//typedef std::function<conditions_t ()> lazy_func_cond_t;
 
 
 /**
@@ -210,10 +210,10 @@ static auto stabilize (const conditions_t& raw_cond) -> conditions_t
 
 //    tfm::format(std::cerr, "%d %d %d\n", addrs_aib.size(), addrs_adb.size(), addrs_bda.size());
 
-    /*addrint_value_maps_t*/auto maps_adb = maps_projection(maps_a, addrs_adb);
-    /*addrint_value_maps_t*/auto maps_bda = maps_projection(maps_b, addrs_bda);
+    auto maps_adb = maps_projection(maps_a, addrs_adb);
+    auto maps_bda = maps_projection(maps_b, addrs_bda);
     // because the priority of b is higher than a, so use the values of b
-    /*addrint_value_maps_t*/auto maps_aib = maps_projection(maps_b, addrs_aib);
+    auto maps_aib = maps_projection(maps_b, addrs_aib);
 
     // calculate the cartesian product of 3 maps
     /*addrint_value_maps_t*/auto maps_ab = addrint_value_maps_t();
@@ -282,8 +282,8 @@ static auto stabilize (const conditions_t& raw_cond) -> conditions_t
 
   // the following loop makes the condition converge on a stabilized state: it modifies the
   // condition by merging intersected sub-conditions until no such intersection is found
-  /*conditions_t*/auto examined_cond = raw_cond;
-  /*bool*/ auto intersection_exists = false;
+  auto examined_cond = raw_cond;
+  auto intersection_exists = false;
 
   do
   {
@@ -366,8 +366,8 @@ static auto stabilize (const conditions_t& raw_cond) -> conditions_t
 static auto calculate_from (const order_ins_map_t& current_path,
                             const path_code_t& current_path_code) -> conditions_t
 {
-  /*conditions_t*/auto raw_condition = conditions_t();
-  /*std::size_t*/auto current_code_order = 0;
+  auto raw_condition = conditions_t();
+  auto current_code_order = 0;
 
 //  tfm::format(std::cerr, "----\ncurrent path length %d with code size %d: %s\n", current_path.size(),
 //              current_path_code.size(), path_code_to_string(current_path_code));
