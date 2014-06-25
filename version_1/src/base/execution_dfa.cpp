@@ -806,7 +806,7 @@ auto execution_dfa::approximate () -> void
       });
 //      tfm::format(std::cerr, "ddd\n");
     }
-//    tfm::format(std::cerr, "counting\n");
+
     tfm::format(std::cerr, "%d approximable pair(s) found\n",
                 std::count_if(std::begin(approximation_table), std::end(approximation_table),
                               [](approx_table_t::const_reference rel) -> bool
