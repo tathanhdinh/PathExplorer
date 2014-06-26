@@ -21,7 +21,6 @@ public:
 
   auto optimize             ()                                    -> void;
   auto approximate          ()                                    -> void;
-  auto optimize_abstracted  ()                                    -> void;
 
   auto save_to_file         (const std::string& filename)         -> void;
 };
