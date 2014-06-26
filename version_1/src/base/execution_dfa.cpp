@@ -22,6 +22,9 @@ typedef boost::graph_traits<dfa_graph_t>::in_edge_iterator    dfa_in_edge_iter;
 
 typedef std::shared_ptr<dfa_graph_t>                          ptr_dfa_graph_t;
 
+typedef std::pair<dfa_vertex_desc, dfa_vertex_desc>           state_pair_t;
+typedef std::vector<state_pair_t>                             state_pairs_t;
+
 /*================================================================================================*/
 
 static dfa_graph_t      internal_dfa;
@@ -585,8 +588,6 @@ auto static longest_path_length_from (dfa_vertex_desc state, const dfa_graph_t& 
 }
 
 
-typedef std::pair<dfa_vertex_desc, dfa_vertex_desc> state_pair_t;
-typedef std::vector<state_pair_t>                   state_pairs_t;
 static auto matching_state_pairs_from (dfa_vertex_desc state_a,
                                        dfa_vertex_desc state_b) -> state_pairs_t
 {
@@ -700,7 +701,7 @@ auto execution_dfa::approximate () -> void
     less_than    = 1,
     more_than    = 2
   };
-  typedef std::pair<dfa_vertex_desc, dfa_vertex_desc> state_pair_t;
+
   typedef std::map<state_pair_t , ordering_t>         approx_table_t;
   typedef std::map<state_pair_t, bool>                direct_connection_rel_t;
 
@@ -1024,47 +1025,6 @@ auto execution_dfa::approximate () -> void
       }
     }; // end of get_representing_state lambda
 
-//    auto add_out_trans = [&](dfa_vertex_desc state) -> void
-//    {
-//      auto first_out_edge_iter = dfa_out_edge_iter();
-//      auto last_out_edge_iter = dfa_out_edge_iter();
-//      std::tie(first_out_edge_iter, last_out_edge_iter) = boost::out_edges(state, internal_dfa);
-
-//      auto rep_state = get_representing_state(state);
-//      auto state_has_rep = (rep_state != boost::graph_traits<dfa_graph_t>::null_vertex());
-
-//      auto trans_to_or_from_rep = dfa_edge_descs();
-//      std::copy_if(first_out_edge_iter, last_out_edge_iter,
-//                   std::back_inserter(trans_to_or_from_rep), [&](dfa_edge_desc trans)
-//      {
-//        return (state_has_rep ||
-//                (get_representing_state(boost::target(trans, internal_dfa))
-//                 != boost::graph_traits<dfa_graph_t>::null_vertex()));
-//      });
-
-//      auto unique_trans = dfa_edge_descs();
-//      std::copy_if(trans_to_or_from_rep.begin(), trans_to_or_from_rep.end(),
-//                   std::back_inserter(unique_trans), [&](dfa_edge_desc trans)
-//      {
-//        auto next_state = boost::target(trans, internal_dfa);
-//        auto next_rep_state = get_representing_state(state);
-//        if (next_rep_state == boost::graph_traits<dfa_graph_t>::null_vertex())
-//          next_rep_state = next_state;
-
-//        return (std::count_if(std::begin(trans_to_or_from_rep), std::end(trans_to_or_from_rep),
-//                              [&](dfa_edge_desc local_trans)
-//        {
-//          auto local_next_state = boost::target(local_trans, internal_dfa);
-//          auto local_next_rep_state = get_representing_state(local_next_state);
-//          if (local_next_rep_state == boost::graph_traits<dfa_graph_t>::null_vertex())
-//            local_next_rep_state = local_next_state;
-
-
-//        }) == 1);
-//      });
-
-//      return;
-//    };
 
     auto add_out_transitions = [&](dfa_vertex_desc state) -> void
     {
@@ -1126,19 +1086,6 @@ auto execution_dfa::approximate () -> void
             boost::add_edge(rep_state, rep_next_state, internal_dfa[trans], internal_dfa);
           }
         }
-
-//        if (rep_next_state != boost::graph_traits<dfa_graph_t>::null_vertex())
-//        {
-//          boost::add_edge(rep_state, rep_next_state, internal_dfa[trans], internal_dfa);
-//          tfm::format(std::cerr, "add transition to representing state\n");
-//        }
-//        else
-//        {
-//          if (rep_state_equiv_states.find(rep_state) != std::end(rep_state_equiv_states))
-//          {
-//            boost::add_edge(rep_state, next_state, internal_dfa[trans], internal_dfa);
-//          }
-//        }
       });
 
       return;
@@ -1257,14 +1204,78 @@ auto execution_dfa::approximate () -> void
   {
     tfm::format(std::cerr, "abstracting states\n");
     state_abstract_state(state_a, state_b);
-//    use_state_to_abstract_state(state_a, state_b);
-
-//    merge_approximable_states(state_a, state_b);
-
-//    auto content_a = internal_dfa[state_a]; auto content_b = internal_dfa[state_b];
-//    erase_states_from_root_content(content_a);
-//    erase_states_from_root_content(content_b);
   }
+
+  return;
+}
+
+
+/**
+ * @brief execution_dfa::optimize_abstracted
+ */
+auto execution_dfa::optimize_abstracted () -> void
+{
+  typedef std::function<bool(state_pairs_t&, dfa_vertex_desc, dfa_vertex_desc)> equiv_func_t;
+  equiv_func_t check_equivalence = [&check_equivalence](state_pairs_t& equiv_rel,
+      dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> bool
+  {
+    if (std::find(std::begin(equiv_rel), std::end(equiv_rel),
+                  std::make_pair(state_a, state_b)) != std::end(equiv_rel)) return true;
+    else
+    {
+      auto equiv_result = false;
+      if (state_a == state_b) equiv_result = true;
+      else
+      {
+        auto first_a_trans_iter = dfa_out_edge_iter();
+        auto last_a_trans_iter = dfa_out_edge_iter();
+        std::tie(first_a_trans_iter, last_a_trans_iter) = boost::out_edges(state_a, internal_dfa);
+
+        equiv_result = std::all_of(first_a_trans_iter, last_a_trans_iter,
+                                   [&](dfa_edge_desc a_trans) -> bool
+        {
+          auto first_b_trans_iter = dfa_out_edge_iter();
+          auto last_b_trans_iter = dfa_out_edge_iter();
+          std::tie(first_b_trans_iter, last_b_trans_iter) = boost::out_edges(state_b, internal_dfa);
+
+          return std::any_of(first_b_trans_iter, last_b_trans_iter,
+                             [&](dfa_edge_desc b_trans) -> bool
+          {
+            return (two_vmaps_are_isomorphic(internal_dfa[a_trans], internal_dfa[b_trans]) &&
+                    check_equivalence(equiv_rel, boost::target(a_trans, internal_dfa),
+                                   boost::target(b_trans, internal_dfa)));
+          });
+        });
+      }
+
+      if (equiv_result)
+      {
+        equiv_rel.push_back(std::make_pair(state_a, state_b));
+        equiv_rel.push_back(std::make_pair(state_b, state_a));
+      }
+
+      return equiv_result;
+    }
+  };
+
+  auto construct_equivalence_table = [&](state_pairs_t& equiv_rel) -> void
+  {
+    auto first_vertex_iter = dfa_vertex_iter();
+    auto last_vertex_iter = dfa_vertex_iter();
+    std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
+
+    std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_a)
+    {
+      std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_b)
+      {
+        if (std::find(std::begin(equiv_rel), std::end(equiv_rel),
+                      std::make_pair(state_a, state_b)) == std::end(equiv_rel))
+          check_equivalence(equiv_rel, state_a, state_b);
+      });
+    });
+
+    return;
+  }; // end of construct_equivalence_table lambda
 
   return;
 }
