@@ -1213,34 +1213,73 @@ auto execution_dfa::approximate () -> void
         }
         else
         {
-          auto first_a_trans_iter = dfa_out_edge_iter();
-          auto last_a_trans_iter = dfa_out_edge_iter();
-          std::tie(first_a_trans_iter, last_a_trans_iter) = boost::out_edges(state_a,
-                                                                             internal_dfa);
-
-          auto are_equiv = std::all_of(first_a_trans_iter, last_a_trans_iter,
-                                     [&](dfa_edge_desc a_trans) -> bool
+          if (boost::out_degree(state_a, internal_dfa) == boost::out_degree(state_b, internal_dfa))
           {
+            auto first_a_trans_iter = dfa_out_edge_iter();
+            auto last_a_trans_iter = dfa_out_edge_iter();
+            std::tie(first_a_trans_iter, last_a_trans_iter) = boost::out_edges(state_a,
+                                                                               internal_dfa);
+
             auto first_b_trans_iter = dfa_out_edge_iter();
             auto last_b_trans_iter = dfa_out_edge_iter();
             std::tie(first_b_trans_iter, last_b_trans_iter) = boost::out_edges(state_b,
                                                                                internal_dfa);
 
-            return std::any_of(first_b_trans_iter, last_b_trans_iter,
-                               [&](dfa_edge_desc b_trans) -> bool
+            if (std::all_of(first_a_trans_iter, last_a_trans_iter, [&](dfa_edge_desc a_trans)
             {
-              return (two_vmaps_are_isomorphic(internal_dfa[a_trans], internal_dfa[b_trans]) &&
-                      check_equivalence(equiv_rel, boost::target(a_trans, internal_dfa),
-                                     boost::target(b_trans, internal_dfa)));
-            });
-          });
+              return std::any_of(first_b_trans_iter, last_b_trans_iter, [&](dfa_edge_desc b_trans)
+              {
+                return (two_vmaps_are_isomorphic(internal_dfa[a_trans], internal_dfa[b_trans]));
+              });
+            }))
+            {
+              equiv_rel.push_back(std::make_pair(state_a, state_b));
+              equiv_rel.push_back(std::make_pair(state_b, state_a));
 
-          if (are_equiv)
-          {
-            equiv_rel.push_back(std::make_pair(state_a, state_b));
-            equiv_rel.push_back(std::make_pair(state_b, state_a));
+              return std::all_of(first_a_trans_iter, last_a_trans_iter,
+                                 [&](dfa_edge_desc a_trans) -> bool
+              {
+                auto corres_trans_iter = std::find_if(first_b_trans_iter, last_b_trans_iter,
+                                                      [&](dfa_edge_desc b_trans)
+                {
+                    return (two_vmaps_are_isomorphic(internal_dfa[a_trans], internal_dfa[b_trans]));
+                });
+
+                if (corres_trans_iter != last_b_trans_iter)
+                {
+                  return check_equivalence(equiv_rel, boost::target(a_trans, internal_dfa),
+                                           boost::target(*corres_trans_iter, internal_dfa));
+                }
+                else return false;
+              });
+            }
+            else return false;
           }
-          return are_equiv;
+          else return false;
+
+//          auto are_equiv = std::all_of(first_a_trans_iter, last_a_trans_iter,
+//                                     [&](dfa_edge_desc a_trans) -> bool
+//          {
+//            auto first_b_trans_iter = dfa_out_edge_iter();
+//            auto last_b_trans_iter = dfa_out_edge_iter();
+//            std::tie(first_b_trans_iter, last_b_trans_iter) = boost::out_edges(state_b,
+//                                                                               internal_dfa);
+
+//            return std::any_of(first_b_trans_iter, last_b_trans_iter,
+//                               [&](dfa_edge_desc b_trans) -> bool
+//            {
+//              return (two_vmaps_are_isomorphic(internal_dfa[a_trans], internal_dfa[b_trans]) &&
+//                      check_equivalence(equiv_rel, boost::target(a_trans, internal_dfa),
+//                                        boost::target(b_trans, internal_dfa)));
+//            });
+//          });
+
+//          if (are_equiv)
+//          {
+//            equiv_rel.push_back(std::make_pair(state_a, state_b));
+//            equiv_rel.push_back(std::make_pair(state_b, state_a));
+//          }
+//          return are_equiv;
         }
       }
     };
@@ -1250,12 +1289,17 @@ auto execution_dfa::approximate () -> void
     auto last_vertex_iter = dfa_vertex_iter();
     std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
 
-    auto equiv_rel = state_pairs_t();
+    auto equiv_rel = state_pairs_t(); auto local_equiv_rel = state_pairs_t();
     std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_a)
     {
       std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_b)
       {
-        check_equivalence(equiv_rel, state_a, state_b);
+        local_equiv_rel = equiv_rel;
+        if (check_equivalence(local_equiv_rel, state_a, state_b))
+        {
+          equiv_rel.insert(std::end(equiv_rel), std::begin(local_equiv_rel),
+                           std::end(local_equiv_rel));
+        }
       });
     });
 
@@ -1297,8 +1341,8 @@ auto execution_dfa::approximate () -> void
     state_abstract_state(state_a, state_b);
   }
 
-//  tfm::format(std::cerr, "optimize abstracted DFA\n");
-//  optimize_abstracted_dfa();
+  tfm::format(std::cerr, "optimizing abstracted DFA\n");
+  optimize_abstracted_dfa();
 
   return;
 }
