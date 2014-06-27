@@ -994,7 +994,7 @@ auto execution_dfa::approximate () -> void
                                                   approx_graph[boost::target(*first_trans_iter,
                                                                              approx_graph)]));
     }
-  };
+  }; // end of select_approximable_states lambda
 
 
   auto construct_dfa_from_equivalence = [&](const dfa_vertex_partition_t& equiv_classes) -> void
@@ -1087,7 +1087,7 @@ auto execution_dfa::approximate () -> void
       });
 
       return;
-    };
+    }; // end of add_out_transitions lambda
 
     auto erase_redundant_transitions = [&](dfa_vertex_desc state) -> void
     {
@@ -1115,8 +1115,9 @@ auto execution_dfa::approximate () -> void
       }
 
       return;
-    };
+    }; // end of erase_redundant_transitions lambda
 
+    // function starts here
 
     tfm::format(std::cerr, "adding representing states\n");
     std::for_each(std::begin(equiv_classes), std::end(equiv_classes),
@@ -1135,13 +1136,22 @@ auto execution_dfa::approximate () -> void
     auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
     std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
 
-    tfm::format(std::cerr, "adding transitions for representing states\n");
+    tfm::format(std::cerr, "adding transitions from/to representing states\n");
     std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state)
     {
       // not a representing state
       if (rep_state_equiv_states.find(state) == std::end(rep_state_equiv_states))
       {
         add_out_transitions(state);
+      }
+    });
+
+    tfm::format(std::cerr, "erasing redundant transitions\n");
+    std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state)
+    {
+      if (rep_state_equiv_states.find(state) != std::end(rep_state_equiv_states))
+      {
+        erase_redundant_transitions(state);
       }
     });
 
@@ -1168,15 +1178,6 @@ auto execution_dfa::approximate () -> void
                   [&](const dfa_vertex content)
     {
       erase_state_by_content(internal_dfa, content);
-    });
-
-    tfm::format(std::cerr, "removing redundant transitions\n");
-    std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state)
-    {
-      if (rep_state_equiv_states.find(state) != std::end(rep_state_equiv_states))
-      {
-        erase_redundant_transitions(state);
-      }
     });
 
     return;
@@ -1264,8 +1265,12 @@ auto execution_dfa::approximate () -> void
 
   auto optimize_abstracted_dfa = [&]() -> void
   {
+    tfm::format(std::cerr, "construct new equivalence relation\n");
     auto equiv_rel = construct_new_equivalence_relation();
+
     auto equiv_classes = get_equivalence_classes(equiv_rel);
+
+    tfm::format(std::cerr, "construct DFA from new equivalence\n");
     construct_dfa_from_equivalence(equiv_classes);
     return;
   };
@@ -1292,8 +1297,8 @@ auto execution_dfa::approximate () -> void
     state_abstract_state(state_a, state_b);
   }
 
-  tfm::format(std::cerr, "optimize abstracted DFA\n");
-  optimize_abstracted_dfa();
+//  tfm::format(std::cerr, "optimize abstracted DFA\n");
+//  optimize_abstracted_dfa();
 
   return;
 }
