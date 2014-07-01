@@ -934,20 +934,18 @@ auto static construct_quotient_dfa_from_equivalence (const state_pairs_t& state_
  * @brief natural_equivalence
  * @return
  */
+typedef std::function<bool(state_pairs_t&, dfa_vertex_desc, dfa_vertex_desc)> local_check_func_t;
 static auto natural_equivalence () -> state_pairs_t
 {
-  typedef std::function<bool(state_pairs_t&, dfa_vertex_desc, dfa_vertex_desc)> equiv_func_t;
-  equiv_func_t check_equivalence = [&check_equivalence](state_pairs_t& equiv_rel,
+  local_check_func_t check_equivalence = [&check_equivalence](state_pairs_t& equiv_rel,
       dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> bool
   {
     if (std::find(std::begin(equiv_rel), std::end(equiv_rel),
                   std::make_pair(state_a, state_b)) != std::end(equiv_rel)) return true;
     else
     {
-      if (state_a == state_b /*||
-          (internal_dfa[state_a].empty() && internal_dfa[state_b].empty())*/)
+      if (state_a == state_b)
       {
-//        if (state_a == state_b) equiv_rel.push_back(std::make_pair(state_a, state_b));
         equiv_rel.push_back(std::make_pair(state_a, state_b));
         return true;
       }
@@ -999,8 +997,6 @@ static auto natural_equivalence () -> state_pairs_t
   }; // end of check_equivalence lambda
 
 
-//  auto derived_equivalence = [&](const state_pairs_t& equiv_rel)
-
   //==== function starts here
   auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
   std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
@@ -1031,12 +1027,110 @@ static auto natural_equivalence () -> state_pairs_t
 }
 
 
+/**
+ * @brief natural_approximation
+ * @return
+ */
+static auto natural_approximation () -> state_pairs_t
+{
+//  typedef std::function<state_pairs_t(const state_pairs_t&)> closure_func_t;
+  auto is_transitive_closure = [](const state_pairs_t& rel, state_pair_t& new_pair) -> bool
+  {
+      return std::any_of(std::begin(rel), std::end(rel),
+                                    [&](const state_pair_t& pair_a)
+      {
+        auto s0_a = std::get<0>(pair_a); auto s1_a = std::get<1>(pair_a);
+        return std::any_of(std::begin(rel), std::end(rel), [&](const state_pair_t& pair_b)
+        {
+          if (s1_a == std::get<0>(pair_b))
+          {
+            new_pair = std::make_pair(s0_a, std::get<1>(pair_b));
+            return std::find(std::begin(rel), std::end(rel), new_pair) == std::end(rel);
+          }
+          else return false;
+        });
+      });
+
+  }; // end of transitive_closure lambda
+
+  local_check_func_t check_approximation = [&](state_pairs_t& equiv_rel,
+      dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> bool
+  {
+     auto new_pair = std::pair<dfa_vertex_desc, dfa_vertex_desc>();
+    if (std::find(std::begin(equiv_rel), std::end(equiv_rel),
+                  std::make_pair(state_a, state_b)) != std::end(equiv_rel))
+    {
+      if (is_transitive_closure(equiv_rel, new_pair)) return true;
+      else return check_approximation(equiv_rel, std::get<0>(new_pair), std::get<1>(new_pair));
+    }
+    else
+    {
+      if (state_a == state_b)
+      {
+        equiv_rel.push_back(std::make_pair(state_a, state_b));
+
+        if (is_transitive_closure(equiv_rel, new_pair)) return true;
+        else return check_approximation(equiv_rel, std::get<0>(new_pair), std::get<1>(new_pair));
+      }
+      else
+      {
+        if (boost::out_degree(state_a, internal_dfa) == boost::out_degree(state_b, internal_dfa))
+        {
+          equiv_rel.push_back(std::make_pair(state_a, state_b));
+          equiv_rel.push_back(std::make_pair(state_b, state_a));
+
+          auto first_trans_a_iter = dfa_out_edge_iter();
+          auto last_trans_a_iter = dfa_out_edge_iter();
+          std::tie(first_trans_a_iter, last_trans_a_iter) = boost::out_edges(state_a, internal_dfa);
+
+          auto first_trans_b_iter = dfa_out_edge_iter();
+          auto last_trans_b_iter = dfa_out_edge_iter();
+          std::tie(first_trans_b_iter, last_trans_b_iter) = boost::out_edges(state_b, internal_dfa);
+
+          return std::all_of(first_trans_a_iter, last_trans_a_iter, [&](dfa_edge_desc trans_a)
+          {
+            return std::any_of(first_trans_b_iter, last_trans_b_iter, [&](dfa_edge_desc trans_b)
+            {
+              if (two_vmaps_are_isomorphic(internal_dfa[trans_a], internal_dfa[trans_b]))
+                return check_approximation(equiv_rel, boost::target(trans_a, internal_dfa),
+                                           boost::target(trans_b, internal_dfa));
+              else return false;
+            });
+          });
+        }
+        else
+        {
+          if (internal_dfa[state_a].empty() || internal_dfa[state_b].empty())
+          {
+            equiv_rel.push_back(std::make_pair(state_a, state_b));
+            equiv_rel.push_back(std::make_pair(state_b, state_a));
+
+            if (is_transitive_closure(equiv_rel, new_pair)) return true;
+            else return check_approximation(equiv_rel,
+                                            std::get<0>(new_pair), std::get<1>(new_pair));
+          }
+          else return false;
+        }
+      }
+    }
+  }; // end of check_approximation lambda
+
+
+  //==== function starts here
+  auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
+  std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
+
+  auto equiv_rel = state_pairs_t(); auto local_equiv_rel = state_pairs_t();
+}
+
+
 auto execution_dfa::co_optimize () -> void
 {
   auto equiv_relation = natural_equivalence();
   construct_quotient_dfa_from_equivalence(equiv_relation);
   return;
 }
+
 
 /**
  * @brief execution_dfa::approximate
@@ -1666,12 +1760,6 @@ auto execution_dfa::approximate () -> void
 //  optimize_abstracted_dfa();
 
   return;
-}
-
-
-static auto natural_approximation () -> state_pairs_t
-{
-
 }
 
 
