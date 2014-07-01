@@ -183,6 +183,9 @@ auto stop_exploring (INT32 code, VOID *data) -> VOID
   tfm::format(std::cerr, "constructing raw DFA\n");
   abstracted_dfa->add_exec_paths(explored_exec_paths);
 
+  tfm::format(std::cerr, "saving raw DFA to file\n");
+  abstracted_dfa->save_to_file("raw_" + process_id_str + ".dot");
+
   tfm::format(std::cerr, "optimizing raw DFA\n");
   abstracted_dfa->optimize();
 
@@ -195,11 +198,9 @@ auto stop_exploring (INT32 code, VOID *data) -> VOID
   tfm::format(std::cerr, "saving abstracted DFA to file\n");
   abstracted_dfa->save_to_file("abstracted_" + process_id_str + ".dot");
 
-
 #if !defined(NDEBUG)
 //  show_path_condition(explored_exec_paths);
 #endif
-
   return;
 }
 

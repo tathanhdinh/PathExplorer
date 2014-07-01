@@ -694,6 +694,144 @@ static auto get_equivalence_classes (const state_pairs_t& matching_pairs) -> dfa
 
 
 /**
+ * @brief quotient_dfa_from_equivalence
+ * @param equiv_partition
+ */
+typedef std::map<dfa_vertex_desc, dfa_vertex_descs> state_states_map_t;
+auto static quotient_dfa_from_equivalence (const state_pairs_t& state_rel) -> void
+{
+  auto state_partition = [](const state_pairs_t& state_rel) -> dfa_vertex_partition_t
+  {
+    auto get_equiv_class = [](dfa_vertex_desc state,
+        dfa_vertex_partition_t& equiv_classes) -> dfa_vertex_partition_iter_t
+    {
+      return std::find_if(std::begin(equiv_classes), std::end(equiv_classes),
+                          [&state](const dfa_vertex_descs& states)
+      {
+        return (std::find(std::begin(states), std::end(states), state) != std::end(states));
+      });
+    };
+
+    auto partition = dfa_vertex_partition_t();
+    std::for_each(std::begin(state_rel), std::end(state_rel), [&](const state_pair_t& state_pair)
+    {
+      auto state_a = std::get<0>(state_pair); auto state_b = std::get<1>(state_pair);
+
+      auto class_a_iter = get_equiv_class(state_a, partition);
+      auto class_b_iter = get_equiv_class(state_b, partition);
+
+      if ((class_a_iter != std::end(partition)) && (class_b_iter != std::end(partition)))
+      {
+        if (class_a_iter != class_b_iter)
+        {
+          auto class_a = *class_a_iter; auto class_b = *class_b_iter;
+
+          tfm::format(std::cerr, "merging a and b\n");
+
+          // merge two equivalence classes: c = a + b
+          auto class_c = class_a;
+          class_c.insert(std::end(class_c), std::begin(class_b), std::end(class_b));
+
+          // remove a and b
+          partition.erase(std::find(std::begin(partition), std::end(partition), class_a));
+          partition.erase(std::find(std::begin(partition), std::end(partition), class_b));
+
+          // add c = a + b
+          partition.push_back(class_c);
+        }
+      }
+      else
+      {
+        if ((class_a_iter == std::end(partition)) && (class_b_iter == std::end(partition)))
+        {
+          auto class_ab = dfa_vertex_descs();
+          class_ab.push_back(state_a);
+          if (state_a != state_b) class_ab.push_back(state_b);
+
+          partition.push_back(class_ab);
+        }
+        else
+        {
+          if (class_a_iter != std::end(partition)) class_a_iter->push_back(state_b);
+          else class_b_iter->push_back(state_a);
+        }
+      }
+    });
+
+    return partition;
+  };
+
+  auto add_representatives = [](const dfa_vertex_partition_t& state_parts) -> state_states_map_t
+  {
+    auto rep_equivs = state_states_map_t();
+
+    std::for_each(std::begin(state_parts), std::end(state_parts),
+                  [&](const dfa_vertex_descs equiv_states)
+    {
+      auto rep_state_content =
+          std::accumulate(std::begin(equiv_states), std::end(equiv_states), dfa_vertex(),
+                          [&](const dfa_vertex& init_content, dfa_vertex_desc state)
+      {
+        return merge_state_contents(init_content, internal_dfa[state]);
+      });
+
+      auto rep_state = boost::add_vertex(rep_state_content, internal_dfa);
+      rep_equivs[rep_state] = equiv_states;
+    });
+
+    return rep_equivs;
+  }; // end of add_representatives lambda
+
+  auto representative_of_state = [](dfa_vertex_desc state,
+      const state_states_map_t& rep_equivs) -> dfa_vertex_desc
+  {
+    auto rep_iter =
+        std::find_if(std::begin(rep_equivs), std::end(rep_equivs),
+                     [&](std::map<dfa_vertex_desc, dfa_vertex_descs>::const_reference rep_equiv)
+    {
+      auto equiv_states = std::get<1>(rep_equiv);
+      return (std::find(std::begin(equiv_states), std::end(equiv_states),
+                        state) != std::end(equiv_states));
+    });
+
+    if (rep_iter == std::end(rep_equivs)) return boost::graph_traits<dfa_graph_t>::null_vertex();
+    else return std::get<0>(*rep_iter);
+  }; // end of representative_of_state lambda
+
+  auto add_transitions = [](const state_states_map_t& rep_equivs) -> void
+  {
+    std::for_each(std::begin(rep_equivs), std::end(rep_equivs),
+                  [&](state_states_map_t::const_reference rep_equiv_a)
+    {
+      auto rep_a = std::get<0>(rep_equiv_a); auto equiv_a = std::get<1>(rep_equiv_a);
+
+      std::for_each(std::begin(rep_equivs), std::end(rep_equivs),
+                    [&](state_states_map_t::const_reference rep_equiv_b)
+      {
+        auto rep_b = std::get<0>(rep_equiv_b); auto equiv_b = std::get<1>(rep_equiv_b);
+
+        std::for_each(std::begin(equiv_a), std::end(equiv_a), [&](dfa_vertex_desc state_a)
+        {
+          std::for_each(std::begin(equiv_b), std::end(equiv_b), [&](dfa_vertex_desc state_b)
+          {
+            if (std::get<1>(boost::edge(state_a, state_b, internal_dfa)))
+            {
+              boost::add_edge(rep_a, rep_b,
+                              internal_dfa[std::get<0>(boost::edge(state_a, state_b,
+                                                                   internal_dfa))], internal_dfa);
+            }
+          });
+        });
+      });
+    });
+    return;
+  }; // end of add_transitions
+
+  return;
+}
+
+
+/**
  * @brief execution_dfa::approximate
  */
 auto execution_dfa::approximate () -> void
@@ -1229,7 +1367,7 @@ auto execution_dfa::approximate () -> void
             {
               return std::any_of(first_b_trans_iter, last_b_trans_iter, [&](dfa_edge_desc b_trans)
               {
-                return (two_vmaps_are_isomorphic(internal_dfa[a_trans], internal_dfa[b_trans]));
+                return two_vmaps_are_isomorphic(internal_dfa[a_trans], internal_dfa[b_trans]);
               });
             }))
             {
@@ -1242,7 +1380,7 @@ auto execution_dfa::approximate () -> void
                 auto corres_trans_iter = std::find_if(first_b_trans_iter, last_b_trans_iter,
                                                       [&](dfa_edge_desc b_trans)
                 {
-                    return (two_vmaps_are_isomorphic(internal_dfa[a_trans], internal_dfa[b_trans]));
+                  return (two_vmaps_are_isomorphic(internal_dfa[a_trans], internal_dfa[b_trans]));
                 });
 
                 if (corres_trans_iter != last_b_trans_iter)
@@ -1256,30 +1394,6 @@ auto execution_dfa::approximate () -> void
             else return false;
           }
           else return false;
-
-//          auto are_equiv = std::all_of(first_a_trans_iter, last_a_trans_iter,
-//                                     [&](dfa_edge_desc a_trans) -> bool
-//          {
-//            auto first_b_trans_iter = dfa_out_edge_iter();
-//            auto last_b_trans_iter = dfa_out_edge_iter();
-//            std::tie(first_b_trans_iter, last_b_trans_iter) = boost::out_edges(state_b,
-//                                                                               internal_dfa);
-
-//            return std::any_of(first_b_trans_iter, last_b_trans_iter,
-//                               [&](dfa_edge_desc b_trans) -> bool
-//            {
-//              return (two_vmaps_are_isomorphic(internal_dfa[a_trans], internal_dfa[b_trans]) &&
-//                      check_equivalence(equiv_rel, boost::target(a_trans, internal_dfa),
-//                                        boost::target(b_trans, internal_dfa)));
-//            });
-//          });
-
-//          if (are_equiv)
-//          {
-//            equiv_rel.push_back(std::make_pair(state_a, state_b));
-//            equiv_rel.push_back(std::make_pair(state_b, state_a));
-//          }
-//          return are_equiv;
         }
       }
     };
@@ -1341,8 +1455,8 @@ auto execution_dfa::approximate () -> void
     state_abstract_state(state_a, state_b);
   }
 
-  tfm::format(std::cerr, "optimizing abstracted DFA\n");
-  optimize_abstracted_dfa();
+//  tfm::format(std::cerr, "optimizing abstracted DFA\n");
+//  optimize_abstracted_dfa();
 
   return;
 }
