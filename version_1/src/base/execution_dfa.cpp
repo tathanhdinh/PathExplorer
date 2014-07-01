@@ -874,9 +874,10 @@ auto static construct_quotient_dfa_from_equivalence (const state_pairs_t& state_
     return;
   };
 
+
   auto erase_redundant_states = [](const state_states_map_t& rep_equivs) -> void
   {
-    auto redundant_state_contents = dfa_vertices();
+    auto redundant_states = dfa_vertex_descs();
     std::for_each(std::begin(rep_equivs), std::end(rep_equivs),
                   [&](state_states_map_t::const_reference state_equiv)
     {
@@ -885,19 +886,38 @@ auto static construct_quotient_dfa_from_equivalence (const state_pairs_t& state_
       {
         std::for_each(std::begin(equiv_states), std::end(equiv_states), [&](dfa_vertex_desc state)
         {
-          redundant_state_contents.push_back(internal_dfa[state]);
+          redundant_states.push_back(state);
         });
       }
     });
 
-    std::for_each(std::begin(redundant_state_contents), std::end(redundant_state_contents),
-                  [&](dfa_vertex state_content)
+    boost::remove_edge_if([&](dfa_edge_desc trans)
     {
-      erase_state_by_content(internal_dfa, state_content);
-    });
+      return ((std::find(std::begin(redundant_states), std::end(redundant_states),
+                        boost::target(trans, internal_dfa)) != std::end(redundant_states)) ||
+              (std::find(std::begin(redundant_states), std::end(redundant_states),
+                         boost::source(trans, internal_dfa)) != std::end(redundant_states)));
+    }, internal_dfa);
+
+    auto isolated_state_exists = true;
+    while (isolated_state_exists)
+    {
+      auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
+      std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
+
+      auto isolated_state_iter = std::find_if(first_vertex_iter, last_vertex_iter,
+                                              [&](dfa_vertex_desc state)
+      {
+        return ((boost::in_degree(state, internal_dfa) == 0) &&
+                (boost::out_degree(state, internal_dfa) == 0));
+      });
+
+      isolated_state_exists = (isolated_state_iter != last_vertex_iter);
+      if (isolated_state_exists) boost::remove_vertex(*isolated_state_iter, internal_dfa);
+    }
 
     return;
-  };
+  }; // end of erase_redundant_states lambda
 
   //==== function starts here
   auto partition = state_partition(state_rel);
@@ -924,10 +944,11 @@ static auto natural_equivalence () -> state_pairs_t
                   std::make_pair(state_a, state_b)) != std::end(equiv_rel)) return true;
     else
     {
-      if ((state_a == state_b) ||
-          (internal_dfa[state_a].empty() && internal_dfa[state_b].empty()))
+      if (state_a == state_b /*||
+          (internal_dfa[state_a].empty() && internal_dfa[state_b].empty())*/)
       {
-        if (!internal_dfa[state_a].empty()) equiv_rel.push_back(std::make_pair(state_a, state_b));
+//        if (state_a == state_b) equiv_rel.push_back(std::make_pair(state_a, state_b));
+        equiv_rel.push_back(std::make_pair(state_a, state_b));
         return true;
       }
       else
@@ -978,6 +999,8 @@ static auto natural_equivalence () -> state_pairs_t
   }; // end of check_equivalence lambda
 
 
+//  auto derived_equivalence = [&](const state_pairs_t& equiv_rel)
+
   //==== function starts here
   auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
   std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
@@ -987,16 +1010,19 @@ static auto natural_equivalence () -> state_pairs_t
   {
     std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_b)
     {
-      local_equiv_rel = equiv_rel;
-      if (check_equivalence(local_equiv_rel, state_a, state_b))
+      if (!internal_dfa[state_a].empty() && !internal_dfa[state_b].empty())
       {
-        std::for_each(std::begin(local_equiv_rel), std::end(local_equiv_rel),
-                      [&](const state_pair_t& equiv_pair)
+        local_equiv_rel = equiv_rel;
+        if (check_equivalence(local_equiv_rel, state_a, state_b))
         {
-          if (std::find(std::begin(equiv_rel),
-                        std::end(equiv_rel), equiv_pair) == std::end(equiv_rel))
-            equiv_rel.push_back(equiv_pair);
-        });
+          std::for_each(std::begin(local_equiv_rel), std::end(local_equiv_rel),
+                        [&](const state_pair_t& equiv_pair)
+          {
+            if (std::find(std::begin(equiv_rel),
+                          std::end(equiv_rel), equiv_pair) == std::end(equiv_rel))
+              equiv_rel.push_back(equiv_pair);
+          });
+        }
       }
     });
   });
@@ -1640,6 +1666,12 @@ auto execution_dfa::approximate () -> void
 //  optimize_abstracted_dfa();
 
   return;
+}
+
+
+static auto natural_approximation () -> state_pairs_t
+{
+
 }
 
 
