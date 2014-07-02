@@ -1034,23 +1034,22 @@ static auto natural_equivalence () -> state_pairs_t
 static auto natural_approximation () -> state_pairs_t
 {
 //  typedef std::function<state_pairs_t(const state_pairs_t&)> closure_func_t;
-  auto is_transitive_closure = [](const state_pairs_t& rel, state_pair_t& new_pair) -> bool
+  auto is_not_transitive = [](const state_pairs_t& rel, state_pair_t& new_pair) -> bool
   {
-      return std::any_of(std::begin(rel), std::end(rel),
-                                    [&](const state_pair_t& pair_a)
+    return std::any_of(std::begin(rel), std::end(rel),
+                                  [&](const state_pair_t& pair_a)
+    {
+      auto s0_a = std::get<0>(pair_a); auto s1_a = std::get<1>(pair_a);
+      return std::any_of(std::begin(rel), std::end(rel), [&](const state_pair_t& pair_b)
       {
-        auto s0_a = std::get<0>(pair_a); auto s1_a = std::get<1>(pair_a);
-        return std::any_of(std::begin(rel), std::end(rel), [&](const state_pair_t& pair_b)
+        if (s1_a == std::get<0>(pair_b))
         {
-          if (s1_a == std::get<0>(pair_b))
-          {
-            new_pair = std::make_pair(s0_a, std::get<1>(pair_b));
-            return std::find(std::begin(rel), std::end(rel), new_pair) == std::end(rel);
-          }
-          else return false;
-        });
+          new_pair = std::make_pair(s0_a, std::get<1>(pair_b));
+          return std::find(std::begin(rel), std::end(rel), new_pair) == std::end(rel);
+        }
+        else return false;
       });
-
+    });
   }; // end of transitive_closure lambda
 
   local_check_func_t check_approximation = [&](state_pairs_t& equiv_rel,
@@ -1060,7 +1059,7 @@ static auto natural_approximation () -> state_pairs_t
     if (std::find(std::begin(equiv_rel), std::end(equiv_rel),
                   std::make_pair(state_a, state_b)) != std::end(equiv_rel))
     {
-      if (is_transitive_closure(equiv_rel, new_pair)) return true;
+      if (!is_not_transitive(equiv_rel, new_pair)) return true;
       else return check_approximation(equiv_rel, std::get<0>(new_pair), std::get<1>(new_pair));
     }
     else
@@ -1069,7 +1068,7 @@ static auto natural_approximation () -> state_pairs_t
       {
         equiv_rel.push_back(std::make_pair(state_a, state_b));
 
-        if (is_transitive_closure(equiv_rel, new_pair)) return true;
+        if (!is_not_transitive(equiv_rel, new_pair)) return true;
         else return check_approximation(equiv_rel, std::get<0>(new_pair), std::get<1>(new_pair));
       }
       else
@@ -1105,7 +1104,7 @@ static auto natural_approximation () -> state_pairs_t
             equiv_rel.push_back(std::make_pair(state_a, state_b));
             equiv_rel.push_back(std::make_pair(state_b, state_a));
 
-            if (is_transitive_closure(equiv_rel, new_pair)) return true;
+            if (!is_not_transitive(equiv_rel, new_pair)) return true;
             else return check_approximation(equiv_rel,
                                             std::get<0>(new_pair), std::get<1>(new_pair));
           }
@@ -1120,7 +1119,7 @@ static auto natural_approximation () -> state_pairs_t
   auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
   std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
 
-  auto equiv_rels = std::vector<state_pairs_t>(); auto new_equiv_rel = state_pairs_t();
+  auto equiv_rels = std::vector<state_pairs_t>(); auto local_equiv_rel = state_pairs_t();
   std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_a)
   {
     std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_b)
@@ -1134,19 +1133,27 @@ static auto natural_approximation () -> state_pairs_t
                            std::make_pair(state_a, state_b)) != std::end(equiv_rel);
         }))
         {
-          new_equiv_rel.clear();
-          if (check_approximation(new_equiv_rel, state_a, state_b))
-            equiv_rels.push_back(new_equiv_rel);
+          local_equiv_rel.clear();
+          if (check_approximation(local_equiv_rel, state_a, state_b))
+            equiv_rels.push_back(local_equiv_rel);
         }
       }
     });
   });
 
-  return *std::max_element(std::begin(equiv_rels), std::end(equiv_rels),
+  local_equiv_rel = *std::max_element(std::begin(equiv_rels), std::end(equiv_rels),
                           [&](const state_pairs_t& equiv_rel_a, const state_pairs_t& equiv_rel_b)
   {
     return equiv_rel_a.size() < equiv_rel_b.size();
   });
+  std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state)
+  {
+    if (std::find(std::begin(local_equiv_rel), std::end(local_equiv_rel),
+                  std::make_pair(state, state)) == std::end(local_equiv_rel))
+      local_equiv_rel.push_back(std::make_pair(state, state));
+  });
+
+  return local_equiv_rel;
 }
 
 
