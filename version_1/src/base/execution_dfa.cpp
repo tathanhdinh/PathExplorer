@@ -1213,23 +1213,32 @@ auto execution_dfa::co_optimize () -> void
 
 auto execution_dfa::co_approximate () -> void
 {
-  auto equiv_relation = natural_approximation();
-  construct_quotient_dfa_from_equivalence(equiv_relation);
+  auto equiv_relation = state_pairs_t();
+  while (true)
+  {
+    equiv_relation = natural_approximation();
+    if (std::all_of(std::begin(equiv_relation), std::end(equiv_relation),
+                    [](decltype(equiv_relation)::const_reference state_pair)
+    {
+      return (std::get<0>(state_pair) == std::get<1>(state_pair));
+    })) break;
+    else construct_quotient_dfa_from_equivalence(equiv_relation);
+  }
 
-  equiv_relation = natural_approximation();
-  construct_quotient_dfa_from_equivalence(equiv_relation);
+//  equiv_relation = natural_approximation();
+//  construct_quotient_dfa_from_equivalence(equiv_relation);
 
-  equiv_relation = natural_approximation();
-  construct_quotient_dfa_from_equivalence(equiv_relation);
+//  equiv_relation = natural_approximation();
+//  construct_quotient_dfa_from_equivalence(equiv_relation);
 
-  equiv_relation = natural_equivalence();
-  construct_quotient_dfa_from_equivalence(equiv_relation);
+//  equiv_relation = natural_equivalence();
+//  construct_quotient_dfa_from_equivalence(equiv_relation);
 
-  equiv_relation = natural_approximation();
-  construct_quotient_dfa_from_equivalence(equiv_relation);
+//  equiv_relation = natural_approximation();
+//  construct_quotient_dfa_from_equivalence(equiv_relation);
 
-  equiv_relation = natural_approximation();
-  construct_quotient_dfa_from_equivalence(equiv_relation);
+//  equiv_relation = natural_approximation();
+//  construct_quotient_dfa_from_equivalence(equiv_relation);
 
   equiv_relation = natural_unification();
   construct_quotient_dfa_from_equivalence(equiv_relation);
