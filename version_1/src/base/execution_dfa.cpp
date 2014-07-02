@@ -1120,13 +1120,50 @@ static auto natural_approximation () -> state_pairs_t
   auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
   std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
 
-  auto equiv_rel = state_pairs_t(); auto local_equiv_rel = state_pairs_t();
+  auto equiv_rels = std::vector<state_pairs_t>(); auto new_equiv_rel = state_pairs_t();
+  std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_a)
+  {
+    std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_b)
+    {
+      if (!internal_dfa[state_a].empty() && !internal_dfa[state_b].empty())
+      {
+        if (!std::any_of(std::begin(equiv_rels), std::end(equiv_rels),
+                        [&](const state_pairs_t equiv_rel)
+        {
+          return std::find(std::begin(equiv_rel), std::end(equiv_rel),
+                           std::make_pair(state_a, state_b)) != std::end(equiv_rel);
+        }))
+        {
+          new_equiv_rel.clear();
+          if (check_approximation(new_equiv_rel, state_a, state_b))
+            equiv_rels.push_back(new_equiv_rel);
+        }
+      }
+    });
+  });
+
+  return *std::max_element(std::begin(equiv_rels), std::end(equiv_rels),
+                          [&](const state_pairs_t& equiv_rel_a, const state_pairs_t& equiv_rel_b)
+  {
+    return equiv_rel_a.size() < equiv_rel_b.size();
+  });
 }
 
 
+/**
+ * @brief execution_dfa::co_optimize
+ */
 auto execution_dfa::co_optimize () -> void
 {
   auto equiv_relation = natural_equivalence();
+  construct_quotient_dfa_from_equivalence(equiv_relation);
+  return;
+}
+
+
+auto execution_dfa::co_approximate () -> void
+{
+  auto equiv_relation = natural_approximation();
   construct_quotient_dfa_from_equivalence(equiv_relation);
   return;
 }

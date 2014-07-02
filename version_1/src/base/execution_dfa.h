@@ -23,6 +23,7 @@ public:
   auto approximate          ()                                    -> void;
 
   auto co_optimize          ()                                    -> void;
+  auto co_approximate       ()                                    -> void;
 
   auto save_to_file         (const std::string& filename)         -> void;
 };
