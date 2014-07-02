@@ -1019,8 +1019,8 @@ static auto natural_equivalence () -> state_pairs_t
           std::for_each(std::begin(local_equiv_rel), std::end(local_equiv_rel),
                         [&](const state_pair_t& equiv_pair)
           {
-            if (std::find(std::begin(equiv_rel),
-                          std::end(equiv_rel), equiv_pair) == std::end(equiv_rel))
+            if (std::find(std::begin(equiv_rel), std::end(equiv_rel),
+                          equiv_pair) == std::end(equiv_rel))
               equiv_rel.push_back(equiv_pair);
           });
         }
