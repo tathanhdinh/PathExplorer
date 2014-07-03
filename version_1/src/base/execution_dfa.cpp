@@ -1048,9 +1048,11 @@ static auto check_approximation (state_pairs_t& equiv_rel,
     return (state_a == state_b);
   };
 
-  auto one_is_unknown = [](dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> bool
+  auto one_is_least = [](dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> bool
   {
-    return (internal_dfa[state_a].empty() || internal_dfa[state_b].empty());
+    return (internal_dfa[state_a].empty() || internal_dfa[state_b].empty() ||
+            boost::out_degree(state_a, internal_dfa) == 0 ||
+            boost::out_degree(state_b, internal_dfa) == 0);
   };
 
   auto are_isomorphic = [](dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> bool
@@ -1084,7 +1086,7 @@ static auto check_approximation (state_pairs_t& equiv_rel,
     else
     {
       auto ab_isomorphic = are_isomorphic(state_a, state_b);
-      auto a_or_b_unknown = one_is_unknown(state_a, state_b);
+      auto a_or_b_unknown = one_is_least(state_a, state_b);
 
       if (a_or_b_unknown || ab_isomorphic)
       {
@@ -1196,7 +1198,7 @@ static auto natural_unification () -> state_pairs_t
 }
 
 
-static auto simplify_transitions () -> void
+static auto pre_process_least_states () -> void
 {
   auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
   std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
@@ -1207,6 +1209,14 @@ static auto simplify_transitions () -> void
     {
       auto first_trans_iter = dfa_out_edge_iter(); auto last_trans_iter = dfa_out_edge_iter();
       std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(state, internal_dfa);
+
+      if (std::all_of(first_trans_iter, last_trans_iter, [](dfa_edge_desc trans)
+      {
+        return internal_dfa[boost::target(trans, internal_dfa)].empty();
+      }))
+      {
+        boost::remove_out_edge_if(state, [](dfa_edge_desc trans) { return true; }, internal_dfa);
+      }
     }
 
 //    auto trans_to_empty = dfa_edge_descs();
@@ -1254,7 +1264,7 @@ auto execution_dfa::co_optimize () -> void
 
 auto execution_dfa::co_approximate () -> void
 {
-//  simplify_transitions();
+  pre_process_least_states();
 
   auto equiv_relation = state_pairs_t();
   while (true)
