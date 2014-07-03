@@ -186,12 +186,12 @@ auto stop_exploring (INT32 code, VOID *data) -> VOID
   tfm::format(std::cerr, "saving raw DFA to file\n");
   abstracted_dfa->save_to_file("raw_" + process_id_str + ".dot");
 
-  tfm::format(std::cerr, "optimizing raw DFA\n");
+//  tfm::format(std::cerr, "optimizing raw DFA\n");
 //  abstracted_dfa->optimize();
-  abstracted_dfa->co_optimize();
+//  abstracted_dfa->co_optimize();
 
-  tfm::format(std::cerr, "saving optimized DFA to file\n");
-  abstracted_dfa->save_to_file("optimized_" + process_id_str + ".dot");
+//  tfm::format(std::cerr, "saving optimized DFA to file\n");
+//  abstracted_dfa->save_to_file("optimized_" + process_id_str + ".dot");
 
   tfm::format(std::cerr, "abstracting DFA\n");
 //  abstracted_dfa->approximate();
