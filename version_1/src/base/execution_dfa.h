@@ -19,8 +19,8 @@ public:
 
   auto add_exec_paths       (const ptr_exec_paths_t& exec_paths)  -> void;
 
-  auto optimize             ()                                    -> void;
-  auto approximate          ()                                    -> void;
+//  auto optimize             ()                                    -> void;
+//  auto approximate          ()                                    -> void;
 
   auto co_optimize          ()                                    -> void;
   auto co_approximate       ()                                    -> void;
