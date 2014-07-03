@@ -1140,9 +1140,9 @@ static auto check_approximation (state_pairs_t& equiv_rel,
   if (continue_checking)
   {
     auto new_pair = std::pair<dfa_vertex_desc, dfa_vertex_desc>();
-    if (!is_not_transitive(equiv_rel, new_pair)) return true;
-    else return check_approximation(equiv_rel,
-                                    std::get<0>(new_pair), std::get<1>(new_pair));
+    if (is_not_transitive(equiv_rel, new_pair))
+      return check_approximation(equiv_rel, std::get<0>(new_pair), std::get<1>(new_pair));
+    else return true;
   }
   else return false;
 }
