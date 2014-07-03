@@ -1095,22 +1095,11 @@ static auto check_approximation (state_pairs_t& equiv_rel,
   };
 
   //==== function starts here
-  auto new_pair = std::pair<dfa_vertex_desc, dfa_vertex_desc>();
+  auto continue_checking = true;
   if (std::find(std::begin(equiv_rel), std::end(equiv_rel),
-                std::make_pair(state_a, state_b)) != std::end(equiv_rel))
+                std::make_pair(state_a, state_b)) == std::end(equiv_rel))
   {
-    if (!is_not_transitive(equiv_rel, new_pair)) return true;
-    else return check_approximation(equiv_rel, std::get<0>(new_pair), std::get<1>(new_pair));
-  }
-  else
-  {
-    if (are_identical(state_a, state_b))
-    {
-      equiv_rel.push_back(std::make_pair(state_a, state_b));
-
-      if (!is_not_transitive(equiv_rel, new_pair)) return true;
-      else return check_approximation(equiv_rel, std::get<0>(new_pair), std::get<1>(new_pair));
-    }
+    if (are_identical(state_a, state_b)) equiv_rel.push_back(std::make_pair(state_a, state_b));
     else
     {
       auto ab_isomorphic = are_isomorphic(state_a, state_b);
@@ -1121,7 +1110,6 @@ static auto check_approximation (state_pairs_t& equiv_rel,
         equiv_rel.push_back(std::make_pair(state_a, state_b));
         equiv_rel.push_back(std::make_pair(state_b, state_a));
 
-        auto can_continue = true;
         if (ab_isomorphic && !a_or_b_unknown)
         {
           auto first_trans_a_iter = dfa_out_edge_iter();
@@ -1132,8 +1120,8 @@ static auto check_approximation (state_pairs_t& equiv_rel,
           auto last_trans_b_iter = dfa_out_edge_iter();
           std::tie(first_trans_b_iter, last_trans_b_iter) = boost::out_edges(state_b, internal_dfa);
 
-          can_continue = std::all_of(first_trans_a_iter,
-                                     last_trans_a_iter, [&](dfa_edge_desc trans_a)
+          continue_checking = std::all_of(first_trans_a_iter,
+                                          last_trans_a_iter, [&](dfa_edge_desc trans_a)
           {
             return std::any_of(first_trans_b_iter, last_trans_b_iter, [&](dfa_edge_desc trans_b)
             {
@@ -1144,18 +1132,19 @@ static auto check_approximation (state_pairs_t& equiv_rel,
             });
           });
         }
-
-        if (can_continue)
-        {
-          if (!is_not_transitive(equiv_rel, new_pair)) return true;
-          else return check_approximation(equiv_rel,
-                                          std::get<0>(new_pair), std::get<1>(new_pair));
-        }
-        else return false;
       }
       else return false;
     }
   }
+
+  if (continue_checking)
+  {
+    auto new_pair = std::pair<dfa_vertex_desc, dfa_vertex_desc>();
+    if (!is_not_transitive(equiv_rel, new_pair)) return true;
+    else return check_approximation(equiv_rel,
+                                    std::get<0>(new_pair), std::get<1>(new_pair));
+  }
+  else return false;
 }
 
 /**
