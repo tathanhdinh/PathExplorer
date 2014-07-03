@@ -1060,6 +1060,41 @@ static auto check_approximation (state_pairs_t& equiv_rel,
     });
   }; // end of is_not_transitive lambda
 
+  //==== state comparison functions
+  auto are_identical = [](dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> bool
+  {
+    return (state_a == state_b);
+  };
+
+  auto one_is_unknown = [](dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> bool
+  {
+    return (internal_dfa[state_a].empty() || internal_dfa[state_b].empty());
+  };
+
+  auto are_isomorphic = [](dfa_vertex_desc state_a, dfa_vertex_desc state_b) -> bool
+  {
+    if (internal_dfa[state_a].empty() || internal_dfa[state_b].empty())
+    {
+      auto first_trans_a_iter = dfa_out_edge_iter();
+      auto last_trans_a_iter = dfa_out_edge_iter();
+      std::tie(first_trans_a_iter, last_trans_a_iter) = boost::out_edges(state_a, internal_dfa);
+
+      auto first_trans_b_iter = dfa_out_edge_iter();
+      auto last_trans_b_iter = dfa_out_edge_iter();
+      std::tie(first_trans_b_iter, last_trans_b_iter) = boost::out_edges(state_b, internal_dfa);
+
+      return std::all_of(first_trans_a_iter, last_trans_a_iter, [&](dfa_edge_desc trans_a)
+      {
+        return std::any_of(first_trans_b_iter, last_trans_b_iter, [&](dfa_edge_desc trans_b)
+        {
+          return two_vmaps_are_isomorphic(internal_dfa[trans_a], internal_dfa[trans_b]);
+        });
+      });
+    }
+    else return false;
+  };
+
+  //==== function starts here
   auto new_pair = std::pair<dfa_vertex_desc, dfa_vertex_desc>();
   if (std::find(std::begin(equiv_rel), std::end(equiv_rel),
                 std::make_pair(state_a, state_b)) != std::end(equiv_rel))
@@ -1069,7 +1104,7 @@ static auto check_approximation (state_pairs_t& equiv_rel,
   }
   else
   {
-    if (state_a == state_b)
+    if (are_identical(state_a, state_b))
     {
       equiv_rel.push_back(std::make_pair(state_a, state_b));
 
@@ -1078,28 +1113,27 @@ static auto check_approximation (state_pairs_t& equiv_rel,
     }
     else
     {
-      if (boost::out_degree(state_a, internal_dfa) == boost::out_degree(state_b, internal_dfa))
+      auto ab_isomorphic = are_isomorphic(state_a, state_b);
+      auto a_or_b_unknown = one_is_unknown(state_a, state_b);
+
+      if (a_or_b_unknown || ab_isomorphic)
       {
-        auto first_trans_a_iter = dfa_out_edge_iter();
-        auto last_trans_a_iter = dfa_out_edge_iter();
-        std::tie(first_trans_a_iter, last_trans_a_iter) = boost::out_edges(state_a, internal_dfa);
+        equiv_rel.push_back(std::make_pair(state_a, state_b));
+        equiv_rel.push_back(std::make_pair(state_b, state_a));
 
-        auto first_trans_b_iter = dfa_out_edge_iter();
-        auto last_trans_b_iter = dfa_out_edge_iter();
-        std::tie(first_trans_b_iter, last_trans_b_iter) = boost::out_edges(state_b, internal_dfa);
-
-        if (std::all_of(first_trans_a_iter, last_trans_a_iter, [&](dfa_edge_desc trans_a)
+        auto can_continue = true;
+        if (ab_isomorphic && !a_or_b_unknown)
         {
-          return std::any_of(first_trans_b_iter, last_trans_b_iter, [&](dfa_edge_desc trans_b)
-          {
-            return two_vmaps_are_isomorphic(internal_dfa[trans_a], internal_dfa[trans_b]);
-          });
-        }))
-        {
-          equiv_rel.push_back(std::make_pair(state_a, state_b));
-          equiv_rel.push_back(std::make_pair(state_b, state_a));
+          auto first_trans_a_iter = dfa_out_edge_iter();
+          auto last_trans_a_iter = dfa_out_edge_iter();
+          std::tie(first_trans_a_iter, last_trans_a_iter) = boost::out_edges(state_a, internal_dfa);
 
-          return std::all_of(first_trans_a_iter, last_trans_a_iter, [&](dfa_edge_desc trans_a)
+          auto first_trans_b_iter = dfa_out_edge_iter();
+          auto last_trans_b_iter = dfa_out_edge_iter();
+          std::tie(first_trans_b_iter, last_trans_b_iter) = boost::out_edges(state_b, internal_dfa);
+
+          can_continue = std::all_of(first_trans_a_iter,
+                                     last_trans_a_iter, [&](dfa_edge_desc trans_a)
           {
             return std::any_of(first_trans_b_iter, last_trans_b_iter, [&](dfa_edge_desc trans_b)
             {
@@ -1110,21 +1144,16 @@ static auto check_approximation (state_pairs_t& equiv_rel,
             });
           });
         }
-        else return false;
-      }
-      else
-      {
-        if (internal_dfa[state_a].empty() || internal_dfa[state_b].empty())
-        {
-          equiv_rel.push_back(std::make_pair(state_a, state_b));
-          equiv_rel.push_back(std::make_pair(state_b, state_a));
 
+        if (can_continue)
+        {
           if (!is_not_transitive(equiv_rel, new_pair)) return true;
           else return check_approximation(equiv_rel,
                                           std::get<0>(new_pair), std::get<1>(new_pair));
         }
         else return false;
       }
+      else return false;
     }
   }
 }
@@ -1176,6 +1205,10 @@ static auto natural_approximation () -> state_pairs_t
 }
 
 
+/**
+ * @brief natural_unification
+ * @return
+ */
 static auto natural_unification () -> state_pairs_t
 {
   auto equiv_rel = state_pairs_t();
@@ -1197,6 +1230,49 @@ static auto natural_unification () -> state_pairs_t
   return equiv_rel;
 }
 
+
+static auto simplify_transitions () -> void
+{
+  auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
+  std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
+
+  std::for_each(first_vertex_iter, last_vertex_iter, [](dfa_vertex_desc state)
+  {
+    if (!internal_dfa[state].empty())
+    {
+      auto first_trans_iter = dfa_out_edge_iter(); auto last_trans_iter = dfa_out_edge_iter();
+      std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(state, internal_dfa);
+    }
+
+//    auto trans_to_empty = dfa_edge_descs();
+//    std::copy_if(first_trans_iter, last_trans_iter, std::back_inserter(trans_to_empty),
+//                 [](dfa_edge_desc trans)
+//    {
+//      return internal_dfa[boost::target(trans, internal_dfa)].empty();
+//    });
+
+//    if (trans_to_empty.size() > 1)
+//    {
+//      auto accumulated_trans_label = dfa_edge();
+//      std::for_each(std::begin(trans_to_empty), std::end(trans_to_empty),
+//                    [&accumulated_trans_label](dfa_edge_desc trans)
+//      {
+//        accumulated_trans_label.insert(std::end(accumulated_trans_label),
+//                                       std::begin(internal_dfa[trans]),
+//                                       std::end(internal_dfa[trans]));
+//      });
+
+//      internal_dfa[trans_to_empty.front()] = accumulated_trans_label;
+//      auto selected_target = boost::target(trans_to_empty.front(), internal_dfa);
+//      boost::remove_out_edge_if(state, [&selected_target](dfa_edge_desc trans)
+//      {
+//        return boost::target(trans, internal_dfa) != selected_target;
+//      }, internal_dfa);
+//    }
+  });
+  return;
+}
+
 /**
  * @brief execution_dfa::co_optimize
  */
@@ -1213,6 +1289,8 @@ auto execution_dfa::co_optimize () -> void
 
 auto execution_dfa::co_approximate () -> void
 {
+//  simplify_transitions();
+
   auto equiv_relation = state_pairs_t();
   while (true)
   {
@@ -1311,27 +1389,6 @@ auto execution_dfa::approximate () -> void
                     internal_dfa[boost::target(*trans_b_iter, internal_dfa)].empty() : false;
             }
           });
-
-//          if (approximable)
-//          {
-//            tfm::format(std::cerr, "approximable pair found\n");
-//            tfm::format(std::cerr, "state a: \n");
-//            std::for_each(std::begin(internal_dfa[state_a]), std::end(internal_dfa[state_a]),
-//                          [&](dfa_vertex::const_reference cfi)
-//            {
-//              tfm::format(std::cerr, "%s: %s\n",
-//                          addrint_to_hexstring(cfi->address), cfi->disassembled_name);
-//            });
-//            tfm::format(std::cerr, "state b: \n");
-//            std::for_each(std::begin(internal_dfa[state_b]), std::end(internal_dfa[state_b]),
-//                          [&](dfa_vertex::const_reference cfi)
-//            {
-//              tfm::format(std::cerr, "%s: %s\n",
-//                          addrint_to_hexstring(cfi->address), cfi->disassembled_name);
-//            });
-//            if (internal_dfa[state_a].size() == 1 && internal_dfa[state_b].size() == 2) std::exit(1);
-//          }
-//          return approximable;
         }
       }
     };
@@ -1398,25 +1455,6 @@ auto execution_dfa::approximate () -> void
                           (approx_relation.at(std::make_pair(state_a, state_c)) == more_than) &&
                           (approx_relation.at(std::make_pair(state_c, state_b)) == more_than));
                 });
-
-//            if (is_direct_connected[std::make_pair(state_a, state_b)])
-//            {
-//              tfm::format(std::cerr, "direct approximable pair found\n");
-//              tfm::format(std::cerr, "state a: \n");
-//              std::for_each(std::begin(internal_dfa[state_a]), std::end(internal_dfa[state_a]),
-//                            [&](dfa_vertex::const_reference cfi)
-//              {
-//                tfm::format(std::cerr, "%s: %s\n",
-//                            addrint_to_hexstring(cfi->address), cfi->disassembled_name);
-//              });
-//              tfm::format(std::cerr, "state b: \n");
-//              std::for_each(std::begin(internal_dfa[state_b]), std::end(internal_dfa[state_b]),
-//                            [&](dfa_vertex::const_reference cfi)
-//              {
-//                tfm::format(std::cerr, "%s: %s\n",
-//                            addrint_to_hexstring(cfi->address), cfi->disassembled_name);
-//              });
-//            }
           }
         });
       });
