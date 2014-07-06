@@ -1888,10 +1888,44 @@ auto execution_dfa::co_approximate () -> void
  */
 auto execution_dfa::save_to_file (const std::string& filename) -> void
 {
+  auto transition_label = [](const addrint_value_maps_t& trans_cond) -> std::string
+  {
+    auto label = std::string("\"{ ");
+
+    auto sub_label_out = std::stringstream();
+    auto range_begin = std::begin(trans_cond); auto range_end = range_begin;
+    auto range_elem = range_end;
+
+    while (range_end != std::end(trans_cond))
+    {
+      while (true && (++range_elem != std::end(trans_cond)))
+      {
+        if (std::get<1>(*std::begin(*range_elem)) == (std::get<1>(*std::begin(*range_end)) + 1))
+          range_end = range_elem;
+        else break;
+      }
+
+      sub_label_out.str(std::string()); sub_label_out.clear();
+      if (range_end == range_begin)
+        tfm::format(sub_label_out, "%d ", std::get<1>(*std::begin(*range_begin)));
+      else
+        tfm::format(sub_label_out, "[%d-%d] ",
+                    std::get<1>(*std::begin(*range_begin)), std::get<1>(*std::begin(*range_end)));
+
+      label += sub_label_out.str();
+
+      range_begin = range_elem; range_end = range_begin;
+    }
+
+    label += "}";
+
+    return label;
+  };
+
   auto write_dfa_transition = [](std::ostream& label, dfa_edge_desc trans) -> void
   {
     auto trans_cond = internal_dfa[trans];
-    if (trans_cond.size() <= 2)
+    if (trans_cond.size() <= 3)
     {
       tfm::format(label, "[label=\"{ ");
       std::for_each(std::begin(trans_cond), std::end(trans_cond),

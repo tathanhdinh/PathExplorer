@@ -215,8 +215,9 @@ static inline auto network_related_intercept (IMG& loaded_img) -> void
   static std::locale current_loc;
   static auto lowercase_convertion = [&](char c) -> char { return std::tolower(c, current_loc); };
 
-  auto img_name = IMG_Name(loaded_img); std::transform(img_name.begin(), img_name.end(),
-                                                       img_name.begin(), lowercase_convertion);
+  auto img_name = IMG_Name(loaded_img);
+  std::transform(img_name.begin(), img_name.end(), img_name.begin(), lowercase_convertion);
+
   if ((img_name.find("ws2_32.dll") != std::string::npos) ||
       (img_name.find("wininet.dll") != std::string::npos))
   {

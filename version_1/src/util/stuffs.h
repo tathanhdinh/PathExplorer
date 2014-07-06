@@ -41,4 +41,6 @@ auto show_exploring_progress    () -> void;
 
 auto show_cfi_logged_inputs     () -> void;
 
+auto reopen_console             () -> void;
+
 #endif // STUFFS_H

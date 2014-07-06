@@ -415,3 +415,29 @@ static auto save_path_condition (const conditions_t& cond, const std::string& fi
 
   return;
 }
+
+
+namespace WINDOWS
+{
+#include <Windows.h>
+#include <Psapi.h>
+#include <io.h>
+}
+
+auto reopen_console () -> void
+{
+  int hCrt;
+  FILE *hf;
+  WINDOWS::COORD newSize;
+
+  //WINDOWS::AllocConsole();
+  if (WINDOWS::AttachConsole((WINDOWS::DWORD)-1))
+  {
+    // AttachConsole(ATTACH_PARENT_PROCESS)
+    hCrt = WINDOWS::_open_osfhandle((long)
+    WINDOWS::GetStdHandle((WINDOWS::DWORD)-11),0);
+//    (WINDOWS::STD_OUTPUT_HANDLE), WINDOWS::_O_TEXT);
+    hf = _fdopen(hCrt, "w"); *stdout = *hf; setvbuf(stdout, NULL, _IONBF, 0);
+  }
+  return;
+}
