@@ -2,6 +2,7 @@
 #include "../util/stuffs.h"
 
 #include <numeric>
+#include <locale>
 #include <boost/graph/graphviz.hpp>
 
 typedef ptr_cond_direct_inss_t                                dfa_vertex;
@@ -131,19 +132,19 @@ auto execution_dfa::add_exec_paths (const ptr_exec_paths_t& exec_paths) -> void
 /**
  * @brief merge_state_contents
  */
-static auto merge_state_contents (const dfa_vertex& content_a,
-                                  const dfa_vertex& content_b) -> dfa_vertex
-{
-  auto merged_content = content_a;
-  std::for_each(std::begin(content_b), std::end(content_b),
-                [&merged_content](dfa_vertex::const_reference sub_content)
-  {
-    if (std::find(std::begin(merged_content),
-                  std::end(merged_content), sub_content) == std::end(merged_content))
-      merged_content.push_back(sub_content);
-  });
-  return merged_content;
-}
+//static auto merge_state_contents (const dfa_vertex& content_a,
+//                                  const dfa_vertex& content_b) -> dfa_vertex
+//{
+//  auto merged_content = content_a;
+//  std::for_each(std::begin(content_b), std::end(content_b),
+//                [&merged_content](dfa_vertex::const_reference sub_content)
+//  {
+//    if (std::find(std::begin(merged_content),
+//                  std::end(merged_content), sub_content) == std::end(merged_content))
+//      merged_content.push_back(sub_content);
+//  });
+//  return merged_content;
+//}
 
 
 /**
@@ -743,6 +744,21 @@ auto static construct_quotient_dfa_from_equivalence (const state_pairs_t& state_
 
   auto add_representatives = [](const dfa_vertex_partition_t& state_parts) -> state_states_map_t
   {
+    auto merge_state_contents =
+        [](const dfa_vertex& content_a, const dfa_vertex& content_b) -> dfa_vertex
+    {
+      auto merged_content = content_a;
+      std::for_each(std::begin(content_b), std::end(content_b),
+                    [&merged_content](dfa_vertex::const_reference sub_content)
+      {
+        if (std::find(std::begin(merged_content),
+                      std::end(merged_content), sub_content) == std::end(merged_content))
+          merged_content.push_back(sub_content);
+      });
+
+      return merged_content;
+    };
+
     auto rep_equivs = state_states_map_t();
 
     std::for_each(std::begin(state_parts), std::end(state_parts),
@@ -1898,16 +1914,21 @@ auto execution_dfa::save_to_file (const std::string& filename) -> void
     });
     std::sort(std::begin(trans_values), std::end(trans_values));
 
-//    if (trans_values.size() >= std::numeric_limits<UINT8>::max() - 3)
-//    {
-//      auto supp_values = std::vector<UINT8>();
-//      for (auto i = 0; i <= std::numeric_limits<UINT8>::max(); ++i)
-//      {
-//        std::
-//      }
-//    }
-
     auto label = std::string("{ ");
+    if (trans_values.size() >= std::numeric_limits<UINT8>::max() - 3)
+    {
+      auto supp_values = std::vector<UINT8>();
+      supp_values.reserve(std::numeric_limits<UINT8>::max() - trans_values.size() + 1);
+      for (auto i = 0; i <= std::numeric_limits<UINT8>::max(); ++i)
+      {
+        if (std::find(std::begin(trans_values),
+                      std::end(trans_values), i) == std::end(trans_values))
+        {
+          supp_values.push_back(i);
+        }
+      }
+      trans_values = supp_values; label = "!" + label;
+    }
 
     auto sub_label_out = std::stringstream();
     auto range_begin = std::begin(trans_values); auto range_end = range_begin;
@@ -1923,9 +1944,9 @@ auto execution_dfa::save_to_file (const std::string& filename) -> void
 
       sub_label_out.str(std::string()); sub_label_out.clear();
       if (range_end == range_begin)
-        tfm::format(sub_label_out, "%d ", *range_begin);
-      else
-        tfm::format(sub_label_out, "[%d-%d] ", *range_begin, *range_end);
+        if (isgraph(*range_begin) != 0) tfm::format(sub_label_out, "%c ", *range_begin);
+        else tfm::format(sub_label_out, "%d ", *range_begin);
+      else tfm::format(sub_label_out, "[%d-%d] ", *range_begin, *range_end);
 
       label += sub_label_out.str();
 
