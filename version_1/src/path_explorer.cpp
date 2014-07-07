@@ -112,7 +112,7 @@ auto start_exploring (VOID *data) -> VOID
   process_id                = PIN_GetPid();
   process_id_str            = std::to_string(static_cast<long long>(process_id));
 
-  reopen_console();
+//  reopen_console();
 
   log_file.open(process_id_str + "_path_explorer.log", std::ofstream::out | std::ofstream::trunc);
   if (!log_file) PIN_ExitProcess(1);

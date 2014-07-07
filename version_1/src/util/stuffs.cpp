@@ -417,27 +417,29 @@ static auto save_path_condition (const conditions_t& cond, const std::string& fi
 }
 
 
-namespace WINDOWS
+#if defined(_WIN32) || defined(_WIN64)
+namespace windows
 {
 #include <Windows.h>
 #include <Psapi.h>
 #include <io.h>
-}
+#include <fcntl.h>
 
 auto reopen_console () -> void
 {
-  int hCrt;
-  FILE *hf;
-  WINDOWS::COORD newSize;
-
-  //WINDOWS::AllocConsole();
-  if (WINDOWS::AttachConsole((WINDOWS::DWORD)-1))
+  // attach to the console of the current cmd process
+  if (AttachConsole(ATTACH_PARENT_PROCESS))
   {
-    // AttachConsole(ATTACH_PARENT_PROCESS)
-    hCrt = WINDOWS::_open_osfhandle((long)
-    WINDOWS::GetStdHandle((WINDOWS::DWORD)-11),0);
-//    (WINDOWS::STD_OUTPUT_HANDLE), WINDOWS::_O_TEXT);
-    hf = _fdopen(hCrt, "w"); *stdout = *hf; setvbuf(stdout, NULL, _IONBF, 0);
+    auto out_desc = _open_osfhandle(reinterpret_cast<intptr_t>(GetStdHandle(STD_OUTPUT_HANDLE)),
+                                    _O_TEXT);
+    *stdout = *_fdopen(out_desc, "w"); setvbuf(stdout, NULL, _IONBF, 0);
+
+    auto err_desc = _open_osfhandle(reinterpret_cast<intptr_t>(GetStdHandle(STD_ERROR_HANDLE)),
+                                    _O_TEXT);
+    *stderr = *_fdopen(err_desc, "w"); setvbuf(stderr, NULL, _IONBF, 0);
   }
   return;
 }
+
+} // end of namespace windows
+#endif

@@ -1888,29 +1888,44 @@ auto execution_dfa::co_approximate () -> void
  */
 auto execution_dfa::save_to_file (const std::string& filename) -> void
 {
-  auto transition_label = [](const addrint_value_maps_t& trans_cond) -> std::string
+  auto transition_label = [](const dfa_edge& trans_cond) -> std::string
   {
-    auto label = std::string("\"{ ");
+    auto trans_values = std::vector<UINT8>(); trans_values.reserve(trans_cond.size());
+    std::for_each(std::begin(trans_cond), std::end(trans_cond),
+                  [&trans_values](addrint_value_maps_t::const_reference trans_elem)
+    {
+      trans_values.push_back(std::get<1>(*std::begin(trans_elem)));
+    });
+    std::sort(std::begin(trans_values), std::end(trans_values));
+
+//    if (trans_values.size() >= std::numeric_limits<UINT8>::max() - 3)
+//    {
+//      auto supp_values = std::vector<UINT8>();
+//      for (auto i = 0; i <= std::numeric_limits<UINT8>::max(); ++i)
+//      {
+//        std::
+//      }
+//    }
+
+    auto label = std::string("{ ");
 
     auto sub_label_out = std::stringstream();
-    auto range_begin = std::begin(trans_cond); auto range_end = range_begin;
+    auto range_begin = std::begin(trans_values); auto range_end = range_begin;
     auto range_elem = range_end;
 
-    while (range_end != std::end(trans_cond))
+    while (range_end != std::end(trans_values))
     {
-      while (true && (++range_elem != std::end(trans_cond)))
+      while (++range_elem != std::end(trans_values))
       {
-        if (std::get<1>(*std::begin(*range_elem)) == (std::get<1>(*std::begin(*range_end)) + 1))
-          range_end = range_elem;
+        if (*range_elem == *range_end + 1) range_end = range_elem;
         else break;
       }
 
       sub_label_out.str(std::string()); sub_label_out.clear();
       if (range_end == range_begin)
-        tfm::format(sub_label_out, "%d ", std::get<1>(*std::begin(*range_begin)));
+        tfm::format(sub_label_out, "%d ", *range_begin);
       else
-        tfm::format(sub_label_out, "[%d-%d] ",
-                    std::get<1>(*std::begin(*range_begin)), std::get<1>(*std::begin(*range_end)));
+        tfm::format(sub_label_out, "[%d-%d] ", *range_begin, *range_end);
 
       label += sub_label_out.str();
 
@@ -1922,87 +1937,126 @@ auto execution_dfa::save_to_file (const std::string& filename) -> void
     return label;
   };
 
-  auto write_dfa_transition = [](std::ostream& label, dfa_edge_desc trans) -> void
+  auto write_dfa_transition = [&transition_label](std::ostream& label, dfa_edge_desc trans) -> void
   {
     auto trans_cond = internal_dfa[trans];
-    if (trans_cond.size() <= 3)
-    {
-      tfm::format(label, "[label=\"{ ");
-      std::for_each(std::begin(trans_cond), std::end(trans_cond),
-                    [&label](decltype(trans_cond)::const_reference trans_elem)
-      {
-        std::for_each(trans_elem.begin(), trans_elem.end(),
-                      [&](addrint_value_map_t::const_reference addr_val)
-        {
-          tfm::format(label, "%d ", std::get<1>(addr_val));
-        });
-      });
-      tfm::format(label, "%s", "}\"]");
-    }
-    else
-    {
-      tfm::format(label, "[label=\"!{ ");
+    tfm::format(label, "[label=\"%s\"]", transition_label(trans_cond));
 
-      auto value_exists = [&trans_cond](UINT8 value) -> bool
-      {
-        return std::any_of(std::begin(trans_cond), std::end(trans_cond),
-                           [&value](addrint_value_maps_t::const_reference trans_elem)
-        {
-          return std::any_of(trans_elem.begin(), trans_elem.end(),
-                             [&](addrint_value_map_t::const_reference addr_val)
-          {
-            return (std::get<1>(addr_val) == value);
-          });
-        });
-      };
+//    if (trans_cond.size() <= 3)
+//    {
+//      tfm::format(label, "[label=\"{ ");
+//      std::for_each(std::begin(trans_cond), std::end(trans_cond),
+//                    [&label](decltype(trans_cond)::const_reference trans_elem)
+//      {
+//        std::for_each(trans_elem.begin(), trans_elem.end(),
+//                      [&](addrint_value_map_t::const_reference addr_val)
+//        {
+//          tfm::format(label, "%d ", std::get<1>(addr_val));
+//        });
+//      });
+//      tfm::format(label, "%s", "}\"]");
+//    }
+//    else
+//    {
+//      tfm::format(label, "[label=\"!{ ");
 
-      for (auto val = 0; val <= std::numeric_limits<UINT8>::max(); ++val)
-      {
-        if (!value_exists(val)) tfm::format(label, "%d ", val);
-      }
-      tfm::format(label, "}\"]");
-    }
+//      auto value_exists = [&trans_cond](UINT8 value) -> bool
+//      {
+//        return std::any_of(std::begin(trans_cond), std::end(trans_cond),
+//                           [&value](addrint_value_maps_t::const_reference trans_elem)
+//        {
+//          return std::any_of(trans_elem.begin(), trans_elem.end(),
+//                             [&](addrint_value_map_t::const_reference addr_val)
+//          {
+//            return (std::get<1>(addr_val) == value);
+//          });
+//        });
+//      };
+
+//      for (auto val = 0; val <= std::numeric_limits<UINT8>::max(); ++val)
+//      {
+//        if (!value_exists(val)) tfm::format(label, "%d ", val);
+//      }
+//      tfm::format(label, "}\"]");
+//    }
 
     return;
   };
 
-  auto write_dfa_state = [](std::ostream& label, dfa_vertex_desc state) -> void
+  auto state_label = [](const dfa_vertex& state_val) -> std::string
   {
-    auto simplified_state_value = [](const dfa_vertex& state_value) -> dfa_vertex
+    auto label = std::string("");
+
+    auto simple_val = dfa_vertex();
+    if (!state_val.empty())
     {
-      auto simplified_value = dfa_vertex();
-      std::for_each(std::begin(state_value), std::end(state_value),
-                    [&](dfa_vertex::const_reference cfi)
+      std::for_each(std::begin(state_val), std::end(state_val), [&](dfa_vertex::const_reference cfi)
       {
-        if (std::find_if(std::begin(simplified_value), std::end(simplified_value),
+        if (std::find_if(std::begin(simple_val), std::end(simple_val),
                          [&](dfa_vertex::const_reference stored_cfi)
         {
-          return (cfi->address == stored_cfi->address);
-        }) == std::end(simplified_value))
+          return (stored_cfi->address == cfi->address);
+        }) == std::end(simple_val))
         {
-          simplified_value.push_back(cfi);
+          simple_val.push_back(cfi);
         }
       });
-      return simplified_value;
-    };
+
+      auto label_out = std::stringstream();
+      std::for_each(std::begin(simple_val), std::end(simple_val),
+                    [&label_out](decltype(simple_val)::const_reference cfi)
+      {
+        tfm::format(label_out, "%s: %s\n", addrint_to_hexstring(cfi->address),
+                    cfi->disassembled_name);
+      });
+
+      label = label_out.str(); label.pop_back();
+    }
+    else label = "unknown";
+
+    return label;
+
+  }; // end of state_label_lambda
+
+  auto write_dfa_state = [&state_label](std::ostream& label, dfa_vertex_desc state) -> void
+  {
+//    auto simplified_state_value = [](const dfa_vertex& state_value) -> dfa_vertex
+//    {
+//      auto simplified_value = dfa_vertex();
+//      std::for_each(std::begin(state_value), std::end(state_value),
+//                    [&](dfa_vertex::const_reference cfi)
+//      {
+//        if (std::find_if(std::begin(simplified_value), std::end(simplified_value),
+//                         [&](dfa_vertex::const_reference stored_cfi)
+//        {
+//          return (cfi->address == stored_cfi->address);
+//        }) == std::end(simplified_value))
+//        {
+//          simplified_value.push_back(cfi);
+//        }
+//      });
+//      return simplified_value;
+//    };
 
     auto state_val = internal_dfa[state];
-    if (state_val.size() > 0)
-    {
-      state_val = simplified_state_value(state_val);
+    tfm::format(label, "[label=\"%s\"]", state_label(state_val));
 
-      tfm::format(label, "[label=\"");
-      std::for_each(state_val.begin(),
-                    state_val.end(), [&](decltype(state_val)::const_reference cfi)
-      {
-        tfm::format(label, "%s: %s\n", addrint_to_hexstring(cfi->address), cfi->disassembled_name);
-//        if (cfi != state_val.back()) tfm::format(label, "\n");
-      });
-      tfm::format(label, "\"]");
-//      tfm::format(label, "[label=\"<%s: %s>\"]", addrint_to_hexstring(state_val.front()->address),
-//                  state_val.front()->disassembled_name);
-    }
-    else tfm::format(label, "[label=\"unknown\"]");
+//    if (state_val.size() > 0)
+//    {
+//      state_val = simplified_state_value(state_val);
+
+//      tfm::format(label, "[label=\"");
+//      std::for_each(std::begin(state_val), std::end(state_val),
+//                    [&](decltype(state_val)::const_reference cfi)
+//      {
+//        tfm::format(label, "%s: %s\n", addrint_to_hexstring(cfi->address), cfi->disassembled_name);
+////        if (cfi != state_val.back()) tfm::format(label, "\n");
+//      });
+//      tfm::format(label, "\"]");
+////      tfm::format(label, "[label=\"<%s: %s>\"]", addrint_to_hexstring(state_val.front()->address),
+////                  state_val.front()->disassembled_name);
+//    }
+//    else tfm::format(label, "[label=\"unknown\"]");
     return;
   };
 

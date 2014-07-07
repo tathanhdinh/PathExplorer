@@ -41,6 +41,8 @@ auto show_exploring_progress    () -> void;
 
 auto show_cfi_logged_inputs     () -> void;
 
+#if defined(_WIN32) || defined(_WIN64)
 auto reopen_console             () -> void;
+#endif
 
 #endif // STUFFS_H
