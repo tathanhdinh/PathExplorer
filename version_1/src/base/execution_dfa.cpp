@@ -1226,12 +1226,15 @@ static auto pre_process_least_states () -> void
       auto first_trans_iter = dfa_out_edge_iter(); auto last_trans_iter = dfa_out_edge_iter();
       std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(state, internal_dfa);
 
-      if (std::all_of(first_trans_iter, last_trans_iter, [](dfa_edge_desc trans)
+      if (boost::out_degree(state, internal_dfa) == 3)
       {
-        return internal_dfa[boost::target(trans, internal_dfa)].empty();
-      }))
-      {
-        boost::remove_out_edge_if(state, [](dfa_edge_desc trans) { return true; }, internal_dfa);
+        if (std::all_of(first_trans_iter, last_trans_iter, [](dfa_edge_desc trans)
+        {
+          return internal_dfa[boost::target(trans, internal_dfa)].empty();
+        }))
+        {
+          boost::remove_out_edge_if(state, [](dfa_edge_desc trans) { return true; }, internal_dfa);
+        }
       }
     }
 
@@ -1309,8 +1312,8 @@ auto execution_dfa::co_approximate () -> void
 //  equiv_relation = natural_approximation();
 //  construct_quotient_dfa_from_equivalence(equiv_relation);
 
-  equiv_relation = natural_unification();
-  construct_quotient_dfa_from_equivalence(equiv_relation);
+//  equiv_relation = natural_unification();
+//  construct_quotient_dfa_from_equivalence(equiv_relation);
   return;
 }
 
