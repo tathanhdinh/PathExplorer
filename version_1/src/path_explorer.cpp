@@ -148,12 +148,13 @@ auto start_exploring (VOID *data) -> VOID
 auto stop_exploring (INT32 code, VOID *data) -> VOID
 {
   stop_time = std::time(0);
-  tfm::format(std::cerr, "%d seconds elapsed\n", stop_time - start_time);
+  tfm::format(std::cerr, "%d seconds elapsed for generating DFA\n", stop_time - start_time);
+  start_time = stop_time;
 
-  tfm::format(std::cerr, "calculating results\n");
+//  tfm::format(std::cerr, "calculating results\n");
 
-  tfm::format(std::cerr, "saving static trace\n");
-  save_static_trace(process_id_str + "_path_explorer_static_trace.log");
+//  tfm::format(std::cerr, "saving static trace\n");
+//  save_static_trace(process_id_str + "_path_explorer_static_trace.log");
 
 #if !defined(DISABLE_FSA)
   tfm::format(std::cerr, "extracting CFI tree\n");
@@ -162,8 +163,8 @@ auto stop_exploring (INT32 code, VOID *data) -> VOID
 //  tfm::format(std::cerr, "saving CFI inputs\n");
 //  save_cfi_inputs(process_id_str + "_cfi_inputs.log");
 
-  tfm::format(std::cerr, "saving all trees\n");
-  explored_fsa->save_to_file(process_id_str + "_path_explorer_explored_fsa.dot");
+//  tfm::format(std::cerr, "saving all trees\n");
+//  explored_fsa->save_to_file(process_id_str + "_path_explorer_explored_fsa.dot");
 #endif
 
   UINT32 resolved_cfi_num = 0, singular_cfi_num = 0;
@@ -201,6 +202,9 @@ auto stop_exploring (INT32 code, VOID *data) -> VOID
 
   tfm::format(std::cerr, "saving abstracted DFA to file\n");
   abstracted_dfa->save_to_file("abstracted_" + process_id_str + ".dot");
+
+  stop_time = std::time(0);
+  tfm::format(std::cerr, "%d seconds elapsed for abstracting DFA\n", stop_time - start_time);
 
   return;
 }

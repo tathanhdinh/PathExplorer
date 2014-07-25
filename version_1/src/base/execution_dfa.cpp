@@ -1226,8 +1226,8 @@ static auto pre_process_least_states () -> void
       auto first_trans_iter = dfa_out_edge_iter(); auto last_trans_iter = dfa_out_edge_iter();
       std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(state, internal_dfa);
 
-      if (boost::out_degree(state, internal_dfa) == 3)
-      {
+//      if (boost::out_degree(state, internal_dfa) == 3)
+//      {
         if (std::all_of(first_trans_iter, last_trans_iter, [](dfa_edge_desc trans)
         {
           return internal_dfa[boost::target(trans, internal_dfa)].empty();
@@ -1235,7 +1235,7 @@ static auto pre_process_least_states () -> void
         {
           boost::remove_out_edge_if(state, [](dfa_edge_desc trans) { return true; }, internal_dfa);
         }
-      }
+//      }
     }
 
 //    auto trans_to_empty = dfa_edge_descs();
@@ -1286,19 +1286,19 @@ auto execution_dfa::co_approximate () -> void
   pre_process_least_states();
 
   auto equiv_relation = state_pairs_t();
-  while (true)
-  {
-    equiv_relation = natural_approximation();
-    if (std::all_of(std::begin(equiv_relation), std::end(equiv_relation),
-                    [](decltype(equiv_relation)::const_reference state_pair)
-    {
-      return (std::get<0>(state_pair) == std::get<1>(state_pair));
-    })) break;
-    else construct_quotient_dfa_from_equivalence(equiv_relation);
-  }
+//  while (true)
+//  {
+//    equiv_relation = natural_approximation();
+//    if (std::all_of(std::begin(equiv_relation), std::end(equiv_relation),
+//                    [](decltype(equiv_relation)::const_reference state_pair)
+//    {
+//      return (std::get<0>(state_pair) == std::get<1>(state_pair));
+//    })) break;
+//    else construct_quotient_dfa_from_equivalence(equiv_relation);
+//  }
 
-//  equiv_relation = natural_approximation();
-//  construct_quotient_dfa_from_equivalence(equiv_relation);
+  equiv_relation = natural_approximation();
+  construct_quotient_dfa_from_equivalence(equiv_relation);
 
 //  equiv_relation = natural_approximation();
 //  construct_quotient_dfa_from_equivalence(equiv_relation);
@@ -1312,8 +1312,8 @@ auto execution_dfa::co_approximate () -> void
 //  equiv_relation = natural_approximation();
 //  construct_quotient_dfa_from_equivalence(equiv_relation);
 
-//  equiv_relation = natural_unification();
-//  construct_quotient_dfa_from_equivalence(equiv_relation);
+  equiv_relation = natural_unification();
+  construct_quotient_dfa_from_equivalence(equiv_relation);
   return;
 }
 
@@ -1949,6 +1949,11 @@ auto execution_dfa::save_to_file (const std::string& filename) -> void
       if (range_end == range_begin)
         if (isgraph(*range_begin) != 0) tfm::format(sub_label_out, "%c ", *range_begin);
         else tfm::format(sub_label_out, "%d ", *range_begin);
+//        {
+//          if (*range_begin == '\n') tfm::format(sub_label_out, "%s", "\\n");
+//          else if (*range_begin == '\r') tfm::format(sub_label_out, "%s", "\\r");
+//          tfm::format(sub_label_out, "%d ", *range_begin);
+//        }
       else tfm::format(sub_label_out, "[%d-%d] ", *range_begin, *range_end);
 
       label += sub_label_out.str();
@@ -2032,11 +2037,13 @@ auto execution_dfa::save_to_file (const std::string& filename) -> void
       {
         tfm::format(label_out, "%s: %s\n", addrint_to_hexstring(cfi->address),
                     cfi->disassembled_name);
+//        tfm::format(label_out, "%s\n", cfi->disassembled_name);
       });
 
       label = label_out.str(); label.pop_back();
     }
-    else label = "unknown";
+    else label = "ternminal";
+//    else label = "unknown";
 
     return label;
 
