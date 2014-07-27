@@ -1331,11 +1331,14 @@ auto execution_dfa::co_approximate () -> void
   equiv_relation = natural_approximation();
   construct_quotient_dfa_from_equivalence(equiv_relation);
 
-//  equiv_relation = natural_approximation();
-//  construct_quotient_dfa_from_equivalence(equiv_relation);
+  equiv_relation = natural_approximation();
+  construct_quotient_dfa_from_equivalence(equiv_relation);
 
 //  equiv_relation = natural_equivalence();
 //  construct_quotient_dfa_from_equivalence(equiv_relation);
+
+  equiv_relation = natural_approximation();
+  construct_quotient_dfa_from_equivalence(equiv_relation);
 
 //  equiv_relation = natural_approximation();
 //  construct_quotient_dfa_from_equivalence(equiv_relation);
