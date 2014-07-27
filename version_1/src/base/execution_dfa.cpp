@@ -997,35 +997,35 @@ static auto check_equivalence (state_pairs_t& equiv_rel,
  * @brief natural_equivalence
  * @return
  */
-static auto natural_equivalence () -> state_pairs_t
-{
-  auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
-  std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
+//static auto natural_equivalence () -> state_pairs_t
+//{
+//  auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
+//  std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
 
-  auto equiv_rel = state_pairs_t(); auto local_equiv_rel = state_pairs_t();
-  std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_a)
-  {
-    std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_b)
-    {
-      if (!internal_dfa[state_a].empty() && !internal_dfa[state_b].empty())
-      {
-        local_equiv_rel = equiv_rel;
-        if (check_equivalence(local_equiv_rel, state_a, state_b))
-        {
-          std::for_each(std::begin(local_equiv_rel), std::end(local_equiv_rel),
-                        [&](const state_pair_t& equiv_pair)
-          {
-            if (std::find(std::begin(equiv_rel), std::end(equiv_rel),
-                          equiv_pair) == std::end(equiv_rel))
-              equiv_rel.push_back(equiv_pair);
-          });
-        }
-      }
-    });
-  });
+//  auto equiv_rel = state_pairs_t(); auto local_equiv_rel = state_pairs_t();
+//  std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_a)
+//  {
+//    std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_b)
+//    {
+//      if (!internal_dfa[state_a].empty() && !internal_dfa[state_b].empty())
+//      {
+//        local_equiv_rel = equiv_rel;
+//        if (check_equivalence(local_equiv_rel, state_a, state_b))
+//        {
+//          std::for_each(std::begin(local_equiv_rel), std::end(local_equiv_rel),
+//                        [&](const state_pair_t& equiv_pair)
+//          {
+//            if (std::find(std::begin(equiv_rel), std::end(equiv_rel),
+//                          equiv_pair) == std::end(equiv_rel))
+//              equiv_rel.push_back(equiv_pair);
+//          });
+//        }
+//      }
+//    });
+//  });
 
-  return equiv_rel;
-}
+//  return equiv_rel;
+//}
 
 
 /**
@@ -1188,6 +1188,37 @@ static auto natural_approximation () -> state_pairs_t
 }
 
 
+//static auto nontrivial_equivalence () -> state_pairs_t
+//{
+//  auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
+//  std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
+
+//  auto equiv_rel = state_pairs_t();
+//  if (!std::any_of(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_a) -> bool
+//  {
+//    return std::any_of(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state_b)
+//    {
+//      if (state_a != state_b)
+//      {
+//        equiv_rel.clear();
+//        return check_approximation(equiv_rel, state_a, state_b);
+//      }
+//      else return false;
+//    });
+//  })) equiv_rel.clear();
+//  else
+//  {
+//    std::for_each(first_vertex_iter, last_vertex_iter, [&](dfa_vertex_desc state)
+//    {
+//      if (std::find(std::begin(equiv_rel), std::end(equiv_rel),
+//                    std::make_pair(state, state)) == std::end(equiv_rel))
+//        equiv_rel.push_back(std::make_pair(state, state));
+//    });
+//  }
+
+//  return equiv_rel;
+//}
+
 /**
  * @brief natural_unification
  * @return
@@ -1270,15 +1301,15 @@ static auto pre_process_least_states () -> void
 /**
  * @brief execution_dfa::co_optimize
  */
-auto execution_dfa::co_optimize () -> void
-{
-  auto equiv_relation = natural_equivalence();
-  construct_quotient_dfa_from_equivalence(equiv_relation);
-
-//  equiv_relation = natural_unification();
+//auto execution_dfa::co_optimize () -> void
+//{
+//  auto equiv_relation = natural_equivalence();
 //  construct_quotient_dfa_from_equivalence(equiv_relation);
-  return;
-}
+
+////  equiv_relation = natural_unification();
+////  construct_quotient_dfa_from_equivalence(equiv_relation);
+//  return;
+//}
 
 
 auto execution_dfa::co_approximate () -> void
@@ -1312,8 +1343,8 @@ auto execution_dfa::co_approximate () -> void
 //  equiv_relation = natural_approximation();
 //  construct_quotient_dfa_from_equivalence(equiv_relation);
 
-  equiv_relation = natural_unification();
-  construct_quotient_dfa_from_equivalence(equiv_relation);
+//  equiv_relation = natural_unification();
+//  construct_quotient_dfa_from_equivalence(equiv_relation);
   return;
 }
 
