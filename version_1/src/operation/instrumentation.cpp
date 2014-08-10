@@ -190,7 +190,7 @@ auto instruction_executing (INS ins, VOID *data) -> VOID
 //  return;
 //}
 
-static inline auto generic_intercept (IMG& loaded_img) -> void
+static auto generic_intercept (IMG& loaded_img) -> void
 {
   // iterate over sections of the loaded image
   for (auto sec = IMG_SecHead(loaded_img); SEC_Valid(sec); sec = SEC_Next(sec))
@@ -209,7 +209,7 @@ static inline auto generic_intercept (IMG& loaded_img) -> void
 }
 
 
-static inline auto network_related_intercept (IMG& loaded_img) -> void
+static auto network_related_intercept (IMG& loaded_img) -> void
 {
   // verify if the winsock or wininet module is loaded
   static std::locale current_loc;

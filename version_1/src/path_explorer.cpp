@@ -131,7 +131,8 @@ auto start_exploring (VOID *data) -> VOID
 #elif
   tfm::format(log_file, "FSA reconstruction disabled\n");
 #endif
-  log_file << "=================================================================================\n";
+  tfm::format(log_file, "======================================================================\n");
+//  log_file << "=================================================================================\n";
 
   instrumentation::initialize();
 

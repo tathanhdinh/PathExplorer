@@ -38,7 +38,7 @@ auto initialize() -> void
 /**
  * @brief prepare switching to a new tainting phase
  */
-static inline auto prepare_new_tainting_phase() -> void
+static auto prepare_new_tainting_phase() -> void
 {
   // save a fresh copy of the input
 //  fresh_input.reset(new UINT8[received_msg_size]);
@@ -57,7 +57,7 @@ static inline auto prepare_new_tainting_phase() -> void
 }
 
 
-static inline auto all_lock_released () -> bool
+static auto all_lock_released () -> bool
 {
   auto func_locked_iter = is_locked.begin();
   for (; func_locked_iter != is_locked.end(); ++func_locked_iter)
@@ -71,7 +71,7 @@ static inline auto all_lock_released () -> bool
 /**
  * @brief handle_received_message
  */
-static inline auto handle_received_message () -> void
+static auto handle_received_message () -> void
 {
   if ((received_msg_size > 0) && all_lock_released())
   {
@@ -621,12 +621,10 @@ auto InternetReadFileEx_routine (RTN& rtn) -> void
 static auto generic_insertion (ADDRINT rtn_addr, THREADID thread_id, bool before_or_after) -> VOID
 {
 #if !defined(NDEBUG)
-  tfm::format(log_file, "<%d: %s> %s ", thread_id, addrint_to_hexstring(rtn_addr),
-              RTN_FindNameByAddress(rtn_addr));
-  if (before_or_after)
-    tfm::format(log_file, "is called\n");
-  else
-    tfm::format(log_file, "returns\n");
+  tfm::format(log_file, "<%d: %s> %s ",
+              thread_id, addrint_to_hexstring(rtn_addr), RTN_FindNameByAddress(rtn_addr));
+  if (before_or_after) tfm::format(log_file, "is called\n");
+  else tfm::format(log_file, "returns\n");
 #endif
   return;
 };
@@ -926,7 +924,6 @@ VOID syscall_exit_analyzer(THREADID thread_id, CONTEXT* p_ctxt, SYSCALL_STANDARD
 }
 
 #endif // defined(__gnu_linux__)
-
 
 /**
  * @brief handle memory read instructions in the capturing phase
