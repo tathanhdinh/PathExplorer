@@ -1,0 +1,4 @@
+Some parameters for cmake
+
+-DPIN_ROOT_DIR="C:\Users\Ta Thanh Dinh\Documents\pin-2.13-65163-msvc11-windows" -DBOOST_ROOT_DIR="C:\Boost\1_55_0" -DDISABLE_FSA="No"
+-DPIN_ROOT_DIR="C:\Users\Ta Thanh Dinh\Documents\pin-2.14-67254-msvc11-windows" -DBOOST_ROOT_DIR="C:\Boost\1_55_0"

@@ -30,6 +30,8 @@ auto save_static_trace          (const std::string& filename)  -> void;
 
 auto save_explored_trace        (const std::string& filename)  -> void;
 
+auto save_received_message      (const std::string& filename)  -> void;
+
 auto save_tainting_graph        (df_diagram& dta_graph,
                                  const std::string& filename)  -> void;
 

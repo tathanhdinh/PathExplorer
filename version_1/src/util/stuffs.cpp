@@ -170,9 +170,26 @@ auto save_static_trace (const std::string& filename) -> void
 auto save_explored_trace (const std::string& filename) -> void
 {
   std::ofstream out_file(filename.c_str(), std::ofstream::out | std::ofstream::trunc);
+
+  std::for_each(ins_at_order.begin(), ins_at_order.end(),
+                [&](decltype(ins_at_order)::const_reference ins_order)
+  {
+    tfm::format(out_file, "%-6d %-15s %-50s\n", ins_order.first,
+                addrint_to_hexstring(ins_order.second->address),
+                ins_order.second->disassembled_name);
+  });
   out_file.close();
 
   return;
+}
+
+
+auto save_received_message (const std::string& filename) -> void
+{
+  std::ofstream out_file(filename.c_str(),
+                         std::ofstream::out | std::ofstream::trunc | std::ofstream::binary);
+  out_file.write(reinterpret_cast<char*>(received_msg_addr), received_msg_size);
+  out_file.close();
 }
 
 

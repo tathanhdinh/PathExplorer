@@ -944,4 +944,19 @@ auto mem_read_instruction (ADDRINT ins_addr, ADDRINT r_mem_addr, UINT32 r_mem_si
   return;
 }
 
+
+auto generic_instruction (ADDRINT ins_addr, THREADID thread_id) -> VOID
+{
+  if (thread_id == traced_thread_id)
+  {
+    if (current_exec_order < max_trace_size)
+    {
+      current_exec_order++;
+      ins_at_order[current_exec_order] = std::make_shared<instruction>(*ins_at_addr[ins_addr]);
+    }
+    else PIN_ExitApplication(0);
+  }
+  return;
+}
+
 } // end of capturing namespace

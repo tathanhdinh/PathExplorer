@@ -21,21 +21,24 @@ static std::map<std::string, instrument_func_t> replace_func_of_name;
 /**
  * @brief exec_capturing_phase
  */
-static inline auto exec_capturing_phase (INS& ins) -> void
-{
-  if (INS_IsMemoryRead(ins))
-  {
-    INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)capturing::mem_read_instruction,
-                             IARG_INST_PTR, IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE,
-                             IARG_CONST_CONTEXT, IARG_THREAD_ID, IARG_END);
+static auto exec_capturing_phase (INS& ins) -> void
+{  
+  INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)capturing::generic_instruction,
+                           IARG_INST_PTR, IARG_THREAD_ID, IARG_END);
 
-    if (INS_HasMemoryRead2(ins))
-    {
-      INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)capturing::mem_read_instruction,
-                               IARG_INST_PTR, IARG_MEMORYREAD2_EA, IARG_MEMORYREAD_SIZE,
-                               IARG_CONST_CONTEXT, IARG_THREAD_ID, IARG_END);
-    }
-  }
+//  if (INS_IsMemoryRead(ins))
+//  {
+//    INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)capturing::mem_read_instruction,
+//                             IARG_INST_PTR, IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE,
+//                             IARG_CONST_CONTEXT, IARG_THREAD_ID, IARG_END);
+
+//    if (INS_HasMemoryRead2(ins))
+//    {
+//      INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)capturing::mem_read_instruction,
+//                               IARG_INST_PTR, IARG_MEMORYREAD2_EA, IARG_MEMORYREAD_SIZE,
+//                               IARG_CONST_CONTEXT, IARG_THREAD_ID, IARG_END);
+//    }
+//  }
   return;
 }
 
@@ -43,7 +46,7 @@ static inline auto exec_capturing_phase (INS& ins) -> void
 /**
  * @brief exec_tainting_phase
  */
-static inline auto exec_tainting_phase (INS& ins, ptr_instruction_t examined_ins) -> void
+static auto exec_tainting_phase (INS& ins, ptr_instruction_t examined_ins) -> void
 {
   /* taint logging */
   if (examined_ins->is_mapped_from_kernel
@@ -96,7 +99,7 @@ static inline auto exec_tainting_phase (INS& ins, ptr_instruction_t examined_ins
 /**
  * @brief instrument codes executed in rollbacking phase
  */
-static inline auto exec_rollbacking_phase (INS& ins, ptr_instruction_t examined_ins) -> void
+static auto exec_rollbacking_phase (INS& ins, ptr_instruction_t examined_ins) -> void
 {
   INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)rollbacking::generic_instruction,
                            IARG_INST_PTR, IARG_THREAD_ID, IARG_END);
@@ -126,25 +129,43 @@ static inline auto exec_rollbacking_phase (INS& ins, ptr_instruction_t examined_
  */
 auto instruction_executing (INS ins, VOID *data) -> VOID
 {
+  // examining statically instructions
+  auto ins_addr = INS_Address(ins);
+
+  // verify if the instruction has been examined
+  if (ins_at_addr.find(ins_addr) == ins_at_addr.end())
+  {
+    // not yet, then create a new instruction object
+    ins_at_addr[ins_addr] = std::make_shared<instruction>(ins);
+    if (ins_at_addr[ins_addr]->is_cond_direct_cf)
+    {
+      ins_at_addr[ins_addr] = std::make_shared<cond_direct_instruction>(*ins_at_addr[ins_addr]);
+    }
+
+//#if !defined(DISABLE_FSA)
+//    explored_fsa->add_vertex(ins_addr);
+//#endif
+  }
+
   if (current_running_phase != capturing_phase)
   {
-    // examining statically instructions
-    auto ins_addr = INS_Address(ins);
+//    // examining statically instructions
+//    auto ins_addr = INS_Address(ins);
 
-    // verify if the instruction has been examined
-    if (ins_at_addr.find(ins_addr) == ins_at_addr.end())
-    {
-      // not yet, then create a new instruction object
-      ins_at_addr[ins_addr] = std::make_shared<instruction>(ins);
-      if (ins_at_addr[ins_addr]->is_cond_direct_cf)
-      {
-        ins_at_addr[ins_addr] = std::make_shared<cond_direct_instruction>(*ins_at_addr[ins_addr]);
-      }
+//    // verify if the instruction has been examined
+//    if (ins_at_addr.find(ins_addr) == ins_at_addr.end())
+//    {
+//      // not yet, then create a new instruction object
+//      ins_at_addr[ins_addr] = std::make_shared<instruction>(ins);
+//      if (ins_at_addr[ins_addr]->is_cond_direct_cf)
+//      {
+//        ins_at_addr[ins_addr] = std::make_shared<cond_direct_instruction>(*ins_at_addr[ins_addr]);
+//      }
 
 #if !defined(DISABLE_FSA)
       explored_fsa->add_vertex(ins_addr);
 #endif
-    }
+//    }
 
     switch (current_running_phase)
     {

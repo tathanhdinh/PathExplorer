@@ -175,7 +175,10 @@ extern VOID syscall_exit_analyzer(THREADID thread_id, CONTEXT* p_ctxt,
 #endif
 
 extern auto mem_read_instruction  (ADDRINT ins_addr, ADDRINT r_mem_addr, UINT32 r_mem_size,
-                                   CONTEXT* p_ctxt, THREADID thread_id)         -> VOID;
+                                   CONTEXT* p_ctxt, THREADID thread_id)                   -> VOID;
+
+extern auto generic_instruction   (ADDRINT ins_addr, THREADID thread_id) -> VOID;
+
 } // end of capturing namespace
 
 #endif // CAPTURING_PHASE_H
