@@ -23,22 +23,24 @@ static std::map<std::string, instrument_func_t> replace_func_of_name;
  */
 static auto exec_capturing_phase (INS& ins) -> void
 {  
-  INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)capturing::generic_instruction,
-                           IARG_INST_PTR, IARG_THREAD_ID, IARG_END);
+  // logging immediately after the message is received
+//  INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)capturing::generic_instruction,
+//                           IARG_INST_PTR, IARG_THREAD_ID, IARG_END);
 
-//  if (INS_IsMemoryRead(ins))
-//  {
-//    INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)capturing::mem_read_instruction,
-//                             IARG_INST_PTR, IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE,
-//                             IARG_CONST_CONTEXT, IARG_THREAD_ID, IARG_END);
+  // waiting for some instruction accessing the message buffer
+  if (INS_IsMemoryRead(ins))
+  {
+    INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)capturing::mem_read_instruction,
+                             IARG_INST_PTR, IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE,
+                             IARG_CONST_CONTEXT, IARG_THREAD_ID, IARG_END);
 
-//    if (INS_HasMemoryRead2(ins))
-//    {
-//      INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)capturing::mem_read_instruction,
-//                               IARG_INST_PTR, IARG_MEMORYREAD2_EA, IARG_MEMORYREAD_SIZE,
-//                               IARG_CONST_CONTEXT, IARG_THREAD_ID, IARG_END);
-//    }
-//  }
+    if (INS_HasMemoryRead2(ins))
+    {
+      INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)capturing::mem_read_instruction,
+                               IARG_INST_PTR, IARG_MEMORYREAD2_EA, IARG_MEMORYREAD_SIZE,
+                               IARG_CONST_CONTEXT, IARG_THREAD_ID, IARG_END);
+    }
+  }
   return;
 }
 
@@ -142,30 +144,30 @@ auto instruction_executing (INS ins, VOID *data) -> VOID
       ins_at_addr[ins_addr] = std::make_shared<cond_direct_instruction>(*ins_at_addr[ins_addr]);
     }
 
-//#if !defined(DISABLE_FSA)
-//    explored_fsa->add_vertex(ins_addr);
-//#endif
+#if !defined(DISABLE_FSA)
+    explored_fsa->add_vertex(ins_addr);
+#endif
   }
 
   if (current_running_phase != capturing_phase)
   {
-//    // examining statically instructions
-//    auto ins_addr = INS_Address(ins);
+    // examining statically instructions
+    auto ins_addr = INS_Address(ins);
 
-//    // verify if the instruction has been examined
-//    if (ins_at_addr.find(ins_addr) == ins_at_addr.end())
-//    {
-//      // not yet, then create a new instruction object
-//      ins_at_addr[ins_addr] = std::make_shared<instruction>(ins);
-//      if (ins_at_addr[ins_addr]->is_cond_direct_cf)
-//      {
-//        ins_at_addr[ins_addr] = std::make_shared<cond_direct_instruction>(*ins_at_addr[ins_addr]);
-//      }
+    // verify if the instruction has been examined
+    if (ins_at_addr.find(ins_addr) == ins_at_addr.end())
+    {
+      // not yet, then create a new instruction object
+      ins_at_addr[ins_addr] = std::make_shared<instruction>(ins);
+      if (ins_at_addr[ins_addr]->is_cond_direct_cf)
+      {
+        ins_at_addr[ins_addr] = std::make_shared<cond_direct_instruction>(*ins_at_addr[ins_addr]);
+      }
 
 #if !defined(DISABLE_FSA)
       explored_fsa->add_vertex(ins_addr);
 #endif
-//    }
+    }
 
     switch (current_running_phase)
     {

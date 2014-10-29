@@ -1257,8 +1257,8 @@ static auto pre_process_least_states () -> void
       auto first_trans_iter = dfa_out_edge_iter(); auto last_trans_iter = dfa_out_edge_iter();
       std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(state, internal_dfa);
 
-//      if (boost::out_degree(state, internal_dfa) == 3)
-//      {
+      if (boost::out_degree(state, internal_dfa) == 3) // for Zeus: the direct cut of tree should be changed to a zic-zac cut
+      {
         if (std::all_of(first_trans_iter, last_trans_iter, [](dfa_edge_desc trans)
         {
           return internal_dfa[boost::target(trans, internal_dfa)].empty();
@@ -1266,7 +1266,7 @@ static auto pre_process_least_states () -> void
         {
           boost::remove_out_edge_if(state, [](dfa_edge_desc trans) { return true; }, internal_dfa);
         }
-//      }
+      }
     }
 
 //    auto trans_to_empty = dfa_edge_descs();
@@ -1317,37 +1317,37 @@ auto execution_dfa::co_approximate () -> void
   pre_process_least_states();
 
   auto equiv_relation = state_pairs_t();
-//  while (true)
-//  {
-//    equiv_relation = natural_approximation();
-//    if (std::all_of(std::begin(equiv_relation), std::end(equiv_relation),
-//                    [](decltype(equiv_relation)::const_reference state_pair)
-//    {
-//      return (std::get<0>(state_pair) == std::get<1>(state_pair));
-//    })) break;
-//    else construct_quotient_dfa_from_equivalence(equiv_relation);
-//  }
+  while (true)
+  {
+    equiv_relation = natural_approximation();
+    if (std::all_of(std::begin(equiv_relation), std::end(equiv_relation),
+                    [](decltype(equiv_relation)::const_reference state_pair)
+    {
+      return (std::get<0>(state_pair) == std::get<1>(state_pair));
+    })) break;
+    else construct_quotient_dfa_from_equivalence(equiv_relation);
+  }
 
-  equiv_relation = natural_approximation();
-  construct_quotient_dfa_from_equivalence(equiv_relation);
+//  equiv_relation = natural_approximation();
+//  construct_quotient_dfa_from_equivalence(equiv_relation);
 
-  equiv_relation = natural_approximation();
-  construct_quotient_dfa_from_equivalence(equiv_relation);
+//  equiv_relation = natural_approximation();
+//  construct_quotient_dfa_from_equivalence(equiv_relation);
 
 //  equiv_relation = natural_equivalence();
 //  construct_quotient_dfa_from_equivalence(equiv_relation);
 
-  equiv_relation = natural_approximation();
+//  equiv_relation = natural_approximation();
+//  construct_quotient_dfa_from_equivalence(equiv_relation);
+
+//  equiv_relation = natural_approximation();
+//  construct_quotient_dfa_from_equivalence(equiv_relation);
+
+//  equiv_relation = natural_approximation();
+//  construct_quotient_dfa_from_equivalence(equiv_relation);
+
+  equiv_relation = natural_unification();
   construct_quotient_dfa_from_equivalence(equiv_relation);
-
-//  equiv_relation = natural_approximation();
-//  construct_quotient_dfa_from_equivalence(equiv_relation);
-
-//  equiv_relation = natural_approximation();
-//  construct_quotient_dfa_from_equivalence(equiv_relation);
-
-//  equiv_relation = natural_unification();
-//  construct_quotient_dfa_from_equivalence(equiv_relation);
   return;
 }
 
@@ -2076,7 +2076,7 @@ auto execution_dfa::save_to_file (const std::string& filename) -> void
 
       label = label_out.str(); label.pop_back();
     }
-    else label = "ternminal";
+    else label = "terminal";
 //    else label = "unknown";
 
     return label;
