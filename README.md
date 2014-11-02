@@ -7,10 +7,11 @@
 * Reverse execution: an application-layer reverse execution mechanism.
 * Multiple rollbacks detection: handles direction fields in the input.
 * Execution with jumps: a new algorithm for checkpoint detection to shorten re-execution paths.
+* LTS approximation for the execution tree.
 
 ##### In development:
 
-* DFA approximation for the execution tree.
+* IR lifting with BAP.
 
 ##### Known bugs:
 
