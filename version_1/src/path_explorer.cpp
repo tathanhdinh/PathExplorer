@@ -136,8 +136,8 @@ auto start_exploring (VOID *data) -> VOID
 
   instrumentation::initialize();
 
-  start_time = std::time(0); std::srand(static_cast<unsigned int>(start_time));
-  ptr_rand_engine = std::make_shared<std::default_random_engine>(std::random_device()());
+//  start_time = std::time(0); std::srand(static_cast<unsigned int>(start_time));
+//  ptr_rand_engine = std::make_shared<std::default_random_engine>(std::random_device()());
 
   return;
 }
@@ -170,8 +170,8 @@ auto stop_exploring (INT32 code, VOID *data) -> VOID
 //  tfm::format(std::cerr, "saving CFI inputs\n");
 //  save_cfi_inputs(process_id_str + "_cfi_inputs.log");
 
-//  tfm::format(std::cerr, "saving all trees\n");
-//  explored_fsa->save_to_file(process_id_str + "_path_explorer_explored_fsa.dot");
+  tfm::format(std::cerr, "saving all trees\n");
+  explored_fsa->save_to_file(process_id_str + "_path_explorer_explored_fsa.dot");
 #endif
 
   UINT32 resolved_cfi_num = 0, singular_cfi_num = 0;
@@ -203,12 +203,12 @@ auto stop_exploring (INT32 code, VOID *data) -> VOID
 //  tfm::format(std::cerr, "saving optimized DFA to file\n");
 //  abstracted_dfa->save_to_file("optimized_" + process_id_str + ".dot");
 
-  tfm::format(std::cerr, "abstracting DFA\n");
-//  abstracted_dfa->approximate();
-  abstracted_dfa->co_approximate();
+//  tfm::format(std::cerr, "abstracting DFA\n");
+////  abstracted_dfa->approximate();
+//  abstracted_dfa->co_approximate();
 
-  tfm::format(std::cerr, "saving abstracted DFA to file\n");
-  abstracted_dfa->save_to_file("abstracted_" + process_id_str + ".dot");
+//  tfm::format(std::cerr, "saving abstracted DFA to file\n");
+//  abstracted_dfa->save_to_file("abstracted_" + process_id_str + ".dot");
 
   stop_time = std::time(0);
   tfm::format(std::cerr, "%d seconds elapsed for abstracting DFA\n", stop_time - start_time);

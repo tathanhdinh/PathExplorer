@@ -26,6 +26,8 @@ typedef std::shared_ptr<dfa_graph_t>                          ptr_dfa_graph_t;
 typedef std::pair<dfa_vertex_desc, dfa_vertex_desc>           state_pair_t;
 typedef std::vector<state_pair_t>                             state_pairs_t;
 
+#define ZEUS_ZICZAC_CUT_TYPE 3
+
 /*================================================================================================*/
 
 static dfa_graph_t      internal_dfa;
@@ -1257,8 +1259,8 @@ static auto pre_process_least_states () -> void
       auto first_trans_iter = dfa_out_edge_iter(); auto last_trans_iter = dfa_out_edge_iter();
       std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(state, internal_dfa);
 
-      if (boost::out_degree(state, internal_dfa) == 3) // for Zeus: the direct cut of tree should be changed to a zic-zac cut
-      {
+//      if (boost::out_degree(state, internal_dfa) == ZEUS_ZICZAC_CUT_TYPE) // for Zeus: the direct cut of tree should be changed to a zic-zac cut
+//      {
         if (std::all_of(first_trans_iter, last_trans_iter, [](dfa_edge_desc trans)
         {
           return internal_dfa[boost::target(trans, internal_dfa)].empty();
@@ -1266,7 +1268,7 @@ static auto pre_process_least_states () -> void
         {
           boost::remove_out_edge_if(state, [](dfa_edge_desc trans) { return true; }, internal_dfa);
         }
-      }
+//      }
     }
 
 //    auto trans_to_empty = dfa_edge_descs();
@@ -1294,6 +1296,28 @@ static auto pre_process_least_states () -> void
 //        return boost::target(trans, internal_dfa) != selected_target;
 //      }, internal_dfa);
 //    }
+  });
+
+  std::for_each(first_vertex_iter, last_vertex_iter, [](dfa_vertex_desc state)
+  {
+    if (!internal_dfa[state].empty()) // this state must contain at least a CFI
+    {
+      if (boost::out_degree(state, internal_dfa) == 2)
+      {
+        auto first_trans_iter = dfa_out_edge_iter(); auto last_trans_iter = dfa_out_edge_iter();
+        std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(state, internal_dfa);
+        if (std::any_of(first_trans_iter, last_trans_iter, [](dfa_edge_desc trans)
+        {
+          auto to_terminal = internal_dfa[boost::target(trans, internal_dfa)].empty();
+          auto cond_size = internal_dfa[trans].size();
+          auto lack_of_cr = std::none_of(internal_dfa[trans].begin(), internal_dfa[trans].end(), )
+//          return (internal_dfa[boost::target(trans, internal_dfa)].empty() && )
+        }))
+        {
+
+        }
+      }
+    }
   });
   return;
 }

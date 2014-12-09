@@ -81,6 +81,9 @@ extern KNOB<UINT32>             max_trace_length_knob;
 
 extern std::ofstream            log_file;
 
+extern time_t                   start_time;
+extern time_t                   stop_time;
+
 typedef std::shared_ptr<std::default_random_engine> ptr_random_engine_t;
 extern ptr_random_engine_t      ptr_rand_engine;
 

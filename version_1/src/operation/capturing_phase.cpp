@@ -79,6 +79,10 @@ static auto handle_received_message () -> void
     // verify if the received message is the interesting message
     if (received_msg_number == received_msg_order)
     {
+      tfm::format(std::cout, "message captured, switching to rollbacking phase\n");
+      start_time = std::time(0); std::srand(static_cast<unsigned int>(start_time));
+      ptr_rand_engine = std::make_shared<std::default_random_engine>(std::random_device()());
+
       // yes, then remove the current instrumentation for message receiving functions
       interested_msg_is_received = true; PIN_RemoveInstrumentation();
     }
