@@ -193,6 +193,9 @@ auto stop_exploring (INT32 code, VOID *data) -> VOID
   tfm::format(std::cerr, "constructing raw DFA\n");
   abstracted_dfa->add_exec_paths(explored_exec_paths);
 
+  tfm::format(std::cerr, "pre-processing some states\n");
+  abstracted_dfa->pre_processing();
+
   tfm::format(std::cerr, "saving raw DFA to file\n");
   abstracted_dfa->save_to_file("raw_" + process_id_str + ".dot");
 
@@ -203,12 +206,12 @@ auto stop_exploring (INT32 code, VOID *data) -> VOID
 //  tfm::format(std::cerr, "saving optimized DFA to file\n");
 //  abstracted_dfa->save_to_file("optimized_" + process_id_str + ".dot");
 
-//  tfm::format(std::cerr, "abstracting DFA\n");
-////  abstracted_dfa->approximate();
-//  abstracted_dfa->co_approximate();
+  tfm::format(std::cerr, "abstracting DFA\n");
+//  abstracted_dfa->approximate();
+  abstracted_dfa->co_approximate();
 
-//  tfm::format(std::cerr, "saving abstracted DFA to file\n");
-//  abstracted_dfa->save_to_file("abstracted_" + process_id_str + ".dot");
+  tfm::format(std::cerr, "saving abstracted DFA to file\n");
+  abstracted_dfa->save_to_file("abstracted_" + process_id_str + ".dot");
 
   stop_time = std::time(0);
   tfm::format(std::cerr, "%d seconds elapsed for abstracting DFA\n", stop_time - start_time);

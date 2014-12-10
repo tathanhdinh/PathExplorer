@@ -1246,11 +1246,193 @@ static auto natural_unification () -> state_pairs_t
   return equiv_rel;
 }
 
+auto execution_dfa::pre_processing () -> void
+{
+  auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
+  std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
+
+  std::for_each(first_vertex_iter, last_vertex_iter, [](dfa_vertex_desc state)
+  {
+    if (!internal_dfa[state].empty()) // this state must contain at least a CFI
+    {
+      if (boost::out_degree(state, internal_dfa) == 2)
+      {
+        auto first_trans_iter = dfa_out_edge_iter(); auto last_trans_iter = dfa_out_edge_iter();
+        std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(state, internal_dfa);
+        if (std::any_of(first_trans_iter, last_trans_iter, [](dfa_edge_desc trans)
+        {
+          auto to_terminal = internal_dfa[boost::target(trans, internal_dfa)].empty();
+          auto cond_size = internal_dfa[trans].size();
+          auto lack_of_CR = std::none_of(internal_dfa[trans].begin(), internal_dfa[trans].end(),
+                                         [&](const addrint_value_map_t& addr_val)
+          {
+            return (std::get<1>(*addr_val.begin()) == 13); // a hack
+          });
+
+          return to_terminal && (cond_size == 255) && lack_of_CR;
+        }))
+        {
+          auto to_terminal_edge = *std::find_if(first_trans_iter, last_trans_iter,
+                                               [](dfa_edge_desc trans)
+          {
+            return internal_dfa[boost::target(trans, internal_dfa)].empty();
+          });
+
+          auto LN_state = boost::add_vertex(ptr_cond_direct_inss_t(), internal_dfa);
+          auto NULL_state = boost::add_vertex(ptr_cond_direct_inss_t(), internal_dfa);
+
+          auto to_LN_edge_label = addrint_value_maps_t();
+          auto to_NULL_edge_label = addrint_value_maps_t();
+          auto to_not_LN_CR_NULL_label = addrint_value_maps_t();
+
+          std::for_each(internal_dfa[to_terminal_edge].begin(), internal_dfa[to_terminal_edge].end(),
+                        [&](const addrint_value_map_t& addr_val)
+          {
+            switch (std::get<1>(*addr_val.begin()))
+            {
+            case 10:
+              to_LN_edge_label.push_back(addr_val);
+              break;
+            case 0:
+              to_NULL_edge_label.push_back(addr_val);
+              break;
+            default:
+              to_not_LN_CR_NULL_label.push_back(addr_val);
+              break;
+            }
+          });
+
+          internal_dfa[to_terminal_edge] = to_not_LN_CR_NULL_label;
+          boost::add_edge(state, LN_state, to_LN_edge_label, internal_dfa);
+          boost::add_edge(state, NULL_state, to_NULL_edge_label, internal_dfa);
+        }
+      }
+    }
+  });
+
+  std::for_each(first_vertex_iter, last_vertex_iter, [](dfa_vertex_desc state)
+  {
+    if (!internal_dfa[state].empty())
+    {
+      if (boost::out_degree(state, internal_dfa) == 3)
+      {
+        auto first_trans_iter = dfa_out_edge_iter(); auto last_trans_iter = dfa_out_edge_iter();
+        std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(state, internal_dfa);
+        if (std::any_of(first_trans_iter, last_trans_iter, [](dfa_edge_desc trans)
+        {
+          auto to_terminal = internal_dfa[boost::target(trans, internal_dfa)].empty();
+          auto cond_size = internal_dfa[trans].size();
+          auto lack_of_LN_NULL = std::none_of(internal_dfa[trans].begin(), internal_dfa[trans].end(),
+                                         [&](const addrint_value_map_t& addr_val)
+          {
+            return (std::get<1>(*addr_val.begin()) == 0) || (std::get<1>(*addr_val.begin()) == 10); // a hack
+          });
+
+          return to_terminal && (cond_size == 254) && lack_of_LN_NULL;
+        }))
+        {
+          auto to_lack_of_LN_NULL_edge = *std::find_if(first_trans_iter,
+                                                       last_trans_iter, [](dfa_edge_desc trans)
+          {
+            return internal_dfa[boost::target(trans, internal_dfa)].empty() &&
+                   (internal_dfa[trans].size() == 254);
+          });
+
+          auto CR_state = boost::add_vertex(ptr_cond_direct_inss_t(), internal_dfa);
+//          auto not_LN_CR_NULL_state = boost::add_vertex(ptr_cond_direct_inss_t(), internal_dfa);
+
+          auto to_CR_edge_label = addrint_value_maps_t();
+//          auto to_NULL_edge_label = addrint_value_maps_t();
+          auto to_not_LN_CR_NULL_label = addrint_value_maps_t();
+
+          std::for_each(internal_dfa[to_lack_of_LN_NULL_edge].begin(),
+                        internal_dfa[to_lack_of_LN_NULL_edge].end(),
+                        [&](const addrint_value_map_t& addr_val)
+          {
+            switch (std::get<1>(*addr_val.begin()))
+            {
+            case 13:
+              to_CR_edge_label.push_back(addr_val);
+              break;
+            default:
+              to_not_LN_CR_NULL_label.push_back(addr_val);
+              break;
+            }
+          });
+
+          internal_dfa[to_lack_of_LN_NULL_edge] = to_not_LN_CR_NULL_label;
+          boost::add_edge(state, CR_state, to_CR_edge_label, internal_dfa);
+//          boost::add_edge(state, NULL_state, to_NULL_edge_label, internal_dfa);
+        }
+      }
+    }
+  });
+  return;
+}
 
 static auto pre_process_least_states () -> void
 {
   auto first_vertex_iter = dfa_vertex_iter(); auto last_vertex_iter = dfa_vertex_iter();
   std::tie(first_vertex_iter, last_vertex_iter) = boost::vertices(internal_dfa);
+
+//  std::for_each(first_vertex_iter, last_vertex_iter, [](dfa_vertex_desc state)
+//  {
+//    if (!internal_dfa[state].empty()) // this state must contain at least a CFI
+//    {
+//      if (boost::out_degree(state, internal_dfa) == 2)
+//      {
+//        auto first_trans_iter = dfa_out_edge_iter(); auto last_trans_iter = dfa_out_edge_iter();
+//        std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(state, internal_dfa);
+//        if (std::any_of(first_trans_iter, last_trans_iter, [](dfa_edge_desc trans)
+//        {
+//          auto to_terminal = internal_dfa[boost::target(trans, internal_dfa)].empty();
+//          auto cond_size = internal_dfa[trans].size();
+//          auto lack_of_CR = std::none_of(internal_dfa[trans].begin(), internal_dfa[trans].end(),
+//                                         [&](const addrint_value_map_t& addr_val)
+//          {
+//            return (std::get<1>(*addr_val.begin()) == 13); // a hack
+//          });
+
+//          return to_terminal && cond_size && lack_of_CR;
+//        }))
+//        {
+//          auto to_terminal_edge = *std::find_if(first_trans_iter, last_trans_iter,
+//                                               [](dfa_edge_desc trans)
+//          {
+//            return internal_dfa[boost::target(trans, internal_dfa)].empty();
+//          });
+
+//          auto LN_state = boost::add_vertex(ptr_cond_direct_inss_t(), internal_dfa);
+//          auto NULL_state = boost::add_vertex(ptr_cond_direct_inss_t(), internal_dfa);
+
+//          auto to_LN_edge_label = addrint_value_maps_t();
+//          auto to_NULL_edge_label = addrint_value_maps_t();
+//          auto to_not_LN_CR_NULL_label = addrint_value_maps_t();
+
+//          std::for_each(internal_dfa[to_terminal_edge].begin(), internal_dfa[to_terminal_edge].end(),
+//                        [&](const addrint_value_map_t& addr_val)
+//          {
+//            switch (std::get<1>(*addr_val.begin()))
+//            {
+//            case 10:
+//              to_LN_edge_label.push_back(addr_val);
+//              break;
+//            case 0:
+//              to_NULL_edge_label.push_back(addr_val);
+//              break;
+//            default:
+//              to_not_LN_CR_NULL_label.push_back(addr_val);
+//              break;
+//            }
+//          });
+
+//          internal_dfa[to_terminal_edge] = to_not_LN_CR_NULL_label;
+//          boost::add_edge(state, LN_state, to_LN_edge_label, internal_dfa);
+//          boost::add_edge(state, NULL_state, to_NULL_edge_label, internal_dfa);
+//        }
+//      }
+//    }
+//  });
 
   std::for_each(first_vertex_iter, last_vertex_iter, [](dfa_vertex_desc state)
   {
@@ -1298,27 +1480,7 @@ static auto pre_process_least_states () -> void
 //    }
   });
 
-  std::for_each(first_vertex_iter, last_vertex_iter, [](dfa_vertex_desc state)
-  {
-    if (!internal_dfa[state].empty()) // this state must contain at least a CFI
-    {
-      if (boost::out_degree(state, internal_dfa) == 2)
-      {
-        auto first_trans_iter = dfa_out_edge_iter(); auto last_trans_iter = dfa_out_edge_iter();
-        std::tie(first_trans_iter, last_trans_iter) = boost::out_edges(state, internal_dfa);
-        if (std::any_of(first_trans_iter, last_trans_iter, [](dfa_edge_desc trans)
-        {
-          auto to_terminal = internal_dfa[boost::target(trans, internal_dfa)].empty();
-          auto cond_size = internal_dfa[trans].size();
-          auto lack_of_cr = std::none_of(internal_dfa[trans].begin(), internal_dfa[trans].end(), )
-//          return (internal_dfa[boost::target(trans, internal_dfa)].empty() && )
-        }))
-        {
 
-        }
-      }
-    }
-  });
   return;
 }
 

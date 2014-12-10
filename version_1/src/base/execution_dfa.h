@@ -25,6 +25,8 @@ public:
 //  auto co_optimize          ()                                    -> void;
   auto co_approximate       ()                                    -> void;
 
+  auto pre_processing       ()                                    -> void;
+
   auto save_to_file         (const std::string& filename)         -> void;
 };
 
